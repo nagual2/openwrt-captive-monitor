@@ -1,2 +1,15 @@
 #!/bin/sh
-exec package/openwrt-captive-monitor/files/etc/init.d/captive-monitor "$@"
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd 2>/dev/null)"
+LOCAL_INIT="$SCRIPT_DIR/package/openwrt-captive-monitor/files/etc/init.d/captive-monitor"
+
+if [ -n "$SCRIPT_DIR" ] && [ -x "$LOCAL_INIT" ]; then
+    exec "$LOCAL_INIT" "$@"
+fi
+
+if [ -x /etc/init.d/captive-monitor ]; then
+    exec /etc/init.d/captive-monitor "$@"
+fi
+
+echo "captive-monitor init script not found" >&2
+exit 127

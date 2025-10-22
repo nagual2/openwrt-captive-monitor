@@ -45,7 +45,7 @@ endef
 
 define Package/openwrt-captive-monitor/postinst
 #!/bin/sh
-if [ -z "$$$IPKG_INSTROOT" ]; then
+if [ -z "$$IPKG_INSTROOT" ]; then
     if [ -x /etc/uci-defaults/99-captive-monitor ]; then
         /etc/uci-defaults/99-captive-monitor || true
     fi
