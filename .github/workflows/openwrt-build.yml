@@ -1,0 +1,129 @@
+name: Build OpenWrt packages
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.target_id }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: ath79
+            subtarget: generic
+            target_id: ath79-generic
+          - target: ramips
+            subtarget: mt7621
+            target_id: ramips-mt7621
+    env:
+      OPENWRT_VERSION: "23.05.3"
+      PACKAGE_NAME: "openwrt-captive-monitor"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            clang \
+            flex \
+            bison \
+            gawk \
+            gcc-multilib \
+            g++-multilib \
+            gettext \
+            git \
+            libncurses5-dev \
+            libssl-dev \
+            python3-distutils \
+            rsync \
+            unzip \
+            zlib1g-dev \
+            file \
+            wget \
+            xz-utils
+
+      - name: Download OpenWrt SDK
+        id: sdk
+        run: |
+          set -euxo pipefail
+          TARGET="${{ matrix.target }}"
+          SUBTARGET="${{ matrix.subtarget }}"
+          SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${TARGET}/${SUBTARGET}/"
+          SDK_TARBALL=$(curl -fsSL "$SDK_URL" | grep -oE 'openwrt-sdk-[^"]*\.tar\.xz' | head -n1)
+          if [ -z "$SDK_TARBALL" ]; then
+            echo "Unable to determine SDK tarball name at $SDK_URL" >&2
+            exit 1
+          fi
+          curl -fSLo "$SDK_TARBALL" "${SDK_URL}${SDK_TARBALL}"
+          tar -xf "$SDK_TARBALL"
+          SDK_DIR=$(tar -tf "$SDK_TARBALL" | head -n1 | cut -d/ -f1)
+          echo "dir=$SDK_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Build package
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.dir }}"
+          TARGET_ID="${{ matrix.target_id }}"
+          cp -r "$GITHUB_WORKSPACE/package/openwrt-captive-monitor" "$SDK_DIR/package/"
+          pushd "$SDK_DIR"
+          make package/${PACKAGE_NAME}/compile V=sc -j"$(nproc)"
+          make package/index V=s
+          popd
+          ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts/$TARGET_ID"
+          mkdir -p "$ARTIFACT_DIR"
+          mapfile -t built_packages < <(find "$SDK_DIR/bin/packages" -type f -name "${PACKAGE_NAME}_*.ipk")
+          if [ ${#built_packages[@]} -eq 0 ]; then
+            echo "No built packages found for ${PACKAGE_NAME}" >&2
+            exit 1
+          fi
+          for ipk in "${built_packages[@]}"; do
+            pkg_dir=$(dirname "$ipk")
+            cp "$ipk" "$ARTIFACT_DIR/"
+            for index in Packages Packages.gz Packages.manifest; do
+              if [ -f "$pkg_dir/$index" ]; then
+                dest_name=${index/Packages/Packages_${TARGET_ID}}
+                cp "$pkg_dir/$index" "$ARTIFACT_DIR/$dest_name"
+              fi
+            done
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_NAME }}-${{ matrix.target_id }}
+          path: artifacts/${{ matrix.target_id }}
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-artifacts/**/*.ipk
+            release-artifacts/**/*Packages*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
