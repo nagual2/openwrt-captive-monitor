@@ -1,0 +1,75 @@
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=openwrt-captive-monitor
+PKG_VERSION:=0.1.0
+PKG_RELEASE:=1
+
+PKG_LICENSE:=MIT
+PKG_MAINTAINER:=Kombai AI Assistant
+PKG_ARCH:=all
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/openwrt-captive-monitor
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=Captive portal connectivity monitor and auto-redirect helper
+  DEPENDS:=+dnsmasq +curl
+endef
+
+define Package/openwrt-captive-monitor/description
+ openwrt-captive-monitor detects captive portals, applies DNS/HTTP redirects so
+ authenticated clients can sign in, and restores normal routing once internet
+ access is available again.
+endef
+
+define Build/Prepare
+    mkdir -p $(PKG_BUILD_DIR)
+endef
+
+define Build/Compile
+    :
+endef
+
+define Package/openwrt-captive-monitor/install
+    $(INSTALL_DIR) $(1)/usr/sbin
+    $(INSTALL_BIN) $(CURDIR)/files/usr/sbin/openwrt_captive_monitor $(1)/usr/sbin/openwrt_captive_monitor
+    $(INSTALL_DIR) $(1)/etc/init.d
+    $(INSTALL_BIN) $(CURDIR)/files/etc/init.d/captive-monitor $(1)/etc/init.d/captive-monitor
+    $(INSTALL_DIR) $(1)/etc/config
+    $(INSTALL_CONF) $(CURDIR)/files/etc/config/captive-monitor $(1)/etc/config/captive-monitor
+    $(INSTALL_DIR) $(1)/etc/uci-defaults
+    $(INSTALL_BIN) $(CURDIR)/files/etc/uci-defaults/99-captive-monitor $(1)/etc/uci-defaults/99-captive-monitor
+endef
+
+define Package/openwrt-captive-monitor/postinst
+#!/bin/sh
+if [ -z "$$$IPKG_INSTROOT" ]; then
+    if [ -x /etc/uci-defaults/99-captive-monitor ]; then
+        /etc/uci-defaults/99-captive-monitor || true
+    fi
+    /etc/init.d/captive-monitor disable >/dev/null 2>&1 || true
+    /etc/init.d/captive-monitor stop >/dev/null 2>&1 || true
+fi
+exit 0
+endef
+
+define Package/openwrt-captive-monitor/prerm
+#!/bin/sh
+if [ -z "$$IPKG_INSTROOT" ]; then
+    /etc/init.d/captive-monitor disable >/dev/null 2>&1 || true
+    /etc/init.d/captive-monitor stop >/dev/null 2>&1 || true
+fi
+exit 0
+endef
+
+define Package/openwrt-captive-monitor/postrm
+#!/bin/sh
+if [ -z "$$IPKG_INSTROOT" ]; then
+    /etc/init.d/captive-monitor stop >/dev/null 2>&1 || true
+fi
+exit 0
+endef
+
+$(eval $(call BuildPackage,openwrt-captive-monitor))
