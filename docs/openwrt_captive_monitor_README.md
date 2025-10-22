@@ -3,14 +3,15 @@
 ## 📋 Описание
 
 Автоматический скрипт для OpenWRT, который:
-- ✅ Проверяет доступность интернета
-- 🔄 Перезагружает WiFi при отсутствии связи
-- 🌐 **DNS Spoofing**: Все DNS запросы возвращают адрес шлюза (через dnsmasq)
-- 🔀 **DNS Redirect**: Перехватывает DNS запросы (TCP/UDP 53) и направляет на локальный DNS
-- 🔀 **HTTP/HTTPS Redirect**: Редиректит веб-трафик на captive portal шлюза
-- ⏳ Ожидает восстановления интернета
-- ✨ Автоматически убирает все редиректы после авторизации
-- ⚡ Минимальное TTL для DNS записей (0 секунд)
+- ✅ Проверяет доступность интернета через ping и контрольные HTTP-запросы
+- 🛰️ Определяет наличие captive-портала по редиректам/HTML ответам и извлекает URL авторизации
+- 🌐 Временно перенаправляет DNS-запросы клиентов LAN на IP роутера (dnsmasq add-on)
+- 📡 Запускает легкий busybox httpd с мгновенным редиректом на страницу портала
+- 🔀 Создает NAT-правило iptables для HTTP-трафика (порт 80) c клиентов LAN → httpd:8080
+- 🔒 HTTPS-трафик не перехватывается (HSTS не ломается, требуется открыть HTTP-сайт)
+- ⏳ Автоматически отслеживает восстановление интернета и выполняет очистку
+- ✨ Останавливает перехват, удаляет DNS-конфиг и iptables-правила после авторизации
+- ⚙️ Перезапускает WiFi интерфейс, если портал не обнаружен
 
 ## 🚀 Установка
 
@@ -183,24 +184,23 @@ ip addr show phy1-sta0
 ip route show dev phy1-sta0
 
 # Проверка правил iptables
-iptables -t nat -L CAPTIVE_REDIRECT -n -v
-iptables -t nat -L CAPTIVE_DNS_REDIRECT -n -v
+iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
 
 # Проверка всех редиректов
-iptables -t nat -L PREROUTING -n -v | grep CAPTIVE
+iptables -t nat -L PREROUTING -n -v | grep CAPTIVE_HTTP
 ```
 
 ### Проверка DNS spoofing
 
 ```bash
 # Проверка конфигурации dnsmasq
-cat /tmp/dnsmasq.d/captive-portal.conf
+cat /tmp/dnsmasq.d/captive_intercept.conf
 
 # Проверка работы DNS
-nslookup google.com
 nslookup example.com
+nslookup portal.example.com
 
-# Должны возвращать IP шлюза, если captive mode активен
+# Большинство доменов должны возвращаться с IP LAN роутера; домен портала — с реальным IP
 ```
 
 ### Ручное тестирование
@@ -258,35 +258,43 @@ lsmod | grep nf_nat
 modprobe iptable_nat
 modprobe nf_nat
 
-# Проверка правил
-iptables -t nat -L -n -v
+# Проверка цепочки перехвата
+iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
 
-# Ручная установка полного captive режима
-GATEWAY=$(ip route | grep default | awk '{print $3}')
-ROUTER_IP=$(ip -4 addr show dev phy1-sta0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
-
-# DNS Spoofing
+# Ручная установка перехвата
+LAN_IF=br-lan
+LAN_IP=$(ip -4 addr show dev "$LAN_IF" | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+PORTAL_URL="http://example.portal/login"
 mkdir -p /tmp/dnsmasq.d
-cat > /tmp/dnsmasq.d/captive-portal.conf <<EOF
-address=/#/$GATEWAY
+cat > /tmp/dnsmasq.d/captive_intercept.conf <<EOF
+address=/#/$LAN_IP
 local-ttl=0
 min-cache-ttl=0
 max-cache-ttl=0
 no-negcache
 EOF
-/etc/init.d/dnsmasq restart
+/etc/init.d/dnsmasq reload
 
-# DNS Redirect
-iptables -t nat -A PREROUTING -i phy1-sta0 -p udp --dport 53 \
-  -j DNAT --to-destination $ROUTER_IP:53
-iptables -t nat -A PREROUTING -i phy1-sta0 -p tcp --dport 53 \
-  -j DNAT --to-destination $ROUTER_IP:53
+mkdir -p /tmp/captive_debug
+cat > /tmp/captive_debug/index.html <<HTML
+<meta http-equiv="refresh" content="0; url=$PORTAL_URL">
+HTML
+busybox httpd -f -p 8080 -h /tmp/captive_debug &
+HTTPD_PID=$!
 
-# HTTP/HTTPS Redirect
-iptables -t nat -A PREROUTING -i phy1-sta0 -p tcp --dport 80 \
-  -j DNAT --to-destination $GATEWAY:80
-iptables -t nat -A PREROUTING -i phy1-sta0 -p tcp --dport 443 \
-  -j DNAT --to-destination $GATEWAY:80
+iptables -t nat -N CAPTIVE_HTTP_REDIRECT 2>/dev/null
+iptables -t nat -F CAPTIVE_HTTP_REDIRECT
+iptables -t nat -A CAPTIVE_HTTP_REDIRECT -p tcp --dport 80 -j DNAT --to-destination $LAN_IP:8080
+iptables -t nat -I PREROUTING 1 -i "$LAN_IF" -p tcp --dport 80 -j CAPTIVE_HTTP_REDIRECT
+
+# Очистка после проверки
+kill $HTTPD_PID
+rm -rf /tmp/captive_debug
+rm -f /tmp/dnsmasq.d/captive_intercept.conf
+/etc/init.d/dnsmasq reload
+iptables -t nat -D PREROUTING -i "$LAN_IF" -p tcp --dport 80 -j CAPTIVE_HTTP_REDIRECT
+iptables -t nat -F CAPTIVE_HTTP_REDIRECT
+iptables -t nat -X CAPTIVE_HTTP_REDIRECT
 ```
 
 ### Проблема: DNS не резолвится
@@ -299,7 +307,7 @@ iptables -t nat -A PREROUTING -i phy1-sta0 -p tcp --dport 443 \
 /etc/init.d/dnsmasq restart
 
 # Проверка конфигурации
-cat /tmp/dnsmasq.d/captive-portal.conf
+cat /tmp/dnsmasq.d/captive_intercept.conf
 
 # Проверка DNS запросов
 nslookup google.com
@@ -392,6 +400,12 @@ else:
 2. Редирект трафика может быть небезопасен в публичных сетях
 3. Используйте VPN после авторизации для защиты трафика
 4. Не храните пароли в скрипте
+
+## ⚠️ Совместимость
+
+- Проверено на OpenWrt 21.02 (iptables/fw3). Для корректной работы требуется наличие iptables-legacy.
+- На OpenWrt 22.03+ (fw4/nftables) правила iptables могут не применяться. Нужно включить совместимость с iptables-legacy или перенести правила в nftables (планируется отдельно).
+- busybox httpd должен быть доступен на устройстве; CGI не требуется.
 
 ## 📝 Лицензия
 

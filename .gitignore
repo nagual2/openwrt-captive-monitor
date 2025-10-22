@@ -1,0 +1,9 @@
+# Temporary and runtime artifacts
+*.log
+*.pid
+*.tmp
+*.bak
+*.swp
+
+# macOS
+.DS_Store
