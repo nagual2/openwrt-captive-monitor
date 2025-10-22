@@ -1,6 +1,6 @@
 #!/bin/sh
 # OpenWRT Captive Portal Monitor and Auto-Redirect Script
-# Проверяет интернет, перезагружает WiFi и редиректит трафик на captive portal
+# Проверяет интернет, перехватывает HTTP-трафик клиентов LAN на captive portal
 
 # ============================================================================
 # КОНФИГУРАЦИЯ
@@ -8,7 +8,9 @@
 
 # Сетевые интерфейсы
 WIFI_INTERFACE="${WIFI_INTERFACE:-phy1-sta0}"
-WIFI_LOGICAL="${WIFI_LOGICAL:-wwan}"  # Логический интерфейс OpenWRT (wwan/wan)
+WIFI_LOGICAL="${WIFI_LOGICAL:-wwan}"
+LAN_INTERFACE="${LAN_INTERFACE:-}"
+LAN_IP="${LAN_IP:-}"
 
 # Серверы для проверки интернета
 PING_SERVERS="1.1.1.1 8.8.8.8 9.9.9.9"
@@ -24,6 +26,31 @@ MAX_WAIT_TIME=90
 
 # Интервал мониторинга (секунды)
 MONITOR_INTERVAL=60
+
+# Проверка captive-портала
+CAPTIVE_CHECK_URLS="http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt"
+CAPTIVE_CURL_TIMEOUT=7
+CAPTIVE_RECHECK_DELAY=5
+CAPTIVE_RECOVERY_TIMEOUT=60
+
+# DNS и HTTP перехват
+DNSMASQ_CAPTIVE_DIR="/tmp/dnsmasq.d"
+DNSMASQ_CAPTIVE_CONF="/tmp/dnsmasq.d/captive_intercept.conf"
+HTTPD_PORT=8080
+HTTPD_ROOT="/tmp/captive_httpd"
+HTTPD_PIDFILE="/tmp/captive_httpd.pid"
+HTTPD_INDEX="/tmp/captive_httpd/index.html"
+CAPTIVE_NAT_CHAIN="CAPTIVE_HTTP_REDIRECT"
+
+# Последний обнаруженный портал
+CAPTIVE_PORTAL_URL=""
+CAPTIVE_PORTAL_HOST=""
+
+# Состояние перехвата
+CAPTIVE_ACTIVE=0
+ACTIVE_PORTAL_URL=""
+ACTIVE_PORTAL_HOST=""
+ACTIVE_PORTAL_IP=""
 
 # Логирование
 LOG_TAG="captive-monitor"
@@ -52,84 +79,101 @@ log_error() {
 }
 
 # ============================================================================
+# УТИЛИТЫ
+# ============================================================================
+
+trim() {
+    local value="$1"
+    value="${value%\r}"
+    echo "$value"
+}
+
+normalize_url() {
+    local raw="$1"
+    local base="$2"
+    local scheme host base_dir
+
+    case "$raw" in
+        http://*|https://*)
+            echo "$raw"
+            return 0
+            ;;
+        //*)
+            echo "http:${raw}"
+            return 0
+            ;;
+        /*)
+            scheme="${base%%://*}"
+            [ -z "$scheme" ] && scheme="http"
+            host=$(echo "$base" | cut -d/ -f3)
+            echo "${scheme}://${host}${raw}"
+            return 0
+            ;;
+    esac
+
+    base_dir=$(echo "$base" | sed 's#[^/]*$##')
+    if [ -n "$base_dir" ]; then
+        echo "${base_dir}${raw}"
+    else
+        echo "$raw"
+    fi
+}
+
+extract_host_from_url() {
+    local url="$1"
+    url="${url#http://}"
+    url="${url#https://}"
+    url="${url#//}"
+    url="${url%%/*}"
+    url="${url%%:*}"
+    echo "$url"
+}
+
+# ============================================================================
 # ФУНКЦИИ ПРОВЕРКИ СЕТИ
 # ============================================================================
 
-# Проверка доступности хоста через ping
 ping_host() {
     local host="$1"
     ping -c "$PING_COUNT" -W "$PING_TIMEOUT" "$host" >/dev/null 2>&1
-    return $?
 }
 
-# Получение IP шлюза для интерфейса
 get_gateway_ip() {
     local iface="${1:-$WIFI_INTERFACE}"
     local gateway
-    
-    # Метод 1: Через ip route show dev
+
     gateway=$(ip route show dev "$iface" 2>/dev/null | grep '^default' | awk '{print $3}' | head -n1)
-    
-    if [ -n "$gateway" ]; then
-        echo "$gateway"
-        return 0
-    fi
-    
-    # Метод 2: Через ip route (без dev)
+    [ -n "$gateway" ] && { echo "$gateway"; return 0; }
+
     gateway=$(ip route 2>/dev/null | grep "^default.*dev $iface" | awk '{print $3}' | head -n1)
-    
-    if [ -n "$gateway" ]; then
-        echo "$gateway"
-        return 0
-    fi
-    
-    # Метод 3: Через route -n
+    [ -n "$gateway" ] && { echo "$gateway"; return 0; }
+
     gateway=$(route -n 2>/dev/null | grep "^0.0.0.0.*$iface" | awk '{print $2}' | head -n1)
-    
-    if [ -n "$gateway" ]; then
-        echo "$gateway"
-        return 0
+    [ -n "$gateway" ] && { echo "$gateway"; return 0; }
+
+    if [ -f "/tmp/dhcpc.resolv.conf" ]; then
+        gateway=$(grep "$iface" /tmp/dhcpc.resolv.conf 2>/dev/null | awk '{print $3}' | head -n1)
+        [ -n "$gateway" ] && { echo "$gateway"; return 0; }
     fi
-    
-    # Метод 4: Получаем из dhcp lease (если используется DHCP)
-    if [ -f "/tmp/dhcp.leases" ]; then
-        gateway=$(grep "$iface" /tmp/dhcp.leases 2>/dev/null | awk '{print $3}' | head -n1)
-        if [ -n "$gateway" ]; then
-            echo "$gateway"
-            return 0
-        fi
-    fi
-    
-    # Метод 5: Пробуем получить из uci (OpenWRT config)
+
     if command -v uci >/dev/null 2>&1; then
         local logical="${WIFI_LOGICAL:-$iface}"
         gateway=$(uci get "network.${logical}.gateway" 2>/dev/null)
-        if [ -n "$gateway" ]; then
-            echo "$gateway"
-            return 0
-        fi
+        [ -n "$gateway" ] && { echo "$gateway"; return 0; }
     fi
-    
-    # Метод 6: Последний шанс - берем любой default gateway
+
     gateway=$(ip route 2>/dev/null | grep '^default' | awk '{print $3}' | head -n1)
-    
-    if [ -n "$gateway" ]; then
-        log_warn "Используем общий default gateway: $gateway"
-        echo "$gateway"
-        return 0
-    fi
-    
+    [ -n "$gateway" ] && { log_warn "Используем общий default gateway: $gateway"; echo "$gateway"; return 0; }
+
     return 1
 }
 
-# Проверка доступности шлюза
 check_gateway() {
+    local attempt=1
     local gateway
-    local attempt
-    
-    for attempt in $(seq 1 $GATEWAY_CHECK_RETRIES); do
+
+    while [ "$attempt" -le "$GATEWAY_CHECK_RETRIES" ]; do
         gateway=$(get_gateway_ip)
-        
         if [ -n "$gateway" ]; then
             if ping_host "$gateway"; then
                 log_info "Шлюз $gateway доступен"
@@ -138,38 +182,33 @@ check_gateway() {
             log_warn "Шлюз $gateway не отвечает (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
         else
             log_warn "Шлюз не найден (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
-            log_warn "Диагностика:"
-            ip route show 2>&1 | head -5 | while read line; do
-                log_warn "  route: $line"
-            done
         fi
-        
-        [ "$attempt" -lt "$GATEWAY_CHECK_RETRIES" ] && sleep "$GATEWAY_CHECK_DELAY"
+        attempt=$((attempt + 1))
+        [ "$attempt" -le "$GATEWAY_CHECK_RETRIES" ] && sleep "$GATEWAY_CHECK_DELAY"
     done
-    
+
     log_error "Шлюз недоступен после $GATEWAY_CHECK_RETRIES попыток"
     return 1
 }
 
-# Проверка доступности интернета
 check_internet() {
-    local attempt
+    local attempt=1
     local server
-    
-    for attempt in $(seq 1 $INTERNET_CHECK_RETRIES); do
+
+    while [ "$attempt" -le "$INTERNET_CHECK_RETRIES" ]; do
         for server in $PING_SERVERS; do
             if ping_host "$server"; then
                 log_info "Интернет доступен (сервер: $server)"
                 return 0
             fi
         done
-        
-        if [ "$attempt" -lt "$INTERNET_CHECK_RETRIES" ]; then
-            log_warn "Интернет недоступен, повтор через ${INTERNET_CHECK_DELAY}с (попытка $attempt/$INTERNET_CHECK_RETRIES)"
+        attempt=$((attempt + 1))
+        [ "$attempt" -le "$INTERNET_CHECK_RETRIES" ] && {
+            log_warn "Интернет недоступен, повтор через ${INTERNET_CHECK_DELAY}с (попытка $((attempt - 1))/$INTERNET_CHECK_RETRIES)"
             sleep "$INTERNET_CHECK_DELAY"
-        fi
+        }
     done
-    
+
     log_warn "Интернет недоступен после $INTERNET_CHECK_RETRIES попыток"
     return 1
 }
@@ -178,426 +217,526 @@ check_internet() {
 # ФУНКЦИИ УПРАВЛЕНИЯ WiFi
 # ============================================================================
 
-# Проверка существования интерфейса
 interface_exists() {
     local iface="${1:-$WIFI_INTERFACE}"
     ip link show "$iface" >/dev/null 2>&1
-    return $?
 }
 
-# Проверка состояния интерфейса (up/down)
 is_interface_up() {
     local iface="${1:-$WIFI_INTERFACE}"
     ip link show "$iface" 2>/dev/null | grep -q "state UP"
-    return $?
 }
 
-# Перезапуск WiFi через ifdown/ifup (OpenWRT)
 restart_wifi_logical() {
     local logical="${1:-$WIFI_LOGICAL}"
-    
     log_info "Перезапуск логического интерфейса: $logical"
-    
     ifdown "$logical" 2>/dev/null
     sleep 2
-    
     if ifup "$logical" 2>/dev/null; then
         log_info "Логический интерфейс $logical успешно поднят"
         return 0
-    else
-        log_error "Ошибка при поднятии логического интерфейса $logical"
-        return 1
     fi
+    log_error "Ошибка при поднятии логического интерфейса $logical"
+    return 1
 }
 
-# Перезапуск WiFi через ip link
 restart_wifi_physical() {
     local iface="${1:-$WIFI_INTERFACE}"
-    
     log_info "Перезапуск физического интерфейса: $iface"
-    
+
     if ! interface_exists "$iface"; then
         log_error "Интерфейс $iface не существует"
         return 1
     fi
-    
-    # Опускаем интерфейс
+
     ip link set dev "$iface" down 2>/dev/null
     sleep 2
-    
-    # Поднимаем интерфейс
-    if ip link set dev "$iface" up 2>/dev/null; then
-        log_info "Интерфейс $iface успешно поднят"
-    else
+
+    if ! ip link set dev "$iface" up 2>/dev/null; then
         log_error "Ошибка при поднятии интерфейса $iface"
         return 1
     fi
-    
-    # Ждем получения IP и доступности шлюза
+
+    log_info "Интерфейс $iface успешно поднят"
+
     local start_time=$(date +%s)
-    local current_time
-    local elapsed
-    
+    local current_time elapsed gateway
+
     while true; do
         current_time=$(date +%s)
         elapsed=$((current_time - start_time))
-        
         if [ "$elapsed" -ge "$MAX_WAIT_TIME" ]; then
             log_error "Таймаут ожидания готовности интерфейса ($MAX_WAIT_TIME сек)"
             return 1
         fi
-        
-        # Проверяем наличие IP
-        if is_interface_up "$iface" && ip -4 addr show dev "$iface" | grep -q 'inet '; then
+        if is_interface_up "$iface" && ip -4 addr show dev "$iface" | grep -q 'inet ' ; then
             log_info "Интерфейс $iface получил IP адрес"
-            
-            # Проверяем доступность шлюза
-            local gateway=$(get_gateway_ip "$iface")
+            gateway=$(get_gateway_ip "$iface")
             if [ -n "$gateway" ] && ping_host "$gateway"; then
                 log_info "Шлюз $gateway доступен, интерфейс готов"
                 return 0
             fi
         fi
-        
         sleep 3
     done
 }
 
-# Основная функция перезапуска WiFi
 restart_wifi() {
     log_info "Начало перезапуска WiFi"
-    
-    # Пробуем через логический интерфейс (если настроен)
     if [ -n "$WIFI_LOGICAL" ] && [ "$WIFI_LOGICAL" != "$WIFI_INTERFACE" ]; then
         if restart_wifi_logical "$WIFI_LOGICAL"; then
             return 0
         fi
         log_warn "Перезапуск через логический интерфейс не удался, пробуем физический"
     fi
-    
-    # Перезапуск через физический интерфейс
     restart_wifi_physical "$WIFI_INTERFACE"
-    return $?
 }
 
 # ============================================================================
-# ФУНКЦИИ УПРАВЛЕНИЯ DNS
+# LAN И DNS УТИЛИТЫ
 # ============================================================================
 
-# Путь к конфигурации dnsmasq для captive portal
-DNSMASQ_CAPTIVE_CONF="/tmp/dnsmasq.d/captive-portal.conf"
-DNSMASQ_CAPTIVE_DIR="/tmp/dnsmasq.d"
-
-# Проверка наличия DNS spoofing
-dns_spoofing_exists() {
-    [ -f "$DNSMASQ_CAPTIVE_CONF" ]
-}
-
-# Установка DNS spoofing - все DNS запросы возвращают адрес шлюза
-setup_dns_spoofing() {
-    local gateway
-    
-    gateway=$(get_gateway_ip)
-    
-    if [ -z "$gateway" ]; then
-        log_error "Не удалось получить IP шлюза для DNS spoofing"
-        log_error "Диагностика маршрутов:"
-        ip route show 2>&1 | while read line; do
-            log_error "  $line"
-        done
-        return 1
+ensure_lan_interface() {
+    if [ -n "$LAN_INTERFACE" ] && ip link show "$LAN_INTERFACE" >/dev/null 2>&1; then
+        return 0
     fi
-    
-    log_info "Установка DNS spoofing: все домены -> $gateway"
-    
-    # Создаем директорию для dnsmasq конфигов
-    mkdir -p "$DNSMASQ_CAPTIVE_DIR"
-    
-    # Создаем конфиг для dnsmasq
-    # address=/#/ означает что все домены будут резолвиться в указанный IP
-    # local-ttl=0 устанавливает минимальное время жизни DNS записей
-    cat > "$DNSMASQ_CAPTIVE_CONF" <<EOF
-# Captive Portal DNS Configuration
-# Все DNS запросы возвращают адрес шлюза
-address=/#/$gateway
 
-# Минимальное время жизни DNS записей (0 секунд)
-local-ttl=0
-min-cache-ttl=0
-max-cache-ttl=0
-
-# Не кешировать negative responses
-no-negcache
-EOF
-    
-    # Перезапускаем dnsmasq для применения конфигурации
-    if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
-        log_info "DNS spoofing установлен, dnsmasq перезапущен"
-    else
-        log_warn "Не удалось перезапустить dnsmasq, пробуем reload"
-        /etc/init.d/dnsmasq reload >/dev/null 2>&1
-    fi
-    
-    return 0
-}
-
-# Удаление DNS spoofing
-remove_dns_spoofing() {
-    log_info "Удаление DNS spoofing"
-    
-    if [ -f "$DNSMASQ_CAPTIVE_CONF" ]; then
-        rm -f "$DNSMASQ_CAPTIVE_CONF"
-        
-        # Перезапускаем dnsmasq для применения изменений
-        if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
-            log_info "DNS spoofing удален, dnsmasq перезапущен"
-        else
-            log_warn "Не удалось перезапустить dnsmasq, пробуем reload"
-            /etc/init.d/dnsmasq reload >/dev/null 2>&1
+    if command -v uci >/dev/null 2>&1; then
+        LAN_INTERFACE=$(uci -q get network.lan.device 2>/dev/null)
+        if [ -z "$LAN_INTERFACE" ]; then
+            LAN_INTERFACE=$(uci -q get network.lan.ifname 2>/dev/null)
+            if echo "$LAN_INTERFACE" | grep -q ' '; then
+                LAN_INTERFACE=$(echo "$LAN_INTERFACE" | awk '{print $1}')
+            fi
         fi
     fi
-    
-    return 0
+
+    [ -z "$LAN_INTERFACE" ] && LAN_INTERFACE="br-lan"
+
+    if ! ip link show "$LAN_INTERFACE" >/dev/null 2>&1; then
+        log_warn "LAN интерфейс $LAN_INTERFACE не найден, используем br-lan"
+        LAN_INTERFACE="br-lan"
+    fi
+}
+
+ensure_lan_ip() {
+    ensure_lan_interface
+    if [ -n "$LAN_IP" ]; then
+        return 0
+    fi
+
+    LAN_IP=$(ip -4 addr show dev "$LAN_INTERFACE" 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 | head -n1)
+    if [ -z "$LAN_IP" ] && command -v uci >/dev/null 2>&1; then
+        LAN_IP=$(uci -q get network.lan.ipaddr)
+    fi
+
+    if [ -z "$LAN_IP" ]; then
+        LAN_IP="192.168.1.1"
+        log_warn "Не удалось определить LAN IP, используем $LAN_IP"
+    fi
+}
+
+get_upstream_dns() {
+    local resolv="/tmp/resolv.conf.d/resolv.conf.auto"
+    if [ -f "$resolv" ]; then
+        awk '/^nameserver/ {print $2; exit 0}' "$resolv"
+        return 0
+    fi
+    return 1
+}
+
+resolve_portal_ip() {
+    local host="$1"
+    local dns ip
+
+    if command -v resolveip >/dev/null 2>&1; then
+        ip=$(resolveip "$host" 2>/dev/null | head -n1)
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
+
+    dns=$(get_upstream_dns)
+    if [ -n "$dns" ] && command -v resolveip >/dev/null 2>&1; then
+        ip=$(resolveip -s "$dns" "$host" 2>/dev/null | head -n1)
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
+
+    if [ -n "$dns" ] && command -v nslookup >/dev/null 2>&1; then
+        ip=$(nslookup "$host" "$dns" 2>/dev/null | awk '/^Address[[:space:]]*[0-9]*:/ {print $3} /^Address: / {print $2}' | grep -v ':' | tail -n1)
+        if [ -z "$ip" ]; then
+            ip=$(nslookup "$host" "$dns" 2>/dev/null | awk '/^Address: / {print $2}' | grep -v ':' | tail -n1)
+        fi
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
+
+    if command -v nslookup >/dev/null 2>&1; then
+        ip=$(nslookup "$host" 2>/dev/null | awk '/^Address[[:space:]]*[0-9]*:/ {print $3} /^Address: / {print $2}' | grep -v ':' | tail -n1)
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
+
+    return 1
 }
 
 # ============================================================================
-# ФУНКЦИИ УПРАВЛЕНИЯ IPTABLES РЕДИРЕКТОМ
+# ПОИСК CAPTIVE-ПОРТАЛА
 # ============================================================================
 
-# Проверка наличия правил редиректа
-redirect_exists() {
-    iptables -t nat -L PREROUTING -n 2>/dev/null | grep -q "CAPTIVE_REDIRECT"
+extract_meta_refresh_url() {
+    local file="$1"
+    local line lower candidate
+
+    while IFS= read -r line; do
+        lower=$(echo "$line" | tr 'A-Z' 'a-z')
+        case "$lower" in
+            *http-equiv*refresh*)
+                candidate=$(echo "$line" | sed -n 's/.*[Uu][Rr][Ll]=["'"'"']\([^"'"'"' >]*\).*/\1/p')
+                [ -n "$candidate" ] && { echo "$candidate"; return 0; }
+                ;;
+        esac
+    done < "$file"
+    return 1
 }
 
-# Проверка наличия DNS редиректа
-dns_redirect_exists() {
-    iptables -t nat -L PREROUTING -n 2>/dev/null | grep -q "CAPTIVE_DNS_REDIRECT"
+extract_first_href() {
+    local file="$1"
+    local candidate
+
+    while IFS= read -r line; do
+        echo "$line" | grep -qi "href" || continue
+        candidate=$(echo "$line" | sed -n 's/.*href=["'"'"']\([^"'"'"'# >]*\).*/\1/p' | head -n1)
+        if [ -n "$candidate" ] && echo "$candidate" | grep -q '^http'; then
+            echo "$candidate"
+            return 0
+        fi
+    done < "$file"
+    return 1
 }
 
-# Установка редиректа DNS (TCP/UDP порт 53) на локальный DNS
-setup_dns_redirect() {
-    local router_ip
-    
-    # Получаем IP адрес роутера на WiFi интерфейсе
-    router_ip=$(ip -4 addr show dev "$WIFI_INTERFACE" 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
-    
-    if [ -z "$router_ip" ]; then
-        log_warn "Не удалось получить IP роутера, используем default"
-        router_ip="192.168.1.1"
-    fi
-    
-    log_info "Установка DNS редиректа на локальный DNS: $router_ip:53"
-    
-    # Создаем цепочку для DNS редиректа (если не существует)
-    if ! iptables -t nat -L CAPTIVE_DNS_REDIRECT -n >/dev/null 2>&1; then
-        iptables -t nat -N CAPTIVE_DNS_REDIRECT
-    fi
-    
-    # Очищаем цепочку
-    iptables -t nat -F CAPTIVE_DNS_REDIRECT
-    
-    # Редирект DNS UDP (порт 53)
-    iptables -t nat -A CAPTIVE_DNS_REDIRECT -p udp --dport 53 -j DNAT --to-destination "$router_ip:53"
-    
-    # Редирект DNS TCP (порт 53)
-    iptables -t nat -A CAPTIVE_DNS_REDIRECT -p tcp --dport 53 -j DNAT --to-destination "$router_ip:53"
-    
-    # Добавляем правило в PREROUTING (если еще не добавлено)
-    if ! dns_redirect_exists; then
-        iptables -t nat -I PREROUTING -i "$WIFI_INTERFACE" -j CAPTIVE_DNS_REDIRECT
-    fi
-    
-    log_info "DNS редирект установлен: DNS (TCP/UDP 53) -> $router_ip:53"
-    return 0
-}
+detect_captive_portal() {
+    local url
+    local header_file body_file status location candidate portal_url host
 
-# Удаление DNS редиректа
-remove_dns_redirect() {
-    log_info "Удаление DNS редиректа"
-    
-    # Удаляем правило из PREROUTING
-    iptables -t nat -D PREROUTING -i "$WIFI_INTERFACE" -j CAPTIVE_DNS_REDIRECT 2>/dev/null
-    
-    # Очищаем и удаляем цепочку
-    iptables -t nat -F CAPTIVE_DNS_REDIRECT 2>/dev/null
-    iptables -t nat -X CAPTIVE_DNS_REDIRECT 2>/dev/null
-    
-    log_info "DNS редирект удален"
-    return 0
-}
-
-# Установка редиректа HTTP/HTTPS на шлюз
-setup_redirect() {
-    local gateway
-    
-    gateway=$(get_gateway_ip)
-    
-    if [ -z "$gateway" ]; then
-        log_error "Не удалось получить IP шлюза для редиректа"
-        log_error "Диагностика маршрутов:"
-        ip route show 2>&1 | while read line; do
-            log_error "  $line"
-        done
+    if ! command -v curl >/dev/null 2>&1; then
+        log_error "curl не найден, невозможно выполнить проверку captive-портала"
         return 1
     fi
-    
-    log_info "Установка редиректа трафика на шлюз: $gateway"
-    
-    # Создаем цепочку для редиректа (если не существует)
-    if ! iptables -t nat -L CAPTIVE_REDIRECT -n >/dev/null 2>&1; then
-        iptables -t nat -N CAPTIVE_REDIRECT
-    fi
-    
-    # Очищаем цепочку
-    iptables -t nat -F CAPTIVE_REDIRECT
-    
-    # Редирект HTTP (порт 80)
-    iptables -t nat -A CAPTIVE_REDIRECT -p tcp --dport 80 -j DNAT --to-destination "$gateway:80"
-    
-    # Редирект HTTPS (порт 443) - некоторые порталы используют
-    iptables -t nat -A CAPTIVE_REDIRECT -p tcp --dport 443 -j DNAT --to-destination "$gateway:80"
-    
-    # Добавляем правило в PREROUTING (если еще не добавлено)
-    if ! redirect_exists; then
-        iptables -t nat -I PREROUTING -i "$WIFI_INTERFACE" -j CAPTIVE_REDIRECT
-    fi
-    
-    log_info "Редирект установлен: HTTP/HTTPS -> $gateway:80"
-    return 0
+
+    header_file=$(mktemp /tmp/captive_hdr.XXXXXX) || return 1
+    body_file=$(mktemp /tmp/captive_body.XXXXXX) || { rm -f "$header_file"; return 1; }
+
+    CAPTIVE_PORTAL_URL=""
+    CAPTIVE_PORTAL_HOST=""
+
+    for url in $CAPTIVE_CHECK_URLS; do
+        log_info "Проверка captive-портала через $url"
+        portal_url=""
+        if ! curl -sS -m "$CAPTIVE_CURL_TIMEOUT" -D "$header_file" -o "$body_file" "$url" >/dev/null 2>&1; then
+            log_warn "curl для $url завершился ошибкой"
+            continue
+        fi
+
+        status=$(head -n1 "$header_file" | awk '{print $2}')
+        location=$(grep -i '^Location:' "$header_file" | tail -n1 | cut -d' ' -f2-)
+        location=$(trim "$location")
+
+        if [ "$status" = "204" ]; then
+            rm -f "$header_file" "$body_file"
+            return 1
+        fi
+
+        if [ "$status" = "200" ]; then
+            if grep -qi '^success' "$body_file"; then
+                rm -f "$header_file" "$body_file"
+                return 1
+            fi
+        fi
+
+        if [ -n "$location" ]; then
+            if echo "$location" | grep -q '^http'; then
+                portal_url="$location"
+            else
+                portal_url=$(normalize_url "$location" "$url")
+            fi
+        else
+            candidate=$(extract_meta_refresh_url "$body_file")
+            if [ -n "$candidate" ]; then
+                portal_url=$(normalize_url "$candidate" "$url")
+            fi
+            if [ -z "$portal_url" ]; then
+                candidate=$(extract_first_href "$body_file")
+                if [ -n "$candidate" ]; then
+                    portal_url=$(normalize_url "$candidate" "$url")
+                fi
+            fi
+        fi
+
+        if [ -n "$portal_url" ]; then
+            host=$(extract_host_from_url "$portal_url")
+            if [ -n "$host" ]; then
+                CAPTIVE_PORTAL_URL="$portal_url"
+                CAPTIVE_PORTAL_HOST="$host"
+                rm -f "$header_file" "$body_file"
+                log_info "Обнаружен captive-портал: $CAPTIVE_PORTAL_URL"
+                return 0
+            fi
+        fi
+    done
+
+    rm -f "$header_file" "$body_file"
+    return 1
 }
 
-# Удаление редиректа
-remove_redirect() {
-    log_info "Удаление редиректа трафика"
-    
-    # Удаляем правило из PREROUTING
-    iptables -t nat -D PREROUTING -i "$WIFI_INTERFACE" -j CAPTIVE_REDIRECT 2>/dev/null
-    
-    # Очищаем и удаляем цепочку
-    iptables -t nat -F CAPTIVE_REDIRECT 2>/dev/null
-    iptables -t nat -X CAPTIVE_REDIRECT 2>/dev/null
-    
-    log_info "Редирект удален"
-    return 0
+# ============================================================================
+# DNS И HTTP ПЕРЕХВАТ
+# ============================================================================
+
+write_dnsmasq_intercept() {
+    local portal_host="$1"
+    local portal_ip="$2"
+
+    ensure_lan_ip
+
+    mkdir -p "$DNSMASQ_CAPTIVE_DIR"
+
+    {
+        echo "# Captive portal intercept"
+        echo "# generated $(date)"
+        echo "address=/#/$LAN_IP"
+        echo "local-ttl=0"
+        echo "min-cache-ttl=0"
+        echo "max-cache-ttl=0"
+        echo "no-negcache"
+        if [ -n "$portal_host" ] && [ -n "$portal_ip" ]; then
+            echo "address=/$portal_host/$portal_ip"
+        fi
+    } > "$DNSMASQ_CAPTIVE_CONF"
+
+    if /etc/init.d/dnsmasq reload >/dev/null 2>&1; then
+        log_info "dnsmasq перезагружен с конфигурацией перехвата"
+    else
+        log_warn "Не удалось выполнить reload dnsmasq"
+    fi
 }
 
-# Установка полного captive portal режима (DNS spoofing + HTTP/HTTPS redirect + DNS redirect)
-setup_captive_mode() {
-    log_info "=== Установка Captive Portal режима ==="
-    
-    # 1. DNS Spoofing через dnsmasq (все домены -> шлюз)
-    if ! setup_dns_spoofing; then
-        log_error "Не удалось установить DNS spoofing"
-        return 1
+remove_dns_intercept() {
+    if [ -f "$DNSMASQ_CAPTIVE_CONF" ]; then
+        rm -f "$DNSMASQ_CAPTIVE_CONF"
+        if /etc/init.d/dnsmasq reload >/dev/null 2>&1; then
+            log_info "dnsmasq конфигурация перехвата удалена"
+        fi
     fi
-    
-    # 2. DNS Redirect через iptables (все DNS запросы -> локальный DNS)
-    if ! setup_dns_redirect; then
-        log_error "Не удалось установить DNS redirect"
-        return 1
-    fi
-    
-    # 3. HTTP/HTTPS Redirect (весь веб-трафик -> шлюз)
-    if ! setup_redirect; then
-        log_error "Не удалось установить HTTP/HTTPS redirect"
-        return 1
-    fi
-    
-    log_info "Captive Portal режим полностью установлен"
-    return 0
 }
 
-# Удаление полного captive portal режима
-remove_captive_mode() {
-    log_info "=== Удаление Captive Portal режима ==="
-    
-    # Удаляем в обратном порядке
-    remove_redirect
-    remove_dns_redirect
-    remove_dns_spoofing
-    
-    log_info "Captive Portal режим полностью удален"
-    return 0
+start_captive_httpd() {
+    local portal_url="$1"
+
+    ensure_lan_ip
+    mkdir -p "$HTTPD_ROOT"
+
+    cat > "$HTTPD_INDEX" <<EOF_HTML
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Captive Portal Redirect</title>
+<meta http-equiv="refresh" content="0; url=$portal_url">
+<style>body{font-family:sans-serif;text-align:center;margin-top:40px;}</style>
+<script>window.location.replace('$portal_url');</script>
+</head>
+<body>
+<p>Перенаправление на страницу авторизации...</p>
+<p><a href="$portal_url">Открыть портал вручную</a></p>
+</body>
+</html>
+EOF_HTML
+
+    if [ -f "$HTTPD_PIDFILE" ]; then
+        local old_pid
+        old_pid=$(cat "$HTTPD_PIDFILE")
+        if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
+            log_info "Обновление содержимого httpd, процесс уже запущен (PID $old_pid)"
+            return 0
+        fi
+        rm -f "$HTTPD_PIDFILE"
+    fi
+
+    busybox httpd -f -p "$HTTPD_PORT" -h "$HTTPD_ROOT" >/dev/null 2>&1 &
+    local pid=$!
+    echo "$pid" > "$HTTPD_PIDFILE"
+    log_info "Запущен busybox httpd (PID $pid) для редиректа"
+}
+
+stop_captive_httpd() {
+    if [ -f "$HTTPD_PIDFILE" ]; then
+        local pid
+        pid=$(cat "$HTTPD_PIDFILE")
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" >/dev/null 2>&1
+            wait "$pid" 2>/dev/null
+            log_info "Остановлен busybox httpd (PID $pid)"
+        fi
+        rm -f "$HTTPD_PIDFILE"
+    fi
+    rm -rf "$HTTPD_ROOT"
+}
+
+setup_http_redirect() {
+    local portal_ip="$1"
+
+    ensure_lan_ip
+
+    if ! iptables -t nat -L "$CAPTIVE_NAT_CHAIN" >/dev/null 2>&1; then
+        iptables -t nat -N "$CAPTIVE_NAT_CHAIN"
+    else
+        iptables -t nat -F "$CAPTIVE_NAT_CHAIN"
+    fi
+
+    if [ -n "$portal_ip" ]; then
+        iptables -t nat -A "$CAPTIVE_NAT_CHAIN" -d "$portal_ip" -p tcp --dport 80 -j RETURN -m comment --comment "captive-http-bypass"
+    fi
+
+    iptables -t nat -A "$CAPTIVE_NAT_CHAIN" -p tcp --dport 80 -j DNAT --to-destination "$LAN_IP:$HTTPD_PORT" -m comment --comment "captive-http-redirect"
+
+    if ! iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2>/dev/null; then
+        iptables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" -m comment --comment "captive-http-intercept"
+    fi
+
+    log_info "iptables настроен для DNAT HTTP на $LAN_IP:$HTTPD_PORT через $LAN_INTERFACE"
+}
+
+remove_http_redirect() {
+    ensure_lan_interface
+
+    while iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2>/dev/null; do
+        iptables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN"
+    done
+
+    iptables -t nat -F "$CAPTIVE_NAT_CHAIN" 2>/dev/null
+    iptables -t nat -X "$CAPTIVE_NAT_CHAIN" 2>/dev/null
+}
+
+setup_captive_intercept() {
+    local portal_url="$1"
+    local portal_host="$2"
+    local portal_ip="$3"
+
+    ensure_lan_ip
+
+    if [ "$CAPTIVE_ACTIVE" = "1" ] && [ "$ACTIVE_PORTAL_URL" = "$portal_url" ]; then
+        log_info "Перехват уже активен для $portal_url"
+        return 0
+    fi
+
+    if [ "$CAPTIVE_ACTIVE" = "1" ]; then
+        cleanup_captive_intercept
+    fi
+
+    write_dnsmasq_intercept "$portal_host" "$portal_ip"
+    start_captive_httpd "$portal_url"
+    setup_http_redirect "$portal_ip"
+
+    CAPTIVE_ACTIVE=1
+    ACTIVE_PORTAL_URL="$portal_url"
+    ACTIVE_PORTAL_HOST="$portal_host"
+    ACTIVE_PORTAL_IP="$portal_ip"
+
+    log_info "Перехват captive-портала включен"
+}
+
+cleanup_captive_intercept() {
+    if [ "$CAPTIVE_ACTIVE" = "1" ] || [ -f "$DNSMASQ_CAPTIVE_CONF" ] || [ -f "$HTTPD_PIDFILE" ]; then
+        log_info "Очистка перехвата captive-портала"
+    fi
+
+    remove_http_redirect
+    stop_captive_httpd
+    remove_dns_intercept
+
+    CAPTIVE_ACTIVE=0
+    ACTIVE_PORTAL_URL=""
+    ACTIVE_PORTAL_HOST=""
+    ACTIVE_PORTAL_IP=""
 }
 
 # ============================================================================
 # ОСНОВНАЯ ЛОГИКА
 # ============================================================================
 
-# Обработка одного цикла проверки
-check_and_fix_connection() {
-    log_info "=== Проверка подключения ==="
-    
-    # Проверяем интернет
-    if check_internet; then
-        log_info "Интернет доступен, Captive Portal режим не требуется"
-        
-        # Убираем captive portal режим если был установлен
-        if redirect_exists || dns_redirect_exists || dns_spoofing_exists; then
-            remove_captive_mode
-        fi
-        
-        return 0
-    fi
-    
-    log_warn "Интернет недоступен, начинаем процедуру восстановления"
-    
-    # Перезапускаем WiFi
-    if ! restart_wifi; then
-        log_error "Не удалось перезапустить WiFi"
-        return 1
-    fi
-    
-    # Проверяем интернет после перезапуска
-    if check_internet; then
-        log_info "Интернет восстановлен после перезапуска WiFi"
-        return 0
-    fi
-    
-    # Интернет все еще недоступен - устанавливаем полный captive portal режим
-    log_warn "Интернет недоступен после перезапуска, устанавливаем Captive Portal режим"
-    
-    if ! setup_captive_mode; then
-        log_error "Не удалось установить Captive Portal режим"
-        return 1
-    fi
-    
-    # Ждем восстановления интернета
-    log_info "Ожидание восстановления интернета (проверка каждые ${INTERNET_CHECK_DELAY}с)"
-    
-    local wait_count=0
-    local max_wait_cycles=$((MAX_WAIT_TIME / INTERNET_CHECK_DELAY))
-    
-    while [ "$wait_count" -lt "$max_wait_cycles" ]; do
-        sleep "$INTERNET_CHECK_DELAY"
-        
+wait_for_internet_after_intercept() {
+    local elapsed=0
+
+    while [ "$elapsed" -lt "$CAPTIVE_RECOVERY_TIMEOUT" ]; do
+        sleep "$CAPTIVE_RECHECK_DELAY"
+        elapsed=$((elapsed + CAPTIVE_RECHECK_DELAY))
         if check_internet; then
-            log_info "Интернет восстановлен, удаляем Captive Portal режим"
-            remove_captive_mode
+            log_info "Интернет доступен, отключаем перехват"
+            cleanup_captive_intercept
             return 0
         fi
-        
-        wait_count=$((wait_count + 1))
-        log_info "Интернет все еще недоступен (ожидание: ${wait_count}/${max_wait_cycles})"
+        log_info "Интернет все еще недоступен (ожидание ${elapsed}/${CAPTIVE_RECOVERY_TIMEOUT}с)"
     done
-    
-    log_warn "Интернет не восстановился за отведенное время"
+
+    log_warn "Интернет не восстановился за $CAPTIVE_RECOVERY_TIMEOUT секунд"
     return 1
 }
 
-# Режим мониторинга (бесконечный цикл)
+check_and_fix_connection() {
+    log_info "=== Проверка подключения ==="
+
+    ensure_lan_ip
+
+    if check_internet; then
+        if [ "$CAPTIVE_ACTIVE" = "1" ]; then
+            cleanup_captive_intercept
+        fi
+        return 0
+    fi
+
+    log_warn "Интернет недоступен, пробуем диагностировать captive-портал"
+
+    if detect_captive_portal; then
+        local portal_ip=""
+        if [ -n "$CAPTIVE_PORTAL_HOST" ]; then
+            portal_ip=$(resolve_portal_ip "$CAPTIVE_PORTAL_HOST")
+            [ -n "$portal_ip" ] && log_info "IP адрес портала: $portal_ip"
+        fi
+        setup_captive_intercept "$CAPTIVE_PORTAL_URL" "$CAPTIVE_PORTAL_HOST" "$portal_ip"
+        wait_for_internet_after_intercept
+        return $?
+    fi
+
+    log_warn "Captive-портал не обнаружен, пробуем перезапустить WiFi"
+    if restart_wifi; then
+        if check_internet; then
+            cleanup_captive_intercept
+            return 0
+        fi
+    fi
+
+    log_warn "Сеть остаётся недоступной после всех действий"
+    return 1
+}
+
 monitor_mode() {
     log_info "Запуск в режиме мониторинга (интервал: ${MONITOR_INTERVAL}с)"
-    
     while true; do
         check_and_fix_connection
-        
         log_info "Следующая проверка через ${MONITOR_INTERVAL}с"
         sleep "$MONITOR_INTERVAL"
     done
 }
 
-# Однократная проверка
 oneshot_mode() {
     log_info "Запуск в режиме однократной проверки"
     check_and_fix_connection
@@ -620,20 +759,15 @@ show_usage() {
   -t, --interval    Интервал мониторинга в секундах (по умолчанию: $MONITOR_INTERVAL)
   -h, --help        Показать эту справку
 
-Примеры:
-  $0 --oneshot                    # Однократная проверка
-  $0 --monitor                    # Постоянный мониторинг
-  $0 -m -i wlan0 -l wan -t 30    # Мониторинг с кастомными параметрами
-
 Переменные окружения:
   WIFI_INTERFACE    Физический WiFi интерфейс
   WIFI_LOGICAL      Логический интерфейс OpenWRT
+  LAN_INTERFACE     LAN интерфейс (определяется автоматически)
+  LAN_IP            LAN IP адрес роутера (определяется автоматически)
   MONITOR_INTERVAL  Интервал проверки в секундах
-
 EOF
 }
 
-# Парсинг аргументов
 MODE="oneshot"
 
 while [ $# -gt 0 ]; do
@@ -670,13 +804,14 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-# Проверка прав root
 if [ "$(id -u)" -ne 0 ]; then
     log_error "Скрипт требует прав root"
     exit 1
 fi
 
-# Запуск в выбранном режиме
+trap 'cleanup_captive_intercept' EXIT
+trap 'exit 0' INT TERM
+
 case "$MODE" in
     monitor)
         monitor_mode
