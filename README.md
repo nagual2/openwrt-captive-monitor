@@ -1,5 +1,7 @@
 # openwrt-captive-monitor
 
+[![ShellCheck](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml)
+
 A lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily intercepts LAN DNS/HTTP traffic so clients can authenticate. Once internet access is restored, the helper automatically cleans up dnsmasq overrides, HTTP redirects, and NAT rules.
 
 **Runtime dependencies:** `dnsmasq`, `curl` (installed automatically via `opkg`).
