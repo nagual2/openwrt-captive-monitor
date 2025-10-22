@@ -1,4 +1,8 @@
 #!/bin/sh
+# shellcheck shell=ash
+
+set -eu
+
 # OpenWRT Captive Portal Monitor and Auto-Redirect Script
 # Проверяет интернет, перехватывает HTTP-трафик клиентов LAN на captive portal
 
@@ -62,6 +66,14 @@ ENABLE_SYSLOG=1
 
 DEFAULT_MODE="oneshot"
 
+uci_safe_get() {
+    if command -v uci >/dev/null 2>&1; then
+        uci -q get "$1" 2>/dev/null || true
+    else
+        printf ''
+    fi
+}
+
 load_uci_config() {
     if ! command -v uci >/dev/null 2>&1; then
         return 0
@@ -70,28 +82,28 @@ load_uci_config() {
     local section="captive-monitor.config"
     local value
 
-    value=$(uci -q get "${section}.wifi_interface")
+    value=$(uci_safe_get "${section}.wifi_interface")
     [ -n "$value" ] && WIFI_INTERFACE="$value"
 
-    value=$(uci -q get "${section}.wifi_logical")
+    value=$(uci_safe_get "${section}.wifi_logical")
     [ -n "$value" ] && WIFI_LOGICAL="$value"
 
-    value=$(uci -q get "${section}.lan_interface")
+    value=$(uci_safe_get "${section}.lan_interface")
     [ -n "$value" ] && LAN_INTERFACE="$value"
 
-    value=$(uci -q get "${section}.lan_ip")
+    value=$(uci_safe_get "${section}.lan_ip")
     [ -n "$value" ] && LAN_IP="$value"
 
-    value=$(uci -q get "${section}.monitor_interval")
+    value=$(uci_safe_get "${section}.monitor_interval")
     [ -n "$value" ] && MONITOR_INTERVAL="$value"
 
-    value=$(uci -q get "${section}.ping_servers")
+    value=$(uci_safe_get "${section}.ping_servers")
     [ -n "$value" ] && PING_SERVERS="$value"
 
-    value=$(uci -q get "${section}.captive_check_urls")
+    value=$(uci_safe_get "${section}.captive_check_urls")
     [ -n "$value" ] && CAPTIVE_CHECK_URLS="$value"
 
-    value=$(uci -q get "${section}.enable_syslog")
+    value=$(uci_safe_get "${section}.enable_syslog")
     case "$value" in
         0|false|no|disabled)
             ENABLE_SYSLOG=0
@@ -101,7 +113,7 @@ load_uci_config() {
             ;;
     esac
 
-    value=$(uci -q get "${section}.mode")
+    value=$(uci_safe_get "${section}.mode")
     case "$value" in
         monitor|oneshot)
             DEFAULT_MODE="$value"
@@ -211,7 +223,7 @@ get_gateway_ip() {
 
     if command -v uci >/dev/null 2>&1; then
         local logical="${WIFI_LOGICAL:-$iface}"
-        gateway=$(uci get "network.${logical}.gateway" 2>/dev/null)
+        gateway=$(uci_safe_get "network.${logical}.gateway")
         [ -n "$gateway" ] && { echo "$gateway"; return 0; }
     fi
 
@@ -226,14 +238,18 @@ check_gateway() {
     local gateway
 
     while [ "$attempt" -le "$GATEWAY_CHECK_RETRIES" ]; do
-        gateway=$(get_gateway_ip)
-        if [ -n "$gateway" ]; then
-            if ping_host "$gateway"; then
-                log_info "Шлюз $gateway доступен"
-                return 0
+        if gateway=$(get_gateway_ip); then
+            if [ -n "$gateway" ]; then
+                if ping_host "$gateway"; then
+                    log_info "Шлюз $gateway доступен"
+                    return 0
+                fi
+                log_warn "Шлюз $gateway не отвечает (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
+            else
+                log_warn "Шлюз не найден (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
             fi
-            log_warn "Шлюз $gateway не отвечает (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
         else
+            gateway=""
             log_warn "Шлюз не найден (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
         fi
         attempt=$((attempt + 1))
@@ -283,7 +299,7 @@ is_interface_up() {
 restart_wifi_logical() {
     local logical="${1:-$WIFI_LOGICAL}"
     log_info "Перезапуск логического интерфейса: $logical"
-    ifdown "$logical" 2>/dev/null
+    ifdown "$logical" 2>/dev/null || true
     sleep 2
     if ifup "$logical" 2>/dev/null; then
         log_info "Логический интерфейс $logical успешно поднят"
@@ -302,7 +318,7 @@ restart_wifi_physical() {
         return 1
     fi
 
-    ip link set dev "$iface" down 2>/dev/null
+    ip link set dev "$iface" down 2>/dev/null || true
     sleep 2
 
     if ! ip link set dev "$iface" up 2>/dev/null; then
@@ -312,7 +328,8 @@ restart_wifi_physical() {
 
     log_info "Интерфейс $iface успешно поднят"
 
-    local start_time=$(date +%s)
+    local start_time
+    start_time=$(date +%s)
     local current_time elapsed gateway
 
     while true; do
@@ -324,10 +341,11 @@ restart_wifi_physical() {
         fi
         if is_interface_up "$iface" && ip -4 addr show dev "$iface" | grep -q 'inet ' ; then
             log_info "Интерфейс $iface получил IP адрес"
-            gateway=$(get_gateway_ip "$iface")
-            if [ -n "$gateway" ] && ping_host "$gateway"; then
-                log_info "Шлюз $gateway доступен, интерфейс готов"
-                return 0
+            if gateway=$(get_gateway_ip "$iface"); then
+                if [ -n "$gateway" ] && ping_host "$gateway"; then
+                    log_info "Шлюз $gateway доступен, интерфейс готов"
+                    return 0
+                fi
             fi
         fi
         sleep 3
@@ -355,9 +373,9 @@ ensure_lan_interface() {
     fi
 
     if command -v uci >/dev/null 2>&1; then
-        LAN_INTERFACE=$(uci -q get network.lan.device 2>/dev/null)
+        LAN_INTERFACE=$(uci_safe_get "network.lan.device")
         if [ -z "$LAN_INTERFACE" ]; then
-            LAN_INTERFACE=$(uci -q get network.lan.ifname 2>/dev/null)
+            LAN_INTERFACE=$(uci_safe_get "network.lan.ifname")
             if echo "$LAN_INTERFACE" | grep -q ' '; then
                 LAN_INTERFACE=$(echo "$LAN_INTERFACE" | awk '{print $1}')
             fi
@@ -380,7 +398,7 @@ ensure_lan_ip() {
 
     LAN_IP=$(ip -4 addr show dev "$LAN_INTERFACE" 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 | head -n1)
     if [ -z "$LAN_IP" ] && command -v uci >/dev/null 2>&1; then
-        LAN_IP=$(uci -q get network.lan.ipaddr)
+        LAN_IP=$(uci_safe_get "network.lan.ipaddr")
     fi
 
     if [ -z "$LAN_IP" ]; then
@@ -410,7 +428,11 @@ resolve_portal_ip() {
         fi
     fi
 
-    dns=$(get_upstream_dns)
+    dns=""
+    if ! dns=$(get_upstream_dns); then
+        dns=""
+    fi
+
     if [ -n "$dns" ] && command -v resolveip >/dev/null 2>&1; then
         ip=$(resolveip -s "$dns" "$host" 2>/dev/null | head -n1)
         if [ -n "$ip" ]; then
@@ -450,7 +472,7 @@ extract_meta_refresh_url() {
     local line lower candidate
 
     while IFS= read -r line; do
-        lower=$(echo "$line" | tr 'A-Z' 'a-z')
+        lower=$(echo "$line" | tr '[:upper:]' '[:lower:]')
         case "$lower" in
             *http-equiv*refresh*)
                 candidate=$(echo "$line" | sed -n 's/.*[Uu][Rr][Ll]=["'"'"']\([^"'"'"' >]*\).*/\1/p')
@@ -522,14 +544,18 @@ detect_captive_portal() {
                 portal_url=$(normalize_url "$location" "$url")
             fi
         else
-            candidate=$(extract_meta_refresh_url "$body_file")
-            if [ -n "$candidate" ]; then
-                portal_url=$(normalize_url "$candidate" "$url")
-            fi
-            if [ -z "$portal_url" ]; then
-                candidate=$(extract_first_href "$body_file")
+            candidate=""
+            if candidate=$(extract_meta_refresh_url "$body_file"); then
                 if [ -n "$candidate" ]; then
                     portal_url=$(normalize_url "$candidate" "$url")
+                fi
+            fi
+            if [ -z "$portal_url" ]; then
+                candidate=""
+                if candidate=$(extract_first_href "$body_file"); then
+                    if [ -n "$candidate" ]; then
+                        portal_url=$(normalize_url "$candidate" "$url")
+                    fi
                 fi
             fi
         fi
@@ -636,7 +662,9 @@ stop_captive_httpd() {
         pid=$(cat "$HTTPD_PIDFILE")
         if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
             kill "$pid" >/dev/null 2>&1
-            wait "$pid" 2>/dev/null
+            if ! wait "$pid" 2>/dev/null; then
+                :
+            fi
             log_info "Остановлен busybox httpd (PID $pid)"
         fi
         rm -f "$HTTPD_PIDFILE"
@@ -675,8 +703,8 @@ remove_http_redirect() {
         iptables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN"
     done
 
-    iptables -t nat -F "$CAPTIVE_NAT_CHAIN" 2>/dev/null
-    iptables -t nat -X "$CAPTIVE_NAT_CHAIN" 2>/dev/null
+    iptables -t nat -F "$CAPTIVE_NAT_CHAIN" 2>/dev/null || true
+    iptables -t nat -X "$CAPTIVE_NAT_CHAIN" 2>/dev/null || true
 }
 
 setup_captive_intercept() {
@@ -709,7 +737,11 @@ setup_captive_intercept() {
 
 cleanup_captive_intercept() {
     if [ "$CAPTIVE_ACTIVE" = "1" ] || [ -f "$DNSMASQ_CAPTIVE_CONF" ] || [ -f "$HTTPD_PIDFILE" ]; then
-        log_info "Очистка перехвата captive-портала"
+        if [ -n "$ACTIVE_PORTAL_URL" ]; then
+            log_info "Очистка перехвата captive-портала для $ACTIVE_PORTAL_URL (host: ${ACTIVE_PORTAL_HOST:--}, ip: ${ACTIVE_PORTAL_IP:--})"
+        else
+            log_info "Очистка перехвата captive-портала"
+        fi
     fi
 
     remove_http_redirect
@@ -761,12 +793,19 @@ check_and_fix_connection() {
     if detect_captive_portal; then
         local portal_ip=""
         if [ -n "$CAPTIVE_PORTAL_HOST" ]; then
-            portal_ip=$(resolve_portal_ip "$CAPTIVE_PORTAL_HOST")
-            [ -n "$portal_ip" ] && log_info "IP адрес портала: $portal_ip"
+            if portal_ip=$(resolve_portal_ip "$CAPTIVE_PORTAL_HOST"); then
+                if [ -n "$portal_ip" ]; then
+                    log_info "IP адрес портала: $portal_ip"
+                fi
+            else
+                portal_ip=""
+            fi
         fi
         setup_captive_intercept "$CAPTIVE_PORTAL_URL" "$CAPTIVE_PORTAL_HOST" "$portal_ip"
-        wait_for_internet_after_intercept
-        return $?
+        if wait_for_internet_after_intercept; then
+            return 0
+        fi
+        return 1
     fi
 
     log_warn "Captive-портал не обнаружен, пробуем перезапустить WiFi"
@@ -784,7 +823,9 @@ check_and_fix_connection() {
 monitor_mode() {
     log_info "Запуск в режиме мониторинга (интервал: ${MONITOR_INTERVAL}с)"
     while true; do
-        check_and_fix_connection
+        if ! check_and_fix_connection; then
+            log_warn "Проверка подключения завершилась с ошибкой"
+        fi
         log_info "Следующая проверка через ${MONITOR_INTERVAL}с"
         sleep "$MONITOR_INTERVAL"
     done
@@ -792,8 +833,10 @@ monitor_mode() {
 
 oneshot_mode() {
     log_info "Запуск в режиме однократной проверки"
-    check_and_fix_connection
-    exit $?
+    if check_and_fix_connection; then
+        exit 0
+    fi
+    exit 1
 }
 
 # ============================================================================
