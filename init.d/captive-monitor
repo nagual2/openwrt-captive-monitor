@@ -1,6 +1,7 @@
 #!/bin/sh
+set -eu
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd 2>/dev/null)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd 2>/dev/null || printf '')"
 LOCAL_INIT="$SCRIPT_DIR/package/openwrt-captive-monitor/files/etc/init.d/captive-monitor"
 
 if [ -n "$SCRIPT_DIR" ] && [ -x "$LOCAL_INIT" ]; then
