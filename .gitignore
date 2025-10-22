@@ -7,3 +7,9 @@
 
 # macOS
 .DS_Store
+
+# Local build artifacts
+/dist/
+/dist/**
+*.ipk
+*.ipk.gz
