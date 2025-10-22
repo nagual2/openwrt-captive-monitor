@@ -15,19 +15,43 @@
 
 ## 🚀 Установка
 
-### 1. Копирование скрипта
+### 1. Через opkg (рекомендуется)
 
 ```bash
-# Скопировать на OpenWRT роутер
-scp openwrt_captive_monitor.sh root@192.168.1.1:/usr/bin/
-
-# Сделать исполняемым
-ssh root@192.168.1.1 "chmod +x /usr/bin/openwrt_captive_monitor.sh"
+# Скопировать пакет на роутер и установить
+scp openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 ```
 
-### 2. Настройка автозапуска (init.d)
+После установки:
 
-Создайте файл `/etc/init.d/captive-monitor`:
+- Конфигурация доступна в `/etc/config/captive-monitor`.
+- Сервис по умолчанию выключен. Для запуска:
+
+```bash
+uci set captive-monitor.config.enabled='1'
+uci commit captive-monitor
+/etc/init.d/captive-monitor enable
+/etc/init.d/captive-monitor start
+```
+
+Для удаления:
+
+```bash
+opkg remove openwrt-captive-monitor
+```
+
+### 2. Ручная установка (альтернатива)
+
+```bash
+# Скопировать скрипт на OpenWRT роутер
+scp package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor root@192.168.1.1:/usr/sbin/
+
+# Сделать исполняемым
+ssh root@192.168.1.1 "chmod +x /usr/sbin/openwrt_captive_monitor"
+```
+
+Создайте файл `/etc/init.d/captive-monitor` (если пакет не установлен):
 
 ```bash
 #!/bin/sh /etc/rc.common
@@ -39,7 +63,7 @@ USE_PROCD=1
 
 start_service() {
     procd_open_instance
-    procd_set_param command /usr/bin/openwrt_captive_monitor.sh --monitor
+    procd_set_param command /usr/sbin/openwrt_captive_monitor --monitor
     procd_set_param respawn
     procd_set_param stdout 1
     procd_set_param stderr 1
@@ -61,7 +85,7 @@ chmod +x /etc/init.d/captive-monitor
 
 ```bash
 # Проверка каждые 2 минуты
-*/2 * * * * /usr/bin/openwrt_captive_monitor.sh --oneshot
+*/2 * * * * /usr/sbin/openwrt_captive_monitor --oneshot
 ```
 
 Перезапустите cron:
@@ -71,6 +95,33 @@ chmod +x /etc/init.d/captive-monitor
 ```
 
 ## ⚙️ Конфигурация
+
+### UCI (по умолчанию)
+
+Основные параметры находятся в `/etc/config/captive-monitor`:
+
+```uci
+config captive_monitor 'config'
+    option enabled '0'
+    option mode 'monitor'
+    option wifi_interface 'phy1-sta0'
+    option wifi_logical 'wwan'
+    option monitor_interval '60'
+    option ping_servers '1.1.1.1 8.8.8.8 9.9.9.9'
+    option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
+    option enable_syslog '1'
+```
+
+Пример включения сервиса и изменения интерфейсов:
+
+```bash
+uci set captive-monitor.config.enabled='1'
+uci set captive-monitor.config.wifi_interface='phy1-sta0'
+uci set captive-monitor.config.wifi_logical='wwan'
+uci set captive-monitor.config.monitor_interval='45'
+uci commit captive-monitor
+/etc/init.d/captive-monitor restart
+```
 
 ### Переменные окружения
 
@@ -84,13 +135,13 @@ export MONITOR_INTERVAL=60            # Интервал проверки (се�
 
 ```bash
 # Однократная проверка
-openwrt_captive_monitor.sh --oneshot
+openwrt_captive_monitor --oneshot
 
 # Постоянный мониторинг
-openwrt_captive_monitor.sh --monitor
+openwrt_captive_monitor --monitor
 
 # Кастомные параметры
-openwrt_captive_monitor.sh --monitor \
+openwrt_captive_monitor --monitor \
   --interface wlan0 \
   --logical wan \
   --interval 30
@@ -124,7 +175,7 @@ MONITOR_INTERVAL=60
 #### 1. Oneshot (однократная проверка)
 
 ```bash
-openwrt_captive_monitor.sh --oneshot
+openwrt_captive_monitor --oneshot
 ```
 
 Выполняет:
@@ -137,7 +188,7 @@ openwrt_captive_monitor.sh --oneshot
 #### 2. Monitor (постоянный мониторинг)
 
 ```bash
-openwrt_captive_monitor.sh --monitor
+openwrt_captive_monitor --monitor
 ```
 
 Выполняет проверку в бесконечном цикле с заданным интервалом.
@@ -146,16 +197,16 @@ openwrt_captive_monitor.sh --monitor
 
 ```bash
 # Проверка с логированием
-openwrt_captive_monitor.sh --oneshot 2>&1 | tee /tmp/captive.log
+openwrt_captive_monitor --oneshot 2>&1 | tee /tmp/captive.log
 
 # Мониторинг в фоне
-openwrt_captive_monitor.sh --monitor &
+openwrt_captive_monitor --monitor &
 
 # Мониторинг с кастомным интервалом
-openwrt_captive_monitor.sh --monitor --interval 30
+openwrt_captive_monitor --monitor --interval 30
 
 # Проверка конкретного интерфейса
-openwrt_captive_monitor.sh --oneshot --interface wlan0 --logical wan
+openwrt_captive_monitor --oneshot --interface wlan0 --logical wan
 ```
 
 ## 🔍 Диагностика
@@ -224,13 +275,13 @@ dig google.com
 
 ```bash
 # Проверка прав
-ls -la /usr/bin/openwrt_captive_monitor.sh
+ls -la /usr/sbin/openwrt_captive_monitor
 
 # Должно быть: -rwxr-xr-x
-chmod +x /usr/bin/openwrt_captive_monitor.sh
+chmod +x /usr/sbin/openwrt_captive_monitor
 
 # Проверка shebang
-head -1 /usr/bin/openwrt_captive_monitor.sh
+head -1 /usr/sbin/openwrt_captive_monitor
 # Должно быть: #!/bin/sh
 ```
 
@@ -343,7 +394,7 @@ curl -I http://captive.apple.com/hotspot-detect.html
 import subprocess
 
 result = subprocess.run(
-    ['/usr/bin/openwrt_captive_monitor.sh', '--oneshot'],
+    ['/usr/sbin/openwrt_captive_monitor', '--oneshot'],
     capture_output=True,
     text=True
 )
@@ -419,7 +470,7 @@ MIT License - свободное использование
 
 При возникновении проблем:
 1. Проверьте логи: `logread | grep captive-monitor`
-2. Запустите в debug режиме: `sh -x /usr/bin/openwrt_captive_monitor.sh --oneshot`
+2. Запустите в debug режиме: `sh -x /usr/sbin/openwrt_captive_monitor --oneshot`
 3. Проверьте конфигурацию сети: `ifconfig`, `ip route`
 
 ---
