@@ -79,8 +79,12 @@ jobs:
           pushd "$SDK_DIR"
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-          echo CONFIG_TARGET_${{ matrix.target }}=y > .config
-          echo CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}=y >> .config
+          cat <<EOF > .config
+          CONFIG_TARGET_${{ matrix.target }}=y
+          CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}=y
+          CONFIG_TARGET_MULTI_PROFILE=y
+          CONFIG_PACKAGE_${PACKAGE_NAME}=m
+          EOF
           make defconfig
           make package/${PACKAGE_NAME}/compile V=sc -j"$(nproc)"
           make package/index V=s
@@ -97,8 +101,7 @@ jobs:
             cp "$ipk" "$ARTIFACT_DIR/"
             for index in Packages Packages.gz Packages.manifest; do
               if [ -f "$pkg_dir/$index" ]; then
-                dest_name=${index/Packages/Packages_${TARGET_ID}}
-                cp "$pkg_dir/$index" "$ARTIFACT_DIR/$dest_name"
+                cp "$pkg_dir/$index" "$ARTIFACT_DIR/$index"
               fi
             done
           done
