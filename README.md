@@ -6,6 +6,10 @@ A lightweight OpenWrt helper that monitors WAN connectivity, detects captive por
 
 **Runtime dependencies:** `dnsmasq`, `curl` (installed automatically via `opkg`).
 
+## Release notes
+
+See [CHANGELOG.md](CHANGELOG.md) for highlights of each version, starting with v0.1.0.
+
 ## Repository layout
 
 - `package/openwrt-captive-monitor/` – OpenWrt package definition, init script, executable, config defaults, and `uci-defaults` helper.
