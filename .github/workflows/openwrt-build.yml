@@ -1,5 +1,10 @@
 name: Build OpenWrt packages
 
+ ./scripts/feeds update -a
+ ./scripts/feeds install -a
+ make defconfig
+name: Build OpenWrt packages
+
 on:
   push:
     branches: [ main ]
