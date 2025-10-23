@@ -1,6 +1,6 @@
 # Release & Feed Publication Checklist
 
-This checklist documents the flow we used for the `v0.1.0` release and can be
+This checklist documents the flow we used for the `v0.1.1` release and can be
 repeated for subsequent versions.
 
 ## 1. Triage and code verification
@@ -72,10 +72,10 @@ scripts/build_ipk.sh --arch mips_24kc          # pick the same arch as target
 
 1. Update the changelog (if required) and tag `v0.1.x`:
    ```bash
-   git tag -a v0.1.0 -m "openwrt-captive-monitor v0.1.0"
-   git push origin v0.1.0
+   git tag -a v0.1.1 -m "openwrt-captive-monitor v0.1.1"
+   git push origin v0.1.1
    ```
-2. Create the GitHub release page and upload:
+
    - The generated `.ipk` for each architecture.
    - The `Packages` and `Packages.gz` files (or a zipped copy of the feed
      directory).
@@ -89,7 +89,7 @@ scripts/build_ipk.sh --arch mips_24kc          # pick the same arch as target
    rm -rf *
    cp -r ../dist/opkg/* .
    git add .
-   git commit -m "Publish feed for v0.1.0"
+   git commit -m "Publish feed for v0.1.1"
    git push -f origin gh-pages
    ```
 2. Record the feed URL, e.g.

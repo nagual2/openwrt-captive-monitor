@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.1
+
+### Packaging & CI
+- Bump package metadata to `v0.1.1` and ensure the GitHub Actions SDK build
+  enables target-specific package compilation via `defconfig`.
+- Keep opkg feed indexes (`Packages`, `Packages.gz`) in the release artifacts for
+  ath79/generic and ramips/mt7621 matrices.
+
+### Documentation
+- Refresh release references for `v0.1.1`, including the runbook and README
+  pointers.
+
 ## v0.1.0
 
 ### Highlights
