@@ -74,28 +74,39 @@ jobs:
         run: |
           set -euxo pipefail
           SDK_DIR="${{ steps.sdk.outputs.dir }}"
+          TARGET="${{ matrix.target }}"
+          SUBTARGET="${{ matrix.subtarget }}"
           TARGET_ID="${{ matrix.target_id }}"
-          cp -r "$GITHUB_WORKSPACE/package/openwrt-captive-monitor" "$SDK_DIR/package/"
+          TARGET_PREFIX="${TARGET}-${SUBTARGET}"
+          PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
+          cp -r "$GITHUB_WORKSPACE/package/$PACKAGE_NAME" "$SDK_DIR/package/"
           pushd "$SDK_DIR"
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
           export TERM=dumb
-          echo CONFIG_TARGET_${{ matrix.target }}=y > .config
-          echo CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}=y >> .config
-          echo CONFIG_ALL=n >> .config
-          echo CONFIG_ALL_KMODS=n >> .config
-          echo CONFIG_PACKAGE_${{ env.PACKAGE_NAME }}=m >> .config
+          ./scripts/feeds update -a && ./scripts/feeds install -a
+          cat <<EOF > .config
+CONFIG_TARGET_${TARGET}=y
+CONFIG_TARGET_${TARGET}_${SUBTARGET}=y
+CONFIG_ALL=n
+CONFIG_ALL_KMODS=n
+CONFIG_PACKAGE_${PACKAGE_NAME}=m
+EOF
           make defconfig
-          make package/${PACKAGE_NAME}/compile V=sc -j"$(nproc)"
-          make package/index V=s
+          make V=sc -j"$(nproc)" package/${PACKAGE_NAME}/compile
+          make V=s package/index
+          ARCH=$(awk -F '"' '/^CONFIG_TARGET_ARCH_PACKAGES=/ {print $2; exit}' .config)
+          if [ -z "$ARCH" ]; then
+            echo "Failed to determine CONFIG_TARGET_ARCH_PACKAGES from .config" >&2
+            exit 1
+          fi
           popd
           ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts/$TARGET_ID"
           mkdir -p "$ARTIFACT_DIR"
           shopt -s nullglob
-          built_packages=( "$SDK_DIR"/bin/packages/*/*/"${PACKAGE_NAME}"_*.ipk )
+          built_packages=( "$SDK_DIR/bin/packages/$ARCH"/*/"${PACKAGE_NAME}"_*.ipk )
           shopt -u nullglob
           if [ ${#built_packages[@]} -eq 0 ]; then
-            echo "No built packages found for ${PACKAGE_NAME}" >&2
+            echo "No built packages found for ${PACKAGE_NAME} under $SDK_DIR/bin/packages/$ARCH" >&2
+            find "$SDK_DIR/bin" -maxdepth 4 -type f -print || true
             exit 1
           fi
           declare -A copied_indexes=()
@@ -104,7 +115,20 @@ jobs:
             cp "$ipk" "$ARTIFACT_DIR/"
             for index in Packages Packages.gz Packages.manifest; do
               if [ -f "$pkg_dir/$index" ]; then
-                target_index="${index}_${TARGET_ID}"
+                case "$index" in
+                  Packages)
+                    target_index="Packages_${TARGET_PREFIX}"
+                    ;;
+                  Packages.gz)
+                    target_index="Packages_${TARGET_PREFIX}.gz"
+                    ;;
+                  Packages.manifest)
+                    target_index="Packages_${TARGET_PREFIX}.manifest"
+                    ;;
+                  *)
+                    continue
+                    ;;
+                esac
                 if [[ -z "${copied_indexes[$target_index]:-}" ]]; then
                   cp "$pkg_dir/$index" "$ARTIFACT_DIR/$target_index"
                   copied_indexes[$target_index]=1
