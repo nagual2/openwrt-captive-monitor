@@ -23,6 +23,19 @@ A lightweight OpenWrt helper that monitors WAN connectivity, detects captive por
 
 > Tip: you can also integrate the repository as a custom feed; add it to `feeds.conf`, run `./scripts/feeds update -a` and `./scripts/feeds install openwrt-captive-monitor`, then build as shown above.
 
+### Quick local packaging (.ipk + opkg feed)
+
+If you only need the shell wrapper without compiling against the full SDK, the helper script below assembles an `.ipk` together with a ready-to-serve opkg feed:
+
+```bash
+scripts/build_ipk.sh --arch mips_24kc
+```
+
+- `--arch` controls the architecture tag that ends up in the filename (defaults to the `PKG_ARCH` defined in the package Makefile, currently `all`).
+- Artifacts are written to `dist/opkg/<arch>/` alongside refreshed `Packages` and `Packages.gz` indexes, so the directory can be pushed as-is to GitHub Pages or any static host.
+- Use `scripts/build_ipk.sh --help` for additional knobs such as redirecting the output via `--feed-root`.
+- The detailed release/runbook lives in [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
+
 ## Installing the generated package
 
 1. Copy the built package to the router (replace the filename with the actual artifact):
