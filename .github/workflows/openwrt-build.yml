@@ -1,10 +1,5 @@
 name: Build OpenWrt packages
 
- ./scripts/feeds update -a
- ./scripts/feeds install -a
- make defconfig
-name: Build OpenWrt packages
-
 on:
   push:
     branches: [ main ]
@@ -82,6 +77,11 @@ jobs:
           TARGET_ID="${{ matrix.target_id }}"
           cp -r "$GITHUB_WORKSPACE/package/openwrt-captive-monitor" "$SDK_DIR/package/"
           pushd "$SDK_DIR"
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+          echo CONFIG_TARGET_${{ matrix.target }}=y > .config
+          echo CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}=y >> .config
+          make defconfig
           make package/${PACKAGE_NAME}/compile V=sc -j"$(nproc)"
           make package/index V=s
           popd
