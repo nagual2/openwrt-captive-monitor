@@ -67,7 +67,7 @@ jobs:
           fi
           curl -fSLo "$SDK_TARBALL" "${SDK_URL}${SDK_TARBALL}"
           tar -xf "$SDK_TARBALL"
-          SDK_DIR=$(tar -tf "$SDK_TARBALL" | head -n1 | cut -d/ -f1)
+          set +o pipefail; SDK_DIR=$(tar -tf "$SDK_TARBALL" | head -n1 | cut -d/ -f1) || true; set -o pipefail
           echo "dir=$SDK_DIR" >> "$GITHUB_OUTPUT"
 
       - name: Build package
