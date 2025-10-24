@@ -2,8 +2,13 @@
 # shellcheck disable=SC3043 # BusyBox ash and bash-compatible shells provide 'local'
 set -eu
 
+if (set -o pipefail) 2> /dev/null; then
+    # shellcheck disable=SC3040
+    set -o pipefail
+fi
+
 usage() {
-    cat <<'EOF'
+    cat << 'EOF'
 Usage: scripts/build_ipk.sh [--arch <name>] [--feed-root <path>]
 
 Options:
@@ -111,16 +116,24 @@ feed_root="$repo_root/dist/opkg"
 while [ $# -gt 0 ]; do
     case "$1" in
         --arch)
-            [ $# -ge 2 ] || { echo "error: --arch requires a value" >&2; usage; exit 1; }
+            [ $# -ge 2 ] || {
+                echo "error: --arch requires a value" >&2
+                usage
+                exit 1
+            }
             arch="$2"
             shift 2
             ;;
         --feed-root)
-            [ $# -ge 2 ] || { echo "error: --feed-root requires a value" >&2; usage; exit 1; }
+            [ $# -ge 2 ] || {
+                echo "error: --feed-root requires a value" >&2
+                usage
+                exit 1
+            }
             feed_root="$2"
             shift 2
             ;;
-        -h|--help)
+        -h | --help)
             usage
             exit 0
             ;;
@@ -181,7 +194,7 @@ control_file="$control_dir/control"
     fi
 } > "$control_file"
 
-cat <<'EOF' > "$control_dir/postinst"
+cat << 'EOF' > "$control_dir/postinst"
 #!/bin/sh
 if [ -z "$IPKG_INSTROOT" ]; then
     if [ -x /etc/uci-defaults/99-captive-monitor ]; then
@@ -193,7 +206,7 @@ fi
 exit 0
 EOF
 
-cat <<'EOF' > "$control_dir/prerm"
+cat << 'EOF' > "$control_dir/prerm"
 #!/bin/sh
 if [ -z "$IPKG_INSTROOT" ]; then
     /etc/init.d/captive-monitor disable >/dev/null 2>&1 || true
@@ -202,7 +215,7 @@ fi
 exit 0
 EOF
 
-cat <<'EOF' > "$control_dir/postrm"
+cat << 'EOF' > "$control_dir/postrm"
 #!/bin/sh
 if [ -z "$IPKG_INSTROOT" ]; then
     /etc/init.d/captive-monitor stop >/dev/null 2>&1 || true
@@ -215,15 +228,15 @@ echo "/etc/config/captive-monitor" > "$control_dir/conffiles"
 chmod 0755 "$control_dir/postinst" "$control_dir/prerm" "$control_dir/postrm"
 chmod 0644 "$control_file" "$control_dir/conffiles"
 
-( cd "$data_dir" && tar --numeric-owner --owner=0 --group=0 -czf "$build_dir/data.tar.gz" . )
-( cd "$control_dir" && tar --numeric-owner --owner=0 --group=0 -czf "$build_dir/control.tar.gz" . )
+(cd "$data_dir" && tar --numeric-owner --owner=0 --group=0 -czf "$build_dir/data.tar.gz" .)
+(cd "$control_dir" && tar --numeric-owner --owner=0 --group=0 -czf "$build_dir/control.tar.gz" .)
 
 echo "2.0" > "$build_dir/debian-binary"
 
 output_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${arch}.ipk"
 rm -f "$output_ipk"
 
-( cd "$build_dir" && ar r "$output_ipk" debian-binary control.tar.gz data.tar.gz )
+(cd "$build_dir" && ar r "$output_ipk" debian-binary control.tar.gz data.tar.gz)
 
 packages_file="$feed_dir/Packages"
 rm -f "$packages_file" "$packages_file.gz"
@@ -244,7 +257,7 @@ for ipk in "$feed_dir"/*.ipk; do
     rm -rf "$tmpdir"
 done
 
-if command -v pigz >/dev/null 2>&1; then
+if command -v pigz > /dev/null 2>&1; then
     pigz -c "$packages_file" > "$packages_file.gz"
 else
     gzip -c "$packages_file" > "$packages_file.gz"
