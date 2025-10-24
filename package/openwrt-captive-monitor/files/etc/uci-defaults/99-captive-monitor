@@ -18,6 +18,10 @@ set captive-monitor.config.monitor_interval='60'
 set captive-monitor.config.ping_servers='1.1.1.1 8.8.8.8 9.9.9.9'
 set captive-monitor.config.captive_check_urls='http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
 set captive-monitor.config.enable_syslog='1'
+set captive-monitor.config.lan_interface=''
+set captive-monitor.config.lan_ip=''
+set captive-monitor.config.lan_ipv6=''
+set captive-monitor.config.firewall_backend='auto'
 commit captive-monitor
 EOF
 
