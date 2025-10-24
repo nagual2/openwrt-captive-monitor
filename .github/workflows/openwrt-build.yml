@@ -21,9 +21,11 @@ jobs:
           - target: ath79
             subtarget: generic
             target_id: ath79-generic
+            arch_packages: mips_24kc
           - target: ramips
             subtarget: mt7621
             target_id: ramips-mt7621
+            arch_packages: mipsel_24kc
     env:
       OPENWRT_VERSION: "23.05.3"
       PACKAGE_NAME: "openwrt-captive-monitor"
@@ -86,6 +88,7 @@ jobs:
           cat <<EOF > .config
 CONFIG_TARGET_${TARGET}=y
 CONFIG_TARGET_${TARGET}_${SUBTARGET}=y
+CONFIG_TARGET_MULTI_PROFILE=y
 CONFIG_ALL=n
 CONFIG_ALL_KMODS=n
 CONFIG_PACKAGE_${PACKAGE_NAME}=m
@@ -93,19 +96,33 @@ EOF
           make defconfig
           make V=sc -j"$(nproc)" package/${PACKAGE_NAME}/compile
           make V=s package/index
-          ARCH=$(awk -F '"' '/^CONFIG_TARGET_ARCH_PACKAGES=/ {print $2; exit}' .config)
-          if [ -z "$ARCH" ]; then
-            echo "Failed to determine CONFIG_TARGET_ARCH_PACKAGES from .config" >&2
-            exit 1
-          fi
           popd
+          ARCH="${{ matrix.arch_packages }}"
           ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts/$TARGET_ID"
           mkdir -p "$ARTIFACT_DIR"
+          declare -a search_dirs=()
+          for arch_dir in "$ARCH" all; do
+            if [ -d "$SDK_DIR/bin/packages/$arch_dir" ]; then
+              search_dirs+=( "$SDK_DIR/bin/packages/$arch_dir" )
+            fi
+          done
           shopt -s nullglob
-          built_packages=( "$SDK_DIR/bin/packages/$ARCH"/*/"${PACKAGE_NAME}"_*.ipk )
+          declare -a built_packages=()
+          for dir in "${search_dirs[@]}"; do
+            for ipk in "$dir"/*/"${PACKAGE_NAME}"_*.ipk; do
+              built_packages+=( "$ipk" )
+            done
+          done
           shopt -u nullglob
           if [ ${#built_packages[@]} -eq 0 ]; then
-            echo "No built packages found for ${PACKAGE_NAME} under $SDK_DIR/bin/packages/$ARCH" >&2
+            echo "No built packages found for ${PACKAGE_NAME}. Searched:" >&2
+            if [ ${#search_dirs[@]} -eq 0 ]; then
+              echo "  $SDK_DIR/bin/packages (no architecture directories present)" >&2
+            else
+              for dir in "${search_dirs[@]}"; do
+                echo "  $dir" >&2
+              done
+            fi
             find "$SDK_DIR/bin" -maxdepth 4 -type f -print || true
             exit 1
           fi
