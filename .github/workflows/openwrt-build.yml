@@ -2,10 +2,15 @@ name: Build OpenWrt packages
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - 'feature/*'
     tags:
       - 'v*'
   pull_request:
+    branches:
+      - main
+      - 'feature/*'
 
 permissions:
   contents: read
@@ -31,10 +36,12 @@ jobs:
       PACKAGE_NAME: "openwrt-captive-monitor"
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.1.7
 
       - name: Install build dependencies
         run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
@@ -155,7 +162,7 @@ EOF
           done
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.3.3
         with:
           name: ${{ env.PACKAGE_NAME }}-${{ matrix.target_id }}
           path: artifacts/${{ matrix.target_id }}
@@ -170,12 +177,12 @@ EOF
       contents: write
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.7
         with:
           path: release-artifacts
 
       - name: Publish release assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.4.1
         with:
           files: |
             release-artifacts/**/*.ipk
