@@ -81,3 +81,7 @@ config captive_monitor 'config'
 ```
 
 Environment variables and CLI flags remain supported for ad-hoc runs; refer to the detailed documentation in `docs/` for advanced scenarios and troubleshooting tips.
+
+## Contributing
+
+Community contributions are welcome. Please review [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, linting, and review expectations before opening a pull request.
