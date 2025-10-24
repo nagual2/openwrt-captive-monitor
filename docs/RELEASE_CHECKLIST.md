@@ -18,6 +18,18 @@ repeated for subsequent versions.
 
 ## 2. Build the release artifacts
 
+The GitHub Actions workflow **Build OpenWrt packages** produces release-ready
+builds for each supported target (`ath79-generic`, `ramips-mt7621`). It pulls the
+matching OpenWrt SDK, runs feed installation plus `defconfig`, and uploads the
+following artifacts per matrix entry:
+
+- `openwrt-captive-monitor_<version>_<arch>.ipk`
+- `Packages_<target>.gz` (with the plain `Packages` and `Packages.manifest`
+  variants)
+
+Download the artifacts from the workflow run or rely on the tag-triggered
+release job to attach them automatically.
+
 ### Option A – quick packager
 
 When the repository only ships shell scripts (no native binaries) the helper
@@ -77,8 +89,8 @@ scripts/build_ipk.sh --arch mips_24kc          # pick the same arch as target
    ```
 
    - The generated `.ipk` for each architecture.
-   - The `Packages` and `Packages.gz` files (or a zipped copy of the feed
-     directory).
+   - The per-target indexes: `Packages_<target>`, `Packages_<target>.gz`, and
+     `Packages_<target>.manifest` (or a zipped copy of the feed directory).
 
 ## 5. Host the opkg feed
 

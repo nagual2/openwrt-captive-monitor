@@ -27,6 +27,11 @@ See [CHANGELOG.md](CHANGELOG.md) for highlights of each release.
 
 > Tip: you can also integrate the repository as a custom feed; add it to `feeds.conf`, run `./scripts/feeds update -a` and `./scripts/feeds install openwrt-captive-monitor`, then build as shown above.
 
+### GitHub Actions builds
+
+Pushes to `main` and annotated tags trigger the **Build OpenWrt packages** workflow.
+For each supported matrix target (`ath79-generic`, `ramips-mt7621`) it fetches the matching OpenWrt SDK, performs `feeds update/install`, runs `defconfig`, and publishes the resulting `.ipk` together with `Packages_<target>` indexes ready for feed hosting or releases.
+
 ### Quick local packaging (.ipk + opkg feed)
 
 If you only need the shell wrapper without compiling against the full SDK, the helper script below assembles an `.ipk` together with a ready-to-serve opkg feed:
