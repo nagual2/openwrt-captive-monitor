@@ -44,6 +44,9 @@ CAPTIVE_CURL_TIMEOUT=7
 CAPTIVE_RECHECK_DELAY=5
 CAPTIVE_RECOVERY_TIMEOUT=60
 
+# DNS разрешение captive-портала
+DNS_LOOKUP_TIMEOUT="${DNS_LOOKUP_TIMEOUT:-5}"
+
 # DNS и HTTP перехват
 DNSMASQ_CAPTIVE_DIR="/tmp/dnsmasq.d"
 DNSMASQ_CAPTIVE_CONF="/tmp/dnsmasq.d/captive_intercept.conf"
@@ -213,6 +216,149 @@ extract_host_from_url() {
     url="${url%%/*}"
     url="${url%%:*}"
     echo "$url"
+}
+
+execute_with_timeout() {
+    local duration="$1"
+    shift
+
+    case "$duration" in
+        ""|0)
+            "$@"
+            ;;
+        *)
+            if command -v timeout > /dev/null 2>&1; then
+                timeout "$duration" "$@"
+            else
+                "$@"
+            fi
+            ;;
+    esac
+}
+
+extract_first_address() {
+    local family="$1"
+
+    awk -v family="$family" '
+        function is_ipv4(value) {
+            return value ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/
+        }
+        function is_ipv6(value) {
+            return index(value, ":") > 0 && value !~ /^([0-9]+\.){3}[0-9]+(#.*)?$/
+        }
+        function consider(value) {
+            gsub(/[,;]/, "", value)
+            if (family == 4 && is_ipv4(value)) {
+                last = value
+            } else if (family == 6 && is_ipv6(value)) {
+                last = value
+            }
+        }
+        /^Name[[:space:]]*:/ {
+            in_answer = 1
+        }
+        /has (IPv6 )?address/ {
+            in_answer = 1
+            for (i = 1; i <= NF; i++) {
+                consider($i)
+            }
+        }
+        /^Address([[:space:]][0-9]+)?:/ {
+            if (!in_answer) {
+                next
+            }
+            for (i = 2; i <= NF; i++) {
+                consider($i)
+            }
+        }
+        END {
+            if (last != "") {
+                print last
+            }
+        }
+    '
+}
+
+dns_lookup_with_nslookup() {
+    local host="$1"
+    local family="$2"
+    local server="${3:-}"
+    local output ip
+
+    if ! command -v nslookup > /dev/null 2>&1; then
+        return 1
+    fi
+
+    if [ -n "$server" ]; then
+        if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" nslookup "$host" "$server" 2> /dev/null); then
+            return 1
+        fi
+    else
+        if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" nslookup "$host" 2> /dev/null); then
+            return 1
+        fi
+    fi
+
+    ip=$(printf '%s\n' "$output" | extract_first_address "$family")
+    if [ -n "$ip" ]; then
+        printf '%s\n' "$ip"
+        return 0
+    fi
+
+    return 1
+}
+
+dns_lookup_with_host() {
+    local host="$1"
+    local family="$2"
+    local server="${3:-}"
+    local output ip record
+
+    if ! command -v host > /dev/null 2>&1; then
+        return 1
+    fi
+
+    case "$family" in
+        4)
+            record="A"
+            ;;
+        6)
+            record="AAAA"
+            ;;
+        *)
+            record=""
+            ;;
+    esac
+
+    if [ -n "$record" ]; then
+        if [ -n "$server" ]; then
+            if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host -t "$record" "$host" "$server" 2> /dev/null); then
+                return 1
+            fi
+        else
+            if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host -t "$record" "$host" 2> /dev/null); then
+                return 1
+            fi
+        fi
+    else
+        if [ -n "$server" ]; then
+            if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host "$host" "$server" 2> /dev/null); then
+                return 1
+            fi
+        else
+            if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host "$host" 2> /dev/null); then
+                return 1
+            fi
+        fi
+    fi
+
+    ip=$(printf '%s\n' "$output" | extract_first_address "$family")
+    if [ -n "$ip" ]; then
+        printf '%s\n' "$ip"
+        return 0
+    fi
+
+    return 1
 }
 
 # ============================================================================
@@ -483,35 +629,32 @@ get_upstream_dns() {
 
 resolve_portal_ipv4() {
     local host="$1"
-    local dns ip
+    local dns=""
+    local ip=""
 
-    if command -v resolveip > /dev/null 2>&1; then
-        ip=$(resolveip "$host" 2> /dev/null | grep -v ':' | head -n1)
-        if [ -n "$ip" ]; then
-            echo "$ip"
-            return 0
-        fi
-    fi
-
-    dns=""
     if ! dns=$(get_upstream_dns); then
         dns=""
     fi
 
-    if [ -n "$dns" ] && command -v nslookup > /dev/null 2>&1; then
-        ip=$(nslookup "$host" "$dns" 2> /dev/null | awk '/^Address[[:space:]]*[0-9]*:/ {print $3} /^Address: / {print $2}' | grep -v ':' | tail -n1)
-        if [ -n "$ip" ]; then
-            echo "$ip"
+    if [ -n "$dns" ]; then
+        if ip=$(dns_lookup_with_nslookup "$host" 4 "$dns"); then
+            printf '%s\n' "$ip"
+            return 0
+        fi
+        if ip=$(dns_lookup_with_host "$host" 4 "$dns"); then
+            printf '%s\n' "$ip"
             return 0
         fi
     fi
 
-    if command -v nslookup > /dev/null 2>&1; then
-        ip=$(nslookup "$host" 2> /dev/null | awk '/^Address[[:space:]]*[0-9]*:/ {print $3} /^Address: / {print $2}' | grep -v ':' | tail -n1)
-        if [ -n "$ip" ]; then
-            echo "$ip"
-            return 0
-        fi
+    if ip=$(dns_lookup_with_nslookup "$host" 4); then
+        printf '%s\n' "$ip"
+        return 0
+    fi
+
+    if ip=$(dns_lookup_with_host "$host" 4); then
+        printf '%s\n' "$ip"
+        return 0
     fi
 
     return 1
@@ -519,35 +662,32 @@ resolve_portal_ipv4() {
 
 resolve_portal_ipv6() {
     local host="$1"
-    local dns ip
+    local dns=""
+    local ip=""
 
-    if command -v resolveip > /dev/null 2>&1; then
-        ip=$(resolveip "$host" 2> /dev/null | grep ':' | head -n1)
-        if [ -n "$ip" ]; then
-            echo "$ip"
-            return 0
-        fi
-    fi
-
-    dns=""
     if ! dns=$(get_upstream_dns); then
         dns=""
     fi
 
-    if [ -n "$dns" ] && command -v nslookup > /dev/null 2>&1; then
-        ip=$(nslookup "$host" "$dns" 2> /dev/null | awk '/^Address[[:space:]]*[0-9]*:/ {print $3} /^Address: / {print $2}' | grep ':' | tail -n1)
-        if [ -n "$ip" ]; then
-            echo "$ip"
+    if [ -n "$dns" ]; then
+        if ip=$(dns_lookup_with_nslookup "$host" 6 "$dns"); then
+            printf '%s\n' "$ip"
+            return 0
+        fi
+        if ip=$(dns_lookup_with_host "$host" 6 "$dns"); then
+            printf '%s\n' "$ip"
             return 0
         fi
     fi
 
-    if command -v nslookup > /dev/null 2>&1; then
-        ip=$(nslookup "$host" 2> /dev/null | awk '/^Address[[:space:]]*[0-9]*:/ {print $3} /^Address: / {print $2}' | grep ':' | tail -n1)
-        if [ -n "$ip" ]; then
-            echo "$ip"
-            return 0
-        fi
+    if ip=$(dns_lookup_with_nslookup "$host" 6); then
+        printf '%s\n' "$ip"
+        return 0
+    fi
+
+    if ip=$(dns_lookup_with_host "$host" 6); then
+        printf '%s\n' "$ip"
+        return 0
     fi
 
     return 1
