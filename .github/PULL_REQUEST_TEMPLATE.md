@@ -3,16 +3,18 @@
 
 ## Testing
 <!-- Describe how you validated the change. Paste command output when possible. -->
-- [ ] `shfmt -d .` (or `shfmt -w` run locally before committing)
-- [ ] `shellcheck` on touched scripts
-- [ ] Additional manual or automated testing:
+- [ ] `shfmt -d …` (or `shfmt -w` before committing)
+- [ ] `shellcheck …`
+- [ ] `./scripts/build_ipk.sh` (required when packaging is touched)
+- [ ] Manual / hardware validation (detail what you tested):
 
-## Checklist
-- [ ] Base branch is `main` and the branch name follows `feature/*`, `fix/*`, `chore/*`, or `docs/*`
-- [ ] Conventional Commit style title (e.g. `feat(wifi): ...`)
-- [ ] Linked issue or clearly documented reasoning in the description
-- [ ] Updated documentation, defaults, or release notes when applicable
-- [ ] Added or updated tests (unit, integration, or smoke), or marked as not applicable
+## Trunk readiness
+- [ ] Rebased on the latest `main` (`git fetch origin && git rebase origin/main`)
+- [ ] Branch name follows `feature/*`, `fix/*`, `chore/*`, `docs/*`, or `hotfix/*`
+- [ ] Title uses Conventional Commit style (e.g. `feat(wifi): ...`)
+- [ ] `Lint` workflow is green (shfmt + ShellCheck)
+- [ ] `openwrt-build` workflow is green (if build/packaging files changed)
+- [ ] Docs / tests updated or marked not applicable
 
-## Reviewer Notes
+## Additional context
 <!-- Optional: call out areas where you would like focused feedback or potential follow-up work. -->
