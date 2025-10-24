@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC3043 # BusyBox ash and bash-compatible shells provide 'local'
 set -eu
 
 usage() {
@@ -232,12 +233,14 @@ for ipk in "$feed_dir"/*.ipk; do
     [ -f "$ipk" ] || continue
     tmpdir=$(mktemp -d)
     ar p "$ipk" control.tar.gz | tar -C "$tmpdir" -xz
-    cat "$tmpdir/control" >> "$packages_file"
-    echo "Filename: $(basename "$ipk")" >> "$packages_file"
-    echo "Size: $(stat -c%s "$ipk")" >> "$packages_file"
-    echo "MD5sum: $(md5sum "$ipk" | awk '{print $1}')" >> "$packages_file"
-    echo "SHA256sum: $(sha256sum "$ipk" | awk '{print $1}')" >> "$packages_file"
-    echo >> "$packages_file"
+    {
+        cat "$tmpdir/control"
+        echo "Filename: $(basename "$ipk")"
+        echo "Size: $(stat -c%s "$ipk")"
+        echo "MD5sum: $(md5sum "$ipk" | awk '{print $1}')"
+        echo "SHA256sum: $(sha256sum "$ipk" | awk '{print $1}')"
+        echo
+    } >> "$packages_file"
     rm -rf "$tmpdir"
 done
 
