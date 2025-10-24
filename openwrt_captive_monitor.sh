@@ -1,14 +1,19 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd 2>/dev/null || printf '')"
+if (set -o pipefail) 2> /dev/null; then
+    # shellcheck disable=SC3040
+    set -o pipefail
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" 2> /dev/null && pwd 2> /dev/null || printf '')"
 LOCAL_SCRIPT="$SCRIPT_DIR/package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor"
 
 if [ -n "$SCRIPT_DIR" ] && [ -x "$LOCAL_SCRIPT" ]; then
     exec "$LOCAL_SCRIPT" "$@"
 fi
 
-SYSTEM_SCRIPT="$(command -v openwrt_captive_monitor 2>/dev/null || printf '')"
+SYSTEM_SCRIPT="$(command -v openwrt_captive_monitor 2> /dev/null || printf '')"
 if [ -n "$SYSTEM_SCRIPT" ]; then
     exec "$SYSTEM_SCRIPT" "$@"
 fi

@@ -3,12 +3,12 @@
 CONFIG="captive-monitor"
 SECTION="config"
 
-if uci -q get "${CONFIG}.${SECTION}" >/dev/null 2>&1; then
-	rm -f "/etc/uci-defaults/99-captive-monitor"
-	exit 0
+if uci -q get "${CONFIG}.${SECTION}" > /dev/null 2>&1; then
+    rm -f "/etc/uci-defaults/99-captive-monitor"
+    exit 0
 fi
 
-uci -q batch <<'EOF'
+uci -q batch << 'EOF'
 set captive-monitor.config=captive_monitor
 set captive-monitor.config.enabled='0'
 set captive-monitor.config.mode='monitor'
