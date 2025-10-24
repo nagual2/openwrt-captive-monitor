@@ -111,6 +111,10 @@ config captive_monitor 'config'
     option ping_servers '1.1.1.1 8.8.8.8 9.9.9.9'
     option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
     option enable_syslog '1'
+    option lan_interface ''
+    option lan_ip ''
+    option lan_ipv6 ''
+    option firewall_backend 'auto'
 ```
 
 Дополнительные параметры (опционально):
@@ -118,6 +122,8 @@ config captive_monitor 'config'
 - `option lan_interface` — вручную указать LAN-интерфейс, если автоопределение некорректно.
 - `option lan_ip`/`option lan_ipv6` — зафиксировать адреса, если они нестандартные или недоступны до запуска службы.
 - `option firewall_backend` — принудительно выбрать `iptables`/`nftables` (по умолчанию определяется автоматически).
+
+> Значения в примере по умолчанию остаются пустыми, поэтому автоопределение продолжит работать до тех пор, пока вы не зададите конкретные параметры.
 
 Пример включения сервиса и изменения интерфейсов:
 
