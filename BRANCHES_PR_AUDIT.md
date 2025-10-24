@@ -57,7 +57,7 @@ All PRs were fetched via `git fetch origin refs/pull/*/head`. Attempting to merg
 | #11 | `ci(build): fix CI .ipk build, opkg feed, and release workflow for v0.1.1` (`dcecbaa`, 2025-10-23) | `release-v0.1.1-ci-fix-ipk-build-opkg-feed-publish` | +23 / −1 | 23 | Conflicts | Requires rebase after CI consolidation (#6/#12/#13). Keep as release PR until then | P1 |
 | #12 | `ci(openwrt): stabilize .ipk build by ensuring non-interactive SDK config and normalized artifacts` (`785f1dc`, 2025-10-23) | `ci-openwrt-stabilize-ipk-noninteractive-term-artifacts` | +25 / −1 | 25 | Conflicts | Rebase, possibly merge with #13; ensure smaller review units | P1 |
 | #13 | `ci(openwrt-build): fix .ipk build matrix in GitHub Actions, non-interactive SDK config, arch feed, and artifacts` (`9661a7e`, 2025-10-23) | `fix-openwrt-ipk-build-gha-noninteractive-sdk-arch-feed-artifacts` | +27 / −1 | 27 | Conflicts | Overlaps with #12; extract reusable pieces, close duplicates | P1 |
-| #14 | `ci(workflows): fix SDK .ipk CI, matrix feed artifact capture, and update docs` (`cba442f`, 2025-10-24) | `release-v0.1.1-ipk-ci-fix-opkg-feed-ath79-ramips` | +29 / −1 | 29 | Conflicts | Final polish for release; rebase after CI stack settles | P1 |
+| #14 | `ci(workflows): fix SDK .ipk CI, matrix feed artifact capture, and update docs` (`cba442f`, 2025-10-24) | `release-v0.1.1-ipk-ci-fix-opkg-feed-ath79-ramips` | +29 / −1 | 29 | Conflicts | Superseded by `main` merges (#20 @a4b5365, #21 @88aaec5); workflows/docs already landed. Close PR and prune branch. | P1 |
 | #15 | `ci(workflows): restore reliable OpenWrt package CI and doc clarity` (`6dbf114`, 2025-10-24) | `restore-missing-changes-rebase-main` | +29 / −1 | 29 | Conflicts | Evaluate overlap with #11/#14; may be obsolete once earlier branches merge | P1 |
 | #16 | `docs(audit): add audit summary, backlog, and test plan for openwrt-captive-monitor` (`850ff2a`, 2025-10-24) | `audit-openwrt-captive-monitor-plan` | +30 / −1 | 30 | Conflicts | Replace with #17 (already on `main`), or squash into markdown living docs | P2 |
 | #17 | `docs(audit): update audit, backlog, and test plan for OpenWrt 24.x/filogic` (`c4cf5ba`, 2025-10-24) | `audit/captive-monitor-openwrt24-filogic` | +31 / −1 | 31 | Conflicts | Determine whether additional audit info belongs in repo or wiki; rebase vs. close | P2 |
@@ -73,9 +73,9 @@ Use this as a working log while tidying the backlog. Adjust priorities if new in
 - [ ] Rebase PR #2 (`restore/feature-openwrt-captive-monitor-opkg`) after #1 merges; verify packaging on OpenWrt 22.03/23.05.
 
 ### High priority (P1)
-- [ ] Consolidate CI fixes (#6, #7, #8, #9, #11, #12, #13, #14, #15) into a sequenced set of smaller PRs that each pass `Lint` and the SDK build workflow.
+- [ ] Consolidate CI fixes (#6, #7, #8, #9, #11, #12, #13, #15) into a sequenced set of smaller PRs that each pass `Lint` and the SDK build workflow (PR #14 closed as superseded).
 - [ ] Work with contributors whose branches live on forks (PRs #3, #4, #5, #7, #9) to rebase and reopen with the new branching conventions.
-- [ ] After CI hardening, decide which release branches (#11, #14) should remain as long-lived support vs. being replaced with annotated tags.
+- [ ] After CI hardening, decide which release branches (#11) should remain as long-lived support vs. being replaced with annotated tags (PR #14 closed as superseded).
 
 ### When convenient (P2)
 - [ ] Delete stale branches that already landed (`feat-captive-intercept-dns-http-redirect`, `feat/shellcheck-ci-openwrt-ash-fixes`, `feature/*`, `release-v0.1.0-pr-review-build-ipk-opkg-feed`) once tags exist.

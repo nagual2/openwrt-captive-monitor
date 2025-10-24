@@ -1,12 +1,15 @@
 # PR_TRIAGE — 2025-10-24
 
 ## Context
-- Working branch: `triage-2-prs-rebase-ci-fixes-openwrt24`
-- Base commit: `a43b82ad573a35f0f3acd653be9d58f4b11ca9b1` (`main` at the time of triage)
-- Tooling verified via the project "Lint" workflow equivalents (`shfmt`, `shellcheck`).
+- Working branch: `triage/fix-last-failing-pr-openwrt-captive-monitor`
+- Base commit: `88aaec5eeaf1a68d716c6746bedbfb7c3aeb5f2b` (`main` as of 2025-10-24)
+- Tooling verified locally: `shfmt -i 4 -ci -sr -ln=posix` (per `.shfmt.conf`) and `shellcheck -s sh`
+- Prior triage for PRs #1 and #2 (see sections below) landed via PR #21 (`triage-2-prs-rebase-ci-fixes-openwrt24`).
 
 ## Summary
-Both legacy PRs were based on a pre-audit tree that no longer matches `main` (missing packaging layout, init wrappers, lint config, etc.). They also failed to run on OpenWrt 24.x because of BusyBox-specific incompatibilities and incomplete procd wiring. The changes below re-implement their intent on top of the current trunk so the originals can be superseded.
+Both legacy PRs were based on a pre-audit tree that no longer matches `main` (missing packaging layout, init wrappers, lint config, etc.). They also failed to run on OpenWrt 24.x because of BusyBox-specific incompatibilities and incomplete procd wiring. The changes below re-implement their intent on top of the current trunk so the originals can be superseded, and the resulting branch landed on `main` as PR #21.
+
+This pass additionally evaluates PR #14 from the release/CI backlog. Its head predates the audit tree, removes the modern tooling/docs that now exist on `main`, and duplicates workflow fixes already merged via PRs #20 and #21, so closure is recommended instead of a rebase.
 
 ---
 
@@ -36,12 +39,23 @@ Both legacy PRs were based on a pre-audit tree that no longer matches `main` (mi
 
 ---
 
+## PR #14 — `ci(workflows): fix SDK .ipk CI, matrix feed artifact capture, and update docs`
+- Original head: `release-v0.1.1-ipk-ci-fix-opkg-feed-ath79-ramips@cba442f` (+29 / −1 vs pre-audit `main`).
+- Findings:
+  - Branch predates the audit restructure and drops `.editorconfig`, `.github/` templates, procd packaging refactors, and lint config that now live on `main`.
+  - Workflow/doc changes proposed here already exist on `main` via PR #20 (`ci/fix-main-openwrt-captive-monitor@a4b5365`) and PR #21 (`triage-2-prs-rebase-ci-fixes-openwrt24@88aaec5`).
+  - Rebasing would reintroduce obsolete shell code (missing BusyBox 1.36 fixes, quoting, procd cleanup) and fail the current lint gate.
+- Decision / Outcome:
+  - Close PR #14 as superseded; no changes need to be ported.
+  - Leave the modern workflow/docs on `main`, which already publish per-target `Packages_<target>` indexes and `.ipk` artifacts.
+
+---
+
 ## Validation
-- ✅ `shfmt -i 2 -ci -sr -d openwrt_captive_monitor.sh init.d/captive-monitor package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor package/openwrt-captive-monitor/files/etc/init.d/captive-monitor scripts/build_ipk.sh`
-- ✅ `shellcheck -s sh openwrt_captive_monitor.sh init.d/captive-monitor package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor package/openwrt-captive-monitor/files/etc/init.d/captive-monitor scripts/build_ipk.sh`
+- ✅ `shfmt -i 4 -ci -sr -ln=posix -d openwrt_captive_monitor.sh init.d/captive-monitor package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor package/openwrt-captive-monitor/files/etc/init.d/captive-monitor scripts/build_ipk.sh`
+- ✅ `shellcheck -s sh openwrt_captive_monitor.sh init.d/captive-monitor package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor package/openwrt-captive-monitor/files/etc/init.d/captive-monitor scripts/build_ipk.sh` (only SC3040 warnings remain on the guarded `set -o pipefail` check)
 
 ## Next steps
-1. Open a new PR from `triage-2-prs-rebase-ci-fixes-openwrt24` that supersedes legacy PRs #1 and #2, referencing them in the description for traceability.
-2. Close the obsolete branches (`restore/feat-captive-intercept-dns-http-redirect`, `restore/feature-openwrt-captive-monitor-opkg`) once reviewers confirm the replacement PR.
-3. Smoke-test on target hardware (AX3000T / OpenWrt 24.x) to validate nftables + dnsmasq reload behaviour before merge.
-4. After merge, retag release candidates so downstream feeds pick up the triaged package.
+1. Post a closure comment on PR #14 summarising that its workflow/doc fixes already live on `main` (PRs #20/#21) and link back to this triage. Close the PR and delete `release-v0.1.1-ipk-ci-fix-opkg-feed-ath79-ramips`.
+2. Keep consolidating the remaining CI backlog (#6, #8, #9, #11, #12, #13, #15) into rebased, reviewable chunks that pass the current `Lint` + OpenWrt build workflows.
+3. Share the new workflow guidance (README + RELEASE_CHECKLIST) with release owners so they rely on the updated artifact structure going forward.
