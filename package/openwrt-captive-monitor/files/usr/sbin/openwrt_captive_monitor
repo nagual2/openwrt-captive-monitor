@@ -23,10 +23,14 @@ LAN_INTERFACE="${LAN_INTERFACE:-}"
 LAN_IP="${LAN_IP:-}"
 LAN_IPV6="${LAN_IPV6:-}"
 
-# Серверы для проверки интернета
+# Серверы и параметры проверки интернета
 PING_SERVERS="1.1.1.1 8.8.8.8 9.9.9.9"
 PING_COUNT=1
 PING_TIMEOUT=2
+GATEWAY_PING_TIMEOUT=2
+INTERNET_PING_TIMEOUT=3
+HTTP_PROBE_TIMEOUT=5
+INTERNET_HTTP_PROBES="https://www.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt"
 
 # Параметры проверки
 GATEWAY_CHECK_RETRIES=3
@@ -73,6 +77,10 @@ ACTIVE_PORTAL_URL=""
 ACTIVE_PORTAL_HOST=""
 ACTIVE_PORTAL_IP=""
 ACTIVE_PORTAL_IP6=""
+
+# Результаты HTTP-проверок
+HTTP_PROBE_RESULT_URL=""
+HTTP_PROBE_RESULT_CODE=""
 
 # Логирование
 LOG_TAG="captive-monitor"
@@ -367,7 +375,8 @@ dns_lookup_with_host() {
 
 ping_host() {
     local host="$1"
-    ping -c "$PING_COUNT" -W "$PING_TIMEOUT" "$host" > /dev/null 2>&1
+    local timeout="${2:-$PING_TIMEOUT}"
+    ping -c "$PING_COUNT" -W "$timeout" "$host" > /dev/null 2>&1
 }
 
 get_gateway_ip() {
@@ -422,14 +431,15 @@ get_gateway_ip() {
 check_gateway() {
     local attempt=1
     local gateway
+    local delay="$GATEWAY_CHECK_DELAY"
 
     while [ "$attempt" -le "$GATEWAY_CHECK_RETRIES" ]; do
         if gateway=$(get_gateway_ip); then
+            if [ -n "$gateway" ] && ping_host "$gateway" "$GATEWAY_PING_TIMEOUT"; then
+                log_info "Шлюз $gateway доступен"
+                return 0
+            fi
             if [ -n "$gateway" ]; then
-                if ping_host "$gateway"; then
-                    log_info "Шлюз $gateway доступен"
-                    return 0
-                fi
                 log_warn "Шлюз $gateway не отвечает (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
             else
                 log_warn "Шлюз не найден (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
@@ -438,30 +448,79 @@ check_gateway() {
             gateway=""
             log_warn "Шлюз не найден (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
         fi
+
+        if [ "$attempt" -lt "$GATEWAY_CHECK_RETRIES" ]; then
+            log_info "Повторная проверка шлюза через ${delay}с (попытка $((attempt + 1))/$GATEWAY_CHECK_RETRIES)"
+            sleep "$delay"
+            delay=$((delay * 2))
+        fi
+
         attempt=$((attempt + 1))
-        [ "$attempt" -le "$GATEWAY_CHECK_RETRIES" ] && sleep "$GATEWAY_CHECK_DELAY"
     done
 
     log_error "Шлюз недоступен после $GATEWAY_CHECK_RETRIES попыток"
     return 1
 }
 
+http_probe_internet() {
+    local url
+    local status
+
+    HTTP_PROBE_RESULT_URL=""
+    HTTP_PROBE_RESULT_CODE=""
+
+    if [ -z "$INTERNET_HTTP_PROBES" ]; then
+        return 1
+    fi
+
+    if ! command -v curl > /dev/null 2>&1; then
+        return 1
+    fi
+
+    for url in $INTERNET_HTTP_PROBES; do
+        status=$(curl -sS -o /dev/null -m "$HTTP_PROBE_TIMEOUT" -w '%{http_code}' "$url" 2> /dev/null || printf '')
+        case "$status" in
+            2?? | 3??)
+                HTTP_PROBE_RESULT_URL="$url"
+                HTTP_PROBE_RESULT_CODE="$status"
+                return 0
+                ;;
+        esac
+    done
+
+    return 1
+}
+
 check_internet() {
     local attempt=1
     local server
+    local delay="$INTERNET_CHECK_DELAY"
 
     while [ "$attempt" -le "$INTERNET_CHECK_RETRIES" ]; do
         for server in $PING_SERVERS; do
-            if ping_host "$server"; then
-                log_info "Интернет доступен (сервер: $server)"
+            if ping_host "$server" "$INTERNET_PING_TIMEOUT"; then
+                log_info "Интернет доступен по ICMP (сервер: $server)"
                 return 0
             fi
         done
+
+        if http_probe_internet; then
+            local probe_url="$HTTP_PROBE_RESULT_URL"
+            local probe_code="$HTTP_PROBE_RESULT_CODE"
+            [ -z "$probe_url" ] && probe_url="unknown"
+            [ -z "$probe_code" ] && probe_code="n/a"
+            log_info "Интернет доступен по HTTP/HTTPS (probe: $probe_url, статус: $probe_code)"
+            return 0
+        fi
+
+        if [ "$attempt" -lt "$INTERNET_CHECK_RETRIES" ]; then
+            log_warn "Интернет недоступен (попытка $attempt/$INTERNET_CHECK_RETRIES)"
+            log_info "Повторная проверка через ${delay}с (попытка $((attempt + 1))/$INTERNET_CHECK_RETRIES)"
+            sleep "$delay"
+            delay=$((delay * 2))
+        fi
+
         attempt=$((attempt + 1))
-        [ "$attempt" -le "$INTERNET_CHECK_RETRIES" ] && {
-            log_warn "Интернет недоступен, повтор через ${INTERNET_CHECK_DELAY}с (попытка $((attempt - 1))/$INTERNET_CHECK_RETRIES)"
-            sleep "$INTERNET_CHECK_DELAY"
-        }
     done
 
     log_warn "Интернет недоступен после $INTERNET_CHECK_RETRIES попыток"
@@ -528,7 +587,7 @@ restart_wifi_physical() {
         if is_interface_up "$iface" && ip -4 addr show dev "$iface" | grep -q 'inet '; then
             log_info "Интерфейс $iface получил IP адрес"
             if gateway=$(get_gateway_ip "$iface"); then
-                if [ -n "$gateway" ] && ping_host "$gateway"; then
+                if [ -n "$gateway" ] && ping_host "$gateway" "$GATEWAY_PING_TIMEOUT"; then
                     log_info "Шлюз $gateway доступен, интерфейс готов"
                     return 0
                 fi
