@@ -14,6 +14,8 @@ The repository follows a **trunk-based** workflow centred on the `main` branch. 
    - `fix/<short-description>` for bug fixes or regressions
    - `chore/<short-description>` for tooling, CI, or maintenance work
    - `docs/<short-description>` for documentation-only updates
+   - `hotfix/<short-description>` for urgent production fixes that must land ahead of the regular release cadence
+   Refer to [`BRANCHES_AND_MERGE_POLICY.md`](./BRANCHES_AND_MERGE_POLICY.md) for the latest merge sequencing, branch protection checklist, and cleanup tasks.
 3. Prefer incremental pull requests (aim for < ~300 lines of net change). Split large efforts into multiple PRs that can be reviewed independently.
 4. Avoid long-lived release branches. If you need to ship a hotfix, branch from the appropriate tag, cherry-pick the fix, release, and merge the change back into `main` immediately afterwards.
 
@@ -71,7 +73,8 @@ Repository administrators should keep the following settings enabled on `main`:
 - ✅ Require pull request reviews before merging (minimum 1 approval).
 - ✅ Require status checks to pass before merging and select:
   - `Lint` (shellcheck + shfmt)
-  - Any packaging/release workflows relevant to the change
+  - `openwrt-build` (OpenWrt SDK packaging matrix)
+  - Any additional packaging or release workflows relevant to the change
 - ✅ Dismiss stale approvals when new commits are pushed.
 - ✅ Restrict who can push directly to `main` (typically only maintainers). Everyone else should go through PRs.
 - ✅ Automatically delete branches after a pull request is merged.
