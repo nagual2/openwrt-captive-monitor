@@ -498,14 +498,6 @@ resolve_portal_ipv4() {
         dns=""
     fi
 
-    if [ -n "$dns" ] && command -v resolveip > /dev/null 2>&1; then
-        ip=$(resolveip -s "$dns" "$host" 2> /dev/null | grep -v ':' | head -n1)
-        if [ -n "$ip" ]; then
-            echo "$ip"
-            return 0
-        fi
-    fi
-
     if [ -n "$dns" ] && command -v nslookup > /dev/null 2>&1; then
         ip=$(nslookup "$host" "$dns" 2> /dev/null | awk '/^Address[[:space:]]*[0-9]*:/ {print $3} /^Address: / {print $2}' | grep -v ':' | tail -n1)
         if [ -n "$ip" ]; then
@@ -540,14 +532,6 @@ resolve_portal_ipv6() {
     dns=""
     if ! dns=$(get_upstream_dns); then
         dns=""
-    fi
-
-    if [ -n "$dns" ] && command -v resolveip > /dev/null 2>&1; then
-        ip=$(resolveip -s "$dns" "$host" 2> /dev/null | grep ':' | head -n1)
-        if [ -n "$ip" ]; then
-            echo "$ip"
-            return 0
-        fi
     fi
 
     if [ -n "$dns" ] && command -v nslookup > /dev/null 2>&1; then
