@@ -5,12 +5,15 @@ on:
     branches:
       - main
       - 'feature/*'
+      - 'fix/*'
+      - 'chore/*'
+      - 'docs/*'
+      - 'hotfix/*'
     tags:
       - 'v*'
   pull_request:
     branches:
       - main
-      - 'feature/*'
 
 permissions:
   contents: read
