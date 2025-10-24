@@ -4,6 +4,7 @@
 *.tmp
 *.bak
 *.swp
+shell-files.txt
 
 # macOS
 .DS_Store
