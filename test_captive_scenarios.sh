@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+# shellcheck shell=ash
 # Captive Portal Test Scenarios for OpenWrt Captive Monitor
 # Usage: ./test_captive_scenarios.sh [SCENARIO]
 #

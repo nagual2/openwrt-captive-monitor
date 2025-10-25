@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck shell=ash
 # shellcheck disable=SC3043 # BusyBox ash and bash-compatible shells provide 'local'
 set -eu
 
