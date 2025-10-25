@@ -2,6 +2,7 @@
 # shellcheck shell=ash
 # shellcheck disable=SC2039
 # shellcheck disable=SC2086
+# shellcheck disable=SC2046
 # Captive Portal Test Scenarios for OpenWrt Captive Monitor
 # Usage: ./test_captive_scenarios.sh [SCENARIO]
 #
