@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+# shellcheck shell=ash
 # OpenWrt Captive Monitor Test Suite
 # Usage: ./test_captive_monitor.sh [OPTIONS]
 #
@@ -147,18 +148,13 @@ build_package() {
     else
         # On Debian, download from GitHub Actions or use build_ipk.sh
         log "Downloading from GitHub Actions..."
-        LATEST_RUN=$(curl -s "https://api.github.com/repos/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml/runs?per_page=1" | \
-                    jq -r '.workflow_runs[0].artifacts_url // empty')
-
-        if [ -n "$LATEST_RUN" ] && [ "$LATEST_RUN" != "null" ]; then
-            # Try to download artifacts (this might not work without authentication)
-            warning "GitHub API available but may require authentication for artifact download"
-        fi
+        # Note: GitHub API download requires authentication, skipping for now
+        warning "GitHub API download requires authentication - using build_ipk.sh instead"
 
         # Fallback: use build_ipk.sh if available
         if [ -f "${PROJECT_ROOT}/scripts/build_ipk.sh" ]; then
             cd "${PROJECT_ROOT}"
-            bash scripts/build_ipk.sh --arch "${TARGET_ARCH}" --feed-root "${BUILD_DIR}"
+            sh scripts/build_ipk.sh --arch "${TARGET_ARCH}" --feed-root "${BUILD_DIR}"
         fi
     fi
 
@@ -273,7 +269,7 @@ BUILD_ONLY=false
 INSTALL_ONLY=false
 TEST_ONLY=false
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
     case $1 in
         --build-only)
             BUILD_ONLY=true
