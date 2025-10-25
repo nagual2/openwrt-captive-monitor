@@ -1,9 +1,5 @@
 #!/bin/sh
 # shellcheck shell=ash
-# shellcheck disable=SC2039
-# shellcheck disable=SC2086
-# shellcheck disable=SC2046
-# shellcheck disable=SC2120
 set -eu
 
 if (set -o pipefail) 2> /dev/null; then
