@@ -1,19 +1,22 @@
 ## Summary
-<!-- What does this change do? Provide a concise overview that reviewers can skim. -->
+<!-- Provide a concise overview that reviewers can skim quickly. -->
 
 ## Testing
-<!-- Describe how you validated the change. Paste command output when possible. -->
-- [ ] `shfmt -d …` (or `shfmt -w` before committing)
+<!-- Paste command output where useful. Mark non-applicable items with N/A. -->
+- [ ] `shfmt -d …` (or `shfmt -w` locally before committing)
 - [ ] `shellcheck …`
 - [ ] `./scripts/build_ipk.sh` (required when packaging is touched)
 - [ ] Manual / hardware validation (detail what you tested):
+
+## CI status
+- [ ] `Lint / Shell lint` workflow run is green
+- [ ] `Build OpenWrt packages / Build (ath79-generic)` is green (if packaging files changed)
+- [ ] `Build OpenWrt packages / Build (ramips-mt7621)` is green (if packaging files changed)
 
 ## Trunk readiness
 - [ ] Rebased on the latest `main` (`git fetch origin && git rebase origin/main`)
 - [ ] Branch name follows `feature/*`, `fix/*`, `chore/*`, `docs/*`, or `hotfix/*`
 - [ ] Title uses Conventional Commit style (e.g. `feat(wifi): ...`)
-- [ ] `Lint` workflow is green (shfmt + ShellCheck)
-- [ ] `openwrt-build` workflow is green (if build/packaging files changed)
 - [ ] Docs / tests updated or marked not applicable
 
 ## Additional context
