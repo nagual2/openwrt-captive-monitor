@@ -1,5 +1,7 @@
 #!/bin/sh
 # shellcheck shell=ash
+# shellcheck disable=SC2039
+# shellcheck disable=SC2086
 
 CONFIG="captive-monitor"
 SECTION="config"

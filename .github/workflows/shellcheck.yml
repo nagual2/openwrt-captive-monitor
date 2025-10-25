@@ -38,34 +38,56 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Find all .sh files and files with shell shebang
-          while IFS= read -r -d '' file; do
-            if [ -f "$file" ]; then
-              # Check if file has shell shebang
-              if head -n 1 "$file" 2>/dev/null | grep -qE '^#!/.*sh\b'; then
-                echo "$file"
-              fi
-            fi
-          done < <(git ls-files -z '*.sh' 'init.d/*' 'scripts/*' 'test_*.sh') > shell-files.txt
+          # Find all shell scripts using basic POSIX commands
+          files=""
 
-          # Add specific files that are known to be shell scripts
-          for file in \
-            "package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor" \
-            "package/openwrt-captive-monitor/files/etc/init.d/captive-monitor" \
-            "package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor" \
-            "openwrt_captive_monitor.sh"
-          do
+          # Check .sh files
+          for file in $(git ls-files '*.sh'); do
             if [ -f "$file" ] && head -n 1 "$file" 2>/dev/null | grep -qE '^#!/.*sh\b'; then
-              echo "$file" >> shell-files.txt
+              files="$files $file"
             fi
           done
 
-          # Count files
-          file_count=$(wc -l < shell-files.txt 2>/dev/null || echo "0")
-          if [ "$file_count" -eq 0 ]; then
-            echo "count=0" >> "$GITHUB_OUTPUT"
+          # Check init.d files
+          for file in $(git ls-files 'init.d/*'); do
+            if [ -f "$file" ] && head -n 1 "$file" 2>/dev/null | grep -qE '^#!/.*sh\b'; then
+              files="$files $file"
+            fi
+          done
+
+          # Check scripts directory
+          for file in $(git ls-files 'scripts/*'); do
+            if [ -f "$file" ] && head -n 1 "$file" 2>/dev/null | grep -qE '^#!/.*sh\b'; then
+              files="$files $file"
+            fi
+          done
+
+          # Check test scripts
+          for file in $(git ls-files 'test_*.sh'); do
+            if [ -f "$file" ] && head -n 1 "$file" 2>/dev/null | grep -qE '^#!/.*sh\b'; then
+              files="$files $file"
+            fi
+          done
+
+          # Check specific known shell scripts (without .sh extension)
+          for file in \
+            "openwrt_captive_monitor.sh" \
+            "package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor" \
+            "package/openwrt-captive-monitor/files/etc/init.d/captive-monitor" \
+            "package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor"
+          do
+            if [ -f "$file" ] && head -n 1 "$file" 2>/dev/null | grep -qE '^#!/.*sh\b'; then
+              files="$files $file"
+            fi
+          done
+
+          # Remove leading space and save files
+          files=$(echo "$files" | sed 's/^ *//')
+          if [ -n "$files" ]; then
+            echo "$files" | tr ' ' '\n' > shell-files.txt
+            echo "count=$(echo "$files" | wc -w)" >> "$GITHUB_OUTPUT"
           else
-            echo "count=$file_count" >> "$GITHUB_OUTPUT"
+            echo "count=0" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run shfmt
@@ -76,7 +98,7 @@ jobs:
           while IFS= read -r line; do
             shfmt_args+=("$line")
           done < <(grep -Ev '^\s*(#|$)' .shfmt.conf || true)
-          if [ "${#shfmt_args[@]}" -eq 0 ]; then
+          if [ ${#shfmt_args[@]} -eq 0 ]; then
             shfmt_args=(-i=4 -ci -sr -ln=posix)
           fi
           # Read files from shell-files.txt (one per line)
