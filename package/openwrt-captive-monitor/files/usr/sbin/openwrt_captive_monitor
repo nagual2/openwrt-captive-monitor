@@ -1,17 +1,6 @@
 #!/bin/sh
 # shellcheck shell=ash
-# shellcheck disable=SC3043
 # shellcheck disable=SC2039 # In POSIX sh, 'local' is undefined
-# shellcheck disable=SC3057 # In POSIX sh, string indexing is undefined
-# shellcheck disable=SC2086 # Double quote to prevent globbing and word splitting
-# shellcheck disable=SC2153 # Possible misspelling: REQUESTED_FIREWALL_BACKEND may not be assigned
-# shellcheck disable=SC3053 # In POSIX sh, indirect expansion is undefined
-# shellcheck disable=SC2009 # Consider using pgrep instead of grepping ps output
-# shellcheck disable=SC2046 # Quote this to prevent word splitting
-# shellcheck disable=SC2162 # read without -r will mangle backslashes
-# shellcheck disable=SC2034 # Variable appears unused
-# shellcheck disable=SC2059 # Don't use variables in the printf format string
-# shellcheck disable=SC2120 # Argument is empty or undefined
 set -eu
 
 if (set -o pipefail) 2> /dev/null; then

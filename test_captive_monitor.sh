@@ -1,8 +1,5 @@
 #!/bin/sh
 # shellcheck shell=ash
-# shellcheck disable=SC2039
-# shellcheck disable=SC2086
-# shellcheck disable=SC2046
 # OpenWrt Captive Monitor Test Suite
 # Usage: ./test_captive_monitor.sh [OPTIONS]
 #
