@@ -37,20 +37,35 @@ jobs:
         id: targets
         run: |
           set -euo pipefail
-          mapfile -d '' -t files < <(
-            git ls-files -z \
-              '*.sh' \
-              'init.d/*' \
-              'package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor' \
-              'package/openwrt-captive-monitor/files/etc/init.d/*' \
-              'package/openwrt-captive-monitor/files/etc/uci-defaults/*' \
-              'scripts/*.sh'
-          )
-          if [ "${#files[@]}" -eq 0 ]; then
+
+          # Find all .sh files and files with shell shebang
+          while IFS= read -r -d '' file; do
+            if [ -f "$file" ]; then
+              # Check if file has shell shebang
+              if head -n 1 "$file" 2>/dev/null | grep -qE '^#!/.*sh\b'; then
+                echo "$file"
+              fi
+            fi
+          done < <(git ls-files -z '*.sh' 'init.d/*' 'scripts/*' 'test_*.sh') > shell-files.txt
+
+          # Add specific files that are known to be shell scripts
+          for file in \
+            "package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor" \
+            "package/openwrt-captive-monitor/files/etc/init.d/captive-monitor" \
+            "package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor" \
+            "openwrt_captive_monitor.sh"
+          do
+            if [ -f "$file" ] && head -n 1 "$file" 2>/dev/null | grep -qE '^#!/.*sh\b'; then
+              echo "$file" >> shell-files.txt
+            fi
+          done
+
+          # Count files
+          file_count=$(wc -l < shell-files.txt 2>/dev/null || echo "0")
+          if [ "$file_count" -eq 0 ]; then
             echo "count=0" >> "$GITHUB_OUTPUT"
           else
-            printf '%s\0' "${files[@]}" > shell-files.txt
-            echo "count=${#files[@]}" >> "$GITHUB_OUTPUT"
+            echo "count=$file_count" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run shfmt
@@ -64,20 +79,32 @@ jobs:
           if [ "${#shfmt_args[@]}" -eq 0 ]; then
             shfmt_args=(-i=4 -ci -sr -ln=posix)
           fi
-          mapfile -d '' -t files < shell-files.txt
+          # Read files from shell-files.txt (one per line)
+          files=()
+          while IFS= read -r line; do
+            [ -n "$line" ] && files+=("$line")
+          done < shell-files.txt
           shfmt "${shfmt_args[@]}" -d "${files[@]}"
 
       - name: Run ShellCheck
         if: steps.targets.outputs.count != '0'
         run: |
           set -euo pipefail
-          mapfile -d '' -t files < shell-files.txt
+          # Read files from shell-files.txt (one per line)
+          files=()
+          while IFS= read -r line; do
+            [ -n "$line" ] && files+=("$line")
+          done < shell-files.txt
           shellcheck "${files[@]}"
 
       - name: Validate init scripts are POSIX-parseable
         run: |
           set -euo pipefail
           sh -n init.d/captive-monitor
+          sh -n openwrt_captive_monitor.sh
+          sh -n scripts/build_ipk.sh
+          sh -n test_captive_monitor.sh
+          sh -n test_captive_scenarios.sh
           sh -n package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor
           sh -n package/openwrt-captive-monitor/files/etc/init.d/captive-monitor
           sh -n package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor

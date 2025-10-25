@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck shell=ash
 set -eu
 
 if (set -o pipefail) 2> /dev/null; then
