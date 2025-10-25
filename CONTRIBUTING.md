@@ -61,7 +61,7 @@ Trunk-based development keeps the integration surface small, which is important 
 - Fill out the PR template. It captures the summary, testing evidence, and review checklist all in one place.
 - Link the relevant issue or explain the motivation in the summary so that reviewers have context.
 - Request at least one reviewer (see [`CODEOWNERS`](./.github/CODEOWNERS)) and wait for an approval before merging. Self-approval is reserved for docs-only or CI-only changes with no risk.
-- Ensure the **Lint** workflow (shfmt + ShellCheck) passes. Additional workflows (packaging, release automation) may run depending on the files you touched.
+- Ensure the GitHub Actions jobs `Lint / Shell lint`, `Build OpenWrt packages / Build (ath79-generic)`, and `Build OpenWrt packages / Build (ramips-mt7621)` (when packaging files change) finish green.
 - Squash-and-merge is the default. If a branch contains several independently useful commits, mention it explicitly in the PR so the reviewer can choose "Rebase and merge" instead.
 
 ---
@@ -72,11 +72,15 @@ Repository administrators should keep the following settings enabled on `main`:
 
 - ✅ Require pull request reviews before merging (minimum 1 approval).
 - ✅ Require status checks to pass before merging and select:
-  - `Lint` (shellcheck + shfmt)
-  - `openwrt-build` (OpenWrt SDK packaging matrix)
+  - `Lint / Shell lint`
+  - `Build OpenWrt packages / Build (ath79-generic)`
+  - `Build OpenWrt packages / Build (ramips-mt7621)`
   - Any additional packaging or release workflows relevant to the change
+- ✅ Require branches to be up to date before merging.
+- ✅ Require linear history.
 - ✅ Dismiss stale approvals when new commits are pushed.
 - ✅ Restrict who can push directly to `main` (typically only maintainers). Everyone else should go through PRs.
+- ✅ Allow only squash merges (disable merge commits and rebase merges).
 - ✅ Automatically delete branches after a pull request is merged.
 
 These checks keep the branch healthy and ensure contributors get feedback quickly.
