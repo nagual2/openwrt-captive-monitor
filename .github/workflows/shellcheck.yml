@@ -88,6 +88,7 @@ jobs:
           set -euo pipefail
           # Read files from shell-files.txt (one per line)
           files=$(cat shell-files.txt | tr '\n' ' ')
+          # shellcheck disable=SC2086 # We need word splitting for shellcheck arguments
           shellcheck $files
 
       - name: Validate OpenWrt scripts are POSIX-parseable

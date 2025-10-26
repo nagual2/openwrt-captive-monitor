@@ -64,6 +64,7 @@ test_openwrt_scripts() {
 package/${PACKAGE_NAME}/files/usr/sbin/openwrt_captive_monitor"
 
     for script in $scripts; do
+        # shellcheck disable=SC2091 # We need to check script syntax with sh -n
         if ! sh -n "$PROJECT_ROOT/$script" 2>/dev/null; then
             error "Syntax error in $script"
         fi

@@ -42,6 +42,7 @@ test_main_script() {
         error "Main script not found: $main_script"
     fi
 
+    # shellcheck disable=SC2091 # We need to check script syntax with sh -n
     if ! sh -n "$main_script" 2>/dev/null; then
         error "Main script has syntax errors"
     fi
@@ -74,6 +75,7 @@ test_init_script() {
         error "Init script not found: $init_script"
     fi
 
+    # shellcheck disable=SC2091 # We need to check script syntax with sh -n
     if ! sh -n "$init_script" 2>/dev/null; then
         error "Init script has syntax errors"
     fi
@@ -89,6 +91,7 @@ test_uci_defaults() {
         error "UCI defaults not found: $uci_defaults"
     fi
 
+    # shellcheck disable=SC2091 # We need to check script syntax with sh -n
     if ! sh -n "$uci_defaults" 2>/dev/null; then
         error "UCI defaults has syntax errors"
     fi
