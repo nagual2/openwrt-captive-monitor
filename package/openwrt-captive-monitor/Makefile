@@ -34,13 +34,13 @@ endef
 
 define Package/openwrt-captive-monitor/install
     $(INSTALL_DIR) $(1)/usr/sbin
-    $(INSTALL_BIN) $(CURDIR)/files/usr/sbin/openwrt_captive_monitor $(1)/usr/sbin/openwrt_captive_monitor
+    $(INSTALL_BIN) ./files/usr/sbin/openwrt_captive_monitor $(1)/usr/sbin/openwrt_captive_monitor
     $(INSTALL_DIR) $(1)/etc/init.d
-    $(INSTALL_BIN) $(CURDIR)/files/etc/init.d/captive-monitor $(1)/etc/init.d/captive-monitor
+    $(INSTALL_BIN) ./files/etc/init.d/captive-monitor $(1)/etc/init.d/captive-monitor
     $(INSTALL_DIR) $(1)/etc/config
-    $(INSTALL_CONF) $(CURDIR)/files/etc/config/captive-monitor $(1)/etc/config/captive-monitor
+    $(INSTALL_CONF) ./files/etc/config/captive-monitor $(1)/etc/config/captive-monitor
     $(INSTALL_DIR) $(1)/etc/uci-defaults
-    $(INSTALL_BIN) $(CURDIR)/files/etc/uci-defaults/99-captive-monitor $(1)/etc/uci-defaults/99-captive-monitor
+    $(INSTALL_BIN) ./files/etc/uci-defaults/99-captive-monitor $(1)/etc/uci-defaults/99-captive-monitor
 endef
 
 define Package/openwrt-captive-monitor/postinst
