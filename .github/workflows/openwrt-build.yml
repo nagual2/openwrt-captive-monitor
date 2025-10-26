@@ -141,45 +141,15 @@ jobs:
           TARGET_ID="${{ matrix.target_id }}"
           TARGET_PREFIX="${TARGET}-${SUBTARGET}"
           PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
-          # Copy package files to SDK
-          PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
-          echo "Copying package $PACKAGE_NAME files to SDK..."
-
-          # Copy the entire package directory structure
-          cp -r "$GITHUB_WORKSPACE/package/$PACKAGE_NAME" "$SDK_DIR/package/"
-
-          # Verify package was copied completely
-          if [ ! -d "$SDK_DIR/package/$PACKAGE_NAME" ]; then
-            echo "Package directory not found after copy"
-            ls -la "$SDK_DIR/package/" || true
-            exit 1
-          fi
-
-          if [ ! -f "$SDK_DIR/package/$PACKAGE_NAME/Makefile" ]; then
-            echo "Makefile not found in copied package"
-            ls -la "$SDK_DIR/package/$PACKAGE_NAME/" || true
-            exit 1
-          fi
-
-          # Check that all required files are present
-          if [ ! -d "$SDK_DIR/package/$PACKAGE_NAME/files" ]; then
-            echo "Package files directory missing"
-            exit 1
-          fi
-
-          echo "Package structure:"
-          find "$SDK_DIR/package/$PACKAGE_NAME" -type f | head -20
-
-          echo "Package copied successfully"
-
-          # Build package
-          pushd "$SDK_DIR"
-          export TERM=dumb
+          # Copy package to packages feed (more reliable approach)
+          echo "Copying package to packages feed..."
+          mkdir -p "$SDK_DIR/feeds/packages/net"
+          cp -r "$GITHUB_WORKSPACE/package/openwrt-captive-monitor" "$SDK_DIR/feeds/packages/net/"
 
           # Update feeds and install our package
           echo "Updating feeds..."
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          ./scripts/feeds update packages
+          ./scripts/feeds install -p packages openwrt-captive-monitor
 
           # Create config with our package enabled
           cat <<EOF > .config
@@ -188,23 +158,21 @@ jobs:
           CONFIG_TARGET_MULTI_PROFILE=y
           CONFIG_ALL=n
           CONFIG_ALL_KMODS=n
-          CONFIG_PACKAGE_${PACKAGE_NAME}=m
+          CONFIG_PACKAGE_${PACKAGE_NAME//-/_}=m
           EOF
 
           echo "Running make defconfig..."
           make defconfig
 
           echo "Checking if package is available..."
-          make package/${PACKAGE_NAME}/list
+          make package/feeds/packages/net/${PACKAGE_NAME}/list
 
           echo "Compiling package..."
-          make V=sc -j"$(nproc)" package/${PACKAGE_NAME}/compile
+          make V=sc -j"$(nproc)" package/feeds/packages/net/${PACKAGE_NAME}/compile
 
           echo "Creating package index..."
           make V=s package/index
           popd
-
-          # Prepare artifacts
           ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts/$TARGET_ID"
           mkdir -p "$ARTIFACT_DIR"
 
