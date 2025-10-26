@@ -14,7 +14,6 @@ if [ -n "$SCRIPT_DIR" ] && [ -x "$LOCAL_SCRIPT" ]; then
     exec "$LOCAL_SCRIPT" "$@"
 fi
 
-SYSTEM_SCRIPT="$(command -v openwrt_captive_monitor 2> /dev/null || printf '')"
 if [ -n "$SYSTEM_SCRIPT" ]; then
     exec "$SYSTEM_SCRIPT" "$@"
 fi
