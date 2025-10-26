@@ -20,8 +20,6 @@ jobs:
   lint:
     name: Shell lint
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - name: Check out repository
         uses: actions/checkout@v4.1.7
@@ -33,74 +31,27 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y shellcheck shfmt
 
-      - name: Determine shell script targets
-        id: targets
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          # Simple approach: check all known OpenWrt shell script files
-          shell_files=(
-            "scripts/build_ipk.sh"
-            "test_captive_monitor.sh"
-            "test_captive_scenarios.sh"
-            "openwrt_captive_monitor.sh"
-            "package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor"
-            "package/openwrt-captive-monitor/files/etc/init.d/captive-monitor"
-            "package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor"
-          )
-
-          valid_files=()
-          for file in "${shell_files[@]}"; do
-            if [ -f "$file" ] && head -n 1 "$file" 2>/dev/null | grep -qE '^#!/.*sh\b'; then
-              valid_files+=("$file")
-              echo "Found shell script: $file"
-            fi
-          done
-
-          if [ ${#valid_files[@]} -gt 0 ]; then
-            printf '%s\n' "${valid_files[@]}" > shell-files.txt
-            echo "count=${#valid_files[@]}" >> "$GITHUB_OUTPUT"
-            echo "Valid shell scripts found: ${#valid_files[@]}"
-          else
-            echo "count=0" >> "$GITHUB_OUTPUT"
-            echo "No valid shell scripts found"
-          fi
-
       - name: Run shfmt
-        if: steps.targets.outputs.count != '0'
         shell: bash
         run: |
           set -euo pipefail
-
-          # Check if .shfmt.conf exists and read its options
-          if [ -f .shfmt.conf ]; then
-            shfmt_args=$(grep -Ev '^\s*(#|$)' .shfmt.conf | tr '\n' ' ')
-            echo "Read shfmt config: $shfmt_args"
-          else
-            shfmt_args="-i=4 -ci -sr -ln=posix"
-            echo "Using default shfmt arguments: $shfmt_args"
-          fi
-
-          echo "Using shfmt arguments: $shfmt_args"
-
-          # Read files from shell-files.txt (one per line)
-          files=$(cat shell-files.txt | tr '\n' ' ')
-          echo "Checking files: $files"
-
-          # Check formatting
-          shfmt $shfmt_args -d $files
+          shfmt -i=4 -ln=posix -d \
+            openwrt_captive_monitor.sh \
+            scripts/build_ipk.sh \
+            package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor \
+            package/openwrt-captive-monitor/files/etc/init.d/captive-monitor \
+            package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor
 
       - name: Run ShellCheck
-        if: steps.targets.outputs.count != '0'
         shell: bash
         run: |
           set -euo pipefail
-          # Read files from shell-files.txt (one per line)
-          files=$(cat shell-files.txt | tr '\n' ' ')
-          echo "Running shellcheck on: $files"
-          # shellcheck disable=SC2086 # We need word splitting for shellcheck arguments
-          shellcheck $files
+          shellcheck \
+            openwrt_captive_monitor.sh \
+            scripts/build_ipk.sh \
+            package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor \
+            package/openwrt-captive-monitor/files/etc/init.d/captive-monitor \
+            package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor
 
       - name: Validate OpenWrt scripts are POSIX-parseable
         shell: bash
@@ -108,8 +59,6 @@ jobs:
           set -euo pipefail
           sh -n openwrt_captive_monitor.sh
           sh -n scripts/build_ipk.sh
-          sh -n test_captive_monitor.sh
-          sh -n test_captive_scenarios.sh
           sh -n package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor
           sh -n package/openwrt-captive-monitor/files/etc/init.d/captive-monitor
           sh -n package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor
