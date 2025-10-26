@@ -1,4 +1,6 @@
 #!/bin/sh
+# shellcheck shell=bash
+# shellcheck disable=SC3043 # BusyBox ash and bash-compatible shells provide 'local'
 # shellcheck shell=ash
 # shellcheck disable=SC2039 # In POSIX sh, 'local' is undefined
 set -eu
@@ -230,7 +232,7 @@ execute_with_timeout() {
     shift
 
     case "$duration" in
-        ""|0)
+        "" | 0)
             "$@"
             ;;
         *)
