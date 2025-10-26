@@ -141,12 +141,14 @@ jobs:
           TARGET_ID="${{ matrix.target_id }}"
           TARGET_PREFIX="${TARGET}-${SUBTARGET}"
           PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
-          # Copy package to SDK
+          # Copy package files to SDK
           PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
-          echo "Copying package $PACKAGE_NAME to SDK..."
+          echo "Copying package $PACKAGE_NAME files to SDK..."
+
+          # Copy the entire package directory structure
           cp -r "$GITHUB_WORKSPACE/package/$PACKAGE_NAME" "$SDK_DIR/package/"
 
-          # Verify package was copied
+          # Verify package was copied completely
           if [ ! -d "$SDK_DIR/package/$PACKAGE_NAME" ]; then
             echo "Package directory not found after copy"
             ls -la "$SDK_DIR/package/" || true
@@ -159,8 +161,16 @@ jobs:
             exit 1
           fi
 
+          # Check that all required files are present
+          if [ ! -d "$SDK_DIR/package/$PACKAGE_NAME/files" ]; then
+            echo "Package files directory missing"
+            exit 1
+          fi
+
+          echo "Package structure:"
+          find "$SDK_DIR/package/$PACKAGE_NAME" -type f | head -20
+
           echo "Package copied successfully"
-          ls -la "$SDK_DIR/package/$PACKAGE_NAME/"
 
           # Build package
           pushd "$SDK_DIR"
@@ -183,6 +193,9 @@ jobs:
 
           echo "Running make defconfig..."
           make defconfig
+
+          echo "Checking if package is available..."
+          make package/${PACKAGE_NAME}/list
 
           echo "Compiling package..."
           make V=sc -j"$(nproc)" package/${PACKAGE_NAME}/compile
