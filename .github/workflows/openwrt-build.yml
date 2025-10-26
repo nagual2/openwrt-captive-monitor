@@ -96,10 +96,16 @@ jobs:
           TARGET_ID="${{ matrix.target_id }}"
           TARGET_PREFIX="${TARGET}-${SUBTARGET}"
           PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
+
+          # Copy package to SDK
           cp -r "$GITHUB_WORKSPACE/package/$PACKAGE_NAME" "$SDK_DIR/package/"
+
+          # Build package
           pushd "$SDK_DIR"
           export TERM=dumb
           ./scripts/feeds update -a && ./scripts/feeds install -a
+
+          # Create config
           cat <<EOF > .config
           CONFIG_TARGET_${TARGET}=y
           CONFIG_TARGET_${TARGET}_${SUBTARGET}=y
@@ -108,64 +114,26 @@ jobs:
           CONFIG_ALL_KMODS=n
           CONFIG_PACKAGE_${PACKAGE_NAME}=m
           EOF
+
           make defconfig
           make V=sc -j"$(nproc)" package/${PACKAGE_NAME}/compile
           make V=s package/index
           popd
+
+          # Prepare artifacts
           ARCH="${{ matrix.arch_packages }}"
           ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts/$TARGET_ID"
           mkdir -p "$ARTIFACT_DIR"
-          search_dirs=()
-          for arch_dir in "$ARCH" all; do
-            if [ -d "$SDK_DIR/bin/packages/$arch_dir" ]; then
-              search_dirs+=( "$SDK_DIR/bin/packages/$arch_dir" )
-            fi
-          done
-          built_packages=()
-          for dir in "${search_dirs[@]}"; do
-            for ipk in "$dir"/*/"${PACKAGE_NAME}"_*.ipk; do
-              built_packages+=( "$ipk" )
-            done
-          done
-          if [ ${#built_packages[@]} -eq 0 ]; then
-            echo "No built packages found for ${PACKAGE_NAME}. Searched:" >&2
-            if [ ${#search_dirs[@]} -eq 0 ]; then
-              echo "  $SDK_DIR/bin/packages (no architecture directories present)" >&2
-            else
-              for dir in "${search_dirs[@]}"; do
-                echo "  $dir" >&2
-              done
-            fi
-            find "$SDK_DIR/bin" -maxdepth 4 -type f -print || true
+
+          # Find and copy packages (simplified)
+          find "$SDK_DIR/bin/packages" -name "*${PACKAGE_NAME}*.ipk" -exec cp {} "$ARTIFACT_DIR/" \;
+
+          # Check if packages were found
+          if [ ! -f "$ARTIFACT_DIR"/*.ipk ]; then
+            echo "No packages found!"
+            find "$SDK_DIR/bin" -name "*.ipk" || true
             exit 1
           fi
-          copied_indexes=()
-          for ipk in "${built_packages[@]}"; do
-            pkg_dir=$(dirname "$ipk")
-            cp "$ipk" "$ARTIFACT_DIR/"
-            for index in Packages Packages.gz Packages.manifest; do
-              if [ -f "$pkg_dir/$index" ]; then
-                case "$index" in
-                  Packages)
-                    target_index="Packages_${TARGET_PREFIX}"
-                    ;;
-                  Packages.gz)
-                    target_index="Packages_${TARGET_PREFIX}.gz"
-                    ;;
-                  Packages.manifest)
-                    target_index="Packages_${TARGET_PREFIX}.manifest"
-                    ;;
-                  *)
-                    continue
-                    ;;
-                esac
-                if [ -z "${copied_indexes[$target_index]:-}" ]; then
-                  cp "$pkg_dir/$index" "$ARTIFACT_DIR/$target_index"
-                  copied_indexes[$target_index]=1
-                fi
-              fi
-            done
-          done
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4.3.3
@@ -183,13 +151,11 @@ jobs:
       contents: write
     steps:
       - name: Download build artifacts
-        shell: bash
         uses: actions/download-artifact@v4.1.7
         with:
           path: release-artifacts
 
       - name: Publish release assets
-        shell: bash
         uses: softprops/action-gh-release@v2.4.1
         with:
           files: |

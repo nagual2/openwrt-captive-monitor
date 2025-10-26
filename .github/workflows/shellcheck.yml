@@ -70,19 +70,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          shfmt_args=()
-          while IFS= read -r line; do
-            shfmt_args+=("$line")
-          done < <(grep -Ev '^\s*(#|$)' .shfmt.conf || true)
-          if [ ${#shfmt_args[@]} -eq 0 ]; then
-            shfmt_args=(-i=4 -ci -sr -ln=posix)
+
+          # Check if .shfmt.conf exists and read its options
+          if [ -f .shfmt.conf ]; then
+            shfmt_args=$(grep -Ev '^\s*(#|$)' .shfmt.conf | tr '\n' ' ')
+          else
+            shfmt_args="-i=4 -ci -sr -ln=posix"
           fi
+
           # Read files from shell-files.txt (one per line)
-          files=()
-          while IFS= read -r line; do
-            [ -n "$line" ] && files+=("$line")
-          done < shell-files.txt
-          shfmt "${shfmt_args[@]}" -d "${files[@]}"
+          files=$(cat shell-files.txt | tr '\n' ' ')
+          shfmt $shfmt_args -d $files
 
       - name: Run ShellCheck
         if: steps.targets.outputs.count != '0'
@@ -90,11 +88,8 @@ jobs:
         run: |
           set -euo pipefail
           # Read files from shell-files.txt (one per line)
-          files=()
-          while IFS= read -r line; do
-            [ -n "$line" ] && files+=("$line")
-          done < shell-files.txt
-          shellcheck "${files[@]}"
+          files=$(cat shell-files.txt | tr '\n' ' ')
+          shellcheck $files
 
       - name: Validate init scripts are POSIX-parseable
         shell: bash
