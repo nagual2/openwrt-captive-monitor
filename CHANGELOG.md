@@ -12,10 +12,12 @@
 - Enhanced GitHub Actions workflows with improved reliability
 - Better POSIX compatibility across all shell scripts
 - Improved workflow file detection and validation processes
+- **Fixed OpenWrt SDK version compatibility** (updated to 23.05.5)
 
 ### Bug Fixes
 - Fixed all shellcheck warnings and compatibility issues
 - Enhanced shell script syntax validation
+- **Fixed GitHub Actions SDK download issues**
 - Improved project maintainability with better documentation
 
 ## v0.1.1
