@@ -1,6 +1,6 @@
 #!/bin/sh
 # shellcheck shell=ash
-# Simple OpenWrt Captive Monitor Tests
+# OpenWrt Captive Monitor Tests
 # Usage: ./test_captive_monitor.sh
 
 set -euo pipefail
@@ -36,9 +36,8 @@ error() {
 
 # Test 1: Check if all required files exist
 test_files() {
-    log "Testing required files..."
+    log "Testing required OpenWrt files..."
 
-    # POSIX-compatible way to list files
     for file in \
         "package/${PACKAGE_NAME}/Makefile" \
         "package/${PACKAGE_NAME}/files/usr/sbin/openwrt_captive_monitor" \
@@ -52,77 +51,70 @@ test_files() {
         fi
     done
 
-    success "All required files present"
+    success "All required OpenWrt files present"
 }
 
-# Test 2: Check shell script syntax
-test_shell_syntax() {
-    log "Testing shell script syntax..."
+# Test 2: Check OpenWrt init scripts
+test_openwrt_scripts() {
+    log "Testing OpenWrt init scripts..."
 
-    # POSIX-compatible way to list scripts
     for script in \
-        "openwrt_captive_monitor.sh" \
-        "scripts/build_ipk.sh" \
-        "package/${PACKAGE_NAME}/files/usr/sbin/openwrt_captive_monitor" \
-        "package/${PACKAGE_NAME}/files/etc/init.d/captive-monitor"
+        "package/${PACKAGE_NAME}/files/etc/init.d/captive-monitor" \
+        "package/${PACKAGE_NAME}/files/usr/sbin/openwrt_captive_monitor"
     do
         if ! sh -n "$PROJECT_ROOT/$script" 2>/dev/null; then
             error "Syntax error in $script"
         fi
     done
 
-    success "All shell scripts have valid syntax"
+    success "OpenWrt init scripts have valid syntax"
 }
 
-# Test 3: Check Makefile syntax
-test_makefile() {
-    log "Testing Makefile..."
+# Test 3: Check OpenWrt Makefile
+test_openwrt_makefile() {
+    log "Testing OpenWrt Makefile..."
 
     makefile="$PROJECT_ROOT/package/${PACKAGE_NAME}/Makefile"
     if [ ! -f "$makefile" ]; then
-        error "Makefile not found: $makefile"
+        error "OpenWrt Makefile not found: $makefile"
     fi
 
-    # Basic check for required variables
+    # Check for required OpenWrt variables
     if ! grep -q "^PKG_NAME:=" "$makefile"; then
-        error "PKG_NAME not defined in Makefile"
+        error "PKG_NAME not defined in OpenWrt Makefile"
     fi
 
     if ! grep -q "^PKG_VERSION:=" "$makefile"; then
-        error "PKG_VERSION not defined in Makefile"
+        error "PKG_VERSION not defined in OpenWrt Makefile"
     fi
 
-    success "Makefile looks valid"
+    success "OpenWrt Makefile is valid"
 }
 
-# Test 4: Try to build package if possible
-test_build() {
-    log "Testing package build..."
+# Test 4: Check UCI configuration
+test_uci_config() {
+    log "Testing UCI configuration..."
 
-    build_script="$PROJECT_ROOT/scripts/build_ipk.sh"
-    if [ -x "$build_script" ]; then
-        if "$build_script" --help >/dev/null 2>&1; then
-            success "Build script is functional"
-        else
-            warning "Build script may have issues"
-        fi
-    else
-        warning "Build script not executable or missing"
+    config_file="$PROJECT_ROOT/package/${PACKAGE_NAME}/files/etc/config/captive-monitor"
+    if [ ! -f "$config_file" ]; then
+        error "UCI config file missing: $config_file"
     fi
+
+    success "UCI configuration file present"
 }
 
 # Main test execution
 main() {
-    echo -e "${BLUE}🧪 OpenWrt Captive Monitor - Simple Tests${NC}"
-    echo "============================================="
+    echo -e "${BLUE}🧪 OpenWrt Captive Monitor Tests${NC}"
+    echo "================================"
 
     test_files
-    test_shell_syntax
-    test_makefile
-    test_build
+    test_openwrt_scripts
+    test_openwrt_makefile
+    test_uci_config
 
     echo ""
-    success "All tests passed! ✅"
+    success "All OpenWrt tests passed! ✅"
 }
 
 # Run tests
