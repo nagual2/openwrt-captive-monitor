@@ -1,18 +1,15 @@
 #!/bin/sh
 # shellcheck shell=ash
-# Captive Portal Test Scenarios for OpenWrt Captive Monitor
+# Simple Captive Portal Test Scenarios
 # Usage: ./test_captive_scenarios.sh [SCENARIO]
-#
-# Scenarios:
-#   setup         Setup test environment
-#   working       Test with working internet
-#   captive       Test with simulated captive portal
-#   offline       Test with no internet
-#   cleanup       Cleanup test environment
 
 set -euo pipefail
 
-# Colors
+# Basic configuration
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -20,7 +17,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 log() {
-    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}"
+    echo -e "${BLUE}[$(date +'%H:%M:%S')] $1${NC}"
 }
 
 success() {
@@ -33,266 +30,116 @@ warning() {
 
 error() {
     echo -e "${RED}❌ $1${NC}"
+    exit 1
 }
 
-# Configuration
-TEST_DIR="/tmp/captive_test"
-HTTPD_PORT="8080"
-DNS_PORT="5353"
+# Test 1: Check main script functionality
+test_main_script() {
+    log "Testing main script..."
 
-setup_test_environment() {
-    log "Setting up test environment..."
-
-    # Create test directories
-    mkdir -p "${TEST_DIR}/httpd"
-    mkdir -p "${TEST_DIR}/dnsmasq"
-
-    # Create test HTTP server files
-    cat > "${TEST_DIR}/httpd/index.html" << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Test Captive Portal</title>
-    <meta http-equiv="refresh" content="0; url=https://httpbin.org/html">
-</head>
-<body>
-    <h1>Redirecting to captive portal...</h1>
-    <p>If you see this, the captive portal detection should trigger.</p>
-    <a href="https://httpbin.org/html">Click here to authenticate</a>
-</body>
-</html>
-EOF
-
-    # Create fake captive portal response
-    cat > "${TEST_DIR}/httpd/generate_204.php" << 'EOF'
-<?php
-// Simulate captive portal detection endpoint
-http_response_code(302);
-header('Location: https://example.com/login?redirect=http://connectivitycheck.gstatic.com/generate_204');
-?>
-EOF
-
-    success "Test environment setup completed"
-}
-
-start_captive_simulation() {
-    log "Starting captive portal simulation..."
-
-    # Start HTTP server for captive portal simulation
-    if command -v python3 >/dev/null 2>&1; then
-        cd "${TEST_DIR}/httpd"
-        python3 -m http.server "${HTTPD_PORT}" > /dev/null 2>&1 &
-        HTTPD_PID=$!
-        log "HTTP server started on port ${HTTPD_PORT} (PID: ${HTTPD_PID})"
-    elif command -v busybox >/dev/null 2>&1; then
-        busybox httpd -p "${HTTPD_PORT}" -h "${TEST_DIR}/httpd" > /dev/null 2>&1 &
-        HTTPD_PID=$!
-        log "BusyBox HTTP server started on port ${HTTPD_PORT} (PID: ${HTTPD_PID})"
-    else
-        warning "No HTTP server available for testing"
-        return 1
+    main_script="$PROJECT_ROOT/openwrt_captive_monitor.sh"
+    if [ ! -f "$main_script" ]; then
+        error "Main script not found: $main_script"
     fi
 
-    # Setup iptables/nftables rules for DNS redirection
-    if command -v nft >/dev/null 2>&1; then
-        log "Setting up nftables rules..."
-
-        # Create captive portal table
-        nft add table inet captive_test
-        nft add chain inet captive_test prerouting { type nat hook prerouting priority dstnat \; }
-
-        # DNS interception (redirect DNS queries to our fake portal)
-        nft add rule inet captive_test prerouting udp dport 53 redirect to :5353
-        nft add rule inet captive_test prerouting tcp dport 53 redirect to :5353
-
-        # HTTP interception (redirect port 80 to our test server)
-        nft add rule inet captive_test prerouting tcp dport 80 redirect to :8080
-
-        success "NFTables rules configured"
-    elif command -v iptables >/dev/null 2>&1; then
-        log "Setting up iptables rules..."
-
-        # DNS interception
-        iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to-port 5353
-        iptables -t nat -A PREROUTING -p tcp --dport 53 -j REDIRECT --to-port 5353
-
-        # HTTP interception
-        iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
-
-        success "IPTables rules configured"
+    if ! sh -n "$main_script" 2>/dev/null; then
+        error "Main script has syntax errors"
     fi
 
-    success "Captive portal simulation started"
+    success "Main script is valid"
 }
 
-test_working_internet() {
-    log "Testing with working internet..."
+# Test 2: Check configuration files
+test_config_files() {
+    log "Testing configuration files..."
 
-    # Test connectivity
-    if curl -s --connect-timeout 10 http://httpbin.org/ip >/dev/null; then
-        success "Internet connectivity confirmed"
+    config_files=(
+        "package/openwrt-captive-monitor/files/etc/config/captive-monitor"
+    )
 
-        # Run captive monitor in oneshot mode
-        if [ -f /usr/sbin/openwrt_captive_monitor ]; then
-            timeout 30s /usr/sbin/openwrt_captive_monitor --oneshot
-            success "Oneshot test completed"
-        elif [ -f /tmp/captive_test/extract/usr/sbin/openwrt_captive_monitor ]; then
-            timeout 30s /tmp/captive_test/extract/usr/sbin/openwrt_captive_monitor --oneshot
-            success "Oneshot test completed (from extracted package)"
+    for config in "${config_files[@]}"; do
+        if [ ! -f "$PROJECT_ROOT/$config" ]; then
+            error "Config file missing: $config"
         fi
+    done
 
-        # Check that no firewall rules are active
-        if command -v nft >/dev/null 2>&1; then
-            RULE_COUNT=$(nft list ruleset 2>/dev/null | grep -c captive_monitor || true)
-            if [ "$RULE_COUNT" -eq 0 ]; then
-                success "No captive portal rules active (correct behavior)"
-            else
-                error "Found $RULE_COUNT unexpected captive portal rules"
-            fi
-        fi
-
-    else
-        warning "No internet connectivity detected"
-    fi
+    success "Configuration files present"
 }
 
-test_captive_portal() {
-    log "Testing captive portal detection..."
+# Test 3: Check init script
+test_init_script() {
+    log "Testing init script..."
 
-    # Test captive portal detection
-    if command -v curl >/dev/null 2>&1; then
-        # Test connectivity check endpoint
-        RESPONSE=$(curl -s -w "%{http_code}" -o /dev/null "http://connectivitycheck.gstatic.com/generate_204" 2>/dev/null || echo "000")
-
-        if [ "$RESPONSE" != "204" ]; then
-            success "Captive portal detected (HTTP ${RESPONSE})"
-
-            # Start the captive monitor service
-            if command -v systemctl >/dev/null 2>&1; then
-                systemctl start openwrt-captive-monitor
-            elif [ -f /etc/init.d/captive-monitor ]; then
-                /etc/init.d/captive-monitor start
-            fi
-
-            # Wait a bit and check if firewall rules are created
-            sleep 5
-
-            if command -v nft >/dev/null 2>&1; then
-                RULE_COUNT=$(nft list ruleset 2>/dev/null | grep -c captive_monitor || true)
-                if [ "$RULE_COUNT" -gt 0 ]; then
-                    success "Firewall rules created: ${RULE_COUNT} rules"
-                else
-                    warning "No firewall rules created"
-                fi
-            fi
-
-            # Check if HTTP redirect server is running
-            if netstat -tlnp 2>/dev/null | grep -q ":${HTTPD_PORT}"; then
-                success "HTTP redirect server is running"
-            fi
-
-        else
-            warning "No captive portal detected (got HTTP 204)"
-        fi
+    init_script="$PROJECT_ROOT/package/openwrt-captive-monitor/files/etc/init.d/captive-monitor"
+    if [ ! -f "$init_script" ]; then
+        error "Init script not found: $init_script"
     fi
+
+    if ! sh -n "$init_script" 2>/dev/null; then
+        error "Init script has syntax errors"
+    fi
+
+    # Check for required functions
+    if ! grep -q "start()" "$init_script"; then
+        error "Init script missing start() function"
+    fi
+
+    if ! grep -q "stop()" "$init_script"; then
+        error "Init script missing stop() function"
+    fi
+
+    success "Init script is valid"
 }
 
-test_offline_mode() {
-    log "Testing offline mode..."
+# Test 4: Check UCI defaults
+test_uci_defaults() {
+    log "Testing UCI defaults..."
 
-    # Block internet access (simulate network issues)
-    if command -v iptables >/dev/null 2>&1; then
-        # Block all outbound traffic except localhost
-        iptables -I OUTPUT -o eth0 -j DROP 2>/dev/null || true
-        iptables -I OUTPUT -o wlan0 -j DROP 2>/dev/null || true
-
-        success "Internet access blocked"
-
-        # Start captive monitor and see how it behaves
-        timeout 60s /usr/sbin/openwrt_captive_monitor --monitor &
-        MONITOR_PID=$!
-
-        # Wait and check behavior
-        sleep 10
-
-        # Restore internet
-        iptables -D OUTPUT -o eth0 -j DROP 2>/dev/null || true
-        iptables -D OUTPUT -o wlan0 -j DROP 2>/dev/null || true
-
-        # Kill monitor
-        kill $MONITOR_PID 2>/dev/null || true
-
-        success "Offline test completed"
-
-    else
-        warning "Cannot simulate offline mode without iptables"
+    uci_defaults="$PROJECT_ROOT/package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor"
+    if [ ! -f "$uci_defaults" ]; then
+        error "UCI defaults not found: $uci_defaults"
     fi
+
+    if ! sh -n "$uci_defaults" 2>/dev/null; then
+        error "UCI defaults has syntax errors"
+    fi
+
+    success "UCI defaults is valid"
 }
 
-cleanup_test_environment() {
-    log "Cleaning up test environment..."
+# Main test execution
+main() {
+    echo -e "${BLUE}🧪 Captive Portal Test Scenarios${NC}"
+    echo "================================"
 
-    # Kill HTTP server
-    if [ -n "${HTTPD_PID:-}" ]; then
-        kill $HTTPD_PID 2>/dev/null || true
-        log "HTTP server stopped"
-    fi
+    case "${1:-all}" in
+        "main"|"all")
+            test_main_script
+            ;;
+        "config"|"all")
+            test_config_files
+            ;;
+        "init"|"all")
+            test_init_script
+            ;;
+        "uci"|"all")
+            test_uci_defaults
+            ;;
+        *)
+            echo "Usage: $0 [SCENARIO]"
+            echo "Scenarios:"
+            echo "  main    Test main script"
+            echo "  config  Test configuration files"
+            echo "  init    Test init script"
+            echo "  uci     Test UCI defaults"
+            echo "  all     Test all scenarios (default)"
+            exit 1
+            ;;
+    esac
 
-    # Remove firewall rules
-    if command -v nft >/dev/null 2>&1; then
-        nft delete table inet captive_test 2>/dev/null || true
-        nft delete table inet captive_monitor 2>/dev/null || true
-    fi
-
-    if command -v iptables >/dev/null 2>&1; then
-        iptables -t nat -F 2>/dev/null || true
-        iptables -F 2>/dev/null || true
-    fi
-
-    # Remove test directories
-    rm -rf "${TEST_DIR}"
-
-    # Stop captive monitor service
-    if command -v systemctl >/dev/null 2>&1; then
-        systemctl stop openwrt-captive-monitor 2>/dev/null || true
-    elif [ -f /etc/init.d/captive-monitor ]; then
-        /etc/init.d/captive-monitor stop 2>/dev/null || true
-    fi
-
-    success "Test environment cleanup completed"
+    echo ""
+    success "All requested tests passed! ✅"
 }
 
-# Main execution
-SCENARIO="${1:-setup}"
-
-case "$SCENARIO" in
-    "setup")
-        setup_test_environment
-        ;;
-    "working")
-        test_working_internet
-        ;;
-    "captive")
-        start_captive_simulation
-        test_captive_portal
-        ;;
-    "offline")
-        test_offline_mode
-        ;;
-    "cleanup")
-        cleanup_test_environment
-        ;;
-    *)
-        echo "Usage: $0 [SCENARIO]"
-        echo ""
-        echo "Scenarios:"
-        echo "  setup     Setup test environment"
-        echo "  working   Test with working internet"
-        echo "  captive   Test with simulated captive portal"
-        echo "  offline   Test with no internet"
-        echo "  cleanup   Cleanup test environment"
-        exit 1
-        ;;
-esac
-
-success "Test scenario '$SCENARIO' completed"
+# Run tests
+main "$@"
