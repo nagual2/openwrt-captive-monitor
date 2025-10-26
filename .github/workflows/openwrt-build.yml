@@ -139,12 +139,13 @@ jobs:
           TARGET="${{ matrix.target }}"
           SUBTARGET="${{ matrix.subtarget }}"
           TARGET_ID="${{ matrix.target_id }}"
-          TARGET_PREFIX="${TARGET}-${SUBTARGET}"
           PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
+          pushd "$SDK_DIR"
+
           # Copy package to packages feed (more reliable approach)
           echo "Copying package to packages feed..."
-          mkdir -p "$SDK_DIR/feeds/packages/net"
-          cp -r "$GITHUB_WORKSPACE/package/openwrt-captive-monitor" "$SDK_DIR/feeds/packages/net/"
+          mkdir -p feeds/packages/net
+          cp -r "$GITHUB_WORKSPACE/package/openwrt-captive-monitor" feeds/packages/net/
 
           # Update feeds and install our package
           echo "Updating feeds..."
@@ -181,7 +182,7 @@ jobs:
           find "$SDK_DIR/bin/packages" -name "*${PACKAGE_NAME}*.ipk" -exec cp {} "$ARTIFACT_DIR/" \;
 
           # Check if packages were found
-          if [ ! -f "$ARTIFACT_DIR"/*.ipk ]; then
+          if ! ls "$ARTIFACT_DIR"/*.ipk >/dev/null 2>&1; then
             echo "No packages found! Checking SDK structure:"
             find "$SDK_DIR/bin" -name "*.ipk" | head -10 || echo "No .ipk files found in SDK"
             ls -la "$SDK_DIR/bin/packages/" || echo "No packages directory"
