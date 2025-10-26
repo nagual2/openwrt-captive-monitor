@@ -20,7 +20,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 BUILD_DIR="${PROJECT_ROOT}/build_test"
 ARTIFACTS_DIR="${PROJECT_ROOT}/artifacts"

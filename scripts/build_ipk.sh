@@ -39,7 +39,7 @@ if [ ! -d "$files_dir" ]; then
 fi
 
 parse_make_var() {
-    local key="$1"
+    key="$1"
     awk -F':=' -v key="$key" '
         $1 == key {
             gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
