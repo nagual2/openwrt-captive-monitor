@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.1.2
+
+### Documentation & Reporting
+- Add comprehensive PROJECT_COMMIT_REPORT.md with detailed analysis of all 59 commits
+- Enhanced project documentation with complete commit history and categorization
+- Improved README with better contribution guidelines and project overview
+
+### Code Quality & CI/CD
+- All shell scripts pass shellcheck validation without errors
+- Enhanced GitHub Actions workflows with improved reliability
+- Better POSIX compatibility across all shell scripts
+- Improved workflow file detection and validation processes
+
+### Bug Fixes
+- Fixed all shellcheck warnings and compatibility issues
+- Enhanced shell script syntax validation
+- Improved project maintainability with better documentation
+
 ## v0.1.1
 
 ### Packaging & CI
