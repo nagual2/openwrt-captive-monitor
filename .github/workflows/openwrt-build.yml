@@ -141,13 +141,37 @@ jobs:
           TARGET_ID="${{ matrix.target_id }}"
           TARGET_PREFIX="${TARGET}-${SUBTARGET}"
           PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
+          # Copy package to SDK
+          PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
+          echo "Copying package $PACKAGE_NAME to SDK..."
+          cp -r "$GITHUB_WORKSPACE/package/$PACKAGE_NAME" "$SDK_DIR/package/"
+
+          # Verify package was copied
+          if [ ! -d "$SDK_DIR/package/$PACKAGE_NAME" ]; then
+            echo "Package directory not found after copy"
+            ls -la "$SDK_DIR/package/" || true
+            exit 1
+          fi
+
+          if [ ! -f "$SDK_DIR/package/$PACKAGE_NAME/Makefile" ]; then
+            echo "Makefile not found in copied package"
+            ls -la "$SDK_DIR/package/$PACKAGE_NAME/" || true
+            exit 1
+          fi
+
+          echo "Package copied successfully"
+          ls -la "$SDK_DIR/package/$PACKAGE_NAME/"
 
           # Build package
           pushd "$SDK_DIR"
           export TERM=dumb
-          ./scripts/feeds update -a && ./scripts/feeds install -a
 
-          # Create config
+          # Update feeds and install our package
+          echo "Updating feeds..."
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+          # Create config with our package enabled
           cat <<EOF > .config
           CONFIG_TARGET_${TARGET}=y
           CONFIG_TARGET_${TARGET}_${SUBTARGET}=y
@@ -157,35 +181,34 @@ jobs:
           CONFIG_PACKAGE_${PACKAGE_NAME}=m
           EOF
 
+          echo "Running make defconfig..."
           make defconfig
+
+          echo "Compiling package..."
           make V=sc -j"$(nproc)" package/${PACKAGE_NAME}/compile
+
+          echo "Creating package index..."
           make V=s package/index
           popd
 
           # Prepare artifacts
-          ARCH="${{ matrix.arch_packages }}"
           ARTIFACT_DIR="$GITHUB_WORKSPACE/artifacts/$TARGET_ID"
           mkdir -p "$ARTIFACT_DIR"
 
-          # Find and copy packages (simplified)
+          # Find and copy packages
+          echo "Looking for built packages..."
           find "$SDK_DIR/bin/packages" -name "*${PACKAGE_NAME}*.ipk" -exec cp {} "$ARTIFACT_DIR/" \;
 
           # Check if packages were found
           if [ ! -f "$ARTIFACT_DIR"/*.ipk ]; then
-            echo "No packages found!"
-            find "$SDK_DIR/bin" -name "*.ipk" || true
+            echo "No packages found! Checking SDK structure:"
+            find "$SDK_DIR/bin" -name "*.ipk" | head -10 || echo "No .ipk files found in SDK"
+            ls -la "$SDK_DIR/bin/packages/" || echo "No packages directory"
             exit 1
           fi
 
           echo "Build completed successfully"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4.3.3
-        with:
-          name: ${{ env.PACKAGE_NAME }}-${{ matrix.target_id }}
-          path: artifacts/${{ matrix.target_id }}
-          if-no-files-found: error
-          retention-days: 7
+          ls -la "$ARTIFACT_DIR/"
 
   release:
     needs: build
