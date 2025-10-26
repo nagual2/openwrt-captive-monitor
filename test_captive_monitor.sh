@@ -38,16 +38,15 @@ error() {
 test_files() {
     log "Testing required files..."
 
-    required_files=(
-        "package/${PACKAGE_NAME}/Makefile"
-        "package/${PACKAGE_NAME}/files/usr/sbin/openwrt_captive_monitor"
-        "package/${PACKAGE_NAME}/files/etc/init.d/captive-monitor"
-        "package/${PACKAGE_NAME}/files/etc/config/captive-monitor"
-        "scripts/build_ipk.sh"
+    # POSIX-compatible way to list files
+    for file in \
+        "package/${PACKAGE_NAME}/Makefile" \
+        "package/${PACKAGE_NAME}/files/usr/sbin/openwrt_captive_monitor" \
+        "package/${PACKAGE_NAME}/files/etc/init.d/captive-monitor" \
+        "package/${PACKAGE_NAME}/files/etc/config/captive-monitor" \
+        "scripts/build_ipk.sh" \
         "openwrt_captive_monitor.sh"
-    )
-
-    for file in "${required_files[@]}"; do
+    do
         if [ ! -f "$PROJECT_ROOT/$file" ]; then
             error "Required file missing: $file"
         fi
@@ -60,14 +59,13 @@ test_files() {
 test_shell_syntax() {
     log "Testing shell script syntax..."
 
-    shell_scripts=(
-        "openwrt_captive_monitor.sh"
-        "scripts/build_ipk.sh"
-        "package/${PACKAGE_NAME}/files/usr/sbin/openwrt_captive_monitor"
+    # POSIX-compatible way to list scripts
+    for script in \
+        "openwrt_captive_monitor.sh" \
+        "scripts/build_ipk.sh" \
+        "package/${PACKAGE_NAME}/files/usr/sbin/openwrt_captive_monitor" \
         "package/${PACKAGE_NAME}/files/etc/init.d/captive-monitor"
-    )
-
-    for script in "${shell_scripts[@]}"; do
+    do
         if ! sh -n "$PROJECT_ROOT/$script" 2>/dev/null; then
             error "Syntax error in $script"
         fi

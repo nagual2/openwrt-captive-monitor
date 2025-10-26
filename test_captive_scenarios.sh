@@ -53,11 +53,10 @@ test_main_script() {
 test_config_files() {
     log "Testing configuration files..."
 
-    config_files=(
+    # POSIX-compatible way to list config files
+    for config in \
         "package/openwrt-captive-monitor/files/etc/config/captive-monitor"
-    )
-
-    for config in "${config_files[@]}"; do
+    do
         if [ ! -f "$PROJECT_ROOT/$config" ]; then
             error "Config file missing: $config"
         fi
