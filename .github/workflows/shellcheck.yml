@@ -54,14 +54,17 @@ jobs:
           for file in "${shell_files[@]}"; do
             if [ -f "$file" ] && head -n 1 "$file" 2>/dev/null | grep -qE '^#!/.*sh\b'; then
               valid_files+=("$file")
+              echo "Found shell script: $file"
             fi
           done
 
           if [ ${#valid_files[@]} -gt 0 ]; then
             printf '%s\n' "${valid_files[@]}" > shell-files.txt
             echo "count=${#valid_files[@]}" >> "$GITHUB_OUTPUT"
+            echo "Valid shell scripts found: ${#valid_files[@]}"
           else
             echo "count=0" >> "$GITHUB_OUTPUT"
+            echo "No valid shell scripts found"
           fi
 
       - name: Run shfmt
@@ -73,12 +76,19 @@ jobs:
           # Check if .shfmt.conf exists and read its options
           if [ -f .shfmt.conf ]; then
             shfmt_args=$(grep -Ev '^\s*(#|$)' .shfmt.conf | tr '\n' ' ')
+            echo "Read shfmt config: $shfmt_args"
           else
             shfmt_args="-i=4 -ci -sr -ln=posix"
+            echo "Using default shfmt arguments: $shfmt_args"
           fi
+
+          echo "Using shfmt arguments: $shfmt_args"
 
           # Read files from shell-files.txt (one per line)
           files=$(cat shell-files.txt | tr '\n' ' ')
+          echo "Checking files: $files"
+
+          # Check formatting
           shfmt $shfmt_args -d $files
 
       - name: Run ShellCheck
@@ -88,6 +98,7 @@ jobs:
           set -euo pipefail
           # Read files from shell-files.txt (one per line)
           files=$(cat shell-files.txt | tr '\n' ' ')
+          echo "Running shellcheck on: $files"
           # shellcheck disable=SC2086 # We need word splitting for shellcheck arguments
           shellcheck $files
 
