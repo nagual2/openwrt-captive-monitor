@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+. "$(dirname "$0")/_lib.sh"
+
+if [ "$#" -gt 0 ] && [ "$1" = "httpd" ]; then
+    shift
+    mock_log busybox httpd "$@"
+    if [ -n "${REAL_SLEEP_BIN:-}" ] && [ -x "${REAL_SLEEP_BIN:-}" ]; then
+        exec "$REAL_SLEEP_BIN" 60
+    fi
+    fallback_sleep=$(command -v sleep 2> /dev/null || printf '/bin/sleep')
+    exec "$fallback_sleep" 60
+fi
+
+real_busybox=${REAL_BUSYBOX_BIN:-$(command -v busybox 2> /dev/null || printf 'busybox')}
+exec "$real_busybox" "$@"

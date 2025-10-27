@@ -1,0 +1,56 @@
+#!/bin/sh
+set -eu
+. "$(dirname "$0")/_lib.sh"
+
+mock_log uci "$@"
+
+if [ "$#" -ge 3 ] && [ "$1" = "-q" ] && [ "$2" = "get" ]; then
+    key="$3"
+    case "$key" in
+        network.lan.device)
+            value=${MOCK_UCI_NETWORK_LAN_DEVICE:-}
+            ;;
+        network.lan.ifname)
+            value=${MOCK_UCI_NETWORK_LAN_IFNAME:-}
+            ;;
+        network.lan.ipaddr)
+            value=${MOCK_UCI_NETWORK_LAN_IPADDR:-}
+            ;;
+        network.lan.ip6addr)
+            value=${MOCK_UCI_NETWORK_LAN_IP6ADDR:-}
+            ;;
+        captive-monitor.config.mode)
+            value=${MOCK_UCI_MODE:-}
+            ;;
+        captive-monitor.config.wifi_interface)
+            value=${MOCK_UCI_WIFI_INTERFACE:-}
+            ;;
+        captive-monitor.config.wifi_logical)
+            value=${MOCK_UCI_WIFI_LOGICAL:-}
+            ;;
+        captive-monitor.config.enable_syslog)
+            value=${MOCK_UCI_ENABLE_SYSLOG:-}
+            ;;
+        captive-monitor.config.monitor_interval)
+            value=${MOCK_UCI_MONITOR_INTERVAL:-}
+            ;;
+        captive-monitor.config.ping_servers)
+            value=${MOCK_UCI_PING_SERVERS:-}
+            ;;
+        captive-monitor.config.captive_check_urls)
+            value=${MOCK_UCI_CAPTIVE_CHECK_URLS:-}
+            ;;
+        captive-monitor.config.firewall_backend)
+            value=${MOCK_UCI_FIREWALL_BACKEND:-}
+            ;;
+        *)
+            value=""
+            ;;
+    esac
+    if [ -n "$value" ]; then
+        printf '%s\n' "$value"
+        exit 0
+    fi
+fi
+
+exit "${MOCK_UCI_STATUS:-1}"

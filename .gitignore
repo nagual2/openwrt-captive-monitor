@@ -5,6 +5,7 @@
 *.bak
 *.swp
 shell-files.txt
+tests/_out/
 
 # macOS
 .DS_Store
