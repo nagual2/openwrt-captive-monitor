@@ -56,6 +56,7 @@ DNS_LOOKUP_TIMEOUT="${DNS_LOOKUP_TIMEOUT:-5}"
 # DNS и HTTP перехват
 DNSMASQ_CAPTIVE_DIR="/tmp/dnsmasq.d"
 DNSMASQ_CAPTIVE_CONF="/tmp/dnsmasq.d/captive_intercept.conf"
+DNSMASQ_SERVICE="${DNSMASQ_SERVICE:-/etc/init.d/dnsmasq}"
 HTTPD_PORT=8080
 HTTPD_ROOT="/tmp/captive_httpd"
 HTTPD_PIDFILE="/tmp/captive_httpd.pid"
@@ -906,7 +907,7 @@ write_dnsmasq_intercept() {
         fi
     } > "$DNSMASQ_CAPTIVE_CONF"
 
-    if /etc/init.d/dnsmasq reload > /dev/null 2>&1; then
+    if [ -n "$DNSMASQ_SERVICE" ] && "$DNSMASQ_SERVICE" reload > /dev/null 2>&1; then
         log_info "dnsmasq перезагружен с конфигурацией перехвата"
     else
         log_warn "Не удалось выполнить reload dnsmasq"
@@ -916,7 +917,7 @@ write_dnsmasq_intercept() {
 remove_dns_intercept() {
     if [ -f "$DNSMASQ_CAPTIVE_CONF" ]; then
         rm -f "$DNSMASQ_CAPTIVE_CONF"
-        if /etc/init.d/dnsmasq reload > /dev/null 2>&1; then
+        if [ -n "$DNSMASQ_SERVICE" ] && "$DNSMASQ_SERVICE" reload > /dev/null 2>&1; then
             log_info "dnsmasq конфигурация перехвата удалена"
         fi
     fi
