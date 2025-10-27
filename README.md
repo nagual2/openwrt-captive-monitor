@@ -45,6 +45,15 @@ scripts/build_ipk.sh --arch mips_24kc
 - Use `scripts/build_ipk.sh --help` for additional knobs such as redirecting the output via `--feed-root`.
 - The detailed release/runbook lives in [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
 
+## Run tests
+
+Install BusyBox if it is not already present, then execute the ash harness:
+
+```bash
+sudo apt-get install -y busybox
+busybox sh tests/run.sh
+```
+
 ## Installing the generated package
 
 1. Copy the built package to the router (replace the filename with the actual artifact):

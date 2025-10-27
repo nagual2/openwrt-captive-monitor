@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+. "$(dirname "$0")/_lib.sh"
+
+mock_log route "$@"
+
+gateway="${MOCK_IP_GATEWAY:-192.168.1.1}"
+iface="${MOCK_ROUTE_INTERFACE:-${LAN_INTERFACE:-br-lan}}"
+
+printf '0.0.0.0 %s 0.0.0.0 %s\n' "$gateway" "$iface"
+exit 0
