@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
 . "$(dirname "$0")/_lib.sh"
+. "$(dirname "$0")/_iptables_mock.sh"
 
-mock_log ip6tables "$@"
-exit "${MOCK_IP6TABLES_STATUS:-0}"
+iptables_mock_run ip6tables "$@"
