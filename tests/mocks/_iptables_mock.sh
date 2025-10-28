@@ -36,11 +36,11 @@ iptables_mock_is_builtin() {
     table="$1"
     chain="$2"
     case "$table:$chain" in
-        filter:INPUT|filter:FORWARD|filter:OUTPUT|\
-        nat:PREROUTING|nat:INPUT|nat:OUTPUT|nat:POSTROUTING|\
-        mangle:PREROUTING|mangle:INPUT|mangle:FORWARD|mangle:OUTPUT|mangle:POSTROUTING|\
-        raw:PREROUTING|raw:OUTPUT|\
-        security:INPUT|security:FORWARD|security:OUTPUT)
+        filter:INPUT | filter:FORWARD | filter:OUTPUT | \
+            nat:PREROUTING | nat:INPUT | nat:OUTPUT | nat:POSTROUTING | \
+            mangle:PREROUTING | mangle:INPUT | mangle:FORWARD | mangle:OUTPUT | mangle:POSTROUTING | \
+            raw:PREROUTING | raw:OUTPUT | \
+            security:INPUT | security:FORWARD | security:OUTPUT)
             return 0
             ;;
     esac
@@ -345,8 +345,7 @@ iptables_mock_run() {
                 if [ "$action" = "-I" ] || [ "$action" = "-D" ]; then
                     if [ "$#" -gt 0 ]; then
                         case "$1" in
-                            '' | -* | *[!0-9]*)
-                                ;;
+                            '' | -* | *[!0-9]*) ;;
                             *)
                                 index="$1"
                                 shift
