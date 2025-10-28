@@ -1,5 +1,6 @@
 # openwrt-captive-monitor
 
+[![Build OpenWrt packages](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml/badge.svg?branch=main)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml)
 [![ShellCheck](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml)
 
 A lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily intercepts LAN DNS/HTTP traffic so clients can authenticate. Once internet access is restored, the helper automatically cleans up dnsmasq overrides, HTTP redirects, and NAT rules.
@@ -31,6 +32,7 @@ See [CHANGELOG.md](CHANGELOG.md) for highlights of each release.
 
 Pushes to `main` and annotated tags trigger the **Build OpenWrt packages** workflow.
 For each supported matrix target (`ath79-generic`, `ramips-mt7621`) it fetches the matching OpenWrt SDK, performs `feeds update/install`, runs `defconfig`, and publishes the resulting `.ipk` together with `Packages_<target>` indexes ready for feed hosting or releases.
+Visit the [GitHub Actions history](https://github.com/nagual2/openwrt-captive-monitor/actions) to quickly find the latest successful run.
 
 ### Quick local packaging (.ipk + opkg feed)
 
