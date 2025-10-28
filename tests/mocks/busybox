@@ -1,16 +1,71 @@
 #!/bin/sh
 set -eu
-. "$(dirname "$0")/_lib.sh"
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" 2> /dev/null && pwd)
+SELF_PATH="$SCRIPT_DIR/$(basename "$0")"
+
+. "$SCRIPT_DIR/_lib.sh"
+
+applet="${1:-}"
+
+real_busybox=""
+if [ -n "${REAL_BUSYBOX_BIN:-}" ]; then
+    candidate="$REAL_BUSYBOX_BIN"
+    if [ -x "$candidate" ] && [ "$candidate" != "$SELF_PATH" ]; then
+        real_busybox="$candidate"
+    else
+        resolved=$(command -v "$candidate" 2> /dev/null || true)
+        if [ -n "$resolved" ] && [ "$resolved" != "$SELF_PATH" ] && [ -x "$resolved" ]; then
+            real_busybox="$resolved"
+        fi
+    fi
+fi
+
+if [ -z "$real_busybox" ]; then
+    OLD_IFS=$IFS
+    IFS=:
+    for dir in $PATH; do
+        [ -z "$dir" ] && dir="."
+        if [ "$dir" = "$SCRIPT_DIR" ]; then
+            continue
+        fi
+        candidate="$dir/busybox"
+        if [ -x "$candidate" ] && [ "$candidate" != "$SELF_PATH" ]; then
+            real_busybox="$candidate"
+            break
+        fi
+    done
+    IFS=$OLD_IFS
+fi
 
 if [ "$#" -gt 0 ] && [ "$1" = "httpd" ]; then
     shift
     mock_log busybox httpd "$@"
-    if [ -n "${REAL_SLEEP_BIN:-}" ] && [ -x "${REAL_SLEEP_BIN:-}" ]; then
-        exec "$REAL_SLEEP_BIN" 60
-    fi
-    fallback_sleep=$(command -v sleep 2> /dev/null || printf '/bin/sleep')
-    exec "$fallback_sleep" 60
+    exec sleep 60
 fi
 
-real_busybox=${REAL_BUSYBOX_BIN:-$(command -v busybox 2> /dev/null || printf 'busybox')}
-exec "$real_busybox" "$@"
+if [ -n "$real_busybox" ]; then
+    exec "$real_busybox" "$@"
+fi
+
+fallback_shell=$(command -v sh 2> /dev/null || printf '/bin/sh')
+case "$fallback_shell" in
+    */*)
+        ;;
+    *)
+        fallback_shell="/bin/sh"
+        ;;
+esac
+
+if [ -z "$applet" ]; then
+    exec "$fallback_shell"
+fi
+
+if [ "$applet" = "sh" ]; then
+    shift
+    exec "$fallback_shell" "$@"
+fi
+
+mock_log busybox "$@"
+printf 'busybox mock: applet %s is not supported without a real busybox\n' "$applet" >&2
+exit 127
