@@ -19,8 +19,7 @@ else
 fi
 SYSTEM_SHELL=$(PATH="$BASE_PATH" command -v sh 2> /dev/null || printf '/bin/sh')
 case "$SYSTEM_SHELL" in
-    */*)
-        ;;
+    */*) ;;
     *)
         SYSTEM_SHELL="/bin/sh"
         ;;
@@ -65,8 +64,7 @@ assert_contains() {
     haystack="$2"
     message=${3:-"Expected to find '$needle'"}
     case "$haystack" in
-        *"$needle"*)
-            ;;
+        *"$needle"*) ;;
         *)
             fail "$message"
             ;;

@@ -50,8 +50,7 @@ fi
 
 fallback_shell=$(command -v sh 2> /dev/null || printf '/bin/sh')
 case "$fallback_shell" in
-    */*)
-        ;;
+    */*) ;;
     *)
         fallback_shell="/bin/sh"
         ;;
