@@ -10,7 +10,21 @@ STATE_DIR="$OUT_DIR/state"
 TEST_LOG="$OUT_DIR/commands.log"
 BASE_PATH=${PATH_OVERRIDE:-/usr/bin:/bin}
 BUSYBOX_CANDIDATE=${BUSYBOX:-busybox}
-BUSYBOX=$(PATH="$BASE_PATH" command -v "$BUSYBOX_CANDIDATE" 2> /dev/null || printf '%s' "$BUSYBOX_CANDIDATE")
+REAL_BUSYBOX_PATH=$(PATH="$BASE_PATH" command -v "$BUSYBOX_CANDIDATE" 2> /dev/null || true)
+HAS_REAL_BUSYBOX=0
+if [ -n "$REAL_BUSYBOX_PATH" ] && [ -x "$REAL_BUSYBOX_PATH" ]; then
+    HAS_REAL_BUSYBOX=1
+else
+    REAL_BUSYBOX_PATH=""
+fi
+SYSTEM_SHELL=$(PATH="$BASE_PATH" command -v sh 2> /dev/null || printf '/bin/sh')
+case "$SYSTEM_SHELL" in
+    */*)
+        ;;
+    *)
+        SYSTEM_SHELL="/bin/sh"
+        ;;
+esac
 REAL_SLEEP_BIN=$(PATH="$BASE_PATH" command -v sleep 2> /dev/null || printf '/bin/sleep')
 DNSMASQ_MOCK="$MOCK_DIR/dnsmasq"
 DNSMASQ_CONF="/tmp/dnsmasq.d/captive_intercept.conf"
@@ -81,7 +95,11 @@ run_with_env() {
         export TEST_LOG="$TEST_LOG"
         export TEST_STATE_DIR="$STATE_DIR"
         export REAL_SLEEP_BIN="$REAL_SLEEP_BIN"
-        export REAL_BUSYBOX_BIN="$BUSYBOX"
+        if [ "$HAS_REAL_BUSYBOX" = "1" ]; then
+            export REAL_BUSYBOX_BIN="$REAL_BUSYBOX_PATH"
+        else
+            unset REAL_BUSYBOX_BIN
+        fi
         export DNSMASQ_SERVICE="$DNSMASQ_MOCK"
         mkdir -p "$STATE_DIR"
         while [ "$#" -gt 0 ]; do
@@ -101,7 +119,14 @@ run_with_env() {
                     ;;
             esac
         done
-        "$BUSYBOX" sh "$SCRIPT" "$@" > "$outfile" 2>&1
+        if [ "$HAS_REAL_BUSYBOX" = "1" ]; then
+            runner="$REAL_BUSYBOX_PATH"
+            set -- sh "$SCRIPT" "$@"
+        else
+            runner="$SYSTEM_SHELL"
+            set -- "$SCRIPT" "$@"
+        fi
+        "$runner" "$@" > "$outfile" 2>&1
     )
     status=$?
     LAST_STATUS=$status
