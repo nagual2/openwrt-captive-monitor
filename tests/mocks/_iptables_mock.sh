@@ -32,6 +32,53 @@ iptables_mock_chain_file() {
     printf '%s/%s.rules\n' "$dir" "$chain"
 }
 
+iptables_mock_debug_enabled() {
+    case "${MOCK_IPTABLES_DEBUG:-0}" in
+        1 | true | TRUE | yes | YES | on | ON)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+iptables_mock_debug_log() {
+    tool="$1"
+    shift
+    if ! iptables_mock_debug_enabled; then
+        return 0
+    fi
+    base=$(iptables_mock_state_base "$tool")
+    log_file="$base/debug.log"
+    printf '%s\n' "$*" >> "$log_file"
+}
+
+iptables_mock_debug_snapshot() {
+    tool="$1"
+    table="$2"
+    chain="$3"
+    label="$4"
+    if ! iptables_mock_debug_enabled; then
+        return 0
+    fi
+    base=$(iptables_mock_state_base "$tool")
+    log_file="$base/debug.log"
+    file=$(iptables_mock_chain_file "$tool" "$table" "$chain")
+    {
+        printf '%s table=%s chain=%s\n' "$label" "$table" "$chain"
+        if [ -f "$file" ] && [ -s "$file" ]; then
+            while IFS= read -r line || [ -n "$line" ]; do
+                printf '    %s\n' "$line"
+            done < "$file"
+        else
+            if [ -f "$file" ]; then
+                printf '    (empty)\n'
+            else
+                printf '    (missing)\n'
+            fi
+        fi
+    } >> "$log_file"
+}
+
 iptables_mock_is_builtin() {
     table="$1"
     chain="$2"
@@ -149,13 +196,17 @@ iptables_mock_append_rule() {
     chain="$3"
     rule="$4"
     if [ -z "$chain" ] || [ -z "$rule" ]; then
+        iptables_mock_debug_log "$tool" "APPEND invalid-spec table=$table chain=$chain rule=$rule"
         return 1
     fi
     if ! iptables_mock_require_chain "$tool" "$table" "$chain"; then
+        iptables_mock_debug_log "$tool" "APPEND missing-chain table=$table chain=$chain rule=$rule"
         return 1
     fi
     file=$(iptables_mock_chain_file "$tool" "$table" "$chain")
     printf '%s\n' "$rule" >> "$file"
+    iptables_mock_debug_log "$tool" "APPEND table=$table chain=$chain rule=$rule"
+    iptables_mock_debug_snapshot "$tool" "$table" "$chain" "STATE AFTER APPEND"
     return 0
 }
 
@@ -166,9 +217,11 @@ iptables_mock_insert_rule() {
     index="$4"
     rule="$5"
     if [ -z "$chain" ] || [ -z "$rule" ]; then
+        iptables_mock_debug_log "$tool" "INSERT invalid-spec table=$table chain=$chain index=$index rule=$rule"
         return 1
     fi
     if ! iptables_mock_require_chain "$tool" "$table" "$chain"; then
+        iptables_mock_debug_log "$tool" "INSERT missing-chain table=$table chain=$chain index=$index rule=$rule"
         return 1
     fi
     file=$(iptables_mock_chain_file "$tool" "$table" "$chain")
@@ -177,7 +230,7 @@ iptables_mock_insert_rule() {
             index=1
             ;;
     esac
-    tmp="${file}.tmp.$$"
+    tmp="${file}.tmp.\$\$"
     : > "$tmp"
     inserted=0
     position=1
@@ -195,6 +248,8 @@ iptables_mock_insert_rule() {
         printf '%s\n' "$rule" >> "$tmp"
     fi
     mv "$tmp" "$file"
+    iptables_mock_debug_log "$tool" "INSERT table=$table chain=$chain index=$index rule=$rule"
+    iptables_mock_debug_snapshot "$tool" "$table" "$chain" "STATE AFTER INSERT"
     return 0
 }
 
@@ -244,22 +299,29 @@ iptables_mock_check_rule() {
     chain="$3"
     rule="$4"
     if [ -z "$chain" ] || [ -z "$rule" ]; then
+        iptables_mock_debug_log "$tool" "CHECK invalid-spec table=$table chain=$chain rule=$rule"
         return 1
     fi
     if ! iptables_mock_require_chain "$tool" "$table" "$chain"; then
+        iptables_mock_debug_log "$tool" "CHECK missing-chain table=$table chain=$chain rule=$rule"
         return 1
     fi
     file=$(iptables_mock_chain_file "$tool" "$table" "$chain")
     target=$(iptables_mock_normalize_rule "$rule")
+    iptables_mock_debug_log "$tool" "CHECK table=$table chain=$chain normalized=$target raw=$rule"
+    iptables_mock_debug_snapshot "$tool" "$table" "$chain" "STATE BEFORE CHECK"
     if [ ! -f "$file" ]; then
+        iptables_mock_debug_log "$tool" "CHECK no-chain-file table=$table chain=$chain"
         return 1
     fi
     while IFS= read -r line || [ -n "$line" ]; do
         current=$(iptables_mock_normalize_rule "$line")
         if [ "$current" = "$target" ]; then
+            iptables_mock_debug_log "$tool" "CHECK hit table=$table chain=$chain rule=$current"
             return 0
         fi
     done < "$file"
+    iptables_mock_debug_log "$tool" "CHECK miss table=$table chain=$chain normalized=$target"
     return 1
 }
 
@@ -270,22 +332,28 @@ iptables_mock_delete_rule() {
     index="$4"
     rule="$5"
     if [ -z "$chain" ]; then
+        iptables_mock_debug_log "$tool" "DELETE invalid-chain table=$table chain=$chain index=$index rule=$rule"
         return 1
     fi
     if ! iptables_mock_require_chain "$tool" "$table" "$chain"; then
+        iptables_mock_debug_log "$tool" "DELETE missing-chain table=$table chain=$chain index=$index rule=$rule"
         return 1
     fi
     file=$(iptables_mock_chain_file "$tool" "$table" "$chain")
     if [ ! -f "$file" ]; then
+        iptables_mock_debug_log "$tool" "DELETE no-chain-file table=$table chain=$chain index=$index rule=$rule"
         return 1
     fi
-    tmp="${file}.tmp.$$"
+    iptables_mock_debug_log "$tool" "DELETE table=$table chain=$chain index=$index rule=$rule"
+    iptables_mock_debug_snapshot "$tool" "$table" "$chain" "STATE BEFORE DELETE"
+    tmp="${file}.tmp.\$\$"
     : > "$tmp"
     removed=0
     if [ -n "$index" ] && [ -z "${index%%[0-9]*}" ] && [ "$index" -ne 0 ]; then
         position=1
         while IFS= read -r line || [ -n "$line" ]; do
             if [ "$removed" -eq 0 ] && [ "$position" -eq "$index" ]; then
+                iptables_mock_debug_log "$tool" "DELETE matched-index table=$table chain=$chain position=$position rule=$line"
                 removed=1
             else
                 printf '%s\n' "$line" >> "$tmp"
@@ -295,12 +363,15 @@ iptables_mock_delete_rule() {
     else
         if [ -z "$rule" ]; then
             rm -f "$tmp"
+            iptables_mock_debug_log "$tool" "DELETE missing-spec table=$table chain=$chain"
             return 1
         fi
         target=$(iptables_mock_normalize_rule "$rule")
+        iptables_mock_debug_log "$tool" "DELETE normalized target=$target"
         while IFS= read -r line || [ -n "$line" ]; do
             current=$(iptables_mock_normalize_rule "$line")
             if [ "$removed" -eq 0 ] && [ "$current" = "$target" ]; then
+                iptables_mock_debug_log "$tool" "DELETE matched-rule table=$table chain=$chain rule=$current"
                 removed=1
                 continue
             fi
@@ -309,9 +380,12 @@ iptables_mock_delete_rule() {
     fi
     if [ "$removed" -eq 0 ]; then
         rm -f "$tmp"
+        iptables_mock_debug_log "$tool" "DELETE miss table=$table chain=$chain index=$index rule=$rule"
         return 1
     fi
     mv "$tmp" "$file"
+    iptables_mock_debug_snapshot "$tool" "$table" "$chain" "STATE AFTER DELETE"
+    iptables_mock_debug_log "$tool" "DELETE success table=$table chain=$chain index=$index"
     return 0
 }
 
