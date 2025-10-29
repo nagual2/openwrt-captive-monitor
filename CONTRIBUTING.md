@@ -97,10 +97,19 @@ These checks keep the branch healthy and ensure contributors get feedback quickl
 
 ## 6. Releases
 
-1. Update `CHANGELOG.md` and docs under `docs/` as needed.
-2. Tag the release from `main` (e.g. `git tag -a v0.1.2 -m "v0.1.2"`).
-3. Push the tag to trigger the packaging workflow.
-4. Publish the generated `.ipk` artifacts and update release notes.
+1. Update `CHANGELOG.md`, `docs/releases/`, and any other relevant docs.
+2. Assemble a local `.ipk` and feed for validation:
+   ```bash
+   scripts/build_ipk.sh --arch all
+   ```
+   Swap `all` for a target-specific architecture if you maintain per-target feeds.
+3. Tag and push the release from `main`:
+   ```bash
+   git tag -a v0.1.3 -m "openwrt-captive-monitor v0.1.3"
+   git push origin v0.1.3
+   ```
+   Replace `v0.1.3` with the new tag when cutting subsequent releases.
+4. Publish the generated `.ipk` artifacts and update the GitHub Release notes.
 
 If a regression requires a hotfix, branch from the affected tag, apply the fix, build/test, release, and cherry-pick the change back into `main` immediately.
 
