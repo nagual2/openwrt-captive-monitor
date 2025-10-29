@@ -286,8 +286,21 @@ rm -f "$output_ipk"
 
 (cd "$build_dir" && ar r "$output_ipk" debian-binary control.tar.gz data.tar.gz)
 
+if [ ! -f "$output_ipk" ]; then
+    echo "error: expected package archive $output_ipk to be created" >&2
+    exit 1
+fi
+
+if [ ! -s "$output_ipk" ]; then
+    echo "error: package archive $output_ipk is empty" >&2
+    exit 1
+fi
+
+ipk_size=$(stat -c%s "$output_ipk")
+
 packages_file="$feed_dir/Packages"
-rm -f "$packages_file" "$packages_file.gz"
+packages_file_gz="$packages_file.gz"
+rm -f "$packages_file" "$packages_file_gz"
 
 packages_written=0
 if command -v opkg-make-index > /dev/null 2>&1; then
@@ -323,21 +336,47 @@ else
     fi
 fi
 
+if [ ! -s "$packages_file" ]; then
+    echo "error: failed to populate $packages_file" >&2
+    exit 1
+fi
+
 if command -v pigz > /dev/null 2>&1; then
-    pigz -c "$packages_file" > "$packages_file.gz"
+    pigz -c "$packages_file" > "$packages_file_gz"
 else
-    gzip -c "$packages_file" > "$packages_file.gz"
+    gzip -c "$packages_file" > "$packages_file_gz"
 fi
 
-if [ ! -s "$packages_file.gz" ]; then
-    echo "error: failed to create $packages_file.gz" >&2
+if [ ! -s "$packages_file_gz" ]; then
+    echo "error: failed to create $packages_file_gz" >&2
     exit 1
 fi
 
-if ! gzip -t "$packages_file.gz" > /dev/null 2>&1; then
-    echo "error: gzip integrity check failed for $packages_file.gz" >&2
+if ! gzip -t "$packages_file_gz" > /dev/null 2>&1; then
+    echo "error: gzip integrity check failed for $packages_file_gz" >&2
     exit 1
 fi
 
-printf 'Created package: %s\n' "$output_ipk"
+packages_size=$(stat -c%s "$packages_file")
+packages_gz_size=$(stat -c%s "$packages_file_gz")
+
+rel_output_ipk="$output_ipk"
+rel_packages_file="$packages_file"
+rel_packages_file_gz="$packages_file_gz"
+
+case "$rel_output_ipk" in
+    "$repo_root"/*) rel_output_ipk="${rel_output_ipk#$repo_root/}" ;;
+esac
+case "$rel_packages_file" in
+    "$repo_root"/*) rel_packages_file="${rel_packages_file#$repo_root/}" ;;
+esac
+case "$rel_packages_file_gz" in
+    "$repo_root"/*) rel_packages_file_gz="${rel_packages_file_gz#$repo_root/}" ;;
+esac
+
+printf 'Created package: %s (%s bytes)\n' "$output_ipk" "$ipk_size"
 printf 'Updated feed index under: %s (entries: %s)\n' "$feed_dir" "$packages_written"
+printf 'Feed artifacts:\n'
+printf '  - %s (%s bytes)\n' "$rel_output_ipk" "$ipk_size"
+printf '  - %s (%s bytes)\n' "$rel_packages_file" "$packages_size"
+printf '  - %s (%s bytes)\n' "$rel_packages_file_gz" "$packages_gz_size"
