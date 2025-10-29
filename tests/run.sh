@@ -286,7 +286,18 @@ test_build_ipk_package() {
     assert_contains "Depends: dnsmasq, curl" "$control_contents" "control file missing dependencies"
     packages_index="$feed_dir/$arch/Packages"
     packages_body=$(cat "$packages_index" 2> /dev/null || printf '')
+    assert_contains "Package: openwrt-captive-monitor" "$packages_body" "Packages index missing package entry"
     assert_contains "Filename: $(basename "$ipk_file")" "$packages_body" "Packages index missing filename entry"
+    packages_gz="$feed_dir/$arch/Packages.gz"
+    [ -f "$packages_gz" ] || fail "Packages.gz missing under $feed_dir/$arch"
+    if ! gzip -t "$packages_gz" > /dev/null 2>&1; then
+        fail "Packages.gz integrity check failed"
+    fi
+    packages_gz_body=$(gzip -cd "$packages_gz" 2> /dev/null || printf '')
+    [ -n "$packages_gz_body" ] || fail "Packages.gz decompressed to empty content"
+    if [ "$packages_body" != "$packages_gz_body" ]; then
+        fail "Packages.gz content differs from Packages"
+    fi
     return 0
 }
 
