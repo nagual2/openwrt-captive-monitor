@@ -117,7 +117,13 @@ run_with_env() {
                     ;;
             esac
         done
-        if [ "$HAS_REAL_BUSYBOX" = "1" ]; then
+        use_real_busybox="$HAS_REAL_BUSYBOX"
+        if [ "$use_real_busybox" = "1" ]; then
+            if [ "${MOCK_SLEEP_FAST:-}" = "1" ] || [ "${MOCK_SLEEP_TERMINATE:-}" = "1" ]; then
+                use_real_busybox=0
+            fi
+        fi
+        if [ "$use_real_busybox" = "1" ]; then
             runner="$REAL_BUSYBOX_PATH"
             set -- sh "$SCRIPT" "$@"
         else
