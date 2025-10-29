@@ -1,0 +1,70 @@
+name: Build OpenWrt packages
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build .ipk package
+        run: ./scripts/build_ipk.sh
+
+      - name: Collect package metadata
+        id: pkg
+        run: |
+          set -e
+          pkg_makefile="package/openwrt-captive-monitor/Makefile"
+          pkg_name=$(awk -F':=' '/^PKG_NAME:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_name" ] || pkg_name="openwrt-captive-monitor"
+          pkg_version=$(awk -F':=' '/^PKG_VERSION:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_version" ] || pkg_version="0.0.0"
+          pkg_release=$(awk -F':=' '/^PKG_RELEASE:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_release" ] || pkg_release="1"
+          pkg_arch=$(awk -F':=' '/^PKG_ARCH:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_arch" ] || pkg_arch="all"
+          feed_dir="dist/opkg/$pkg_arch"
+          pkg_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}.ipk"
+          {
+            echo "name=$pkg_name"
+            echo "version=$pkg_version"
+            echo "release=$pkg_release"
+            echo "arch=$pkg_arch"
+            echo "feed_dir=$feed_dir"
+            echo "ipk=$pkg_ipk"
+            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.pkg.outputs.artifact_name }}
+          path: |
+            ${{ steps.pkg.outputs.ipk }}
+            ${{ steps.pkg.outputs.feed_dir }}/Packages
+            ${{ steps.pkg.outputs.feed_dir }}/Packages.gz
+          if-no-files-found: error
+
+      - name: Publish release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ steps.pkg.outputs.ipk }}
+            ${{ steps.pkg.outputs.feed_dir }}/Packages
+            ${{ steps.pkg.outputs.feed_dir }}/Packages.gz
