@@ -1,7 +1,8 @@
 # Release & Feed Publication Checklist
 
-This checklist documents the flow we used for the `v0.1.1` release and can be
-repeated for subsequent versions.
+This checklist documents the flow we used for the `v0.1.3` release (update the
+version string whenever you cut the next release) and can be repeated for
+subsequent versions.
 
 ## 1. Triage and code verification
 
@@ -59,6 +60,15 @@ scripts/build_ipk.sh --arch mips_24kc          # pick the same arch as target
    `bin/packages/<arch>/base/openwrt-captive-monitor_<version>_<arch>.ipk` and
    copy it into your feed folder.
 
+### Sanity checks
+
+Run the BusyBox test harness (it now validates the `.ipk` layout produced by
+`scripts/build_ipk.sh`):
+
+```bash
+busybox sh tests/run.sh
+```
+
 ## 3. Smoke test the package on OpenWrt
 
 1. Transfer the new `.ipk` to the router:
@@ -82,11 +92,14 @@ scripts/build_ipk.sh --arch mips_24kc          # pick the same arch as target
 
 ## 4. Tag and publish the release
 
-1. Update the changelog (if required) and tag `v0.1.x`:
+1. Update the changelog (if required), regenerate `docs/releases/<version>.md`,
+   and make sure the test harness is green (`busybox sh tests/run.sh`).
+2. Tag and push the release:
    ```bash
-   git tag -a v0.1.1 -m "openwrt-captive-monitor v0.1.1"
-   git push origin v0.1.1
+   git tag -a v0.1.3 -m "openwrt-captive-monitor v0.1.3"
+   git push origin v0.1.3
    ```
+   Swap `v0.1.3` for the new version string on future releases.
 
    - The generated `.ipk` for each architecture.
    - The per-target indexes: `Packages_<target>`, `Packages_<target>.gz`, and
@@ -101,7 +114,7 @@ scripts/build_ipk.sh --arch mips_24kc          # pick the same arch as target
    rm -rf *
    cp -r ../dist/opkg/* .
    git add .
-   git commit -m "Publish feed for v0.1.1"
+   git commit -m "Publish feed for v0.1.3"
    git push -f origin gh-pages
    ```
 2. Record the feed URL, e.g.
