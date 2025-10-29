@@ -39,6 +39,52 @@ if [ ! -d "$files_dir" ]; then
     exit 1
 fi
 
+require_command() {
+    tool="$1"
+    if command -v "$tool" > /dev/null 2>&1; then
+        return 0
+    fi
+
+    case "$tool" in
+        ar)
+            hint="Install binutils (e.g., 'sudo apt-get install -y binutils')."
+            ;;
+        gzip)
+            hint="Install gzip (e.g., 'sudo apt-get install -y gzip')."
+            ;;
+        md5sum | sha256sum)
+            hint="Install coreutils (e.g., 'sudo apt-get install -y coreutils')."
+            ;;
+        stat)
+            hint="Install coreutils (e.g., 'sudo apt-get install -y coreutils')."
+            ;;
+        tar)
+            hint="Install tar (e.g., 'sudo apt-get install -y tar')."
+            ;;
+        opkg-make-index)
+            hint="Install opkg-utils (e.g., via your distribution package manager)."
+            ;;
+        *)
+            hint=""
+            ;;
+    esac
+
+    if [ -n "$hint" ]; then
+        printf 'error: required tool "%s" not found. %s\n' "$tool" "$hint" >&2
+    else
+        printf 'error: required tool "%s" not found in PATH.\n' "$tool" >&2
+    fi
+    exit 1
+}
+
+ensure_prereqs() {
+    for tool in "$@"; do
+        require_command "$tool"
+    done
+}
+
+ensure_prereqs ar tar gzip md5sum sha256sum stat
+
 parse_make_var() {
     key="$1"
     awk -F':=' -v key="$key" '
@@ -242,22 +288,40 @@ rm -f "$output_ipk"
 
 packages_file="$feed_dir/Packages"
 rm -f "$packages_file" "$packages_file.gz"
-: > "$packages_file"
 
-for ipk in "$feed_dir"/*.ipk; do
-    [ -f "$ipk" ] || continue
-    tmpdir=$(mktemp -d)
-    ar p "$ipk" control.tar.gz | tar -C "$tmpdir" -xz
-    {
-        cat "$tmpdir/control"
-        echo "Filename: $(basename "$ipk")"
-        echo "Size: $(stat -c%s "$ipk")"
-        echo "MD5sum: $(md5sum "$ipk" | awk '{print $1}')"
-        echo "SHA256sum: $(sha256sum "$ipk" | awk '{print $1}')"
-        echo
-    } >> "$packages_file"
-    rm -rf "$tmpdir"
-done
+packages_written=0
+if command -v opkg-make-index > /dev/null 2>&1; then
+    tmp_packages_index="$build_dir/Packages.index"
+    opkg-make-index -a "$arch" "$feed_dir" > "$tmp_packages_index"
+    packages_written=$(awk '/^Package:[[:space:]]/{count++} END {print count+0}' "$tmp_packages_index")
+    if [ "$packages_written" -eq 0 ]; then
+        echo "error: opkg-make-index generated an empty index for $feed_dir" >&2
+        exit 1
+    fi
+    mv "$tmp_packages_index" "$packages_file"
+else
+    : > "$packages_file"
+    for ipk in "$feed_dir"/*.ipk; do
+        [ -f "$ipk" ] || continue
+        tmpdir=$(mktemp -d)
+        ar p "$ipk" control.tar.gz | tar -C "$tmpdir" -xz
+        {
+            cat "$tmpdir/control"
+            echo "Filename: $(basename "$ipk")"
+            echo "Size: $(stat -c%s "$ipk")"
+            echo "MD5sum: $(md5sum "$ipk" | awk '{print $1}')"
+            echo "SHA256sum: $(sha256sum "$ipk" | awk '{print $1}')"
+            echo
+        } >> "$packages_file"
+        rm -rf "$tmpdir"
+        packages_written=$((packages_written + 1))
+    done
+
+    if [ "$packages_written" -eq 0 ]; then
+        echo "error: no .ipk packages found under $feed_dir to index" >&2
+        exit 1
+    fi
+fi
 
 if command -v pigz > /dev/null 2>&1; then
     pigz -c "$packages_file" > "$packages_file.gz"
@@ -265,5 +329,15 @@ else
     gzip -c "$packages_file" > "$packages_file.gz"
 fi
 
-echo "Created package: $output_ipk"
-echo "Updated feed index under: $feed_dir"
+if [ ! -s "$packages_file.gz" ]; then
+    echo "error: failed to create $packages_file.gz" >&2
+    exit 1
+fi
+
+if ! gzip -t "$packages_file.gz" > /dev/null 2>&1; then
+    echo "error: gzip integrity check failed for $packages_file.gz" >&2
+    exit 1
+fi
+
+printf 'Created package: %s\n' "$output_ipk"
+printf 'Updated feed index under: %s (entries: %s)\n' "$feed_dir" "$packages_written"
