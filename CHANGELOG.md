@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.1.3
+
+### Packaging & QA
+- Bump the OpenWrt package version to `0.1.3` and keep the release scoped to a single `PKG_RELEASE`.
+- Extend the BusyBox test harness with an integration test for `scripts/build_ipk.sh` to make sure the `.ipk` payload ships the expected init script, config, and uci-defaults files.
+- Confirm package metadata (control fields, dependencies, conffiles) via automated assertions to guard future regressions.
+
+### Documentation
+- Refresh the release checklist and contributing guide with the updated tag/version flow and instructions for running the quick `.ipk` builder.
+- Document download & installation steps for GitHub releases in the README and add dedicated v0.1.3 release notes under `docs/releases/`.
+
 ## v0.1.2
 
 ### Documentation & Reporting
