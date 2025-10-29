@@ -3,7 +3,7 @@
 [![Package Build](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml/badge.svg?branch=main&label=Package%20Build)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml?query=branch%3Amain)
 [![Tests](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml/badge.svg?branch=main&label=Tests)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml?query=branch%3Amain)
 
-The **Build OpenWrt packages** workflow produces `.ipk` artifacts for supported targets, while **BusyBox lint and test** installs BusyBox, runs `shfmt`, and executes `tests/run.sh` for every push to `main` and pull request targeting `main`.
+The **Build OpenWrt packages** workflow provisions the packaging toolchain, runs the BusyBox test harness, builds the `.ipk`, validates the generated `Packages`/`Packages.gz`, and uploads them as artifacts. Tagged builds automatically attach the same files to the GitHub release. **BusyBox lint and test** installs BusyBox, runs `shfmt`, and executes `tests/run.sh` for every push to `main` and pull request targeting `main`.
 
 A lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily intercepts LAN DNS/HTTP traffic so clients can authenticate. Once internet access is restored, the helper automatically cleans up dnsmasq overrides, HTTP redirects, and NAT rules.
 
@@ -60,10 +60,26 @@ If you only need the shell wrapper without compiling against the full SDK, the h
 scripts/build_ipk.sh --arch mips_24kc
 ```
 
+Install the packaging prerequisites once per workstation or CI runner—`binutils`, `busybox`, `gzip`, `pigz`, `tar`, and `xz-utils` are sufficient for the helper to succeed. On Debian/Ubuntu systems:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y binutils busybox gzip pigz tar xz-utils
+```
+
+The script now fails fast with a descriptive error if any required utility is missing.
+
 - `--arch` controls the architecture tag that ends up in the filename (defaults to the `PKG_ARCH` defined in the package Makefile, currently `all`).
 - Artifacts are written to `dist/opkg/<arch>/` alongside refreshed `Packages` and `Packages.gz` indexes, so the directory can be pushed as-is to GitHub Pages or any static host.
 - Use `scripts/build_ipk.sh --help` for additional knobs such as redirecting the output via `--feed-root`.
+- Run `busybox sh tests/run.sh` after building if you need to regenerate the packaging validation locally.
 - The detailed release/runbook lives in [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
+
+#### Manual fallback when CI is unavailable
+
+1. Install the prerequisites shown above.
+2. Run `scripts/build_ipk.sh` with the desired `--arch` (and optionally `--feed-root`).
+3. Upload `dist/opkg/<arch>/{openwrt-captive-monitor_*.ipk,Packages,Packages.gz}` to the GitHub Release or your static feed host.
 
 ## Run tests
 

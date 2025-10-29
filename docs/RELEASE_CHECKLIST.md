@@ -19,18 +19,13 @@ subsequent versions.
 
 ## 2. Build the release artifacts
 
-The GitHub Actions workflow **Build OpenWrt packages** invokes
-`scripts/build_ipk.sh` on every push/PR to `main`. It assembles the
-shell-based package without the full OpenWrt SDK and refreshes the feed
-under `dist/opkg/<arch>/`. Each run emits:
+The GitHub Actions workflow **Build OpenWrt packages** now provisions the packaging toolchain, executes the BusyBox test harness, runs `scripts/build_ipk.sh`, and refuses to continue if the `.ipk`, `Packages`, or `Packages.gz` files are missing. Every push or pull request targeting `main` therefore produces a verified feed under `dist/opkg/<arch>/` with:
 
 - `openwrt-captive-monitor_<version>-<release>_<arch>.ipk`
 - `Packages`
 - `Packages.gz`
 
-Tag pushes reuse the same workflow to upload the artifacts directly to the
-GitHub Release. For ad-hoc verification download the artifacts from the
-workflow run.
+Tag pushes reuse the same workflow to upload the artifacts directly to the GitHub Release via `softprops/action-gh-release`. Grab the run URL or artifact log snippet for the release notes so you can demonstrate that the binaries were attached successfully.
 
 ### Option A – quick packager
 
@@ -41,12 +36,16 @@ below generates the `.ipk` plus a ready-to-serve opkg feed in one go:
 scripts/build_ipk.sh --arch mips_24kc          # pick the same arch as target
 ```
 
+Install `binutils`, `busybox`, `gzip`, `pigz`, `tar`, and `xz-utils` before invoking the helper; it aborts early with a descriptive error message if any tool is missing.
+
 - The command reads `PKG_VERSION`/`PKG_RELEASE` from
   `package/openwrt-captive-monitor/Makefile`.
 - Outputs land under `dist/opkg/<arch>/` and include `Packages` + `Packages.gz`
   alongside the generated `.ipk`.
 - Use `--feed-root` to point to a different destination if you keep release
   artifacts in a separate repo.
+- Run `busybox sh tests/run.sh` after generating artifacts to re-check the
+  archive layout and ensure `Packages.gz` matches `Packages`.
 
 ### Option B – official OpenWrt SDK/Buildroot
 
@@ -63,8 +62,7 @@ scripts/build_ipk.sh --arch mips_24kc          # pick the same arch as target
 
 ### Sanity checks
 
-Run the BusyBox test harness (it now validates the `.ipk` layout produced by
-`scripts/build_ipk.sh`):
+Run the BusyBox test harness (it now validates the `.ipk` layout, control metadata, and that `Packages.gz` matches `Packages`):
 
 ```bash
 busybox sh tests/run.sh
@@ -101,10 +99,13 @@ busybox sh tests/run.sh
    git push origin v0.1.3
    ```
    Swap `v0.1.3` for the new version string on future releases.
+3. Monitor the **Build OpenWrt packages** workflow triggered by the tag, ensure the job succeeds, and confirm the GitHub Release lists:
 
-   - The generated `.ipk` for each architecture.
-   - The per-target indexes: `Packages_<target>`, `Packages_<target>.gz`, and
-     `Packages_<target>.manifest` (or a zipped copy of the feed directory).
+   - `openwrt-captive-monitor_<version>-<release>_<arch>.ipk`
+   - `Packages`
+   - `Packages.gz`
+
+   Capture a screenshot of the artifact upload step or copy the workflow run URL into your release notes for traceability. If automation is unavailable, run `scripts/build_ipk.sh` manually (see the README fallback section) and upload the three files above to the release page by hand.
 
 ## 5. Host the opkg feed
 

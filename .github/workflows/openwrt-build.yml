@@ -14,6 +14,10 @@ on:
 permissions:
   contents: write
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,13 +26,33 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Install packaging prerequisites
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            binutils \
+            busybox \
+            gzip \
+            pigz \
+            tar \
+            xz-utils
+
+      - name: Run shell test harness
+        run: |
+          set -euxo pipefail
+          busybox sh tests/run.sh
+
       - name: Build .ipk package
-        run: ./scripts/build_ipk.sh
+        run: |
+          set -euxo pipefail
+          rm -rf dist/opkg
+          ./scripts/build_ipk.sh
 
       - name: Collect package metadata
         id: pkg
         run: |
-          set -e
+          set -euxo pipefail
           pkg_makefile="package/openwrt-captive-monitor/Makefile"
           pkg_name=$(awk -F':=' '/^PKG_NAME:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
           [ -n "$pkg_name" ] || pkg_name="openwrt-captive-monitor"
@@ -40,15 +64,24 @@ jobs:
           [ -n "$pkg_arch" ] || pkg_arch="all"
           feed_dir="dist/opkg/$pkg_arch"
           pkg_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}.ipk"
-          {
-            echo "name=$pkg_name"
-            echo "version=$pkg_version"
-            echo "release=$pkg_release"
-            echo "arch=$pkg_arch"
-            echo "feed_dir=$feed_dir"
-            echo "ipk=$pkg_ipk"
-            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}"
-          } >> "$GITHUB_OUTPUT"
+          echo "name=$pkg_name" >> "$GITHUB_OUTPUT"
+          echo "version=$pkg_version" >> "$GITHUB_OUTPUT"
+          echo "release=$pkg_release" >> "$GITHUB_OUTPUT"
+          echo "arch=$pkg_arch" >> "$GITHUB_OUTPUT"
+          echo "feed_dir=$feed_dir" >> "$GITHUB_OUTPUT"
+          echo "ipk=$pkg_ipk" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify build outputs
+        run: |
+          set -euxo pipefail
+          test -f "${{ steps.pkg.outputs.ipk }}"
+          test -s "${{ steps.pkg.outputs.ipk }}"
+          test -f "${{ steps.pkg.outputs.feed_dir }}/Packages"
+          test -s "${{ steps.pkg.outputs.feed_dir }}/Packages"
+          test -f "${{ steps.pkg.outputs.feed_dir }}/Packages.gz"
+          test -s "${{ steps.pkg.outputs.feed_dir }}/Packages.gz"
+          gzip -t "${{ steps.pkg.outputs.feed_dir }}/Packages.gz"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -68,3 +101,6 @@ jobs:
             ${{ steps.pkg.outputs.ipk }}
             ${{ steps.pkg.outputs.feed_dir }}/Packages
             ${{ steps.pkg.outputs.feed_dir }}/Packages.gz
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
