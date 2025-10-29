@@ -301,12 +301,34 @@ test_build_ipk_package() {
     return 0
 }
 
+test_build_ipk_detects_archiver_failure() {
+    feed_dir="$OUT_DIR/feed_missing"
+    arch="all_fail"
+    mkdir -p "$feed_dir"
+    mock_bin="$OUT_DIR/mock-bin"
+    mkdir -p "$mock_bin"
+    cat <<'EOF' > "$mock_bin/ar"
+#!/bin/sh
+exit 0
+EOF
+    chmod +x "$mock_bin/ar"
+    build_log="$OUT_DIR/build_ipk_missing.log"
+    if PATH="$mock_bin:$PATH" "$REPO_ROOT/scripts/build_ipk.sh" --feed-root "$feed_dir" --arch "$arch" > "$build_log" 2>&1; then
+        cat "$build_log" >&2 2> /dev/null || true
+        fail "build_ipk.sh succeeded even though ar produced no archive"
+    fi
+    log_contents=$(cat "$build_log" 2> /dev/null || printf '')
+    assert_contains "error: expected package archive" "$log_contents" "build_ipk.sh should detect missing archive"
+    return 0
+}
+
 main() {
     run_test test_opts_parsing
     run_test test_mode_switch
     run_test test_dns_redirect_stubs
     run_test test_cleanup
     run_test test_build_ipk_package
+    run_test test_build_ipk_detects_archiver_failure
     printf 'All tests passed (%d/%d)\n' "$PASSED_TESTS" "$TOTAL_TESTS"
 }
 
