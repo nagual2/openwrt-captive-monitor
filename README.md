@@ -11,12 +11,23 @@ A lightweight OpenWrt helper that monitors WAN connectivity, detects captive por
 
 ## Release notes
 
-See [CHANGELOG.md](CHANGELOG.md) for highlights of each release.
+- [v0.1.3](docs/releases/v0.1.3.md) – package build verification, refreshed release documentation, and end-to-end installation guidance.
+- See [CHANGELOG.md](CHANGELOG.md) for highlights of each release.
 
 ## Repository layout
 
 - `package/openwrt-captive-monitor/` – OpenWrt package definition, init script, executable, config defaults, and `uci-defaults` helper.
 - `docs/openwrt_captive_monitor_README.md` – extended guide that covers troubleshooting, manual deployment, and advanced usage scenarios.
+
+## Download prebuilt packages
+
+Grab the latest `.ipk` from the [GitHub Releases](https://github.com/nagual2/openwrt-captive-monitor/releases) page:
+
+```bash
+wget https://github.com/nagual2/openwrt-captive-monitor/releases/download/v0.1.3/openwrt-captive-monitor_0.1.3-1_all.ipk
+```
+
+Replace `v0.1.3` with the desired tag if you need an older version. Each release also includes refreshed `Packages` and `Packages.gz` indexes so the artifacts can be served directly as a custom opkg feed.
 
 ## Build with the OpenWrt SDK / Buildroot
 
@@ -65,22 +76,32 @@ busybox sh tests/run.sh
 
 ## Installing the generated package
 
-1. Copy the built package to the router (replace the filename with the actual artifact):
+1. **Download or build the `.ipk`:**
+   - GitHub Releases (prebuilt for the `all` architecture):
+     ```bash
+     wget https://github.com/nagual2/openwrt-captive-monitor/releases/download/v0.1.3/openwrt-captive-monitor_0.1.3-1_all.ipk
+     ```
+   - Or build locally from the repository root:
+     ```bash
+     scripts/build_ipk.sh --arch all
+     ```
+     Adjust `--arch` if you need architecture-specific naming.
+2. **Copy the package to the router** (replace the filename with the actual artifact):
    ```bash
    scp openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
    ```
-2. Install with opkg:
+3. **Install with opkg:**
    ```bash
    ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
    ```
-3. Enable and start the service when you are ready (the package keeps it disabled by default):
+4. **Enable and start the service when you are ready** (the package keeps it disabled by default):
    ```bash
    uci set captive-monitor.config.enabled='1'
    uci commit captive-monitor
    /etc/init.d/captive-monitor enable
    /etc/init.d/captive-monitor start
    ```
-4. On removal, opkg automatically stops the service: `opkg remove openwrt-captive-monitor`.
+5. On removal, opkg automatically stops the service: `opkg remove openwrt-captive-monitor`.
 
 ## Configuration overview
 

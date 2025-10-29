@@ -84,6 +84,18 @@ assert_status() {
     fi
 }
 
+parse_make_var() {
+    key="$1"
+    awk -F':=' -v key="$key" '
+        $1 == key {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
+            gsub(/\r/, "", $2)
+            print $2
+            exit
+        }
+    ' "$REPO_ROOT/package/openwrt-captive-monitor/Makefile"
+}
+
 run_with_env() {
     outfile="$OUT_DIR/output.txt"
     rm -f "$outfile"
@@ -247,11 +259,43 @@ test_cleanup() {
     return 0
 }
 
+test_build_ipk_package() {
+    feed_dir="$OUT_DIR/feed"
+    arch="all_test"
+    mkdir -p "$feed_dir"
+    build_log="$OUT_DIR/build_ipk.log"
+    if ! "$REPO_ROOT/scripts/build_ipk.sh" --feed-root "$feed_dir" --arch "$arch" > "$build_log" 2>&1; then
+        cat "$build_log" >&2 2> /dev/null || true
+        fail "build_ipk.sh failed"
+    fi
+    ipk_file=$(find "$feed_dir/$arch" -maxdepth 1 -type f -name '*.ipk' | head -n1)
+    [ -n "$ipk_file" ] || fail "No .ipk produced under $feed_dir/$arch"
+    data_listing=$(ar p "$ipk_file" data.tar.gz | tar -tzf -)
+    assert_contains "usr/sbin/openwrt_captive_monitor" "$data_listing" "Executable missing from package payload"
+    assert_contains "etc/init.d/captive-monitor" "$data_listing" "Init script missing from package payload"
+    assert_contains "etc/uci-defaults/99-captive-monitor" "$data_listing" "uci-defaults missing from package payload"
+    assert_contains "etc/config/captive-monitor" "$data_listing" "Config file missing from package payload"
+    tmp_control_dir=$(mktemp -d)
+    ar p "$ipk_file" control.tar.gz | tar -C "$tmp_control_dir" -xz
+    control_contents=$(cat "$tmp_control_dir/control" 2> /dev/null || printf '')
+    rm -rf "$tmp_control_dir"
+    pkg_version=$(parse_make_var "PKG_VERSION")
+    pkg_release=$(parse_make_var "PKG_RELEASE")
+    assert_contains "Package: openwrt-captive-monitor" "$control_contents" "control file missing package name"
+    assert_contains "Version: ${pkg_version}-${pkg_release}" "$control_contents" "control file missing version string"
+    assert_contains "Depends: dnsmasq, curl" "$control_contents" "control file missing dependencies"
+    packages_index="$feed_dir/$arch/Packages"
+    packages_body=$(cat "$packages_index" 2> /dev/null || printf '')
+    assert_contains "Filename: $(basename "$ipk_file")" "$packages_body" "Packages index missing filename entry"
+    return 0
+}
+
 main() {
     run_test test_opts_parsing
     run_test test_mode_switch
     run_test test_dns_redirect_stubs
     run_test test_cleanup
+    run_test test_build_ipk_package
     printf 'All tests passed (%d/%d)\n' "$PASSED_TESTS" "$TOTAL_TESTS"
 }
 
