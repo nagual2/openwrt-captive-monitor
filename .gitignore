@@ -4,6 +4,7 @@
 *.tmp
 *.bak
 *.swp
+ed -n *
 shell-files.txt
 tests/_out/
 
