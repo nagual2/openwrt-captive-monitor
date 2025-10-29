@@ -307,7 +307,7 @@ test_build_ipk_detects_archiver_failure() {
     mkdir -p "$feed_dir"
     mock_bin="$OUT_DIR/mock-bin"
     mkdir -p "$mock_bin"
-    cat <<'EOF' > "$mock_bin/ar"
+    cat << 'EOF' > "$mock_bin/ar"
 #!/bin/sh
 exit 0
 EOF
