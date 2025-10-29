@@ -71,6 +71,7 @@ The script now fails fast with a descriptive error if any required utility is mi
 
 - `--arch` controls the architecture tag that ends up in the filename (defaults to the `PKG_ARCH` defined in the package Makefile, currently `all`).
 - Artifacts are written to `dist/opkg/<arch>/` alongside refreshed `Packages` and `Packages.gz` indexes, so the directory can be pushed as-is to GitHub Pages or any static host.
+- The helper now aborts with a descriptive error if the `.ipk`, `Packages`, or `Packages.gz` files fail to materialise and prints a short summary of the generated feed when it succeeds.
 - Use `scripts/build_ipk.sh --help` for additional knobs such as redirecting the output via `--feed-root`.
 - Run `busybox sh tests/run.sh` after building if you need to regenerate the packaging validation locally.
 - The detailed release/runbook lives in [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
