@@ -1,9 +1,9 @@
 # openwrt-captive-monitor
 
-[![Lint Status](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml/badge.svg?branch=main&label=Lint%20Status)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml?query=branch%3Amain)
-[![Test Status](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml/badge.svg?branch=main&label=Test%20Status)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml?query=branch%3Amain)
+[![Package Build](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml/badge.svg?branch=main&label=Package%20Build)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml?query=branch%3Amain)
+[![Tests](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml/badge.svg?branch=main&label=Tests)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml?query=branch%3Amain)
 
-The **BusyBox lint and test** workflow installs BusyBox, runs `shfmt`, and executes `tests/run.sh` for every push to `main` and pull request targeting `main`.
+The **Build OpenWrt packages** workflow produces `.ipk` artifacts for supported targets, while **BusyBox lint and test** installs BusyBox, runs `shfmt`, and executes `tests/run.sh` for every push to `main` and pull request targeting `main`.
 
 A lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily intercepts LAN DNS/HTTP traffic so clients can authenticate. Once internet access is restored, the helper automatically cleans up dnsmasq overrides, HTTP redirects, and NAT rules.
 
@@ -32,9 +32,14 @@ See [CHANGELOG.md](CHANGELOG.md) for highlights of each release.
 
 ### Continuous integration
 
-The repository's GitHub Actions workflow, **BusyBox lint and test** (`.github/workflows/shellcheck.yml`), provisions BusyBox, runs `shfmt`, and executes `tests/run.sh`. The badges at the top of this document surface the latest lint and test status for the `main` branch.
+Two GitHub Actions workflows keep the project healthy:
 
-Package builds are produced manually using [`scripts/build_ipk.sh`](scripts/build_ipk.sh); no automated GitHub Actions job currently publishes `.ipk` artifacts.
+- **Build OpenWrt packages** (`.github/workflows/openwrt-build.yml`) compiles `.ipk` artifacts for supported targets and publishes release assets on tagged builds.
+- **BusyBox lint and test** (`.github/workflows/shellcheck.yml`) provisions BusyBox, runs `shfmt`, and executes `tests/run.sh` on every push and pull request targeting `main`.
+
+The badges at the top of this document surface the latest package build and test status for the `main` branch.
+
+For local builds you can still use [`scripts/build_ipk.sh`](scripts/build_ipk.sh) to assemble packages without going through GitHub Actions.
 
 ### Quick local packaging (.ipk + opkg feed)
 
