@@ -2,6 +2,7 @@
 
 [![Package Build](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml/badge.svg?branch=main&label=Package%20Build)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml?query=branch%3Amain)
 [![Tests](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml/badge.svg?branch=main&label=Tests)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/shellcheck.yml?query=branch%3Amain)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 The **Build OpenWrt packages** workflow provisions the packaging toolchain, runs the BusyBox test harness, builds the `.ipk`, validates the generated `Packages`/`Packages.gz`, and uploads them as artifacts. Tagged builds automatically attach the same files to the GitHub release. **BusyBox lint and test** installs BusyBox, runs `shfmt`, and executes `tests/run.sh` for every push to `main` and pull request targeting `main`.
 
@@ -137,6 +138,14 @@ config captive_monitor 'config'
 ```
 
 Environment variables and CLI flags remain supported for ad-hoc runs; refer to the detailed documentation in `docs/` for advanced scenarios and troubleshooting tips.
+
+## Community
+
+This project follows the [Contributor Code of Conduct](CODE_OF_CONDUCT.md). Please read it to understand the expectations for community participation.
+
+* **Support**: Find help, ask questions, and report issues in our [Support Guide](.github/SUPPORT.md)
+* **Security**: Report security vulnerabilities privately according to our [Security Policy](.github/SECURITY.md)
+* **License**: This project is licensed under the [MIT License](LICENSE)
 
 ## Contributing
 
