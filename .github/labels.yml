@@ -1,0 +1,122 @@
+# Label taxonomy for openwrt-captive-monitor
+# This file defines the standard labels used across the repository
+# Synced automatically via the label-sync workflow
+
+# Priority labels
+- name: priority/critical
+  color: d73a4a
+  description: Critical issues that need immediate attention
+- name: priority/high
+  color: d93f0b
+  description: High priority issues and features
+- name: priority/medium
+  color: fb850f
+  description: Medium priority items
+- name: priority/low
+  color: 1d76db
+  description: Low priority items, nice to have
+
+# Type labels
+- name: bug
+  color: d73a4a
+  description: Something isn't working
+- name: enhancement
+  color: a2eeef
+  description: New feature or request
+- name: question
+  color: d876e3
+  description: Further information is requested
+- name: documentation
+  color: 0075ca
+  description: Improvements or additions to documentation
+- name: maintenance
+  color: e99695
+  description: Maintenance tasks, refactoring, cleanup
+
+# Status labels
+- name: status/needs-triage
+  color: fef2c0
+  description: Issue needs initial triage and categorization
+- name: status/ready-for-review
+  color: 0e8a16
+  description: Pull request is ready for review
+- name: status/review-requested
+  color: 5319e7
+  description: Review has been specifically requested
+- name: status/needs-more-info
+  color: fef2c0
+  description: More information is needed to proceed
+- name: status/blocked
+  color: b60205
+  description: Blocked by external dependency or other issue
+- name: status/wontfix
+  color:ffffff
+  description: This will not be worked on
+- name: status/duplicate
+  color: cfd3d7
+  description: This issue or pull request already exists
+
+# Component labels
+- name: component/wifi
+  color: 1d76db
+  description: Related to WiFi recovery and management
+- name: component/dns
+  color: 1d76db
+  description: Related to DNS handling and redirection
+- name: component/networking
+  color: 1d76db
+  description: Related to network connectivity and routing
+- name: component/packaging
+  color: 1d76db
+  description: Related to OpenWrt packaging and build system
+- name: component/ci
+  color: 1d76db
+  description: Related to CI/CD workflows and automation
+- name: component/configuration
+  color: 1d76db
+  description: Related to UCI configuration and settings
+- name: component/logging
+  color: 1d76db
+  description: Related to logging and diagnostics
+
+# Size labels
+- name: size/XS
+  color: 006b75
+  description: Pull request with 0-9 lines changed
+- name: size/S
+  color: 006b75
+  description: Pull request with 10-29 lines changed
+- name: size/M
+  color: 006b75
+  description: Pull request with 30-99 lines changed
+- name: size/L
+  color: 006b75
+  description: Pull request with 100-499 lines changed
+- name: size/XL
+  color: 006b75
+  description: Pull request with 500-999 lines changed
+- name: size/XXL
+  color: 006b75
+  description: Pull request with 1000+ lines changed
+
+# Special labels
+- name: good-first-issue
+  color: 7057ff
+  description: Good for newcomers
+- name: help-wanted
+  color: 008672
+  description: Extra attention is needed
+- name: security
+  color: ee0701
+  description: Security-related issues
+- name: dependencies
+  color: 0366d6
+  description: Pull requests that update a dependency file
+
+# Release labels
+- name: release-blocker
+  color: d93f0b
+  description: Blocks the next release
+- name: release-candidate
+  color: 0e8a16
+  description: Ready for the next release

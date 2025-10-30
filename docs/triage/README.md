@@ -10,6 +10,14 @@ This directory contains PR queue audit reports and triage artifacts for the `ope
 
 ## Files in This Directory
 
+### Templates and Label Management
+
+- **[TEMPLATES_AND_LABELS.md](./TEMPLATES_AND_LABELS.md)** - Guide to modernized issue/PR templates and label taxonomy
+  - GitHub Issue Forms usage and triage processes
+  - PR template structure and review checklist
+  - Label taxonomy and synchronization workflow
+  - Best practices for issue and PR triage
+
 ### Audit Reports
 
 - **[AUDIT_REPORT.md](./AUDIT_REPORT.md)** - Comprehensive PR queue audit report from 2025-10-30

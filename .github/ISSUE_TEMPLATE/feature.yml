@@ -1,0 +1,80 @@
+name: 🚀 Feature Request
+description: Suggest an idea to improve openwrt-captive-monitor
+title: "[Feature]: "
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please fill out the form below to help us understand your proposal and evaluate its fit for the project.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the feature or improvement you would like to see.
+      placeholder: Describe the feature in one or two sentences...
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this needed? What problem does it solve?
+      placeholder: Explain the use case and why this feature would be valuable...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: Outline how the feature should work. Include UI/CLI/API examples if applicable.
+      placeholder: Describe how you envision this feature working...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: List any alternative solutions or features you have considered.
+      placeholder: What other approaches did you consider? Why did you prefer this one?
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Implementation scope
+      description: What areas would this feature affect?
+      multiple: true
+      options:
+        - Core monitoring logic
+        - WiFi recovery functions
+        - DNS/traffic redirection
+        - Configuration/UCI integration
+        - Logging and diagnostics
+        - Package/build system
+        - Documentation
+        - Other (specify in additional context)
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context, documentation, or references that support the request.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Acceptance
+      description: By submitting this feature request, you agree to the following:
+      options:
+        - label: I have searched existing issues and proposals for similar features
+          required: true
+        - label: I have considered whether this fits the project's scope and goals
+          required: true
+        - label: I understand this is a request and not guaranteed to be implemented
+          required: true
