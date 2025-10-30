@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.0.1](https://github.com/nagual2/openwrt-captive-monitor/compare/v1.0.0...v1.0.1) (2025-10-30)
+
+### Bug Fixes
+
+* **build:** fix parameter expansion warnings in build_ipk.sh by properly quoting variables inside ${..} expansions
+* **shellcheck:** add missing shebang to iptables mock script to resolve shell compatibility issues
+* **shellcheck:** fix subshell variable modification in validate-docs.sh by using temp file instead of pipeline
+* **tests:** resolve all shellcheck warnings and improve script compatibility
+
+### Code Quality
+
+* Apply consistent code formatting across all shell scripts using shfmt
+* Ensure POSIX shell compatibility and eliminate linting warnings
+* Improve test framework reliability and maintainability
+
+### Build System
+
+* Update PKG_VERSION to 1.0.0 to align with changelog documentation
+* Add VERSION file for centralized version tracking
+* Ensure version consistency across build artifacts and documentation
+
 ## [1.0.0](https://github.com/nagual2/openwrt-captive-monitor/compare/v0.1.0...v1.0.0) (2025-10-30)
 
 

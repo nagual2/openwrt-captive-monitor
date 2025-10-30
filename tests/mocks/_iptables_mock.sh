@@ -1,3 +1,4 @@
+#!/bin/sh
 # Stateful mock implementation for iptables-style CLIs.
 # Tracks per-table per-chain rule lists on disk so tests can
 # observe realistic rule creation/removal semantics.
@@ -35,11 +36,11 @@ iptables_mock_handle() {
                 shift 2
                 continue
                 ;;
-            -w|--wait)
+            -w | --wait)
                 shift
                 if [ "$#" -gt 0 ]; then
                     case "$1" in
-                        ''|*[!0-9]*) ;;
+                        '' | *[!0-9]*) ;;
                         *)
                             shift
                             ;;
@@ -99,7 +100,7 @@ iptables_mock_handle() {
                 index=1
                 if [ "$#" -gt 0 ]; then
                     case "$1" in
-                        ''|*[!0-9]*) ;;
+                        '' | *[!0-9]*) ;;
                         *)
                             index="$1"
                             shift
@@ -130,7 +131,7 @@ iptables_mock_handle() {
                     return 2
                 fi
                 case "$1" in
-                    ''|*[!0-9]*)
+                    '' | *[!0-9]*)
                         iptables_mock_delete_rule "$base_dir" "$table" "$chain" "$@"
                         ;;
                     *)
@@ -157,14 +158,14 @@ iptables_mock_builtin_chain() {
     case "$builtin_table" in
         nat)
             case "$builtin_chain" in
-                PREROUTING|INPUT|OUTPUT|POSTROUTING)
+                PREROUTING | INPUT | OUTPUT | POSTROUTING)
                     return 0
                     ;;
             esac
             ;;
         filter)
             case "$builtin_chain" in
-                INPUT|FORWARD|OUTPUT)
+                INPUT | FORWARD | OUTPUT)
                     return 0
                     ;;
             esac
