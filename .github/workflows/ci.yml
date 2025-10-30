@@ -113,7 +113,8 @@ jobs:
         if: matrix.linter == 'actionlint'
         run: |
           set -euo pipefail
-          export PATH="$PATH:$(go env GOPATH)/bin"
+          gopath_bin=$(go env GOPATH)/bin
+          export PATH="$PATH:$gopath_bin"
           actionlint
 
   test:

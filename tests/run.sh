@@ -32,7 +32,6 @@ HTTPD_PIDFILE="/tmp/captive_httpd.pid"
 
 TOTAL_TESTS=0
 PASSED_TESTS=0
-LAST_STATUS=0
 LAST_OUTPUT=""
 
 reset_logs() {
@@ -145,7 +144,6 @@ run_with_env() {
         "$runner" "$@" > "$outfile" 2>&1
     )
     status=$?
-    LAST_STATUS=$status
     if [ -f "$outfile" ]; then
         LAST_OUTPUT=$(cat "$outfile" 2> /dev/null || printf '')
     else

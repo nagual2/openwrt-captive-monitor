@@ -36,7 +36,6 @@ jobs:
   build:
     name: Build (${{ matrix.target }})
     runs-on: ubuntu-latest
-    needs: ci
     
     strategy:
       matrix:
@@ -114,13 +113,15 @@ jobs:
           [ -n "$pkg_arch" ] || pkg_arch="all"
           feed_dir="dist/opkg/$pkg_arch"
           pkg_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}.ipk"
-          echo "name=$pkg_name" >> "$GITHUB_OUTPUT"
-          echo "version=$pkg_version" >> "$GITHUB_OUTPUT"
-          echo "release=$pkg_release" >> "$GITHUB_OUTPUT"
-          echo "arch=$pkg_arch" >> "$GITHUB_OUTPUT"
-          echo "feed_dir=$feed_dir" >> "$GITHUB_OUTPUT"
-          echo "ipk=$pkg_ipk" >> "$GITHUB_OUTPUT"
-          echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}_${{ matrix.target }}" >> "$GITHUB_OUTPUT"
+          {
+            echo "name=$pkg_name"
+            echo "version=$pkg_version"
+            echo "release=$pkg_release"
+            echo "arch=$pkg_arch"
+            echo "feed_dir=$feed_dir"
+            echo "ipk=$pkg_ipk"
+            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}_${{ matrix.target }}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Verify build outputs
         run: |
@@ -167,10 +168,12 @@ jobs:
           [ -n "$pkg_release" ] || pkg_release="1"
           pkg_arch=$(awk -F':=' '/^PKG_ARCH:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
           [ -n "$pkg_arch" ] || pkg_arch="all"
-          echo "name=$pkg_name" >> "$GITHUB_OUTPUT"
-          echo "version=$pkg_version" >> "$GITHUB_OUTPUT"
-          echo "release=$pkg_release" >> "$GITHUB_OUTPUT"
-          echo "arch=$pkg_arch" >> "$GITHUB_OUTPUT"
+          {
+            echo "name=$pkg_name"
+            echo "version=$pkg_version"
+            echo "release=$pkg_release"
+            echo "arch=$pkg_arch"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v6
