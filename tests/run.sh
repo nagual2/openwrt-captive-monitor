@@ -32,7 +32,6 @@ HTTPD_PIDFILE="/tmp/captive_httpd.pid"
 
 TOTAL_TESTS=0
 PASSED_TESTS=0
-LAST_STATUS=0
 LAST_OUTPUT=""
 
 reset_logs() {
