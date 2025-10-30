@@ -1,0 +1,142 @@
+site_name: OpenWrt Captive Monitor Documentation
+site_description: Comprehensive documentation for openwrt-captive-monitor - a lightweight OpenWrt service for captive portal detection and traffic interception.
+site_author: OpenWrt Captive Monitor Team
+site_url: https://nagual2.github.io/openwrt-captive-monitor/
+repo_url: https://github.com/nagual2/openwrt-captive-monitor
+repo_name: openwrt-captive-monitor
+edit_uri: edit/main/docs/
+
+# Configuration
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - toc.integrate
+    - search.highlight
+    - search.share
+    - search.suggest
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
+
+# Plugins
+plugins:
+  - search:
+      separator: '[\s\-\.]+'
+      lang: en
+  - minify:
+      minify_html: true
+  - git-revision-date-localized:
+      type: datetime
+      timezone: UTC
+      locale: en
+      enable_creation_date: true
+  - awesome-pages
+  - macros
+
+# Markdown extensions
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - attr_list
+  - md_in_html
+  - footnotes
+  - toc:
+      permalink: true
+      title: Table of Contents
+
+# Navigation structure
+nav:
+  - Home: index.md
+  
+  # Getting Started
+  - Getting Started:
+    - Quick Start: usage/quick-start.md
+    - Installation Guide: usage/installation.md
+    - Basic Configuration: configuration/basic-config.md
+  
+  # User Guides
+  - User Guides:
+    - Captive Portal Walkthrough: guides/captive-portal-walkthrough.md
+    - Oneshot Recovery Mode: guides/oneshot-recovery.md
+    - Troubleshooting: guides/troubleshooting.md
+    - Architecture Overview: guides/architecture.md
+  
+  # Configuration
+  - Configuration:
+    - Configuration Reference: configuration/reference.md
+    - Advanced Configuration: configuration/advanced-config.md
+  
+  # Project
+  - Project:
+    - Project Management: project/management.md
+    - Frequently Asked Questions: project/faq.md
+    - Release Checklist: project/release-checklist.md
+    - Test Plan: project/test-plan.md
+    - Project Backlog: project/backlog.md
+    - Package Management: project/packages.md
+
+# Documentation tree
+docs_dir: docs
+site_dir: site
+
+# Copyright
+copyright: |
+  &copy; 2024 OpenWrt Captive Monitor Team - 
+  Documentation distributed under CC BY 4.0
+
+# Extra files
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/nagual2/openwrt-captive-monitor
+    - icon: fontawesome/brands/docker
+      link: https://github.com/nagual2/openwrt-captive-monitor/pkgs/container
+    - icon: fontawesome/solid/rss
+      link: https://github.com/nagual2/openwrt-captive-monitor/releases.atom
+  version:
+    provider: mike
+    default: stable
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX
+
+# Development and deployment settings
+dev_addr: 0.0.0.0:8000
+use_directory_urls: false
+strict: true

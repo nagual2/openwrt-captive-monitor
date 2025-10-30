@@ -16,3 +16,14 @@ tests/_out/
 /dist/**
 *.ipk
 *.ipk.gz
+
+# Documentation build
+/site/
+/site/**/
+*.pyc
+__pycache__/
+.pycache/
+
+# MkDocs
+.mkdocs/
+mkdocs.yml.local
