@@ -31,6 +31,7 @@ Welcome to the comprehensive documentation for **openwrt-captive-monitor**, a li
 - [Test Plan](project/test-plan.md) - Testing procedures and validation
 - [Backlog](project/backlog.md) - Feature roadmap and priorities
 - [Package Management](project/packages.md) - Build and distribution details
+- [Packaging and Distribution](packaging.md) - Complete packaging workflow and automation
 
 ## 🔗 Quick Links
 

@@ -110,6 +110,7 @@ nav:
     - Test Plan: project/test-plan.md
     - Project Backlog: project/backlog.md
     - Package Management: project/packages.md
+    - Packaging and Distribution: packaging.md
 
 # Documentation tree
 docs_dir: docs
