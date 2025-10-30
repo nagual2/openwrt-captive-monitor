@@ -10,6 +10,13 @@
 - **Improved caching**: Enhanced apt package caching across workflows to reduce build times.
 - **Separate release job**: Isolated release asset publishing into a dedicated job that runs only on tags, improving workflow clarity.
 
+## 2025-01-30 - Release Please Permissions Fix
+
+- **Enhanced workflow permissions**: Added explicit `actions: read` and `checks: write` permissions to release-please workflow to ensure proper token access.
+- **PAT token fallback**: Added configuration comments and documentation for using Personal Access Token as fallback when GitHub Actions permissions are restricted.
+- **Troubleshooting documentation**: Created comprehensive troubleshooting guide in `RELEASE_PLEASE_TROUBLESHOOTING.md` for common permission issues and solutions.
+- **Repository settings guidance**: Documented required GitHub repository settings for enabling GitHub Actions PR creation.
+
 ## 2024-10-24
 
 - Updated the lint workflow to run on pushes and pull requests targeting `main` or `feature/*` branches, and to gather shell targets once for both `shfmt` and `shellcheck`.

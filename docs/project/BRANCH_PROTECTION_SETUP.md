@@ -62,10 +62,20 @@ After setup, verify:
 - Branch cleanup: All redundant branches deleted
 - Documentation: BRANCHES_AND_MERGE_POLICY.md, CODEOWNERS, PR templates configured
 - CI enforcement: Shell linting and OpenWrt package builds required
+- Release automation: release-please workflow configured with proper permissions
 
 🔄 **Pending** (GitHub UI configuration):
 - Branch protection rules setup
 - Auto-delete branches enabled
 - Status checks enforcement
+- **GitHub Actions permissions**: Enable "Allow GitHub Actions to create and approve pull requests" in Settings → Actions → General (required for release-please automation)
 
 The repository is now ready for protected, systematic development with enforced CI and merge policies.
+
+## Release Automation Notes
+
+The `release-please` workflow requires special permissions to create release PRs automatically. If GitHub Actions cannot create PRs:
+
+1. **Enable Actions permissions** in repository settings (recommended)
+2. **Use PAT token** as documented in `RELEASE_PLEASE_TROUBLESHOOTING.md`
+3. **Exclude release branches** from protection if needed: `!release-please--branches--*`
