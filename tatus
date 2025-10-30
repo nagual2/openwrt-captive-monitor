@@ -1,0 +1,141 @@
+[33m3a87887[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfix-ci-failing-tests[m[33m, [m[1;31morigin/fix-ci-failing-tests[m[33m)[m ci: fix all failing CI tests, lint, and workflow issues
+[33ma6133d4[m Merge pull request #61 from nagual2/fix-github-actions-tests-add-semver-changelog
+[33m5dc842c[m fix(ci,build,test): fix GitHub CI tests, enforce shell script lint, and align versioning
+[33m4c32890[m merge docs-add-ci-badge-and-actions-link-to-readme into main (keep main README)
+[33m2c9e576[m merge mocks/stateful-iptables-ip6tables into main (take theirs)
+[33m6e831e9[m merge verify-ipk-build-e2e-e01 into main
+[33m1b9b8e1[m merge release-please--branches--main into main
+[33m00652a0[m chore(main): release 1.0.0
+[33ma3dfc0f[m fix(build): synchronize PKG_VERSION with release branch and verify end-to-end package build (#60)
+[33m8042bc3[m fix(build): synchronize PKG_VERSION with release branch and verify end-to-end package build
+[33mf44b6c7[m ci(deps): bump the github-actions group with 4 updates (#58)
+[33m1b9193b[m feat(github-templates): modernize issue and PR templates, label taxonomy, and triage docs
+[33mc0f6d74[m Merge pull request #57 from nagual2/ci-consolidate-workflows-packaging-release-please-dependabot-docs
+[33me515939[m ci(workflows): consolidate CI workflows, add release automation, and improve packaging
+[33mb40634d[m Merge pull request #56 from nagual2/packaging/refresh-openwrt-metadata
+[33mbaeccf4[m feat(packaging): align OpenWrt packaging, build, and docs with current best practices
+[33m5c16ce6[m Merge pull request #55 from nagual2/docs/revamp-readme-structure-mkdocs
+[33m35ae060[m docs: revamp documentation structure and content for GitHub best practices
+[33m22e6782[m Merge pull request #54 from nagual2/add-community-files-license-code-of-conduct-security-support-readme-updates
+[33meaa6310[m chore(repo): add standard community health files and update references
+[33m29be9c0[m Merge pull request #53 from nagual2/feat/list-ipk-packages-report
+[33m6fd5445[m docs(report): add comprehensive OpenWrt package availability report
+[33m4038d2d[m Merge pull request #52 from nagual2/audit/create-pr-audit-report-pr-51
+[33m0204d67[m docs(triage): add comprehensive PR audit report for PR #51 and queue status
+[33m81c14ab[m Merge pull request #51 from nagual2/audit-pr-queue
+[33mc0ffe98[m chore(triage): audit PR queue and record zero open PRs at audit
+[33m2f01760[m Merge pull request #50 from nagual2/investigate-missing-ipk-artifacts
+[33m3bc3d60[m ci(build): widen packaging workflow triggers and add investigation docs
+[33m6749a37[m Merge pull request #49 from nagual2/fix-ci-apt-get-timeouts
+[33m720b7db[m ci(openwrt-build): add timeouts and resilience to apt-get update/install in CI
+[33m7616c53[m Merge pull request #48 from nagual2/fix-ci-pr-47-no-ipk-artifacts-e01
+[33m1546131[m style(tests): fix improper heredoc spacing for shell formatter compliance
+[33mbc00cbd[m Merge pull request #47 from nagual2/fix-ci-no-ipk-artifacts
+[33mae1858c[m fix(build): enforce .ipk artifact creation and add hard fail on missing artifacts
+[33m0ffd2b4[m Merge pull request #46 from nagual2/fix-openwrt-ipk-workflow-artifacts
+[33m7915044[m fix(ci): harden and verify OpenWrt package workflow and docs
+[33m03b5360[m Merge pull request #45 from nagual2/cleanup/remove-ed-artifact-fix-ipk-build
+[33m4ca51d8[m chore(build): remove accidental artifact file and ensure reliable package build
+[33mcda0f61[m Merge pull request #44 from nagual2/release-openwrt-captive-monitor
+[33mc14b634[m chore(release): bump openwrt-captive-monitor to v0.1.3 and refresh release docs
+[33m36403a8[m Merge pull request #43 from nagual2/ci/cache-apt-packages
+[33mc67b805[m ci(workflow): cache apt packages in CI to optimize package downloads
+[33mb4c7e44[m Merge pull request #42 from nagual2/fix-readme-badges-package-tests
+[33md0da3f1[m docs(readme): fix CI/CD badges to show distinct build and test statuses
+[33m9d36778[m Merge pull request #41 from nagual2/ci-verify-readme-badges
+[33m0a545e3[m docs(readme): verify and update CI workflow badges for lint and test
+[33m76ea226[m Merge pull request #40 from nagual2/fix/test-mode-switch-hang-stateful-iptables-mock
+[33m5b5aee1[m fix(tests): debug and fix stateful iptables mock, unblock hanging test
+[33m573326b[m Merge pull request #39 from nagual2/chore-format-iptables-mock-shfmt-e01
+[33m9525911[m style(tests/mocks): apply shfmt formatting to mock scripts and test runner
+[33mda7cb76[m Merge pull request #38 from nagual2/chore-format-iptables-mock-shfmt
+[33mcb83cc0[m chore(format): apply shfmt to iptables mock for consistent formatting
+[33m1886f3f[m Merge pull request #37 from nagual2/test/add-stateful-iptables-mocks
+[33m4075bf2[m test(mocks): add stateful iptables/ip6tables mocks to prevent test hangs
+[33mba8beb7[m Merge pull request #36 from nagual2/ci/busybox-minimal-lint-test
+[33mc805178[m ci(github): streamline CI to BusyBox-only minimal lint and test
+[33m7bcd137[m Merge pull request #35 from nagual2/honor-env-overrides-captive-monitor
+[33ma13e170[m Merge pull request #33 from nagual2/stabilize-busybox-harness
+[33m13bfd87[m refactor(config): honor environment overrides for all key variables
+[33m1ae869f[m fix(mocks): make iptables/ip6tables test mocks stateful to avoid infinite cleanup loops
+[33m9e79438[m fix(test): resolve busybox mock recursion & httpd sleep, stabilize test harness
+[33mab701ad[m docs(readme): add CI status badge and link to Actions page (#32)
+[33m09db281[m docs(readme): add CI status badge and link to Actions page
+[33m8f2c245[m Merge pull request #31 from nagual2/ci-find-last-green-audit-changes
+[33m648d8ec[m docs(report): add CI audit report since last green run
+[33ma8cec07[m Merge pull request #30 from nagual2/tests-openwrt-ash-minimal-harness
+[33m4fccdcc[m test(openwrt-ash): add minimal POSIX BusyBox ash test harness and mocks
+[33m581bf18[m Merge pull request #29 from nagual2/ci-shfmt-fix-openwrt-captive-monitor
+[33mc2916d0[m ci(shfmt): reformat shell scripts to comply with shfmt rules
+[33mfe7031f[m Merge pull request #28 from nagual2/fix-gh-actions-tests-openwrt
+[33me6fd6e0[m fix(ci): correct OpenWrt build workflow to ensure package build dir context
+[33ma4cf30d[m[33m ([m[1;33mtag: [m[1;33mv0.1.2[m[33m)[m feat(minimal): remove complex testing, keep only essential linting
+[33m04cb8d8[m fix(shfmt): remove -filename option from shfmt config
+[33m3feb8b8[m fix(shellcheck): fix sh -n syntax validation commands
+[33m1ab45c3[m fix(shell): fix POSIX shell compatibility in test scripts
+[33m53372c1[m fix(sdk): use OpenWrt feeds system for package building
+[33m5b8c756[m fix(sdk): improve OpenWrt SDK package build process
+[33m1ab308f[m fix(openwrt): convert tests to pure OpenWrt validation
+[33mfaf23e2[m fix(shell): resolve POSIX shell compatibility issues
+[33m5c66326[m fix(build): improve OpenWrt SDK package compilation process
+[33m96c5fbe[m fix(ci): resolve OpenWrt SDK version and dependency issues
+[33m92e2802[m refactor(tests): deep refactor and cleanup of test suite
+[33m9c3b7d5[m fix(ci): resolve YAML syntax errors and simplify workflow scripts
+[33m95b39d3[m fix(ci): resolve shell compatibility issues in GitHub Actions
+[33mb473c54[m chore(release): bump version to v0.1.2
+[33m7f10c76[m docs: add comprehensive project commit report
+[33mdf81fc4[m fix(shellcheck): clean up excessive disable annotations
+[33m008cba3[m fix(shellcheck): add comprehensive disable annotations and simplify workflow
+[33m0616788[m fix(shellcheck): comprehensive ash compatibility fixes
+[33m0f7a7bb[m fix(shellcheck): add comprehensive ash compatibility annotations
+[33m16d459a[m fix(shellcheck): improve workflow file detection and POSIX compatibility
+[33m86e3645[m fix(shellcheck): fix ash compatibility and workflow file patterns
+[33m7dacbd5[m feat(testing): add comprehensive testing suite for remote servers
+[33md9ae7a4[m docs(build): add Windows build instructions
+[33m185dbf7[m docs(setup): add branch protection setup instructions
+[33mfe78ae9[m chore(repo): enforce trunk protection, improve CI hygiene, and document merge rules (#27)
+[33m07fa174[m feat(health-check): add HTTP/HTTPS probes and exponential backoff to connectivity checks (#25)
+[33mce3776d[m chore(repo): establish trunk, merge policy, and branch hygiene for maintainability (#26)
+[33m444b128[m Merge pull request #24 from nagual2/continue-previous-task
+[33m6e9e72e[m fix(dns): replace resolveip usage with nslookup/host-based DNS resolution and timeout
+[33m688887f[m Merge pull request #23 from nagual2/triage-3-failing-prs-check-main-close-or-fix-ci-add-pr-triage-md
+[33m8f23e7b[m docs(triage): add consolidated triage and closure for 3 failing CI/release PRs
+[33m88aaec5[m Merge pull request #21 from nagual2/triage-2-prs-rebase-ci-fixes-openwrt24
+[33m7b5e2d6[m fix(openwrt-captive-monitor): rebase and modernize captive portal intercept & packaging for OpenWrt 24.x
+[33ma43b82a[m Merge pull request #20 from nagual2/ci/fix-main-openwrt-captive-monitor
+[33ma4b5365[m ci(main): repair and modernize all CI pipelines, enforce shell code quality
+[33m9e989cb[m Merge pull request #19 from nagual2/audit-openwrt-captive-monitor-24x-filogic-restart
+[33me4be5b1[m docs(audit): refresh audit & backlog for OpenWrt 24.x/filogic, address lint & quick wins
+[33m5731b98[m Merge pull request #18 from nagual2/audit-pr-branching-openwrt-captive-monitor
+[33m79062c7[m chore(repo): standardize branch model, PR/issue templates, and lint workflow
+[33mc2c6e39[m docs(audit): update audit, backlog, and test plan for OpenWrt 24.x/filogic (#17)
+[33ma6005d9[m docs(audit): add audit summary, backlog, and test plan for openwrt-captive-monitor (#16)
+[33m9f2e35a[m ci(workflows): restore reliable OpenWrt package CI and doc clarity (#15)
+[33m253b562[m Merge pull request #13 from nagual2/fix-openwrt-ipk-build-gha-noninteractive-sdk-arch-feed-artifacts
+[33m9661a7e[m ci(openwrt-build): fix .ipk build matrix in GitHub Actions, non-interactive SDK config, arch feed, and artifacts
+[33md87d35f[m Merge pull request #12 from nagual2/ci-openwrt-stabilize-ipk-noninteractive-term-artifacts
+[33m785f1dc[m ci(openwrt): stabilize .ipk build by ensuring non-interactive SDK config and normalized artifacts
+[33m7b8cd6f[m Merge pull request #11 from nagual2/release-v0.1.1-ci-fix-ipk-build-opkg-feed-publish
+[33mdcecbaa[m ci(build): fix CI .ipk build, opkg feed, and release workflow for v0.1.1
+[33m2d8583c[m ci(workflow): fix OpenWrt .ipk build by setting config target and defconfig (#9)
+[33m7da3c26[m Merge pull request #10 from nagual2/restore-branches-reopen-prs-rebase-release-v0.1.0
+[33m053c661[m docs(release): add CHANGELOG and release notes link for v0.1.0
+[33m30ca021[m ci: add missing feeds update/install and defconfig in build step
+[33m0539b23[m ci: run feeds update/install and make defconfig before build
+[33m9629161[m ci: init OpenWrt feeds and run defconfig in SDK before building package
+[33m19fe866[m ci: make SDK_DIR probe resilient to pipefail (set +o pipefail; || true; set -o pipefail)
+[33m03cd413[m ci: drop python3-distutils on ubuntu-24.04 runner (#7)
+[33m8e8a3f2[m[33m ([m[1;33mtag: [m[1;33mv0.1.0[m[33m)[m Merge pull request #6 from nagual2/feat-ci-shellcheck-ipk-sdk-matrix
+[33m8e473fe[m Merge pull request #5 from nagual2/release-v0.1.0-pr-review-build-ipk-opkg-feed
+[33m5a90e34[m ci(openwrt): add GitHub Actions for ShellCheck and OpenWrt SDK .ipk builds
+[33mf9a5d4a[m feat(release): automate .ipk packaging, opkg feed, and release docs
+[33m3fc5167[m Merge pull request #4 from nagual2/feature/captive-redirect-nft-ipv6-iptables-compat-idempotent
+[33m97bfac3[m feat(captive): add nftables + IPv6 support with idempotence and dual-stack
+[33m3250982[m Merge pull request #3 from nagual2/feat/shellcheck-ci-openwrt-ash-fixes
+[33ma44202d[m ci(shellcheck): add ShellCheck CI, warnings fixed, safe POSIX, badge
+[33m364aff6[m Merge pull request #2 from nagual2/feature/openwrt-captive-monitor-opkg
+[33m92d8bd7[m fix(openwrt-captive-monitor): launcher and Makefile env fixes
+[33m39b2f47[m feat(pkg/openwrt-captive-monitor): initial OpenWrt package, UCI defaults, install & cleanup scripts
+[33m5c08eab[m Merge pull request #1 from nagual2/feat-captive-intercept-dns-http-redirect
+[33m68a99f2[m feat(captive-intercept): implement robust captive portal detection and HTTP+DNS intercept for LAN clients
+[33m06e8d73[m Initial commit
