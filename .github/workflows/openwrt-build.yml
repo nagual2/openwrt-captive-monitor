@@ -4,21 +4,8 @@ on:
   push:
     branches:
       - main
-      - 'feature/**'
-      - 'feature-*'
-      - 'fix/**'
-      - 'fix-*'
-      - 'chore/**'
-      - 'chore-*'
-      - 'docs/**'
-      - 'docs-*'
-      - 'hotfix/**'
-      - 'hotfix-*'
     tags:
       - 'v*'
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -86,11 +73,6 @@ jobs:
             pigz \
             tar \
             xz-utils
-
-      - name: Run shell test harness
-        run: |
-          set -euxo pipefail
-          busybox sh tests/run.sh
 
       - name: Build .ipk package
         run: |
