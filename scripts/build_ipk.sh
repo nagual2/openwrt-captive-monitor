@@ -428,13 +428,13 @@ rel_packages_file="$packages_file"
 rel_packages_file_gz="$packages_file_gz"
 
 case "$rel_output_ipk" in
-    "$repo_root"/*) rel_output_ipk="${rel_output_ipk#$repo_root/}" ;;
+    "$repo_root"/*) rel_output_ipk="${rel_output_ipk#"$repo_root"/}" ;;
 esac
 case "$rel_packages_file" in
-    "$repo_root"/*) rel_packages_file="${rel_packages_file#$repo_root/}" ;;
+    "$repo_root"/*) rel_packages_file="${rel_packages_file#"$repo_root"/}" ;;
 esac
 case "$rel_packages_file_gz" in
-    "$repo_root"/*) rel_packages_file_gz="${rel_packages_file_gz#$repo_root/}" ;;
+    "$repo_root"/*) rel_packages_file_gz="${rel_packages_file_gz#"$repo_root"/}" ;;
 esac
 
 # Calculate checksums for release mode
@@ -460,7 +460,7 @@ if [ "$release_mode" = "true" ]; then
     printf '%-40s %12s %64s %64s\n' "$rel_packages_file" "$packages_size" "$packages_md5" "$packages_sha256"
     printf '%-40s %12s %64s %64s\n' "$rel_packages_file_gz" "$packages_gz_size" "$packages_gz_md5" "$packages_gz_sha256"
     echo ""
-    
+
     # Generate JSON metadata for release automation
     release_metadata="$feed_dir/release-metadata.json"
     cat > "$release_metadata" << EOF
