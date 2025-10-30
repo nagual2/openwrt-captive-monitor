@@ -108,9 +108,10 @@ These checks keep the branch healthy and ensure contributors get feedback quickl
 
 ## 5. Issue triage & support
 
-- Use the issue templates to provide reproducible bug reports and well-scoped feature requests.
+- Use the GitHub Issue Forms to provide structured bug reports, feature requests, support questions, and documentation issues. The forms guide you through providing the necessary information for effective triage.
+- For detailed guidance on templates and label usage, see [docs/triage/TEMPLATES_AND_LABELS.md](./docs/triage/TEMPLATES_AND_LABELS.md).
 - Security problems should go through the private disclosure channel listed in our [Security Policy](.github/SECURITY.md) or GitHub security advisories.
-- Tag issues with `good first issue` when they have a clear scope and minimal risk so newcomers can help.
+- Tag issues with `good-first-issue` when they have a clear scope and minimal risk so newcomers can help.
 
 ---
 
