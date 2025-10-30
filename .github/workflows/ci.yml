@@ -1,0 +1,157 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'feature-*'
+      - 'fix/**'
+      - 'fix-*'
+      - 'chore/**'
+      - 'chore-*'
+      - 'docs/**'
+      - 'docs-*'
+      - 'hotfix/**'
+      - 'hotfix-*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        linter:
+          - shfmt
+          - shellcheck
+          - markdownlint
+          - actionlint
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/*.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          case "${{ matrix.linter }}" in
+            shfmt|shellcheck)
+              sudo apt-get install -y busybox shfmt shellcheck
+              ;;
+            markdownlint)
+              sudo apt-get install -y nodejs npm
+              npm install -g markdownlint-cli
+              ;;
+            actionlint)
+              sudo apt-get install -y go
+              go install github.com/rhysd/actionlint/cmd/actionlint@latest
+              ;;
+          esac
+
+      - name: Run shfmt
+        if: matrix.linter == 'shfmt'
+        run: |
+          set -euo pipefail
+          shfmt -d -s -i 4 -ci -sr .
+
+      - name: Run shellcheck
+        if: matrix.linter == 'shellcheck'
+        run: |
+          set -euo pipefail
+          # Find all shell scripts and check them
+          find . -type f -name "*.sh" -exec shellcheck {} +
+          # Also check the main script
+          shellcheck openwrt_captive_monitor.sh
+
+      - name: Run markdownlint
+        if: matrix.linter == 'markdownlint'
+        run: |
+          set -euo pipefail
+          # Configure basic markdownlint rules
+          cat > .markdownlint.json << 'EOF'
+          {
+            "default": true,
+            "MD013": {
+              "line_length": 120,
+              "code_blocks": false,
+              "tables": false
+            },
+            "MD033": {
+              "allowed_elements": ["img", "a", "br", "sub", "sup"]
+            },
+            "MD041": false
+          }
+          EOF
+          markdownlint "**/*.md" --ignore node_modules
+
+      - name: Run actionlint
+        if: matrix.linter == 'actionlint'
+        run: |
+          set -euo pipefail
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          actionlint
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/*.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      - name: Install BusyBox and test dependencies
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install -y busybox
+
+      - name: Run test harness with BusyBox ash
+        run: |
+          set -euo pipefail
+          busybox ash tests/run.sh
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: tests/_out/
+          retention-days: 7
+          if-no-files-found: warn
