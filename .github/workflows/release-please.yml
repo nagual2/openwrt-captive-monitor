@@ -1,0 +1,76 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      
+    steps:
+      - name: Release Please
+        id: release
+        uses: google-github-actions/release-please-action@v4
+        with:
+          release-type: simple
+          package-name: openwrt-captive-monitor
+          changelog-types: |
+            [
+              {"type":"feat","section":"Features","hidden":false},
+              {"type":"fix","section":"Bug Fixes","hidden":false},
+              {"type":"chore","section":"Miscellaneous","hidden":false},
+              {"type":"docs","section":"Documentation","hidden":false},
+              {"type":"style","section":"Styling","hidden":false},
+              {"type":"refactor","section":"Code Refactoring","hidden":false},
+              {"type":"perf","section":"Performance Improvements","hidden":false},
+              {"type":"test","section":"Tests","hidden":false},
+              {"type":"build","section":"Build System","hidden":false},
+              {"type":"ci","section":"Continuous Integration","hidden":false}
+            ]
+          changelog-path: CHANGELOG.md
+          version-file: package/openwrt-captive-monitor/Makefile
+          version-regex: '^PKG_VERSION:=([0-9]+\.[0-9]+\.[0-9]+)'
+          bump-minor-pre-major: true
+          bump-patch-for-minor-pre-major: true
+
+  update-version:
+    runs-on: ubuntu-latest
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Update package version
+        run: |
+          set -euo pipefail
+          # Extract version from tag
+          TAG="${{ needs.release-please.outputs.tag_name }}"
+          VERSION="${TAG#v}"
+          
+          # Update Makefile
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=$VERSION/" package/openwrt-captive-monitor/Makefile
+          
+          # Reset release to 1 for new version
+          sed -i "s/^PKG_RELEASE:=.*/PKG_RELEASE:=1/" package/openwrt-captive-monitor/Makefile
+          
+          # Commit changes
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package/openwrt-captive-monitor/Makefile
+          git commit -m "chore(release): bump version to $VERSION"
+          git push

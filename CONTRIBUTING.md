@@ -30,27 +30,38 @@ Trunk-based development keeps the integration surface small, which is important 
 ## 2. Local development workflow
 
 1. Clone the repository and install the linting dependencies:
-   ```bash
-   git clone https://github.com/nagual2/openwrt-captive-monitor.git
-   cd openwrt-captive-monitor
-   sudo apt-get update && sudo apt-get install -y shellcheck shfmt
-   ```
+    ```bash
+    git clone https://github.com/nagual2/openwrt-captive-monitor.git
+    cd openwrt-captive-monitor
+    sudo apt-get update && sudo apt-get install -y shellcheck shfmt npm nodejs
+    npm install -g markdownlint-cli
+    # For actionlint (optional, runs in CI)
+    go install github.com/rhysd/actionlint/cmd/actionlint@latest
+    ```
 2. Create a topic branch following the naming rules above.
 3. Make your changes and keep commits focused. Conventional Commit prefixes (`feat(wifi): …`, `fix(ci): …`, etc.) match the existing history and feed changelog automation.
 4. Before pushing:
-   ```bash
-   shfmt -w openwrt_captive_monitor.sh init.d/captive-monitor \
-         package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor \
-         package/openwrt-captive-monitor/files/etc/init.d/captive-monitor \
-         package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor \
-         scripts/build_ipk.sh
+    ```bash
+    # Shell formatting
+    shfmt -w openwrt_captive_monitor.sh init.d/captive-monitor \
+          package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor \
+          package/openwrt-captive-monitor/files/etc/init.d/captive-monitor \
+          package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor \
+          scripts/build_ipk.sh
 
-   shellcheck openwrt_captive_monitor.sh init.d/captive-monitor \
-              package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor \
-              package/openwrt-captive-monitor/files/etc/init.d/captive-monitor \
-              package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor \
-              scripts/build_ipk.sh
-   ```
+    # Shell linting
+    shellcheck openwrt_captive_monitor.sh init.d/captive-monitor \
+               package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor \
+               package/openwrt-captive-monitor/files/etc/init.d/captive-monitor \
+               package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor \
+               scripts/build_ipk.sh
+
+    # Markdown linting
+    markdownlint "**/*.md" --ignore node_modules
+
+    # Action linting (optional)
+    actionlint .github/workflows/*.yml
+    ```
 5. Run any additional smoke tests that apply (e.g. running the script in `oneshot` mode, packaging via `scripts/build_ipk.sh`, or deploying to a test router).
 6. Rebase on top of the latest `main` and resolve conflicts locally before opening the PR.
 
@@ -63,7 +74,10 @@ Trunk-based development keeps the integration surface small, which is important 
 - Fill out the PR template. It captures the summary, testing evidence, and review checklist all in one place.
 - Link the relevant issue or explain the motivation in the summary so that reviewers have context.
 - Request at least one reviewer (see [`CODEOWNERS`](./.github/CODEOWNERS)) and wait for an approval before merging. Self-approval is reserved for docs-only or CI-only changes with no risk.
-- Ensure the GitHub Actions jobs `Lint / Shell lint`, `Build OpenWrt packages / Build (ath79-generic)`, and `Build OpenWrt packages / Build (ramips-mt7621)` (when packaging files change) finish green.
+- Ensure the GitHub Actions jobs finish green:
+  - `lint (shfmt)`, `lint (shellcheck)`, `lint (markdownlint)`, `lint (actionlint)`
+  - `test`
+  - `build (generic)` (or other relevant matrix targets when packaging files change)
 - Squash-and-merge is the default. If a branch contains several independently useful commits, mention it explicitly in the PR so the reviewer can choose "Rebase and merge" instead.
 
 ---
@@ -74,9 +88,12 @@ Repository administrators should keep the following settings enabled on `main`:
 
 - ✅ Require pull request reviews before merging (minimum 1 approval).
 - ✅ Require status checks to pass before merging and select:
-  - `Lint / Shell lint`
-  - `Build OpenWrt packages / Build (ath79-generic)`
-  - `Build OpenWrt packages / Build (ramips-mt7621)`
+  - `lint (shfmt)`
+  - `lint (shellcheck)`
+  - `lint (markdownlint)`
+  - `lint (actionlint)`
+  - `test`
+  - `build (generic)` (or other matrix targets as needed)
   - Any additional packaging or release workflows relevant to the change
 - ✅ Require branches to be up to date before merging.
 - ✅ Require linear history.

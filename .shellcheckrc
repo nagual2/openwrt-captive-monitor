@@ -1,0 +1,20 @@
+# Shellcheck configuration for openwrt-captive-monitor
+# Optimized for BusyBox ash compatibility
+
+# Disable checks that conflict with BusyBox ash
+disable=SC2039  # In POSIX sh, array references are undefined
+disable=SC3010  # In POSIX sh, [[ ]] is undefined
+disable=SC3024  # In POSIX sh, ${var@Q} is undefined
+disable=SC3030  # In POSIX sh, 'source' is undefined
+disable=SC3037  # In POSIX sh, 'echo' flags are undefined
+disable=SC3043  # In POSIX sh, 'local' is undefined
+disable=SC3045  # In POSIX sh, 'read' -d is undefined
+
+# Allow common patterns used in this project
+disable=SC2086  # Double quote to prevent globbing and word splitting
+disable=SC2155  # Declare and assign separately to avoid masking return values
+disable=SC2162  # read without -r will mangle backslashes
+disable=SC2166  # Prefer [ p ] && [ q ] as [ p -a q ] is not well defined
+
+# Allow for explicit error handling
+disable=SC2181  # Check exit code directly with e.g. 'if mycmd;', not indirectly with $?.
