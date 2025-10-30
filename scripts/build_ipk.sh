@@ -11,15 +11,25 @@ fi
 
 usage() {
     cat << 'EOF'
-Usage: scripts/build_ipk.sh [--arch <name>] [--feed-root <path>]
+Usage: scripts/build_ipk.sh [--arch <name>] [--feed-root <path>] [--maintainer <name>] [--maintainer-email <email>] [--spdx-id <id>] [--release-mode]
 
 Options:
-  --arch <name>       Architecture string to embed into the .ipk (default: value of PKG_ARCH or "all")
-  --feed-root <path>  Output directory for the opkg feed (default: <repo>/dist/opkg)
-  -h, --help          Show this help message
+  --arch <name>            Architecture string to embed into the .ipk (default: value of PKG_ARCH or "all")
+  --feed-root <path>       Output directory for the opkg feed (default: <repo>/dist/opkg)
+  --maintainer <name>      Override maintainer name (default: from PKG_MAINTAINER)
+  --maintainer-email <email> Override maintainer email (default: from PKG_MAINTAINER)
+  --spdx-id <id>           Override SPDX license identifier (default: from PKG_LICENSE)
+  --release-mode           Enable release-friendly artifact naming and checksum output
+  -h, --help               Show this help message
 
 The script builds an .ipk package directly from the repository sources and
 creates/updates an opkg feed containing Packages and Packages.gz indexes.
+
+Release Mode:
+When --release-mode is enabled, the script:
+- Uses semantic version-based artifact naming
+- Outputs detailed checksum summaries suitable for publication
+- Generates release metadata in JSON format
 EOF
 }
 
@@ -160,6 +170,10 @@ description_block=$(extract_description_block)
 
 arch="$pkg_arch_default"
 feed_root="$repo_root/dist/opkg"
+maintainer_override=""
+maintainer_email_override=""
+spdx_id_override=""
+release_mode=false
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -181,6 +195,37 @@ while [ $# -gt 0 ]; do
             feed_root="$2"
             shift 2
             ;;
+        --maintainer)
+            [ $# -ge 2 ] || {
+                echo "error: --maintainer requires a value" >&2
+                usage
+                exit 1
+            }
+            maintainer_override="$2"
+            shift 2
+            ;;
+        --maintainer-email)
+            [ $# -ge 2 ] || {
+                echo "error: --maintainer-email requires a value" >&2
+                usage
+                exit 1
+            }
+            maintainer_email_override="$2"
+            shift 2
+            ;;
+        --spdx-id)
+            [ $# -ge 2 ] || {
+                echo "error: --spdx-id requires a value" >&2
+                usage
+                exit 1
+            }
+            spdx_id_override="$2"
+            shift 2
+            ;;
+        --release-mode)
+            release_mode=true
+            shift
+            ;;
         -h | --help)
             usage
             exit 0
@@ -192,6 +237,24 @@ while [ $# -gt 0 ]; do
             ;;
     esac
 done
+
+# Apply maintainer overrides if provided
+if [ -n "$maintainer_override" ]; then
+    if [ -n "$maintainer_email_override" ]; then
+        pkg_maintainer="$maintainer_override <$maintainer_email_override>"
+    else
+        pkg_maintainer="$maintainer_override"
+    fi
+elif [ -n "$maintainer_email_override" ]; then
+    # Extract name from current maintainer and override email
+    pkg_maintainer_name=$(echo "$pkg_maintainer" | sed 's/ <.*//')
+    pkg_maintainer="$pkg_maintainer_name <$maintainer_email_override>"
+fi
+
+# Apply SPDX ID override if provided
+if [ -n "$spdx_id_override" ]; then
+    pkg_license="$spdx_id_override"
+fi
 
 feed_dir="$feed_root/$arch"
 mkdir -p "$feed_dir"
@@ -374,9 +437,99 @@ case "$rel_packages_file_gz" in
     "$repo_root"/*) rel_packages_file_gz="${rel_packages_file_gz#$repo_root/}" ;;
 esac
 
-printf 'Created package: %s (%s bytes)\n' "$output_ipk" "$ipk_size"
-printf 'Updated feed index under: %s (entries: %s)\n' "$feed_dir" "$packages_written"
-printf 'Feed artifacts:\n'
-printf '  - %s (%s bytes)\n' "$rel_output_ipk" "$ipk_size"
-printf '  - %s (%s bytes)\n' "$rel_packages_file" "$packages_size"
-printf '  - %s (%s bytes)\n' "$rel_packages_file_gz" "$packages_gz_size"
+# Calculate checksums for release mode
+ipk_md5=$(md5sum "$output_ipk" | awk '{print $1}')
+ipk_sha256=$(sha256sum "$output_ipk" | awk '{print $1}')
+packages_md5=$(md5sum "$packages_file" | awk '{print $1}')
+packages_sha256=$(sha256sum "$packages_file" | awk '{print $1}')
+packages_gz_md5=$(md5sum "$packages_file_gz" | awk '{print $1}')
+packages_gz_sha256=$(sha256sum "$packages_file_gz" | awk '{print $1}')
+
+if [ "$release_mode" = "true" ]; then
+    # Release mode output with detailed checksums
+    echo "=== RELEASE MODE: Package Build Summary ==="
+    echo "Package: $pkg_name"
+    echo "Version: ${pkg_version}-${pkg_release}"
+    echo "Architecture: $arch"
+    echo "Maintainer: $pkg_maintainer"
+    echo "License: $pkg_license"
+    echo ""
+    echo "=== ARTIFACTS ==="
+    printf '%-40s %12s %64s %64s\n' "FILENAME" "SIZE" "MD5" "SHA256"
+    printf '%-40s %12s %64s %64s\n' "$rel_output_ipk" "$ipk_size" "$ipk_md5" "$ipk_sha256"
+    printf '%-40s %12s %64s %64s\n' "$rel_packages_file" "$packages_size" "$packages_md5" "$packages_sha256"
+    printf '%-40s %12s %64s %64s\n' "$rel_packages_file_gz" "$packages_gz_size" "$packages_gz_md5" "$packages_gz_sha256"
+    echo ""
+    
+    # Generate JSON metadata for release automation
+    release_metadata="$feed_dir/release-metadata.json"
+    cat > "$release_metadata" << EOF
+{
+  "package": {
+    "name": "$pkg_name",
+    "version": "${pkg_version}-${pkg_release}",
+    "architecture": "$arch",
+    "maintainer": "$pkg_maintainer",
+    "license": "$pkg_license",
+    "title": "$pkg_title",
+    "description": "$description_block",
+    "dependencies": "$pkg_depends",
+    "installed_size": $installed_size
+  },
+  "artifacts": {
+    "ipk": {
+      "filename": "$(basename "$output_ipk")",
+      "path": "$rel_output_ipk",
+      "size": $ipk_size,
+      "checksums": {
+        "md5": "$ipk_md5",
+        "sha256": "$ipk_sha256"
+      }
+    },
+    "packages": {
+      "filename": "Packages",
+      "path": "$rel_packages_file",
+      "size": $packages_size,
+      "checksums": {
+        "md5": "$packages_md5",
+        "sha256": "$packages_sha256"
+      }
+    },
+    "packages_gz": {
+      "filename": "Packages.gz",
+      "path": "$rel_packages_file_gz",
+      "size": $packages_gz_size,
+      "checksums": {
+        "md5": "$packages_gz_md5",
+        "sha256": "$packages_gz_sha256"
+      }
+    }
+  },
+  "feed": {
+    "entries": $packages_written,
+    "directory": "$feed_dir"
+  },
+  "build": {
+    "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+    "script_version": "1.0",
+    "release_mode": true
+  }
+}
+EOF
+    echo "=== RELEASE METADATA ==="
+    echo "JSON metadata written to: $release_metadata"
+    echo ""
+    echo "=== OPKG FEED SETUP ==="
+    echo "To use this feed on OpenWrt:"
+    echo "  echo 'src/gz captive-monitor file:///path/to/feed' >> /etc/opkg/customfeeds.conf"
+    echo "  opkg update"
+    echo "  opkg install $pkg_name"
+else
+    # Standard output mode
+    printf 'Created package: %s (%s bytes)\n' "$output_ipk" "$ipk_size"
+    printf 'Updated feed index under: %s (entries: %s)\n' "$feed_dir" "$packages_written"
+    printf 'Feed artifacts:\n'
+    printf '  - %s (%s bytes)\n' "$rel_output_ipk" "$ipk_size"
+    printf '  - %s (%s bytes)\n' "$rel_packages_file" "$packages_size"
+    printf '  - %s (%s bytes)\n' "$rel_packages_file_gz" "$packages_gz_size"
+fi
