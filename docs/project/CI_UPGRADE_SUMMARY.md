@@ -3,7 +3,7 @@
 ## Changes Implemented
 
 ### 1. Consolidated CI Workflow (`.github/workflows/ci.yml`)
-- **Matrix Strategy**: Parallel execution of shfmt, shellcheck, markdownlint, and actionlint
+- **Matrix Strategy**: Parallel execution of shfmt and shellcheck
 - **Shared Caching**: Apt package caching across all lint jobs
 - **Test Integration**: BusyBox ash test harness execution
 - **Artifact Management**: Test results uploaded with 7-day retention
@@ -23,12 +23,9 @@
 
 ### 4. Dependency Management (`.github/dependabot.yml`)
 - **GitHub Actions**: Weekly updates with grouped PRs
-- **npm Packages**: For markdownlint dependencies
-- **Go Modules**: For actionlint dependencies
 - **Auto-assignment**: Automatic reviewer and assignee configuration
 
 ### 5. Configuration Files
-- **`.markdownlint.json`**: Markdown linting rules
 - **`.shellcheckrc`**: Shell linting configuration for BusyBox ash compatibility
 - **`scripts/validate-workflows.sh`**: Workflow validation helper
 
