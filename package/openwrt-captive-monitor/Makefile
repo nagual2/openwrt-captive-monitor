@@ -5,7 +5,11 @@ PKG_VERSION:=0.1.3
 PKG_RELEASE:=1
 
 PKG_LICENSE:=MIT
-PKG_MAINTAINER:=Kombai AI Assistant
+PKG_LICENSE_FILES:=LICENSE
+PKG_MAINTAINER:=OpenWrt Captive Monitor Team <https://github.com/nagual2/openwrt-captive-monitor>
+PKG_SOURCE_URL:=https://github.com/nagual2/openwrt-captive-monitor
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_ARCH:=all
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
@@ -14,8 +18,11 @@ include $(INCLUDE_DIR)/package.mk
 define Package/openwrt-captive-monitor
   SECTION:=net
   CATEGORY:=Network
+  SUBMENU:=Captive Portals
   TITLE:=Captive portal connectivity monitor and auto-redirect helper
   DEPENDS:=+dnsmasq +curl
+  URL:=https://github.com/nagual2/openwrt-captive-monitor
+  MAINTAINER:=OpenWrt Captive Monitor Team
 endef
 
 define Package/openwrt-captive-monitor/description
@@ -41,6 +48,8 @@ define Package/openwrt-captive-monitor/install
     $(INSTALL_CONF) ./files/etc/config/captive-monitor $(1)/etc/config/captive-monitor
     $(INSTALL_DIR) $(1)/etc/uci-defaults
     $(INSTALL_BIN) ./files/etc/uci-defaults/99-captive-monitor $(1)/etc/uci-defaults/99-captive-monitor
+    $(INSTALL_DIR) $(1)/usr/share/licenses/openwrt-captive-monitor
+    $(INSTALL_DATA) ./files/LICENSE $(1)/usr/share/licenses/openwrt-captive-monitor/
 endef
 
 define Package/openwrt-captive-monitor/postinst
