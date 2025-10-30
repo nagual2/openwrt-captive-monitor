@@ -1,10 +1,49 @@
 # Last Green CI Audit
 
 **Last successful run:**
-- **Workflow:** Lint
-- **Run ID:** 18793009154 — [view run](https://github.com/nagual2/openwrt-captive-monitor/actions/runs/18793009154)
-- **Commit:** 688887f0b42df67e4a7df01a23863a05c024a556 — Merge pull request #23 from nagual2/triage-3-failing-prs-check-main-close-or-fix-ci-add-pr-triage-md (cto-new[bot], 2025-10-24 21:51 UTC)
-- **Audit range:** `688887f0b42df67e4a7df01a23863a05c024a556..a8cec07bcf693e4cc567d51b07f0e8c2a48cbf4c`
+- **Workflow:** CI (Consolidated)
+- **Run ID:** PENDING — [view run](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/ci.yml)
+- **Commit:** CURRENT — CI consolidation and release automation upgrade (2025-01-30)
+- **Audit range:** `Previous commit..current consolidation`
+
+## New CI Pipeline Structure
+
+### Primary Workflows
+
+1. **CI Workflow** (`.github/workflows/ci.yml`)
+   - **Lint Jobs**: Parallel matrix execution of shfmt, shellcheck, markdownlint, actionlint
+   - **Test Job**: BusyBox ash test harness execution
+   - **Triggers**: Push to all branches, PR to main, manual dispatch
+   - **Artifacts**: Test results uploaded with 7-day retention
+
+2. **Build Workflow** (`.github/workflows/openwrt-build.yml`)
+   - **Matrix Builds**: generic, x86-64, armvirt-64, mips_24kc targets
+   - **Dependencies**: Requires CI workflow completion
+   - **Concurrency**: Enabled with automatic cancellation
+   - **Release Job**: Dedicated job for tag-triggered releases
+
+3. **Release Workflow** (`.github/workflows/release-please.yml`)
+   - **Automated**: Semantic versioning and changelog generation
+   - **Version Management**: Automatic package Makefile updates
+   - **Integration**: Works with GitHub releases and tags
+
+### Required Status Checks
+
+For branch protection, enable these required checks:
+- `lint (shfmt)`
+- `lint (shellcheck)` 
+- `lint (markdownlint)`
+- `lint (actionlint)`
+- `test`
+- `build (generic)` (or specific target as needed)
+
+### Maintenance Automation
+
+- **Dependabot**: Weekly updates for GitHub Actions, npm, and Go dependencies
+- **Auto-merge**: Configure for Dependabot PRs after CI passes
+- **Release Process**: Fully automated through conventional commits
+
+## Previous Audit History
 
 ## Changes Since Last Green Run (chronological)
 
