@@ -1,5 +1,41 @@
 # Changelog
 
+## v0.1.4 (Unreleased)
+
+### Packaging & Distribution
+- **Refreshed packaging metadata** to align with current OpenWrt packaging guidelines
+- Updated maintainer contact to team-based identifier with proper URL format
+- Added `PKG_LICENSE_FILES`, `PKG_SOURCE_URL`, `PKG_SOURCE_PROTO`, and `PKG_SOURCE_VERSION` fields
+- Enhanced package categorization with `SUBMENU:=Captive Portals` for better discoverability
+- Updated `Makefile.template` with current OpenWrt packaging best practices
+
+### Build Tooling
+- **Enhanced `scripts/build_ipk.sh`** with maintainer-configurable metadata support:
+  - `--maintainer` and `--maintainer-email` options for overriding maintainer information
+  - `--spdx-id` option for custom SPDX license identifiers
+  - `--release-mode` flag for publication-ready artifact generation
+- **Release mode features**:
+  - Detailed checksum summaries (MD5, SHA256) for all artifacts
+  - JSON metadata output for release automation
+  - Semantic version-based artifact naming
+  - OPKG feed setup instructions
+
+### Documentation
+- **New `docs/packaging.md`** comprehensive guide covering:
+  - Local development builds and custom builds
+  - CI/CD integration and release workflow
+  - Custom OPKG feed setup (local and GitHub Pages)
+  - Automated distribution and release scripts
+  - Package signing and quality assurance
+- Updated documentation navigation in `mkdocs.yml` to include packaging guide
+- Enhanced build script help documentation with all new options
+
+### Version Mapping & Release Automation
+- **Semantic version mapping**: Package versions now follow `vX.Y.Z` tag mapping to `PKG_VERSION`
+- **Release workflow**: Documented automated release process with artifact generation
+- **Feed structure**: Standardized OPKG feed layout with `Packages`, `Packages.gz`, and JSON metadata
+- **Checksum automation**: Built-in checksum generation for release verification
+
 ## v0.1.3
 
 ### Packaging & QA

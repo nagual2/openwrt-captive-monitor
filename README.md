@@ -67,6 +67,9 @@ cd openwrt-captive-monitor
 # Build package
 scripts/build_ipk.sh --arch all
 
+# For advanced packaging options and release automation, see:
+# https://nagual2.github.io/openwrt-captive-monitor/packaging/
+
 # Install built package
 scp dist/opkg/all/openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"

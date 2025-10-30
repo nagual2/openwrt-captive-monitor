@@ -59,6 +59,7 @@ DOC_FILES=(
     "docs/project/test-plan.md"
     "docs/project/backlog.md"
     "docs/project/packages.md"
+    "docs/packaging.md"
 )
 
 for file in "${DOC_FILES[@]}"; do
