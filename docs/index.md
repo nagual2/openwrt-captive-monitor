@@ -42,6 +42,6 @@ Welcome to the comprehensive documentation for **openwrt-captive-monitor**, a li
 
 ## 📖 About This Documentation
 
-This documentation is built with [MkDocs](https://www.mkdocs.org/) and can be served locally or published via GitHub Pages. The content is organized to serve both end-users who want to deploy and configure the captive monitor, as well as developers who want to contribute to the project.
+This documentation is organized to serve both end-users who want to deploy and configure the captive monitor, as well as developers who want to contribute to the project. The markdown files can be viewed directly on GitHub or any markdown viewer.
 
 For the most up-to-date information, always refer to the [main repository](https://github.com/nagual2/openwrt-captive-monitor).
