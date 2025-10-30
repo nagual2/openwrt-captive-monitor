@@ -11,7 +11,7 @@
 ### Primary Workflows
 
 1. **CI Workflow** (`.github/workflows/ci.yml`)
-   - **Lint Jobs**: Parallel matrix execution of shfmt, shellcheck, markdownlint, actionlint
+   - **Lint Jobs**: Parallel matrix execution of shfmt, shellcheck
    - **Test Job**: BusyBox ash test harness execution
    - **Triggers**: Push to all branches, PR to main, manual dispatch
    - **Artifacts**: Test results uploaded with 7-day retention
@@ -32,14 +32,12 @@
 For branch protection, enable these required checks:
 - `lint (shfmt)`
 - `lint (shellcheck)` 
-- `lint (markdownlint)`
-- `lint (actionlint)`
 - `test`
 - `build (generic)` (or specific target as needed)
 
 ### Maintenance Automation
 
-- **Dependabot**: Weekly updates for GitHub Actions, npm, and Go dependencies
+- **Dependabot**: Weekly updates for GitHub Actions dependencies
 - **Auto-merge**: Configure for Dependabot PRs after CI passes
 - **Release Process**: Fully automated through conventional commits
 
