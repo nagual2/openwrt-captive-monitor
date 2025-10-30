@@ -2,6 +2,8 @@
 
 Thanks for taking the time to contribute! This project keeps OpenWrt routers online by recovering from captive portals and flaky uplinks, so changes need to be safe, reviewable, and well documented.
 
+Please read our [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to understand the expectations for community participation.
+
 The repository follows a **trunk-based** workflow centred on the `main` branch. Short-lived topic branches, small pull requests, and fast feedback from CI keep releases predictable.
 
 ---
@@ -90,7 +92,7 @@ These checks keep the branch healthy and ensure contributors get feedback quickl
 ## 5. Issue triage & support
 
 - Use the issue templates to provide reproducible bug reports and well-scoped feature requests.
-- Security problems should go through the private disclosure channel listed in `SECURITY.md` or the repository security policy page.
+- Security problems should go through the private disclosure channel listed in our [Security Policy](.github/SECURITY.md) or GitHub security advisories.
 - Tag issues with `good first issue` when they have a clear scope and minimal risk so newcomers can help.
 
 ---
@@ -117,6 +119,7 @@ If a regression requires a hotfix, branch from the affected tag, apply the fix, 
 
 ## 7. Getting help
 
+- Support options and guidance are available in our [Support Guide](.github/SUPPORT.md)
 - Discussions: open a GitHub Discussion or issue with the `question` label.
 - Real-world testing: share reproducible steps and logs in the PR or issue so maintainers can validate on similar hardware.
 - Documentation updates: if anything in this guide is unclear, submit a PR – meta-contributions are welcome!
