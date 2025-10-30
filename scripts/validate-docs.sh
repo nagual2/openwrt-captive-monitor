@@ -72,8 +72,8 @@ for file in "${DOC_FILES[@]}"; do
 done
 
 # Check mkdocs.yml syntax
-if command -v python3 >/dev/null; then
-    if python3 -c "import yaml; yaml.safe_load(open('mkdocs.yml'))" 2>/dev/null; then
+if command -v python3 > /dev/null; then
+    if python3 -c "import yaml; yaml.safe_load(open('mkdocs.yml'))" 2> /dev/null; then
         echo "✓ mkdocs.yml syntax is valid"
     else
         echo "✗ mkdocs.yml has syntax errors"
@@ -85,36 +85,39 @@ fi
 
 # Check for broken internal links
 echo "Checking for broken internal links..."
-if command -v find >/dev/null && command -v grep >/dev/null; then
+if command -v find > /dev/null && command -v grep > /dev/null; then
     BROKEN_LINKS=0
-    
+
     # Find all markdown files and check for broken internal links
-    find docs -name "*.md" -exec grep -H '\[.*\](.*\.md)' {} \; | while read line; do
+    temp_file=$(mktemp)
+    find docs -name "*.md" -exec grep -H '\[.*\](.*\.md)' {} \; > "$temp_file"
+    while read line; do
         file=$(echo "$line" | cut -d: -f1)
         links=$(echo "$line" | grep -o '\[.*\]([^)]*\.md)' | sed 's/.*](\(.*\))/\1/')
-        
+
         for link in $links; do
-            if [[ "$link" == http* ]]; then
-                continue  # Skip external links
+            if [[ $link == http* ]]; then
+                continue # Skip external links
             fi
-            
+
             # Convert relative links to absolute paths
-            if [[ "$link" == /* ]]; then
+            if [[ $link == /* ]]; then
                 target="$link"
             else
                 target="$(dirname "$file")/$link"
             fi
-            
+
             # Normalize path
-            target=$(realpath -m "$target" 2>/dev/null || echo "$target")
-            
+            target=$(realpath -m "$target" 2> /dev/null || echo "$target")
+
             if [ ! -f "$target" ] && [ ! -d "$target" ]; then
                 echo "✗ Broken link: $file -> $link (target: $target)"
                 BROKEN_LINKS=$((BROKEN_LINKS + 1))
             fi
         done
-    done
-    
+    done < "$temp_file"
+    rm -f "$temp_file"
+
     if [ $BROKEN_LINKS -eq 0 ]; then
         echo "✓ No broken internal links found"
     else
