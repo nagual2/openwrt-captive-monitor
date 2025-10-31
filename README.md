@@ -7,7 +7,9 @@
 [![GitHub release](https://img.shields.io/github/release/nagual2/openwrt-captive-monitor.svg)](https://github.com/nagual2/openwrt-captive-monitor/releases)
 [![GitHub stars](https://img.shields.io/github/stars/nagual2/openwrt-captive-monitor.svg?style=social)](https://github.com/nagual2/openwrt-captive-monitor/stargazers)
 
-A lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily intercepts LAN DNS/HTTP traffic so clients can authenticate. Once internet access is restored, the helper automatically cleans up dnsmasq overrides, HTTP redirects, and NAT rules.
+A lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily
+intercepts LAN DNS/HTTP traffic so clients can authenticate. Once internet access is restored,
+the helper automatically cleans up dnsmasq overrides, HTTP redirects, and NAT rules.
 
 ## ✨ Features
 
@@ -22,7 +24,7 @@ A lightweight OpenWrt helper that monitors WAN connectivity, detects captive por
 
 ## 🏗️ Architecture Overview
 
-```
+```text
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Client       │    │   Router       │    │   External      │
 │   Devices      │◄──►│  (OpenWrt +    │◄──►│   Network       │
@@ -32,6 +34,7 @@ A lightweight OpenWrt helper that monitors WAN connectivity, detects captive por
 ```
 
 The service integrates seamlessly with OpenWrt's networking stack:
+
 - **dnsmasq** - DNS hijacking for client redirection
 - **iptables/nftables** - Traffic interception and redirection
 - **procd** - Service management and monitoring
@@ -97,25 +100,39 @@ ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
 
 ## 📋 Table of Contents
 
-- [Installation](#installation)
+- [Installation](#-quick-start)
   - [Prerequisites](#prerequisites)
-  - [Installation Options](#installation-options)
-  - [Configuration](#configuration)
-- [Usage](#usage)
-  - [Operation Modes](#operation-modes)
-  - [Monitoring](#monitoring)
-  - [Troubleshooting](#troubleshooting)
-- [Configuration](#configuration-1)
+  - [Installation](#installation)
+  - [Basic Configuration](#basic-configuration)
+- [Installation Options](#-installation-options)
+  - [Installation Matrix](#installation-matrix)
+  - [OpenWrt SDK Build](#openwrt-sdk-build)
+  - [Dependencies](#dependencies)
+- [Configuration](#-configuration)
   - [Basic Settings](#basic-settings)
   - [Advanced Options](#advanced-options)
-- [Development](#development)
+  - [Environment Variables](#environment-variables)
+- [Usage](#-usage)
+  - [Operation Modes](#operation-modes)
+  - [Monitoring](#monitoring)
+- [Troubleshooting](#-troubleshooting)
+  - [Common Issues](#common-issues)
+  - [Health Check](#health-check)
+- [Development](#-development)
   - [Building](#building)
   - [Testing](#testing)
-  - [Contributing](#contributing)
-- [Community](#community)
+  - [How to Contribute](#how-to-contribute)
+- [Documentation](#-documentation)
+- [Community](#-community)
   - [Support](#support)
   - [Security](#security)
-  - [License](#license)
+  - [Contributing](#contributing)
+- [Project Status](#-project-status)
+  - [Latest Release](#latest-release)
+  - [Compatibility](#compatibility)
+- [License](#-license)
+- [Acknowledgments](#-acknowledgments)
+- [Related Projects](#-related-projects)
 
 ## 📦 Installation Options
 
@@ -147,11 +164,13 @@ make package/openwrt-captive-monitor/compile V=s
 ### Dependencies
 
 **Runtime dependencies:**
+
 - `dnsmasq` - DNS and DHCP server
 - `curl` - HTTP probes and captive detection
 - `iptables` or `nftables` - Traffic redirection
 
 **Build dependencies:**
+
 - `binutils`, `busybox`, `gzip`, `pigz`, `tar`, `xz-utils`
 
 ## 🔧 Configuration
@@ -228,6 +247,7 @@ Single check and exit, ideal for cron:
 ### Monitoring
 
 **Service Status:**
+
 ```bash
 # Check if running
 ps aux | grep openwrt_captive_monitor
@@ -240,6 +260,7 @@ logread | grep captive-monitor | tail -20
 ```
 
 **Debug Mode:**
+
 ```bash
 # Verbose output
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose
@@ -254,6 +275,7 @@ export CAPTIVE_DEBUG="1"
 ### Common Issues
 
 **Service won't start:**
+
 ```bash
 # Check configuration
 uci show captive-monitor
@@ -266,6 +288,7 @@ ls -la /usr/sbin/openwrt_captive_monitor
 ```
 
 **Captive portal not detected:**
+
 ```bash
 # Test detection URLs manually
 curl -I http://connectivitycheck.gstatic.com/generate_204
@@ -276,6 +299,7 @@ uci add_list captive-monitor.config.captive_check_urls='http://your-portal.com/d
 ```
 
 **Redirection not working:**
+
 ```bash
 # Check firewall rules
 iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
@@ -326,7 +350,7 @@ shfmt -i 2 -ci -sr -d openwrt_captive_monitor.sh
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose
 ```
 
-### Contributing
+### How to Contribute
 
 1. Fork repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)
@@ -405,8 +429,6 @@ This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LI
 
 ---
 
-<div align="center">
-
 **[📖 Full Documentation](https://nagual2.github.io/openwrt-captive-monitor/)** •
 **[🚀 Quick Start](docs/usage/quick-start.md)** •
 **[⚙️ Configuration](docs/configuration/basic-config.md)** •
@@ -414,5 +436,3 @@ This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LI
 **[💬 Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)**
 
 Made with ❤️ for the OpenWrt community
-
-</div>
