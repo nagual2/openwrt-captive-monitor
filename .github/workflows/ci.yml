@@ -26,7 +26,6 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 defaults:
   run:
     shell: bash
@@ -92,7 +91,7 @@ jobs:
           # Also check the main script
           shellcheck openwrt_captive_monitor.sh
 
-      - name: Run markdownlint
+- name: Run markdownlint
         if: matrix.linter == 'markdownlint'
         run: |
           set -euo pipefail
@@ -120,7 +119,6 @@ jobs:
           gopath_bin=$(go env GOPATH)/bin
           export PATH="$PATH:$gopath_bin"
           actionlint
-
   test:
     name: Test
     runs-on: ubuntu-latest
