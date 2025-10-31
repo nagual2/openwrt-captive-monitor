@@ -118,6 +118,7 @@ ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
 - [Community](#community)
   - [Support](#support)
   - [Security](#security)
+  - [Contributing](#contributing)
   - [License](#license)
 
 ## 📦 Installation Options
