@@ -99,7 +99,6 @@ ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
 
 ## 📋 Table of Contents
 
-<<<<<<< HEAD
 - [Installation](#-quick-start)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
@@ -133,27 +132,6 @@ ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
 - [License](#-license)
 - [Acknowledgments](#-acknowledgments)
 - [Related Projects](#-related-projects)
-=======
-- [Installation](#installation)
-  - [Prerequisites](#prerequisites)
-  - [Installation Options](#installation-options)
-  - [Configuration](#configuration)
-- [Usage](#usage)
-  - [Operation Modes](#operation-modes)
-  - [Monitoring](#monitoring)
-  - [Troubleshooting](#troubleshooting)
-- [Configuration](#configuration-1)
-  - [Basic Settings](#basic-settings)
-  - [Advanced Options](#advanced-options)
-- [Development](#development)
-  - [Building](#building)
-  - [Testing](#testing)
-  - [Contributing](#contributing)
-- [Community](#community)
-  - [Support](#support)
-  - [Security](#security)
-  - [License](#license)
->>>>>>> origin/chore-audit-merge-active-branches
 
 ## 📦 Installation Options
 
@@ -364,11 +342,7 @@ shfmt -i 2 -ci -sr -d openwrt_captive_monitor.sh
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose
 ```
 
-<<<<<<< HEAD
 ### How to Contribute
-=======
-### Contributing
->>>>>>> origin/chore-audit-merge-active-branches
 
 1. Fork repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)
@@ -447,21 +421,14 @@ This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LI
 
 ---
 
-<<<<<<< HEAD
-=======
 <div align="center">
 
->>>>>>> origin/chore-audit-merge-active-branches
 **[📖 Full Documentation](https://nagual2.github.io/openwrt-captive-monitor/)** •
 **[🚀 Quick Start](docs/usage/quick-start.md)** •
 **[⚙️ Configuration](docs/configuration/basic-config.md)** •
 **[🐛 Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)** •
 **[💬 Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)**
 
-<<<<<<< HEAD
-Made with ❤️ for the OpenWrt community
-=======
 Made with ❤️ for the OpenWrt community
 
 </div>
->>>>>>> origin/chore-audit-merge-active-branches
