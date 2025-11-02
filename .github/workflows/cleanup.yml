@@ -1,26 +1,48 @@
-name: Cleanup Artifacts
+name: Cleanup Artifacts and Runs
 
 on:
   schedule:
-    # Run daily at 3 AM UTC (5 AM Moscow time)
-    - cron: '0 3 * * *'
+    - cron: '0 3 * * *'  # Every day at 3 AM UTC
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force delete all artifacts (including recent ones)'
+        required: false
+        default: 'false'
 
 jobs:
   cleanup:
-    name: Cleanup old artifacts
+    name: Cleanup
     runs-on: ubuntu-latest
     steps:
-      - name: Cleanup old artifacts
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Delete all artifacts
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.force == 'true' }}
+        run: |
+          gh api --paginate -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/actions/artifacts \
+            --jq '.artifacts[] | .id' | \
+          xargs -I{} gh api --silent \
+            -X DELETE \
+            /repos/${{ github.repository }}/actions/artifacts/{} \
+            -f confirm=true
+
+      - name: Delete old artifacts (scheduled)
+        if: ${{ github.event_name == 'schedule' }}
         uses: actions/upload-artifact/delete-artifact@v4
         with:
           name: "*"
-          retention-days: 1  # Keep artifacts for 1 day
+          retention-days: 1
 
       - name: Cleanup workflow runs
         uses: rokroskar/workflow-run-cleanup-action@v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          retain_days: 3  # Keep workflow runs for 3 days
-          keep_minimum_runs: 5  # But always keep at least 5 most recent runs
+          retain_days: 3
+          keep_minimum_runs: 5
+
+      - name: Show disk usage after cleanup
+        run: df -h
