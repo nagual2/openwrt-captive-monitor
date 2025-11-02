@@ -4,7 +4,7 @@ This guide explains the modernized issue and PR templates, label taxonomy, and t
 
 ## Overview
 
-The repository uses GitHub Issue Forms and structured PR templates to ensure consistent, high-quality contributions. Labels are automatically synced from `.github/labels.yml` to maintain consistency across all issues and pull requests.
+The repository uses GitHub Issue Forms and structured PR templates to ensure consistent, high-quality contributions. Labels are managed manually to maintain consistency across all issues and pull requests.
 
 ## Issue Templates
 
@@ -136,23 +136,6 @@ The PR template is organized into clear sections to help contributors and review
 - `release-blocker` - Blocks next release
 - `release-candidate` - Ready for next release
 
-## Label Synchronization
-
-Labels are automatically synchronized using the `label-sync.yml` workflow:
-
-- **Trigger**: Daily at 2 AM UTC, or on push to `main` with changes to `.github/labels.yml`
-- **Action**: Syncs all labels defined in `.github/labels.yml` with the repository
-- **Permissions**: Requires `issues: write` and `pull-requests: write`
-- **Maintenance**: Update `.github/labels.yml` to add/modify labels
-
-### Manual Label Sync
-
-To manually trigger label synchronization:
-
-1. Go to the **Actions** tab in the repository
-2. Select **Sync Repository Labels** workflow
-3. Click **Run workflow** and choose the branch
-
 ## Triage Best Practices
 
 ### For Issue Triage
@@ -182,16 +165,6 @@ Common label combinations to understand:
 
 ## Automation and Workflows
 
-### Label Sync Workflow
-
-The `.github/workflows/label-sync.yml` file ensures labels stay consistent:
-
-```yaml
-# Runs daily and on .github/labels.yml changes
-# Uses crazy-max/ghaction-github-labeler@v5
-# Requires GitHub token with issues/pull-requests write permissions
-```
-
 ### Issue Form Automation
 
 Issue forms automatically:
@@ -213,14 +186,13 @@ To improve the templates and label system:
 
 1. **Edit issue forms** - Modify `.github/ISSUE_TEMPLATE/*.yml` files
 2. **Update PR template** - Edit `.github/PULL_REQUEST_TEMPLATE.md`
-3. **Adjust labels** - Update `.github/labels.yml`
+3. **Manage labels** - Use GitHub's label management interface
 4. **Test changes** - Use draft PRs to verify template rendering
 5. **Update documentation** - Keep this guide current
 
 ## Resources
 
 - [GitHub Issue Forms documentation](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms)
-- [GitHub Label Syncer action](https://github.com/marketplace/actions/github-label-sync)
 - [Conventional Commits specification](https://www.conventionalcommits.org/)
 - [Project contribution guidelines](../../CONTRIBUTING.md)
 
