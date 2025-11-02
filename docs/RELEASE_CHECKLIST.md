@@ -19,10 +19,16 @@ subsequent versions.
 
 ## 2. Build the release artifacts
 
-The GitHub Actions workflow **Build OpenWrt packages** now provisions the packaging toolchain,
-executes the BusyBox test harness, runs `scripts/build_ipk.sh`, and refuses to continue if the
-`.ipk`, `Packages`, or `Packages.gz` files are missing. Every push or pull request targeting
-`main` therefore produces a verified feed under `dist/opkg/<arch>/` with:
+The GitHub Actions workflow **Build OpenWrt packages** now:
+- Provisions the packaging toolchain
+- Executes the BusyBox test harness
+- Runs `scripts/build_ipk.sh`
+- Refuses to continue if any of these files are missing:
+  - `.ipk`
+  - `Packages`
+  - `Packages.gz`
+
+Every push or pull request targeting `main` produces a verified feed under `dist/opkg/<arch>/` containing:
 
 - `openwrt-captive-monitor_<version>-<release>_<arch>.ipk`
 - `Packages`
