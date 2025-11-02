@@ -41,7 +41,7 @@
    - Provides clear download and usage instructions
 
 5. **✅ Все проблемы задокументированы или исправлены**
-     - **CRITICAL ISSUE FIXED**: Version synchronization between release-please and main branch
+   - **CRITICAL ISSUE FIXED**: Version synchronization between release-please and main branch
    - Updated PKG_VERSION from 0.1.3 to 1.0.0
    - All tests passing (6/6)
    - No remaining blocking issues

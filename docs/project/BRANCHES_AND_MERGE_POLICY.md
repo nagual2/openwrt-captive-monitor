@@ -25,11 +25,8 @@ pull requests targeting `main`. |
 
 | Workflow | Purpose | Key jobs | When it runs |
 | --- | --- | --- | --- |
-| `Lint` | Shell formatting (`shfmt`) and static analysis (`shellcheck`). | `Shell lint` | `push` to allowed branch
-prefixes, `pull_request` to `main`. |
-| `Build OpenWrt packages` | Builds `.ipk` artifacts for ath79/ramips and publishes releases on tags. | `Build
-(ath79-generic)`, `Build (ramips-mt7621)`, `release` (tag only). | Same push filters as above, all PRs into `main`,
-tags `v*`. |
+| `Lint` | Shell formatting (`shfmt`) and static analysis (`shellcheck`). | `Shell lint` | `push` to allowed branch prefixes, `pull_request` to `main`. |
+| `Build OpenWrt packages` | Builds `.ipk` artifacts for ath79/ramips and publishes releases on tags. | `Build (ath79-generic)`, `Build (ramips-mt7621)`, `release` (tag only). | Same push filters as above, all PRs into `main`, tags `v*`. |
 
 Both workflows currently finish successfully on `main`. Administrators should mark the build jobs listed above as
 **required status checks** when enabling branch protection (section 3).

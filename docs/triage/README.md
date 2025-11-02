@@ -36,18 +36,18 @@ This directory contains PR queue audit reports and triage artifacts for the `ope
 
 For historical context and prior triage work, see:
 
-  - **[../project/BRANCHES_PR_AUDIT.md](../project/BRANCHES_PR_AUDIT.md)** - Original branch & PR inventory (2025-10-24)
-   - Documents 17 PRs that existed before comprehensive triage
-   - Provides cleanup checklist and branching strategy
+- **[../project/BRANCHES_PR_AUDIT.md](../project/BRANCHES_PR_AUDIT.md)** - Original branch & PR inventory (2025-10-24)
+  - Documents 17 PRs that existed before comprehensive triage
+  - Provides cleanup checklist and branching strategy
 
-  - **[../project/PR_TRIAGE.md](../project/PR_TRIAGE.md)** - Detailed triage analysis (2025-10-24)
-   - Explains closure rationale for PRs #6, #11, #12
-   - Documents prior triage of PRs #1-#2
+- **[../project/PR_TRIAGE.md](../project/PR_TRIAGE.md)** - Detailed triage analysis (2025-10-24)
+  - Explains closure rationale for PRs #6, #11, #12
+  - Documents prior triage of PRs #1-#2
 
-  - **[../project/CI_AUDIT_LAST_GREEN.md](../project/CI_AUDIT_LAST_GREEN.md)** - CI health tracking
-   - Last green CI run information
-   - Commit history since last green
-   - Likely breakpoints analysis
+- **[../project/CI_AUDIT_LAST_GREEN.md](../project/CI_AUDIT_LAST_GREEN.md)** - CI health tracking
+  - Last green CI run information
+  - Commit history since last green
+  - Likely breakpoints analysis
 
 ## Audit Process
 
