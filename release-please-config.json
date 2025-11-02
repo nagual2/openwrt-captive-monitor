@@ -1,0 +1,21 @@
+{
+  "release-type": "simple",
+  "package-name": "openwrt-captive-monitor",
+  "changelog-types": [
+    {"type":"feat","section":"Features","hidden":false},
+    {"type":"fix","section":"Bug Fixes","hidden":false},
+    {"type":"chore","section":"Miscellaneous","hidden":false},
+    {"type":"docs","section":"Documentation","hidden":false},
+    {"type":"style","section":"Styling","hidden":false},
+    {"type":"refactor","section":"Code Refactoring","hidden":false},
+    {"type":"perf","section":"Performance Improvements","hidden":false},
+    {"type":"test","section":"Tests","hidden":false},
+    {"type":"build","section":"Build System","hidden":false},
+    {"type":"ci","section":"Continuous Integration","hidden":false}
+  ],
+  "changelog-path": "CHANGELOG.md",
+  "version-file": "package/openwrt-captive-monitor/Makefile",
+  "version-regex": "^PKG_VERSION:=([0-9]+\\.[0-9]+\\.[0-9]+)",
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true
+}
