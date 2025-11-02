@@ -47,31 +47,31 @@ The openwrt-captive-monitor project provides several channels for getting suppor
 
 ### Service won't start
 ```bash
-# Check service status
+## Check service status
 /etc/init.d/captive-monitor status
 
-# View logs
+## View logs
 logread | grep captive-monitor
 
-# Test configuration
+## Test configuration
 uci show captive-monitor
 ```
 
 ### Package installation issues
 ```bash
-# Check package dependencies
+## Check package dependencies
 opkg depends openwrt-captive-monitor
 
-# Verify package integrity
+## Verify package integrity
 opkg verify openwrt-captive-monitor
 ```
 
 ### Network connectivity problems
 ```bash
-# Test manually in oneshot mode
+## Test manually in oneshot mode
 openwrt_captive_monitor --mode oneshot --verbose
 
-# Check DNS resolution
+## Check DNS resolution
 nslookup google.com
 ```
 

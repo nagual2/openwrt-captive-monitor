@@ -19,7 +19,7 @@ Oneshot mode performs a single connectivity check and exits, making it ideal for
 ### Basic Configuration
 
 ```uci
-# /etc/config/captive-monitor
+## /etc/config/captive-monitor
 config captive_monitor 'config'
     option enabled '1'
     option mode 'oneshot'                 # Single check mode
@@ -32,16 +32,16 @@ config captive_monitor 'config'
 ### Command-Line Usage
 
 ```bash
-# Basic oneshot execution
+## Basic oneshot execution
 /usr/sbin/openwrt_captive_monitor --oneshot
 
-# With custom interface
+## With custom interface
 /usr/sbin/openwrt_captive_monitor --oneshot --interface wlan0 --logical wan
 
-# Verbose output for debugging
+## Verbose output for debugging
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose
 
-# Dry run (no changes made)
+## Dry run (no changes made)
 /usr/sbin/openwrt_captive_monitor --oneshot --dry-run
 ```
 
@@ -76,23 +76,23 @@ config captive_monitor 'config'
 ### Cron Configuration
 
 ```bash
-# Edit root crontab
+## Edit root crontab
 crontab -e
 
-# Add oneshot execution every 5 minutes
+## Add oneshot execution every 5 minutes
 */5 * * * * /usr/sbin/openwrt_captive_monitor --oneshot
 
-# Add every 15 minutes with logging
+## Add every 15 minutes with logging
 */15 * * * * /usr/sbin/openwrt_captive_monitor --oneshot >> /var/log/captive-oneshot.log 2>&1
 
-# Add hourly with verbose output
+## Add hourly with verbose output
 0 * * * * /usr/sbin/openwrt_captive_monitor --oneshot --verbose >> /var/log/captive-oneshot.log 2>&1
 ```
 
 ### Systemd Timer (if available)
 
 ```bash
-# Create systemd service
+## Create systemd service
 cat > /etc/systemd/system/captive-monitor-oneshot.service <<'EOF'
 [Unit]
 Description=OpenWrt Captive Monitor Oneshot
@@ -105,7 +105,7 @@ StandardOutput=journal
 StandardError=journal
 EOF
 
-# Create systemd timer
+## Create systemd timer
 cat > /etc/systemd/system/captive-monitor-oneshot.timer <<'EOF'
 [Unit]
 Description=Run captive monitor oneshot every 10 minutes
@@ -119,7 +119,7 @@ Persistent=true
 WantedBy=timers.target
 EOF
 
-# Enable and start timer
+## Enable and start timer
 systemctl enable captive-monitor-oneshot.timer
 systemctl start captive-monitor-oneshot.timer
 ```
@@ -132,9 +132,9 @@ systemctl start captive-monitor-oneshot.timer
 
 ```bash
 #!/bin/sh
-# /usr/local/bin/network-recovery.sh
+## /usr/local/bin/network-recovery.sh
 
-# Check if interface is down
+## Check if interface is down
 if ! ip link show phy1-sta0 | grep -q "state UP"; then
     echo "Interface is down, attempting recovery"
     
@@ -162,9 +162,9 @@ fi
 
 ```bash
 #!/bin/sh
-# /usr/local/bin/conditional-check.sh
+## /usr/local/bin/conditional-check.sh
 
-# Only run if specific conditions are met
+## Only run if specific conditions are met
 WIFI_ENABLED=$(uci get wireless.@wifi-iface[0].disabled 2>/dev/null || echo "0")
 
 if [ "$WIFI_ENABLED" = "0" ]; then
@@ -180,9 +180,9 @@ fi
 
 ```bash
 #!/bin/sh
-# /etc/hotplug.d/iface/99-captive-monitor
+## /etc/hotplug.d/iface/99-captive-monitor
 
-# Run oneshot when WAN interface comes up
+## Run oneshot when WAN interface comes up
 [ "$INTERFACE" = "wan" ] && [ "$ACTION" = "ifup" ] && {
     echo "WAN interface up, running connectivity check"
     /usr/sbin/openwrt_captive_monitor --oneshot
@@ -196,7 +196,7 @@ fi
 ### Enhanced Logging
 
 ```bash
-# Create comprehensive logging script
+## Create comprehensive logging script
 cat > /usr/local/bin/captive-oneshot-logger.sh <<'EOF'
 #!/bin/sh
 
@@ -206,11 +206,11 @@ RESULT_FILE="/tmp/captive-oneshot-result"
 
 echo "=== Captive Monitor Oneshot - $TIMESTAMP ===" >> $LOG_FILE
 
-# Run oneshot with verbose output
+## Run oneshot with verbose output
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose >> $LOG_FILE 2>&1
 EXIT_CODE=$?
 
-# Log result
+## Log result
 case $EXIT_CODE in
     0)
         echo "Result: SUCCESS - Internet is working" >> $LOG_FILE
@@ -234,7 +234,7 @@ esac
 
 echo "" >> $LOG_FILE
 
-# Store result for other scripts
+## Store result for other scripts
 echo $EXIT_CODE > $RESULT_FILE
 
 exit $EXIT_CODE
@@ -246,7 +246,7 @@ chmod +x /usr/local/bin/captive-oneshot-logger.sh
 ### Log Analysis
 
 ```bash
-# Analyze oneshot results
+## Analyze oneshot results
 cat > /usr/local/bin/analyze-oneshot.sh <<'EOF'
 #!/bin/sh
 
@@ -255,19 +255,19 @@ DAYS=7
 
 echo "=== Oneshot Analysis (Last $DAYS days) ==="
 
-# Count results by type
+## Count results by type
 echo "Results Summary:"
 grep "Result:" $LOG_FILE | tail -100 | sort | uniq -c | sort -nr
 
-# Show recent failures
+## Show recent failures
 echo -e "\nRecent Failures:"
 grep "Result: ERROR" $LOG_FILE | tail -10
 
-# Show captive portal detections
+## Show captive portal detections
 echo -e "\nCaptive Portal Detections:"
 grep "Result: WARNING" $LOG_FILE | tail -10
 
-# Success rate
+## Success rate
 TOTAL=$(grep "Result:" $LOG_FILE | wc -l)
 SUCCESS=$(grep "Result: SUCCESS" $LOG_FILE | wc -l)
 if [ $TOTAL -gt 0 ]; then
@@ -289,14 +289,14 @@ chmod +x /usr/local/bin/analyze-oneshot.sh
 
 ```python
 #!/usr/bin/env python3
-# captive_monitor_integration.py
+## captive_monitor_integration.py
 
 import subprocess
 import sys
 import time
 import logging
 
-# Configure logging
+## Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -372,7 +372,7 @@ if __name__ == "__main__":
 
 ```bash
 #!/bin/sh
-# /usr/local/bin/network-health-check.sh
+## /usr/local/bin/network-health-check.sh
 
 MAX_RETRIES=3
 RETRY_DELAY=30
@@ -397,7 +397,7 @@ run_check() {
     fi
 }
 
-# Main logic
+## Main logic
 RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     if run_check; then
@@ -452,10 +452,10 @@ exit 1
 ### Debug Mode
 
 ```bash
-# Run with maximum debugging
+## Run with maximum debugging
 sh -x /usr/sbin/openwrt_captive_monitor --oneshot --verbose 2>&1 | tee /tmp/captive-debug.log
 
-# Check for missing dependencies
+## Check for missing dependencies
 for cmd in curl iptables dnsmasq; do
     if ! command -v $cmd >/dev/null 2>&1; then
         echo "Missing dependency: $cmd"
@@ -466,10 +466,10 @@ done
 ### Dry Run Testing
 
 ```bash
-# Test what would happen without making changes
+## Test what would happen without making changes
 /usr/sbin/openwrt_captive_monitor --oneshot --dry-run --verbose
 
-# Test with custom configuration
+## Test with custom configuration
 export WIFI_INTERFACE="test-interface"
 export MONITOR_INTERVAL="10"
 /usr/sbin/openwrt_captive_monitor --oneshot --dry-run
@@ -482,10 +482,10 @@ export MONITOR_INTERVAL="10"
 ### Resource Usage
 
 ```bash
-# Monitor resource usage during oneshot
+## Monitor resource usage during oneshot
 time /usr/sbin/openwrt_captive_monitor --oneshot
 
-# Check memory usage
+## Check memory usage
 /usr/bin/time -v /usr/sbin/openwrt_captive_monitor --oneshot
 ```
 

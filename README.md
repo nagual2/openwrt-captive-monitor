@@ -26,10 +26,10 @@ the helper automatically cleans up dnsmasq overrides, HTTP redirects, and NAT ru
 
 ```text
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Client       │    │   Router       │    │   External      │
-│   Devices      │◄──►│  (OpenWrt +    │◄──►│   Network       │
-│                │    │  Captive        │    │                 │
-│                │    │  Monitor)       │    │                 │
+│   Client        │    │   Router        │    │   External      │
+│   Devices       │◄──►│  (OpenWrt +     │◄──►│   Network       │
+│                 │    │  Captive        │    │                 │
+│                 │    │  Monitor)       │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -52,10 +52,10 @@ The service integrates seamlessly with OpenWrt's networking stack:
 #### Option 1: Prebuilt Package (Recommended)
 
 ```bash
-# Download latest package
+## Download latest package
 wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_*.ipk
 
-# Install on router
+## Install on router
 scp openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 ```
@@ -63,17 +63,17 @@ ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 #### Option 2: Build from Source
 
 ```bash
-# Clone repository
+## Clone repository
 git clone https://github.com/nagual2/openwrt-captive-monitor.git
 cd openwrt-captive-monitor
 
-# Build package
+## Build package
 scripts/build_ipk.sh --arch all
 
-# For advanced packaging options and release automation, see:
-# https://nagual2.github.io/openwrt-captive-monitor/packaging/
+## For advanced packaging options and release automation, see:
+## https://nagual2.github.io/openwrt-captive-monitor/packaging/
 
-# Install built package
+## Install built package
 scp dist/opkg/all/openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 ```
@@ -81,7 +81,7 @@ ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 ### Basic Configuration
 
 ```bash
-# Enable service
+## Enable service
 ssh root@192.168.1.1 <<'EOSSH'
 uci set captive-monitor.config.enabled='1'
 uci commit captive-monitor
@@ -93,13 +93,13 @@ EOSSH
 ### Verification
 
 ```bash
-# Check service status
+## Check service status
 ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
 ```
 
 ## 📋 Table of Contents
 
-<<<<<<< HEAD
+
 - [Installation](#-quick-start)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
@@ -133,7 +133,7 @@ ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
 - [License](#-license)
 - [Acknowledgments](#-acknowledgments)
 - [Related Projects](#-related-projects)
-=======
+
 - [Installation](#installation)
   - [Prerequisites](#prerequisites)
   - [Installation Options](#installation-options)
@@ -153,7 +153,7 @@ ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
   - [Support](#support)
   - [Security](#security)
   - [License](#license)
->>>>>>> origin/chore-audit-merge-active-branches
+
 
 ## 📦 Installation Options
 
@@ -168,15 +168,15 @@ ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
 ### OpenWrt SDK Build
 
 ```bash
-# Download OpenWrt SDK
+## Download OpenWrt SDK
 wget https://downloads.openwrt.org/releases/22.03.5/targets/ath79/generic/openwrt-sdk-22.03.5-ath79-generic_gcc-11.2.0_musl.Linux-x86_64.tar.xz
 tar -xf openwrt-sdk-*.tar.xz
 cd openwrt-sdk-*
 
-# Add package source
+## Add package source
 git clone https://github.com/nagual2/openwrt-captive-monitor.git package/openwrt-captive-monitor
 
-# Build package
+## Build package
 ./scripts/feeds update -a
 ./scripts/feeds install openwrt-captive-monitor
 make package/openwrt-captive-monitor/compile V=s
@@ -228,7 +228,7 @@ config captive_monitor 'config'
 ### Environment Variables
 
 ```bash
-# Override configuration
+## Override configuration
 export MONITOR_INTERVAL="30"
 export WIFI_INTERFACE="wlan0"
 export PING_SERVERS="1.1.1.1 9.9.9.9"
@@ -244,10 +244,10 @@ export CAPTIVE_DEBUG="1"
 Continuous monitoring with specified interval:
 
 ```bash
-# Start monitoring
+## Start monitoring
 /usr/sbin/openwrt_captive_monitor --monitor
 
-# With custom interval
+## With custom interval
 /usr/sbin/openwrt_captive_monitor --monitor --interval 30
 ```
 
@@ -256,10 +256,10 @@ Continuous monitoring with specified interval:
 Single check and exit, ideal for cron:
 
 ```bash
-# Single check
+## Single check
 /usr/sbin/openwrt_captive_monitor --oneshot
 
-# Cron job (every 15 minutes)
+## Cron job (every 15 minutes)
 */15 * * * * /usr/sbin/openwrt_captive_monitor --oneshot
 ```
 
@@ -267,22 +267,22 @@ Single check and exit, ideal for cron:
 
 **Service Status:**
 ```bash
-# Check if running
+## Check if running
 ps aux | grep openwrt_captive_monitor
 
-# Service status
+## Service status
 /etc/init.d/captive-monitor status
 
-# Recent logs
+## Recent logs
 logread | grep captive-monitor | tail -20
 ```
 
 **Debug Mode:**
 ```bash
-# Verbose output
+## Verbose output
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose
 
-# Debug mode
+## Debug mode
 export CAPTIVE_DEBUG="1"
 /usr/sbin/openwrt_captive_monitor --oneshot
 ```
@@ -293,45 +293,45 @@ export CAPTIVE_DEBUG="1"
 
 **Service won't start:**
 ```bash
-# Check configuration
+## Check configuration
 uci show captive-monitor
 
-# Check permissions
+## Check permissions
 ls -la /usr/sbin/openwrt_captive_monitor
 
-# Manual test
+## Manual test
 /usr/sbin/openwrt_captive_monitor --help
 ```
 
 **Captive portal not detected:**
 ```bash
-# Test detection URLs manually
+## Test detection URLs manually
 curl -I http://connectivitycheck.gstatic.com/generate_204
 curl -I http://detectportal.firefox.com/success.txt
 
-# Add custom URLs
+## Add custom URLs
 uci add_list captive-monitor.config.captive_check_urls='http://your-portal.com/detect'
 ```
 
 **Redirection not working:**
 ```bash
-# Check firewall rules
+## Check firewall rules
 iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
 
-# Check DNS overrides
+## Check DNS overrides
 cat /tmp/dnsmasq.d/captive_intercept.conf
 
-# Restart services
+## Restart services
 /etc/init.d/dnsmasq restart
 ```
 
 ### Health Check
 
 ```bash
-# Comprehensive health check
+## Comprehensive health check
 /usr/local/bin/captive-health-check.sh
 
-# Manual cleanup (if needed)
+## Manual cleanup (if needed)
 /usr/sbin/openwrt_captive_monitor --force-cleanup
 ```
 
@@ -340,35 +340,35 @@ cat /tmp/dnsmasq.d/captive_intercept.conf
 ### Building
 
 ```bash
-# Install build dependencies
+## Install build dependencies
 sudo apt-get install -y binutils busybox gzip pigz tar xz-utils
 
-# Build package
+## Build package
 scripts/build_ipk.sh --arch all
 
-# Validate package
+## Validate package
 tar -tzf dist/opkg/all/openwrt-captive-monitor_*.ipk
 ```
 
 ### Testing
 
 ```bash
-# Run test suite
+## Run test suite
 busybox sh tests/run.sh
 
-# Linting
+## Linting
 shellcheck openwrt_captive_monitor.sh
 shfmt -i 2 -ci -sr -d openwrt_captive_monitor.sh
 
-# Manual testing
+## Manual testing
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose
 ```
 
-<<<<<<< HEAD
+
 ### How to Contribute
-=======
+
 ### Contributing
->>>>>>> origin/chore-audit-merge-active-branches
+
 
 1. Fork repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)

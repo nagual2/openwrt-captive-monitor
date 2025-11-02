@@ -15,10 +15,10 @@
 
 ### Шаг 3: Установка на роутер
 ```bash
-# Скопируйте .ipk файл на роутер
+## Скопируйте .ipk файл на роутер
 scp openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
 
-# Установите пакет
+## Установите пакет
 ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 ```
 
@@ -28,20 +28,20 @@ ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 
 ### Вариант 1: Docker Desktop (Windows)
 ```bash
-# Установите Docker Desktop для Windows
-# Затем создайте Dockerfile для сборки
+## Установите Docker Desktop для Windows
+## Затем создайте Dockerfile для сборки
 ```
 
 ### Вариант 2: WSL (Windows Subsystem for Linux)
 ```bash
-# Включите WSL в Windows Features
+## Включите WSL в Windows Features
 wsl --install
 
-# В WSL установите инструменты
+## В WSL установите инструменты
 sudo apt update
 sudo apt install build-essential git wget xz-utils
 
-# Скачайте и соберите
+## Скачайте и соберите
 wget https://downloads.openwrt.org/releases/23.05.3/targets/ath79/generic/openwrt-sdk-23.05.3-ath79-generic_gcc-11.2.0_musl.Linux-x86_64.tar.xz
 tar -xf openwrt-sdk-*.tar.xz
 cp -r package/openwrt-captive-monitor openwrt-sdk-*/package/
@@ -51,11 +51,11 @@ make package/openwrt-captive-monitor/compile V=s
 
 ### Вариант 3: Git Bash + дополнительные утилиты
 ```bash
-# Установите MSYS2 или Cygwin для дополнительных Unix утилит
-# В MSYS2:
+## Установите MSYS2 или Cygwin для дополнительных Unix утилит
+## В MSYS2:
 pacman -S base-devel tar gzip
 
-# Для команды 'ar' (нужна для .ipk):
+## Для команды 'ar' (нужна для .ipk):
 pacman -S binutils
 ```
 
@@ -69,7 +69,7 @@ pacman -S binutils
 
 После установки проверьте:
 ```bash
-# На роутере
+## На роутере
 opkg list | grep captive-monitor
 /etc/init.d/captive-monitor status
 ```

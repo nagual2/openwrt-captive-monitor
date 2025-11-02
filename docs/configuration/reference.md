@@ -95,44 +95,44 @@ config captive_monitor 'config'
 All UCI options can be overridden using environment variables. Variable names follow the pattern:
 
 ```bash
-# UCI option: wifi_interface
-# Environment variable: WIFI_INTERFACE
+## UCI option: wifi_interface
+## Environment variable: WIFI_INTERFACE
 export WIFI_INTERFACE="phy1-sta0"
 
-# UCI option: monitor_interval  
-# Environment variable: MONITOR_INTERVAL
+## UCI option: monitor_interval  
+## Environment variable: MONITOR_INTERVAL
 export MONITOR_INTERVAL="30"
 ```
 
 ### Complete Environment Variable List
 
 ```bash
-# Core settings
+## Core settings
 export CAPTIVE_MONITOR_ENABLED="1"           # Override enabled
 export CAPTIVE_MONITOR_MODE="monitor"        # Override mode
 export WIFI_INTERFACE="phy1-sta0"            # WiFi interface
 export WIFI_LOGICAL="wwan"                    # Logical interface
 export MONITOR_INTERVAL="60"                  # Monitoring interval
 
-# Network settings
+## Network settings
 export LAN_INTERFACE="br-lan"                 # LAN interface
 export LAN_IP="192.168.1.1"                   # LAN IPv4 address
 export LAN_IPV6="fd00::1"                     # LAN IPv6 address
 export REQUESTED_FIREWALL_BACKEND="iptables"  # Firewall backend
 
-# Connectivity checks
+## Connectivity checks
 export PING_SERVERS="1.1.1.1 8.8.8.8"        # Ping servers
 export CAPTIVE_CHECK_URLS="http://example.com" # Captive check URLs
 export INTERNET_HTTP_PROBES="http://example.com" # HTTP probe URLs
 
-# Timing settings
+## Timing settings
 export PING_TIMEOUT="2"                       # Ping timeout
 export HTTP_PROBE_TIMEOUT="5"                 # HTTP probe timeout
 export GATEWAY_CHECK_RETRIES="2"              # Gateway check retries
 export INTERNET_CHECK_RETRIES="2"             # Internet check retries
 export INTERNET_CHECK_DELAY="3"               # Retry delay
 
-# Logging
+## Logging
 export ENABLE_SYSLOG="1"                      # Enable syslog
 ```
 
@@ -154,19 +154,19 @@ Command-line flags provide the highest priority configuration and are useful for
 ### Basic Usage
 
 ```bash
-# Display help
+## Display help
 /usr/sbin/openwrt_captive_monitor --help
 
-# Oneshot mode (single check)
+## Oneshot mode (single check)
 /usr/sbin/openwrt_captive_monitor --oneshot
 
-# Monitor mode (continuous)
+## Monitor mode (continuous)
 /usr/sbin/openwrt_captive_monitor --monitor
 
-# Custom interface
+## Custom interface
 /usr/sbin/openwrt_captive_monitor --oneshot --interface wlan0 --logical wan
 
-# Custom interval
+## Custom interval
 /usr/sbin/openwrt_captive_monitor --monitor --interval 30
 ```
 
@@ -207,16 +207,16 @@ Configuration is applied in the following order (highest to lowest priority):
 ### Example Precedence
 
 ```bash
-# UCI configuration sets interval to 60
+## UCI configuration sets interval to 60
 uci set captive-monitor.config.monitor_interval='60'
 
-# Environment variable overrides to 30
+## Environment variable overrides to 30
 export MONITOR_INTERVAL="30"
 
-# Command-line flag overrides to 15
+## Command-line flag overrides to 15
 /usr/sbin/openwrt_captive_monitor --monitor --interval 15
 
-# Result: interval = 15 seconds
+## Result: interval = 15 seconds
 ```
 
 ---
@@ -226,12 +226,12 @@ export MONITOR_INTERVAL="30"
 ### Example 1: Development Testing
 
 ```bash
-# Environment overrides for testing
+## Environment overrides for testing
 export MONITOR_INTERVAL="10"
 export WIFI_INTERFACE="wlan0"
 export ENABLE_SYSLOG="0"
 
-# Run with command-line override
+## Run with command-line override
 /usr/sbin/openwrt_captive_monitor --monitor --interval 5
 ```
 
@@ -281,44 +281,44 @@ config captive_monitor 'config'
 ### Validate UCI Configuration
 
 ```bash
-# Check syntax
+## Check syntax
 uci -c /tmp validate captive-monitor
 
-# Show current configuration
+## Show current configuration
 uci show captive-monitor
 
-# Check specific option
+## Check specific option
 uci get captive-monitor.config.enabled
 ```
 
 ### Test Configuration
 
 ```bash
-# Test with oneshot mode
+## Test with oneshot mode
 /usr/sbin/openwrt_captive_monitor --oneshot
 
-# Test with custom settings
+## Test with custom settings
 /usr/sbin/openwrt_captive_monitor --oneshot \
     --interface wlan0 \
     --logical wan \
     --interval 30
 
-# Check logs for configuration application
+## Check logs for configuration application
 logread | grep captive-monitor
 ```
 
 ### Environment Variable Testing
 
 ```bash
-# Set test environment
+## Set test environment
 export MONITOR_INTERVAL="10"
 export WIFI_INTERFACE="wlan0"
 export PING_SERVERS="8.8.8.8"
 
-# Test with environment overrides
+## Test with environment overrides
 /usr/sbin/openwrt_captive_monitor --oneshot
 
-# Clear environment
+## Clear environment
 unset MONITOR_INTERVAL WIFI_INTERFACE PING_SERVERS
 ```
 
@@ -327,8 +327,8 @@ unset MONITOR_INTERVAL WIFI_INTERFACE PING_SERVERS
 ## 📝 Configuration File Template
 
 ```uci
-# /etc/config/captive-monitor
-# Complete configuration template
+## /etc/config/captive-monitor
+## Complete configuration template
 
 config captive_monitor 'config'
     # === Core Settings ===
@@ -389,10 +389,10 @@ config captive_monitor 'config'
 ### Debug Mode
 
 ```bash
-# Run with debug output
+## Run with debug output
 sh -x /usr/sbin/openwrt_captive_monitor --oneshot
 
-# Check configuration application
+## Check configuration application
 logread -f | grep captive-monitor &
 /usr/sbin/openwrt_captive_monitor --oneshot
 ```

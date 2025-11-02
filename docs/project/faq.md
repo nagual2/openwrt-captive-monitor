@@ -128,13 +128,13 @@ uci commit captive-monitor
 
 **A:** Check the following:
 ```bash
-# Test detection URLs manually
+## Test detection URLs manually
 curl -I http://connectivitycheck.gstatic.com/generate_204
 
-# Check service logs
+## Check service logs
 logread | grep captive-monitor
 
-# Run in verbose mode
+## Run in verbose mode
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose
 ```
 
@@ -147,10 +147,10 @@ logread | grep captive-monitor
 
 Solutions:
 ```bash
-# Restart dnsmasq
+## Restart dnsmasq
 /etc/init.d/dnsmasq restart
 
-# Check dnsmasq configuration
+## Check dnsmasq configuration
 cat /tmp/dnsmasq.d/captive_intercept.conf
 ```
 
@@ -158,10 +158,10 @@ cat /tmp/dnsmasq.d/captive_intercept.conf
 
 **A:** Check firewall rules and HTTP server:
 ```bash
-# Check firewall rules
+## Check firewall rules
 iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
 
-# Check HTTP server
+## Check HTTP server
 netstat -ln | grep :8080
 curl http://127.0.0.1:8080/
 ```
@@ -172,7 +172,7 @@ curl http://127.0.0.1:8080/
 ```bash
 /usr/sbin/openwrt_captive_monitor --force-cleanup
 
-# Or manually clean up
+## Or manually clean up
 iptables -t nat -F CAPTIVE_HTTP_REDIRECT
 iptables -t nat -D PREROUTING -i br-lan -p tcp --dport 80 -j CAPTIVE_HTTP_REDIRECT
 rm -f /tmp/dnsmasq.d/captive_intercept.conf
@@ -183,13 +183,13 @@ rm -f /tmp/dnsmasq.d/captive_intercept.conf
 
 **A:** Optimize configuration:
 ```bash
-# Increase monitoring interval
+## Increase monitoring interval
 uci set captive-monitor.config.monitor_interval='300'
 
-# Reduce ping servers
+## Reduce ping servers
 uci set captive-monitor.config.ping_servers='8.8.8.8'
 
-# Disable verbose logging
+## Disable verbose logging
 uci set captive-monitor.config.enable_syslog='0'
 ```
 
@@ -224,7 +224,7 @@ opkg install dist/opkg/all/openwrt-captive-monitor_*.ipk
 **A:** 
 ```bash
 opkg remove openwrt-captive-monitor
-# Optionally clean up configuration
+## Optionally clean up configuration
 uci delete captive-monitor
 uci commit captive-monitor
 ```
@@ -241,13 +241,13 @@ uci commit captive-monitor
 
 **A:** 
 ```bash
-# Run health check
+## Run health check
 /usr/local/bin/captive-health-check.sh
 
-# Test with oneshot mode
+## Test with oneshot mode
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose
 
-# Monitor logs
+## Monitor logs
 logread -f | grep captive-monitor
 ```
 
@@ -255,10 +255,10 @@ logread -f | grep captive-monitor
 
 **A:** Yes, use oneshot mode with cron:
 ```bash
-# Edit crontab
+## Edit crontab
 crontab -e
 
-# Add line for every 15 minutes
+## Add line for every 15 minutes
 */15 * * * * /usr/sbin/openwrt_captive_monitor --oneshot
 ```
 

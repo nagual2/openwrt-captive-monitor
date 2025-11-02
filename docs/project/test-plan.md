@@ -207,13 +207,13 @@ Ensure the service:
 
 **Validation Commands:**
 ```bash
-# Check service logs
+## Check service logs
 logread | grep captive-monitor
 
-# Verify no interception rules
+## Verify no interception rules
 iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n 2>/dev/null || echo "No rules (expected)"
 
-# Test internet connectivity
+## Test internet connectivity
 ping -c 2 8.8.8.8
 curl -I http://example.com
 ```
@@ -235,17 +235,17 @@ curl -I http://example.com
 
 **Validation Commands:**
 ```bash
-# Check DNS interception
+## Check DNS interception
 nslookup google.com  # Should return router IP
 
-# Check firewall rules
+## Check firewall rules
 iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
 
-# Test HTTP redirection
+## Test HTTP redirection
 curl -I http://google.com  # Should redirect to portal
 
-# Verify cleanup after authentication
-# (repeat checks after authentication)
+## Verify cleanup after authentication
+## (repeat checks after authentication)
 ```
 
 ### 3. Network Disconnection/Reconnection
@@ -288,16 +288,16 @@ curl -I http://google.com  # Should redirect to portal
 
 **Test Procedure:**
 ```bash
-# Baseline measurement
+## Baseline measurement
 ps aux | grep openwrt_captive_monitor
 free -h
 df -h
 
-# Long-running test (24 hours)
+## Long-running test (24 hours)
 /usr/sbin/openwrt_captive_monitor --monitor &
 SERVICE_PID=$!
 
-# Monitor resources every 5 minutes
+## Monitor resources every 5 minutes
 while kill -0 $SERVICE_PID; do
     echo "$(date): $(ps -o pid,pcpu,pmem,cmd -p $SERVICE_PID)"
     sleep 300
@@ -339,13 +339,13 @@ done
 
 **Test Procedure:**
 ```bash
-# Test HTTPS traffic
+## Test HTTPS traffic
 curl -I https://google.com  # Should not be intercepted
 
-# Test DNS queries
+## Test DNS queries
 tcpdump -i any port 53 -n  # Monitor DNS traffic
 
-# Test firewall rules
+## Test firewall rules
 iptables -L -n -v  # Verify rule scope
 ```
 
@@ -436,10 +436,10 @@ iptables -L -n -v  # Verify rule scope
 
 **Execution:**
 ```bash
-# Run full regression suite
+## Run full regression suite
 ./scripts/run-regression-tests.sh
 
-# Generate report
+## Generate report
 ./scripts/generate-test-report.sh
 ```
 
@@ -486,27 +486,27 @@ jobs:
 **Test Runner:**
 ```bash
 #!/bin/bash
-# run-tests.sh - Comprehensive test runner
+## run-tests.sh - Comprehensive test runner
 
 set -e
 
 echo "Running test suite..."
 
-# Unit tests
+## Unit tests
 echo "Running unit tests..."
 bats tests/unit/
 
-# Integration tests
+## Integration tests
 echo "Running integration tests..."
 bats tests/integration/
 
-# System tests (if in container/emulation)
+## System tests (if in container/emulation)
 if [ -n "$TEST_ENVIRONMENT" ]; then
     echo "Running system tests..."
     bats tests/system/
 fi
 
-# Package validation
+## Package validation
 echo "Validating package..."
 scripts/validate-package.sh
 
@@ -544,22 +544,22 @@ Each test case should include:
 
 **Development Environment:**
 ```bash
-# Setup development test environment
+## Setup development test environment
 ./scripts/setup-dev-env.sh
 
-# Run tests
+## Run tests
 ./scripts/run-tests.sh
 ```
 
 **Emulation Environment:**
 ```bash
-# Setup OpenWrt emulation
+## Setup OpenWrt emulation
 docker run -it openwrtorg/rootfs:x86-64
 
-# Install test package
+## Install test package
 opkg install openwrt-captive-monitor_*.ipk
 
-# Run tests
+## Run tests
 ./scripts/run-system-tests.sh
 ```
 

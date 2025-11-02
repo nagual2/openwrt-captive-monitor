@@ -27,27 +27,27 @@ package/
 ### Quick Build
 
 ```bash
-# Build package using defaults
+## Build package using defaults
 ./scripts/build_ipk.sh
 
-# Output: dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk
+## Output: dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk
 ```
 
 ### Custom Builds
 
 ```bash
-# Override maintainer information
+## Override maintainer information
 ./scripts/build_ipk.sh \
   --maintainer "Your Name" \
   --maintainer-email "your.email@example.com"
 
-# Use custom SPDX license identifier
+## Use custom SPDX license identifier
 ./scripts/build_ipk.sh --spdx-id "MIT"
 
-# Build for specific architecture
+## Build for specific architecture
 ./scripts/build_ipk.sh --arch "mips_24kc"
 
-# Custom output directory
+## Custom output directory
 ./scripts/build_ipk.sh --feed-root "./my-feed"
 ```
 
@@ -99,7 +99,7 @@ Release mode provides:
 The project includes automated building via GitHub Actions:
 
 ```yaml
-# .github/workflows/openwrt-build.yml
+## .github/workflows/openwrt-build.yml
 - Builds packages for multiple architectures
 - Generates opkg feed indexes
 - Uploads artifacts for releases
@@ -127,14 +127,14 @@ PKG_RELEASE:=1
 ### 2. Build Release Artifacts
 
 ```bash
-# Build with release mode
+## Build with release mode
 ./scripts/build_ipk.sh --release-mode
 
-# This creates:
-# - dist/opkg/all/openwrt-captive-monitor_0.1.4-1_all.ipk
-# - dist/opkg/all/Packages
-# - dist/opkg/all/Packages.gz
-# - dist/opkg/all/release-metadata.json
+## This creates:
+## - dist/opkg/all/openwrt-captive-monitor_0.1.4-1_all.ipk
+## - dist/opkg/all/Packages
+## - dist/opkg/all/Packages.gz
+## - dist/opkg/all/release-metadata.json
 ```
 
 ### 3. Tag and Push
@@ -202,7 +202,7 @@ git push origin v0.1.4
 
 ```bash
 #!/bin/bash
-# release.sh - Automated release script
+## release.sh - Automated release script
 
 set -eu
 
@@ -210,16 +210,16 @@ VERSION=${1:-"0.1.4"}
 MAINTAINER=${2:-"OpenWrt Captive Monitor Team"}
 EMAIL=${3:-"team@example.com"}
 
-# Update version in Makefile
+## Update version in Makefile
 sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=$VERSION/" package/openwrt-captive-monitor/Makefile
 
-# Build release artifacts
+## Build release artifacts
 ./scripts/build_ipk.sh \
   --release-mode \
   --maintainer "$MAINTAINER" \
   --maintainer-email "$EMAIL"
 
-# Create GitHub release
+## Create GitHub release
 gh release create "v$VERSION" \
   --title "Release v$VERSION" \
   --notes "Automated release v$VERSION" \
@@ -238,7 +238,7 @@ The GitHub Actions workflow can be extended to:
 4. **Notify downstream systems**
 
 ```yaml
-# Example release job
+## Example release job
 - name: Create Release
   if: startsWith(github.ref, 'refs/tags/')
   uses: actions/create-release@v1
@@ -254,14 +254,14 @@ The GitHub Actions workflow can be extended to:
 For production feeds, consider package signing:
 
 ```bash
-# Generate signing key
+## Generate signing key
 openssl genrsa -out opkg.key 2048
 openssl rsa -in opkg.key -pubout > opkg.pub
 
-# Sign packages
+## Sign packages
 opkg-sign key opkg.key dist/opkg/all/*.ipk
 
-# Update feed with signatures
+## Update feed with signatures
 opkg-make-index -s opkg.pub -p dist/opkg/all/Packages dist/opkg/all/
 ```
 
@@ -270,23 +270,23 @@ opkg-make-index -s opkg.pub -p dist/opkg/all/Packages dist/opkg/all/
 ### Package Validation
 
 ```bash
-# Verify package structure
+## Verify package structure
 tar -tzf dist/opkg/all/openwrt-captive-monitor_*.ipk
 
-# Check control file
+## Check control file
 ar p dist/opkg/all/openwrt-captive-monitor_*.ipk control.tar.gz | tar -Oxz ./control
 
-# Validate dependencies
+## Validate dependencies
 opkg info ./dist/opkg/all/openwrt-captive-monitor_*.ipk
 ```
 
 ### Linting
 
 ```bash
-# Check OpenWrt package compliance
+## Check OpenWrt package compliance
 openwrt-package-lint package/openwrt-captive-monitor/Makefile
 
-# Verify file permissions
+## Verify file permissions
 find package/openwrt-captive-monitor/files -type f -exec ls -la {} \;
 ```
 
@@ -302,12 +302,12 @@ find package/openwrt-captive-monitor/files -type f -exec ls -la {} \;
 ### Debug Commands
 
 ```bash
-# Debug package build
+## Debug package build
 ./scripts/build_ipk.sh --arch all 2>&1 | tee build.log
 
-# Test feed locally
+## Test feed locally
 python3 -m http.server 8080 --directory dist/opkg/all/
-# Then: echo "src/gz test http://localhost:8080" >> /etc/opkg/customfeeds.conf
+## Then: echo "src/gz test http://localhost:8080" >> /etc/opkg/customfeeds.conf
 ```
 
 ## References

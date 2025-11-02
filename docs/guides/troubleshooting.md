@@ -7,30 +7,30 @@ Comprehensive troubleshooting guide for **openwrt-captive-monitor** covering com
 ### Immediate Checks
 
 ```bash
-# 1. Check if service is running
+## 1. Check if service is running
 ps aux | grep openwrt_captive_monitor
 
-# 2. Check service status
+## 2. Check service status
 /etc/init.d/captive-monitor status
 
-# 3. Check recent logs
+## 3. Check recent logs
 logread | grep captive-monitor | tail -20
 
-# 4. Check configuration
+## 4. Check configuration
 uci show captive-monitor
 ```
 
 ### Health Check Script
 
 ```bash
-# Create comprehensive health check
+## Create comprehensive health check
 cat > /usr/local/bin/captive-health-check.sh <<'EOF'
 #!/bin/sh
 
 echo "=== OpenWrt Captive Monitor Health Check ==="
 echo ""
 
-# Check service status
+## Check service status
 echo "1. Service Status:"
 if pgrep -f openwrt_captive_monitor > /dev/null; then
     echo "   ✓ Process is running"
@@ -40,7 +40,7 @@ else
     echo "   ✗ Process is NOT running"
 fi
 
-# Check configuration
+## Check configuration
 echo -e "\n2. Configuration:"
 if uci -q get captive-monitor.config.enabled > /dev/null; then
     echo "   ✓ UCI configuration exists"
@@ -51,7 +51,7 @@ else
     echo "   ✗ UCI configuration not found"
 fi
 
-# Check required binaries
+## Check required binaries
 echo -e "\n3. Required Binaries:"
 MISSING=""
 for binary in curl iptables dnsmasq; do
@@ -63,7 +63,7 @@ for binary in curl iptables dnsmasq; do
     fi
 done
 
-# Check network interfaces
+## Check network interfaces
 echo -e "\n4. Network Interfaces:"
 WIFI_IFACE=$(uci -q get captive-monitor.config.wifi_interface)
 if [ -n "$WIFI_IFACE" ]; then
@@ -76,7 +76,7 @@ if [ -n "$WIFI_IFACE" ]; then
     fi
 fi
 
-# Check firewall state
+## Check firewall state
 echo -e "\n5. Firewall State:"
 if iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n 2>/dev/null | grep -q "Chain CAPTIVE_HTTP_REDIRECT"; then
     echo "   ⚠ Captive portal rules are ACTIVE"
@@ -86,7 +86,7 @@ else
     echo "   ✓ No captive portal rules active"
 fi
 
-# Check DNS overrides
+## Check DNS overrides
 echo -e "\n6. DNS Overrides:"
 if [ -f /tmp/dnsmasq.d/captive_intercept.conf ]; then
     echo "   ⚠ DNS intercept file EXISTS"
@@ -96,7 +96,7 @@ else
     echo "   ✓ No DNS intercept file found"
 fi
 
-# Recent errors
+## Recent errors
 echo -e "\n7. Recent Errors:"
 ERRORS=$(logread | grep captive-monitor | grep -i error | tail -5)
 if [ -n "$ERRORS" ]; then
@@ -130,16 +130,16 @@ chmod +x /usr/local/bin/captive-health-check.sh
 
 #### Diagnosis
 ```bash
-# Check if service is enabled
+## Check if service is enabled
 uci get captive-monitor.config.enabled
 
-# Check init script
+## Check init script
 ls -la /etc/init.d/captive-monitor
 
-# Try manual start
+## Try manual start
 /etc/init.d/captive-monitor start
 
-# Check for errors
+## Check for errors
 logread | grep captive-monitor
 ```
 
@@ -161,12 +161,12 @@ chmod +x /etc/init.d/captive-monitor
 
 **Solution 3: Check configuration**
 ```bash
-# Validate configuration
+## Validate configuration
 uci -c /tmp validate captive-monitor
 
-# Reset to defaults if corrupted
+## Reset to defaults if corrupted
 uci revert captive-monitor
-# Then reconfigure as needed
+## Then reconfigure as needed
 ```
 
 ### Issue 2: Captive Portal Not Detected
@@ -178,11 +178,11 @@ uci revert captive-monitor
 
 #### Diagnosis
 ```bash
-# Test captive detection URLs manually
+## Test captive detection URLs manually
 curl -I http://connectivitycheck.gstatic.com/generate_204
 curl -I http://detectportal.firefox.com/success.txt
 
-# Check response codes
+## Check response codes
 curl -s -w "%{http_code}" http://connectivitycheck.gstatic.com/generate_204 -o /dev/null
 ```
 
@@ -217,13 +217,13 @@ uci commit captive-monitor
 
 #### Diagnosis
 ```bash
-# Check if DNS intercept file exists
+## Check if DNS intercept file exists
 cat /tmp/dnsmasq.d/captive_intercept.conf
 
-# Check dnsmasq configuration
+## Check dnsmasq configuration
 ps aux | grep dnsmasq
 
-# Test DNS resolution from client
+## Test DNS resolution from client
 nslookup google.com  # Should return router IP
 ```
 
@@ -233,23 +233,23 @@ nslookup google.com  # Should return router IP
 ```bash
 /etc/init.d/dnsmasq restart
 sleep 5
-# Test again
+## Test again
 nslookup google.com
 ```
 
 **Solution 2: Check dnsmasq configuration**
 ```bash
-# Ensure dnsmasq reads the drop-in directory
+## Ensure dnsmasq reads the drop-in directory
 grep -E "^conf-dir|^conf-file" /etc/dnsmasq.conf
 
-# If missing, add to configuration
+## If missing, add to configuration
 echo "conf-dir=/tmp/dnsmasq.d" >> /etc/dnsmasq.conf
 /etc/init.d/dnsmasq restart
 ```
 
 **Solution 3: Manual DNS intercept**
 ```bash
-# Create manual intercept file
+## Create manual intercept file
 mkdir -p /tmp/dnsmasq.d
 cat > /tmp/dnsmasq.d/captive_intercept.conf <<'EOF'
 address=/#/192.168.1.1
@@ -270,15 +270,15 @@ EOF
 
 #### Diagnosis
 ```bash
-# Check firewall rules
+## Check firewall rules
 iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
 iptables -t nat -L PREROUTING -n -v | grep CAPTIVE
 
-# Check if HTTP server is running
+## Check if HTTP server is running
 ps aux | grep httpd
 netstat -ln | grep :8080
 
-# Test HTTP server locally
+## Test HTTP server locally
 curl http://127.0.0.1:8080/
 ```
 
@@ -286,11 +286,11 @@ curl http://127.0.0.1:8080/
 
 **Solution 1: Check firewall backend**
 ```bash
-# Determine if using iptables or nftables
+## Determine if using iptables or nftables
 which iptables >/dev/null && echo "iptables available" || echo "iptables not available"
 which nft >/dev/null && echo "nft available" || echo "nft not available"
 
-# Force specific backend
+## Force specific backend
 uci set captive-monitor.config.firewall_backend='iptables'
 uci commit captive-monitor
 /etc/init.d/captive-monitor restart
@@ -298,7 +298,7 @@ uci commit captive-monitor
 
 **Solution 2: Manual firewall rules**
 ```bash
-# Create manual redirect rules
+## Create manual redirect rules
 LAN_IF=br-lan
 LAN_IP=192.168.1.1
 
@@ -327,11 +327,11 @@ busybox httpd -f -p 8080 -h /tmp/captive_httpd &
 
 #### Diagnosis
 ```bash
-# Check for remaining rules
+## Check for remaining rules
 iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
 iptables -t nat -L PREROUTING -n -v | grep CAPTIVE
 
-# Check for remaining files
+## Check for remaining files
 ls -la /tmp/dnsmasq.d/captive_intercept.conf
 ps aux | grep httpd
 ```
@@ -345,16 +345,16 @@ ps aux | grep httpd
 
 **Solution 2: Manual cleanup**
 ```bash
-# Remove firewall rules
+## Remove firewall rules
 iptables -t nat -F CAPTIVE_HTTP_REDIRECT
 iptables -t nat -D PREROUTING -i br-lan -p tcp --dport 80 -j CAPTIVE_HTTP_REDIRECT 2>/dev/null
 iptables -t nat -X CAPTIVE_HTTP_REDIRECT 2>/dev/null
 
-# Remove DNS intercept
+## Remove DNS intercept
 rm -f /tmp/dnsmasq.d/captive_intercept.conf
 /etc/init.d/dnsmasq restart
 
-# Stop HTTP server
+## Stop HTTP server
 pkill -f "busybox httpd.*8080"
 ```
 
@@ -372,14 +372,14 @@ sleep 5
 ### Debug Mode
 
 ```bash
-# Enable comprehensive debugging
+## Enable comprehensive debugging
 export CAPTIVE_DEBUG="1"
 export CAPTIVE_VERBOSE="1"
 
-# Run with debug output
+## Run with debug output
 sh -x /usr/sbin/openwrt_captive_monitor --oneshot 2>&1 | tee /tmp/captive-debug.log
 
-# Monitor logs in real-time
+## Monitor logs in real-time
 logread -f | grep captive-monitor &
 /usr/sbin/openwrt_captive_monitor --monitor --verbose
 ```
@@ -387,16 +387,16 @@ logread -f | grep captive-monitor &
 ### Network Analysis
 
 ```bash
-# Capture network traffic
+## Capture network traffic
 tcpdump -i br-lan port 53 -n -vvv    # DNS traffic
 tcpdump -i br-lan port 80 -n -vvv    # HTTP traffic
 tcpdump -i phy1-sta0 -n -vvv        # WAN traffic
 
-# Check routing
+## Check routing
 ip route show
 ip route get 8.8.8.8
 
-# Check interface status
+## Check interface status
 ip addr show
 ip link show
 ```
@@ -404,12 +404,12 @@ ip link show
 ### System State Inspection
 
 ```bash
-# Check system resources
+## Check system resources
 free -h
 df -h
 top -b -n 1 | head -20
 
-# Check system logs
+## Check system logs
 dmesg | grep -E "(error|fail|warn)" | tail -20
 logread | grep -E "(error|fail|warn)" | tail -20
 ```
@@ -422,10 +422,10 @@ logread | grep -E "(error|fail|warn)" | tail -20
 
 #### Diagnosis
 ```bash
-# Check CPU usage
+## Check CPU usage
 top | grep openwrt_captive_monitor
 
-# Monitor over time
+## Monitor over time
 while true; do
     echo "$(date): $(ps -o pid,pcpu,pmem,cmd -p $(pgrep openwrt_captive_monitor))"
     sleep 5
@@ -442,10 +442,10 @@ done
 
 #### Diagnosis
 ```bash
-# Check memory usage
+## Check memory usage
 ps aux | grep openwrt_captive_monitor
 
-# Monitor memory leaks
+## Monitor memory leaks
 while true; do
     echo "$(date): $(cat /proc/$(pgrep openwrt_captive_monitor)/status | grep -E 'VmSize|VmRSS')"
     sleep 30
@@ -465,23 +465,23 @@ done
 
 #### Diagnosis
 ```bash
-# Check WiFi interface status
+## Check WiFi interface status
 iwconfig
 iw dev
 ifstatus wwan
 
-# Check wireless configuration
+## Check wireless configuration
 uci show wireless
 ```
 
 #### Solutions
 ```bash
-# Restart WiFi interface
+## Restart WiFi interface
 wifi down
 sleep 5
 wifi up
 
-# Restart specific interface
+## Restart specific interface
 ifdown wwan
 sleep 5
 ifup wwan
@@ -491,17 +491,17 @@ ifup wwan
 
 #### Diagnosis
 ```bash
-# Check IPv6 configuration
+## Check IPv6 configuration
 ip -6 addr show
 ip -6 route show
 
-# Test IPv6 connectivity
+## Test IPv6 connectivity
 ping6 -c 2 2001:4860:4860::8888
 ```
 
 #### Solutions
 ```bash
-# Enable IPv6 support
+## Enable IPv6 support
 uci set captive-monitor.config.enable_ipv6='1'
 uci set captive-monitor.config.lan_ipv6='fd00::1'
 uci commit captive-monitor
@@ -546,7 +546,7 @@ uci commit captive-monitor
 ### Collect Debug Information
 
 ```bash
-# Create debug report
+## Create debug report
 cat > /tmp/captive-debug-report.txt <<'EOF'
 === OpenWrt Captive Monitor Debug Report ===
 Generated: $(date)
