@@ -48,11 +48,6 @@ concurrency:
 - **Concurrency**: Enabled
 - **Dependencies**: Downloads test results from CI
 
-### `label-sync.yml` - Repository Management
-
-- **Triggers**: Main pushes (labels.yml only) + daily schedule + manual
-- **Purpose**: Sync GitHub labels
-
 ### `release-please.yml` - Automated Releases
 
 - **Triggers**: Main branch pushes + manual
