@@ -1,0 +1,26 @@
+name: Cleanup Artifacts
+
+on:
+  schedule:
+    # Run daily at 3 AM UTC (5 AM Moscow time)
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    name: Cleanup old artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup old artifacts
+        uses: actions/upload-artifact/delete-artifact@v4
+        with:
+          name: "*"
+          retention-days: 1  # Keep artifacts for 1 day
+
+      - name: Cleanup workflow runs
+        uses: rokroskar/workflow-run-cleanup-action@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          retain_days: 3  # Keep workflow runs for 3 days
+          keep_minimum_runs: 5  # But always keep at least 5 most recent runs
