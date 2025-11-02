@@ -89,10 +89,10 @@ jobs:
 
       - name: Run markdownlint
         if: matrix.linter == 'markdownlint'
-        uses: avto-dev/markdown-lint@v1
+        uses: DavidAnson/markdownlint-action2@v2
         with:
           config: '.markdownlint.json'
-          args: '**/*.md'
+          files: '**/*.md'
 
       - name: Run actionlint
         if: matrix.linter == 'actionlint'
@@ -130,7 +130,7 @@ jobs:
           busybox ash tests/run.sh
 
       - name: Upload test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-results

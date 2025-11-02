@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Delete all artifacts
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.force == 'true' }}
@@ -31,18 +31,80 @@ jobs:
 
       - name: Delete old artifacts (scheduled)
         if: ${{ github.event_name == 'schedule' }}
-        uses: actions/upload-artifact/delete-artifact@v4
+        uses: actions/github-script@v7
         with:
-          name: "*"
-          retention-days: 1
+          script: |
+            const { data: artifacts } = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            
+            const now = new Date();
+            const retentionDays = 1;
+            
+            for (const artifact of artifacts.artifacts) {
+              const artifactAge = (now - new Date(artifact.created_at)) / (1000 * 60 * 60 * 24);
+              
+              if (artifactAge > retentionDays) {
+                try {
+                  await github.rest.actions.deleteArtifact({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    artifact_id: artifact.id
+                  });
+                  console.log(`Deleted artifact ${artifact.name} (${artifact.id})`);
+                } catch (error) {
+                  console.warn(`Failed to delete artifact ${artifact.name}: ${error.message}`);
+                }
+              }
+            }
 
       - name: Cleanup workflow runs
-        uses: rokroskar/workflow-run-cleanup-action@v1.0.0
+        uses: actions/github-script@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          retain_days: 3
-          keep_minimum_runs: 5
+          script: |
+            const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            
+            const now = new Date();
+            const retainDays = 3;
+            const keepMinimumRuns = 5;
+            
+            // Sort by creation date (oldest first)
+            const sortedRuns = runs.workflow_runs.sort((a, b) => 
+              new Date(a.created_at) - new Date(b.created_at)
+            );
+            
+            let deletedCount = 0;
+            const totalRuns = sortedRuns.length;
+            
+            for (const run of sortedRuns) {
+              const runAge = (now - new Date(run.created_at)) / (1000 * 60 * 60 * 24);
+              const runsLeft = totalRuns - deletedCount;
+              
+              // Delete if older than retain_days AND we have more than keep_minimum_runs left
+              if (runAge > retainDays && runsLeft > keepMinimumRuns) {
+                try {
+                  await github.rest.actions.deleteWorkflowRun({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    run_id: run.id
+                  });
+                  deletedCount++;
+                  console.log(`Deleted workflow run ${run.id} (${run.name})`);
+                } catch (error) {
+                  console.warn(`Failed to delete workflow run ${run.id}: ${error.message}`);
+                }
+              }
+            }
+            
+            console.log(`Deleted ${deletedCount} workflow runs`);
 
       - name: Show disk usage after cleanup
         run: df -h
