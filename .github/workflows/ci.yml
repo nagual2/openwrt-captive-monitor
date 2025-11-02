@@ -66,13 +66,9 @@ jobs:
             shfmt|shellcheck)
               sudo apt-get install -y busybox shfmt shellcheck
               ;;
-            markdownlint)
-              sudo apt-get install -y nodejs npm
-              npm install -g markdownlint-cli
-              ;;
-            actionlint)
-              sudo apt-get install -y go
-              go install github.com/rhysd/actionlint/cmd/actionlint@latest
+            markdownlint|actionlint)
+              # Use docker/actions instead, no packages needed
+              echo "Using docker-based linters"
               ;;
           esac
 
@@ -91,34 +87,17 @@ jobs:
           # Also check the main script
           shellcheck openwrt_captive_monitor.sh
 
-- name: Run markdownlint
+      - name: Run markdownlint
         if: matrix.linter == 'markdownlint'
-        run: |
-          set -euo pipefail
-          # Configure basic markdownlint rules
-          cat > .markdownlint.json << 'EOF'
-          {
-            "default": true,
-            "MD013": {
-              "line_length": 120,
-              "code_blocks": false,
-              "tables": false
-            },
-            "MD033": {
-              "allowed_elements": ["img", "a", "br", "sub", "sup"]
-            },
-            "MD041": false
-          }
-          EOF
-          markdownlint "**/*.md" --ignore node_modules
+        uses: avto-dev/markdown-lint@v1
+        with:
+          config: '.markdownlint.json'
+          args: '**/*.md'
 
       - name: Run actionlint
         if: matrix.linter == 'actionlint'
-        run: |
-          set -euo pipefail
-          gopath_bin=$(go env GOPATH)/bin
-          export PATH="$PATH:$gopath_bin"
-          actionlint
+        uses: reviewdog/action-actionlint@v1
+
   test:
     name: Test
     runs-on: ubuntu-latest
