@@ -19,7 +19,10 @@ subsequent versions.
 
 ## 2. Build the release artifacts
 
-The GitHub Actions workflow **Build OpenWrt packages** now provisions the packaging toolchain, executes the BusyBox test harness, runs `scripts/build_ipk.sh`, and refuses to continue if the `.ipk`, `Packages`, or `Packages.gz` files are missing. Every push or pull request targeting `main` therefore produces a verified feed under `dist/opkg/<arch>/` with:
+The GitHub Actions workflow **Build OpenWrt packages** now provisions the packaging toolchain,
+executes the BusyBox test harness, runs `scripts/build_ipk.sh`, and refuses to continue if the
+`.ipk`, `Packages`, or `Packages.gz` files are missing. Every push or pull request targeting
+`main` therefore produces a verified feed under `dist/opkg/<arch>/` with:
 
 - `openwrt-captive-monitor_<version>-<release>_<arch>.ipk`
 - `Packages`
@@ -119,11 +122,17 @@ busybox sh tests/run.sh
    git commit -m "Publish feed for v0.1.3"
    git push -f origin gh-pages
    ```
-2. Record the feed URL, e.g.
-   `https://<user>.github.io/openwrt-captive-monitor/mips_24kc/Packages`.
+2. Record the feed URL, e.g.:
+   ```
+   https://<user>.github.io/openwrt-captive-monitor/mips_24kc/Packages
+   ```
+
 3. Clients can then add the feed on OpenWrt:
    ```bash
-   echo 'src/gz captive_monitor https://<user>.github.io/openwrt-captive-monitor/mips_24kc' >> /etc/opkg/customfeeds.conf
+   # Add feed
+   echo 'src/gz captive_monitor https://<user>.github.io/openwrt-captive-monitor/mips_24kc' \
+        >> /etc/opkg/customfeeds.conf
+   ```
    opkg update
    opkg install openwrt-captive-monitor
    ```
