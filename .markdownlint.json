@@ -1,20 +1,14 @@
 {
   "default": true,
-<<<<<<< HEAD
   "MD013": {
     "line_length": 120,
     "code_blocks": false,
     "tables": false
   },
   "MD033": {
-    "allowed_elements": ["img", "a", "br", "sub", "sup"]
-  },
-  "MD041": false
-=======
-  "MD013": false,
-  "MD033": {
     "allowed_elements": ["img", "a", "br", "sub", "sup", "div"]
   },
+  "MD041": false,
   "MD024": false,
   "MD026": false,
   "MD031": false,
@@ -32,5 +26,4 @@
   "MD036": false,
   "MD009": false,
   "MD010": false
->>>>>>> origin/chore-audit-merge-active-branches
 }
