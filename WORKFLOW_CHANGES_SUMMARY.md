@@ -17,8 +17,8 @@
 
 **Solution**: Modified `openwrt-build.yml` triggers:
 
-- **Before**: All branch pushes + pull_request + tags + manual
-- **After**: Main branch pushes + tags + manual
+  - **Before**: All branch pushes + pull_request + tags + manual
+  - **After**: Main branch pushes + tags + manual
 
 ### 3. ✅ Missing Concurrency Control
 
@@ -36,22 +36,22 @@ concurrency:
 
 ### `ci.yml` - Main CI/CD Pipeline
 
-- **Triggers**: All branch pushes + pull_requests + manual
-- **Jobs**: Lint → Test
-- **Concurrency**: Enabled
-- **Artifacts**: Uploads test results
+  - **Triggers**: All branch pushes + pull_requests + manual
+  - **Jobs**: Lint → Test
+  - **Concurrency**: Enabled
+  - **Artifacts**: Uploads test results
 
 ### `openwrt-build.yml` - Package Builds
 
-- **Triggers**: Main branch pushes + tags + manual
-- **Jobs**: Build (matrix) → Release (on tags)
-- **Concurrency**: Enabled
-- **Dependencies**: Downloads test results from CI
+  - **Triggers**: Main branch pushes + tags + manual
+  - **Jobs**: Build (matrix) → Release (on tags)
+  - **Concurrency**: Enabled
+  - **Dependencies**: Downloads test results from CI
 
 ### `release-please.yml` - Automated Releases
 
-- **Triggers**: Main branch pushes + manual
-- **Purpose**: Create releases when needed
+  - **Triggers**: Main branch pushes + manual
+  - **Purpose**: Create releases when needed
 
 ## Expected Results
 

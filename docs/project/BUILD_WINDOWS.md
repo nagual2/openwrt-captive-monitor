@@ -2,7 +2,8 @@
 
 ## 🚀 Самый простой способ: GitHub Actions (РЕКОМЕНДУЕТСЯ)
 
-Проект автоматически собирает пакеты через GitHub Actions. Готовые .ipk файлы можно скачать напрямую:
+Проект автоматически собирает пакеты через GitHub Actions. Готовые .ipk
+файлы можно скачать напрямую:
 
 ### Шаг 1: Перейдите в Actions
 1. Откройте: https://github.com/nagual2/openwrt-captive-monitor/actions
@@ -10,8 +11,8 @@
 3. Скачайте артефакты для нужной архитектуры
 
 ### Шаг 2: Выберите архитектуру
-- **ath79-generic** (mips_24kc) - для старых роутеров TP-Link, D-Link
-- **ramips-mt7621** (mipsel_24kc) - для новых роутеров Xiaomi, TP-Link
+  - **ath79-generic** (mips_24kc) - для старых роутеров TP-Link, D-Link
+  - **ramips-mt7621** (mipsel_24kc) - для новых роутеров Xiaomi, TP-Link
 
 ### Шаг 3: Установка на роутер
 ```bash
@@ -42,7 +43,8 @@ sudo apt update
 sudo apt install build-essential git wget xz-utils
 
 ## Скачайте и соберите
-wget https://downloads.openwrt.org/releases/23.05.3/targets/ath79/generic/openwrt-sdk-23.05.3-ath79-generic_gcc-11.2.0_musl.Linux-x86_64.tar.xz
+wget
+https://downloads.openwrt.org/releases/23.05.3/targets/ath79/generic/openwrt-sdk-23.05.3-ath79-generic_gcc-11.2.0_musl.Linux-x86_64.tar.xz
 tar -xf openwrt-sdk-*.tar.xz
 cp -r package/openwrt-captive-monitor openwrt-sdk-*/package/
 cd openwrt-sdk-*
@@ -80,4 +82,6 @@ opkg list | grep captive-monitor
 - Release checklist: [../RELEASE_CHECKLIST.md](../RELEASE_CHECKLIST.md)
 - Troubleshooting: [../../docs/openwrt_captive_monitor_README.md](../../docs/openwrt_captive_monitor_README.md)
 
-**Рекомендация:** Используйте GitHub Actions - это самый надежный и быстрый способ получить готовые пакеты без установки дополнительных инструментов!
+**Рекомендация:** Используйте GitHub Actions - это самый надежный и
+быстрый способ получить готовые пакеты без установки
+дополнительных инструментов!

@@ -8,12 +8,14 @@
 
 ## Executive Summary
 
-This report provides a comprehensive audit of all branches in the openwrt-captive-monitor repository. The audit identifies which branches have been fully merged into main, which have outstanding changes, and provides recommendations for branch cleanup.
+This report provides a comprehensive audit of all branches in the openwrt-captive-monitor repository. The audit
+identifies which branches have been fully merged into main, which have outstanding changes, and provides
+recommendations for branch cleanup.
 
-- **Total branches:** 4 (excluding HEAD reference)
-- **Merged (can delete):** 1
-- **Unmerged (need review):** 1
-- **Protected (keep):** 2
+  - **Total branches:** 4 (excluding HEAD reference)
+  - **Merged (can delete):** 1
+  - **Unmerged (need review):** 1
+  - **Protected (keep):** 2
 
 ## Detailed Branch Analysis
 
@@ -23,19 +25,20 @@ These branches should be maintained and never deleted:
 
 #### 1. `origin/main`
 
-- **Status:** 🔒 Protected - Main production branch
-- **Last commit:** `0dd635a` (2025-11-02 12:05:22)
-- **Message:** ci(workflow): fix YAML syntax and optimize linter setup (#71)
-- **Recommendation:** Keep - this is the primary development branch
+  - **Status:** 🔒 Protected - Main production branch
+  - **Last commit:** `0dd635a` (2025-11-02 12:05:22)
+  - **Message:** ci(workflow): fix YAML syntax and optimize linter setup (#71)
+  - **Recommendation:** Keep - this is the primary development branch
 
 #### 2. `origin/release-please--branches--main`
 
-- **Status:** 🔒 Protected - Automation branch
-- **Last commit:** `fc7b8e6` (2025-11-02 11:06:16)
-- **Message:** chore(main): release 1.0.0
-- **Unique commits:** 1 commit ahead of main
-- **Outstanding changes:** CHANGELOG.md (61 insertions)
-- **Recommendation:** Keep - this is the release-please automation branch that manages version releases and changelog updates. It will be automatically merged when the next release is created.
+  - **Status:** 🔒 Protected - Automation branch
+  - **Last commit:** `fc7b8e6` (2025-11-02 11:06:16)
+  - **Message:** chore(main): release 1.0.0
+  - **Unique commits:** 1 commit ahead of main
+  - **Outstanding changes:** CHANGELOG.md (61 insertions)
+  - **Recommendation:** Keep - this is the release-please automation branch that manages version releases and changelog
+updates. It will be automatically merged when the next release is created.
 
 ### Merged Branches (Ready to Delete)
 
@@ -43,13 +46,14 @@ These branches have been fully merged into main and can be safely deleted:
 
 #### 3. `origin/fix-ci-yaml-remove-go-use-docker-linters`
 
-- **Status:** ✅ Fully merged (squash-merged)
-- **Last commit:** `796e07a` (2025-11-02 10:57:11)
-- **Message:** ci(workflow): fix YAML syntax and optimize linter setup
-- **Merge status:** All changes squash-merged into main via PR #71
-- **Outstanding changes:** None (0 file differences with main)
-- **Age:** 0 days old
-- **Recommendation:** **DELETE** - This branch was squash-merged into main as commit `0dd635a`. All changes are in main, and the branch serves no further purpose.
+  - **Status:** ✅ Fully merged (squash-merged)
+  - **Last commit:** `796e07a` (2025-11-02 10:57:11)
+  - **Message:** ci(workflow): fix YAML syntax and optimize linter setup
+  - **Merge status:** All changes squash-merged into main via PR #71
+  - **Outstanding changes:** None (0 file differences with main)
+  - **Age:** 0 days old
+  - **Recommendation:** **DELETE** - This branch was squash-merged into main as commit `0dd635a`. All changes are in
+main, and the branch serves no further purpose.
 
 ### Unmerged Branches (Need Review)
 
@@ -57,17 +61,19 @@ These branches have unique commits or changes that are not in main:
 
 #### 4. `origin/chore/remove-label-sync-workflow-e01`
 
-- **Status:** ⚠️ Partially merged
-- **Last commit:** `a2e268a` (2025-11-02 09:56:41)
-- **Message:** chore: remove unused label-sync workflow
-- **Unique commits:** 157 commits (but includes history from merged branches)
-- **Outstanding changes:** 3 files with differences from main:
+  - **Status:** ⚠️ Partially merged
+  - **Last commit:** `a2e268a` (2025-11-02 09:56:41)
+  - **Message:** chore: remove unused label-sync workflow
+  - **Unique commits:** 157 commits (but includes history from merged branches)
+  - **Outstanding changes:** 3 files with differences from main:
   - `.github/workflows/ci.yml` (41 insertions, 9 deletions)
   - `.github/workflows/openwrt-build.yml` (31 insertions, 1 deletion)
   - `.markdownlint.json` (11 insertions, 2 deletions)
-- **Age:** 0 days old
-- **Analysis:** This branch was merged via PR #70, but the branch pointer contains additional commits that show differences in workflow files. The git log shows this branch was part of the merge chain leading to the current main, but the working tree has diverged.
-- **Recommendation:** **NEEDS REVIEW** - Examine the 3 files with differences to determine if:
+  - **Age:** 0 days old
+  - **Analysis:** This branch was merged via PR #70, but the branch pointer contains additional commits that show
+differences in workflow files. The git log shows this branch was part of the merge chain leading to the current main,
+but the working tree has diverged.
+  - **Recommendation:** **NEEDS REVIEW** - Examine the 3 files with differences to determine if:
   1. These are old versions that should be discarded (branch can be deleted)
   2. These contain work-in-progress changes that need to be merged
   3. These are experimental changes that should be preserved in the branch
@@ -170,9 +176,11 @@ To prevent branch buildup in the future:
 
 ## Conclusion
 
-The repository is in good health with minimal branch clutter. Only one branch needs immediate deletion, and one requires review. All branches are actively maintained (updated today), showing no signs of abandonment.
+The repository is in good health with minimal branch clutter. Only one branch needs immediate deletion, and one
+requires review. All branches are actively maintained (updated today), showing no signs of abandonment.
 
-The main action item is to decide the fate of `chore/remove-label-sync-workflow-e01` based on whether its workflow changes should be preserved or discarded.
+The main action item is to decide the fate of `chore/remove-label-sync-workflow-e01` based on whether its workflow
+changes should be preserved or discarded.
 
 ---
 

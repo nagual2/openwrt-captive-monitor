@@ -2,7 +2,8 @@
 
 ## Supported Versions
 
-Only the latest released version of openwrt-captive-monitor receives security updates and patches. Users are strongly encouraged to upgrade to the most recent version to ensure they have the latest security fixes.
+Only the latest released version of openwrt-captive-monitor receives security updates and patches. Users are strongly
+encouraged to upgrade to the most recent version to ensure they have the latest security fixes.
 
 | Version | Supported |
 |---------|------------------|
@@ -11,13 +12,15 @@ Only the latest released version of openwrt-captive-monitor receives security up
 
 ## Reporting a Vulnerability
 
-The openwrt-captive-monitor team takes security vulnerabilities seriously. We appreciate your efforts to responsibly disclose your findings.
+The openwrt-captive-monitor team takes security vulnerabilities seriously. We appreciate your efforts to responsibly
+disclose your findings.
 
 If you discover a security vulnerability, please report it privately before disclosing it publicly.
 
 ### Reporting Channels
 
-**Preferred method**: Use [GitHub's private vulnerability reporting](https://github.com/nagual2/openwrt-captive-monitor/security/advisories/new)
+**Preferred method**: Use [GitHub's private vulnerability
+reporting](https://github.com/nagual2/openwrt-captive-monitor/security/advisories/new)
 
 **Alternative**: Email the maintainers directly at [security@nagual2.com](mailto:security@nagual2.com)
 
@@ -35,7 +38,8 @@ Please include as much of the following information as possible to help us bette
 
 ### Response Timeline
 
-We aim to respond to security reports within **7 business days** and provide a detailed analysis and timeline for addressing the vulnerability.
+We aim to respond to security reports within **7 business days** and provide a detailed analysis and timeline for
+addressing the vulnerability.
 
 ### Remediation Expectations
 
@@ -58,4 +62,5 @@ We aim to respond to security reports within **7 business days** and provide a d
 
 ### Security Acknowledgments
 
-We thank all researchers who help us keep openwrt-captive-monitor secure. Your responsible disclosure helps protect the entire OpenWrt community.
+We thank all researchers who help us keep openwrt-captive-monitor secure. Your responsible disclosure helps protect the
+entire OpenWrt community.

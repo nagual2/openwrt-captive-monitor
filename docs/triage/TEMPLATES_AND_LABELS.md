@@ -1,10 +1,12 @@
 # Issue & PR Templates and Label Management
 
-This guide explains the modernized issue and PR templates, label taxonomy, and triage processes for the `openwrt-captive-monitor` repository.
+This guide explains the modernized issue and PR templates, label taxonomy, and triage processes for the
+`openwrt-captive-monitor` repository.
 
 ## Overview
 
-The repository uses GitHub Issue Forms and structured PR templates to ensure consistent, high-quality contributions. Labels are managed manually to maintain consistency across all issues and pull requests.
+The repository uses GitHub Issue Forms and structured PR templates to ensure consistent, high-quality contributions.
+Labels are managed manually to maintain consistency across all issues and pull requests.
 
 ## Issue Templates
 
@@ -192,7 +194,8 @@ To improve the templates and label system:
 
 ## Resources
 
-- [GitHub Issue Forms documentation](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms)
+- [GitHub Issue Forms
+documentation](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms)
 - [Conventional Commits specification](https://www.conventionalcommits.org/)
 - [Project contribution guidelines](../../CONTRIBUTING.md)
 

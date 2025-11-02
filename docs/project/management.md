@@ -1,18 +1,20 @@
 # Project Management
 
-Overview of project management practices, versioning strategy, release cadence, and development workflow for **openwrt-captive-monitor**.
+Overview of project management practices, versioning strategy, release cadence, and development workflow for
+**openwrt-captive-monitor**.
 
 ## 🎯 Project Overview
 
-**openwrt-captive-monitor** is a lightweight OpenWrt service that monitors WAN connectivity, detects captive portals, and temporarily intercepts LAN traffic to facilitate client authentication.
+**openwrt-captive-monitor** is a lightweight OpenWrt service that monitors WAN connectivity, detects captive portals,
+and temporarily intercepts LAN traffic to facilitate client authentication.
 
 ### Project Goals
 
-- **Reliability**: Robust captive portal detection and handling
-- **Performance**: Minimal resource usage on router hardware
-- **Compatibility**: Support for various OpenWrt versions and hardware
-- **Maintainability**: Clean, well-documented codebase
-- **Community**: Open development with transparent processes
+  - **Reliability**: Robust captive portal detection and handling
+  - **Performance**: Minimal resource usage on router hardware
+  - **Compatibility**: Support for various OpenWrt versions and hardware
+  - **Maintainability**: Clean, well-documented codebase
+  - **Community**: Open development with transparent processes
 
 ---
 
@@ -74,11 +76,11 @@ release/branch-name
 
 #### Branch Protection Rules
 
-- **main**: Requires PR review, CI checks, and approval
-- **develop**: Requires PR review and CI checks
-- **feature/**: No restrictions (developer branches)
-- **hotfix/**: Requires PR review, CI checks, and approval
-- **release/**: Requires PR review, CI checks, and approval
+  - **main**: Requires PR review, CI checks, and approval
+  - **develop**: Requires PR review and CI checks
+  - **feature/**: No restrictions (developer branches)
+  - **hotfix/**: Requires PR review, CI checks, and approval
+  - **release/**: Requires PR review, CI checks, and approval
 
 ---
 
@@ -88,21 +90,21 @@ release/branch-name
 
 #### Regular Releases
 
-- **Frequency**: Every 4-6 weeks (or as needed)
-- **Content**: New features, bug fixes, documentation updates
-- **Process**: develop → release → main
+  - **Frequency**: Every 4-6 weeks (or as needed)
+  - **Content**: New features, bug fixes, documentation updates
+  - **Process**: develop → release → main
 
 #### Patch Releases
 
-- **Frequency**: As needed (critical bugs, security)
-- **Content**: Bug fixes, security patches only
-- **Process**: hotfix → main → develop (backport)
+  - **Frequency**: As needed (critical bugs, security)
+  - **Content**: Bug fixes, security patches only
+  - **Process**: hotfix → main → develop (backport)
 
 #### Major Releases
 
-- **Frequency**: Every 6-12 months
-- **Content**: Major features, breaking changes
-- **Process**: develop → release → main
+  - **Frequency**: Every 6-12 months
+  - **Content**: Major features, breaking changes
+  - **Process**: develop → release → main
 
 ### Release Timeline
 
@@ -152,11 +154,11 @@ Backlog → In Progress → In Review → Testing → Done
 
 **Columns:**
 
-- **Backlog**: Planned features and improvements
-- **In Progress**: Currently being developed
-- **In Review**: Code review pending
-- **Testing**: QA and user acceptance testing
-- **Done**: Completed and released
+  - **Backlog**: Planned features and improvements
+  - **In Progress**: Currently being developed
+  - **In Review**: Code review pending
+  - **Testing**: QA and user acceptance testing
+  - **Done**: Completed and released
 
 #### Bug Tracking Board
 
@@ -282,6 +284,7 @@ New → Triage → In Progress → In Review → Fixed → Verified
 #### Automated Testing
 
 ```
+
 ┌─────────────────────────────────────────────────────────────┐
 │                Automated Testing                             │
 │                                                             │
@@ -306,31 +309,32 @@ New → Triage → In Progress → In Review → Fixed → Verified
 │  ├─ Resource usage monitoring                             │
 │  ├─ Concurrent client handling                             │
 │  └─ Long-running stability                               │
+
 └─────────────────────────────────────────────────────────────┘
 ```
 
 #### Manual Testing
 
-- **Device Testing**: Real OpenWrt hardware
-- **Network Scenarios**: Various captive portals
-- **Edge Cases**: Unusual network configurations
-- **User Experience**: Client device behavior
+  - **Device Testing**: Real OpenWrt hardware
+  - **Network Scenarios**: Various captive portals
+  - **Edge Cases**: Unusual network configurations
+  - **User Experience**: Client device behavior
 
 ### Code Quality
 
 #### Standards
 
-- **Shell Script**: Follow [Google Shell Style Guide](https://google.github.io/styleguide/shellguide.html)
-- **Documentation**: Markdown with consistent formatting
-- **Configuration**: UCI-compliant options
-- **Error Handling**: Comprehensive error checking
+  - **Shell Script**: Follow [Google Shell Style Guide](https://google.github.io/styleguide/shellguide.html)
+  - **Documentation**: Markdown with consistent formatting
+  - **Configuration**: UCI-compliant options
+  - **Error Handling**: Comprehensive error checking
 
 #### Tools
 
-- **Linting**: `shellcheck`, `shfmt`
-- **Testing**: `bats`, custom test harness
-- **CI/CD**: GitHub Actions
-- **Code Coverage**: Test coverage reporting
+  - **Linting**: `shellcheck`, `shfmt`
+  - **Testing**: `bats`, custom test harness
+  - **CI/CD**: GitHub Actions
+  - **Code Coverage**: Test coverage reporting
 
 ---
 
@@ -340,24 +344,24 @@ New → Triage → In Progress → In Review → Fixed → Verified
 
 #### User Documentation
 
-- **README.md**: Project overview and quick start
-- **User Guides**: Step-by-step instructions
-- **Configuration Reference**: Complete option reference
-- **Troubleshooting**: Common issues and solutions
+  - **README.md**: Project overview and quick start
+  - **User Guides**: Step-by-step instructions
+  - **Configuration Reference**: Complete option reference
+  - **Troubleshooting**: Common issues and solutions
 
 #### Developer Documentation
 
-- **Architecture**: System design and components
-- **Contributing**: Development guidelines
-- **API Reference**: Function and module documentation
-- **Testing**: Test strategy and procedures
+  - **Architecture**: System design and components
+  - **Contributing**: Development guidelines
+  - **API Reference**: Function and module documentation
+  - **Testing**: Test strategy and procedures
 
 #### Project Documentation
 
-- **Project Management**: This document
-- **Release Notes**: Version-specific information
-- **Changelog**: Feature and fix history
-- **Roadmap**: Future plans and priorities
+  - **Project Management**: This document
+  - **Release Notes**: Version-specific information
+  - **Changelog**: Feature and fix history
+  - **Roadmap**: Future plans and priorities
 
 ### Documentation Review Process
 
@@ -400,27 +404,27 @@ New → Triage → In Progress → In Review → Fixed → Verified
 
 #### Non-Code Contributions
 
-- **Bug Reports**: Detailed issue reports
-- **Feature Requests**: Well-defined requirements
-- **Documentation**: Improvements and corrections
-- **Testing**: Device testing and feedback
-- **Translation**: Localization support
+  - **Bug Reports**: Detailed issue reports
+  - **Feature Requests**: Well-defined requirements
+  - **Documentation**: Improvements and corrections
+  - **Testing**: Device testing and feedback
+  - **Translation**: Localization support
 
 ### Community Channels
 
 #### Support
 
-- **GitHub Issues**: Bug reports and feature requests
-- **GitHub Discussions**: General questions and discussions
-- **Documentation**: Self-service help and guides
-- **Wiki**: Community-contributed content
+  - **GitHub Issues**: Bug reports and feature requests
+  - **GitHub Discussions**: General questions and discussions
+  - **Documentation**: Self-service help and guides
+  - **Wiki**: Community-contributed content
 
 #### Communication
 
-- **Release Announcements**: GitHub Releases
-- **Security Updates**: GitHub Security Advisories
-- **Roadmap Updates**: GitHub Discussions and Projects
-- **Community Meetings**: Periodic virtual meetings
+  - **Release Announcements**: GitHub Releases
+  - **Security Updates**: GitHub Security Advisories
+  - **Roadmap Updates**: GitHub Discussions and Projects
+  - **Community Meetings**: Periodic virtual meetings
 
 ---
 
@@ -429,30 +433,30 @@ New → Triage → In Progress → In Review → Fixed → Verified
 ### Development Metrics
 
 #### Code Quality
-- **Test Coverage**: Percentage of code covered by tests
-- **Code Review Time**: Average time for PR review
-- **Bug Resolution Time**: Average time to fix bugs
-- **Documentation Coverage**: Percentage of documented features
+  - **Test Coverage**: Percentage of code covered by tests
+  - **Code Review Time**: Average time for PR review
+  - **Bug Resolution Time**: Average time to fix bugs
+  - **Documentation Coverage**: Percentage of documented features
 
 #### Project Health
-- **Open Issues**: Number and age of open issues
-- **PR Merge Rate**: Percentage of PRs merged
-- **Release Cadence**: Time between releases
-- **Contributor Growth**: Number of active contributors
+  - **Open Issues**: Number and age of open issues
+  - **PR Merge Rate**: Percentage of PRs merged
+  - **Release Cadence**: Time between releases
+  - **Contributor Growth**: Number of active contributors
 
 ### User Metrics
 
 #### Adoption
-- **Downloads**: Package download statistics
-- **Installations**: Estimated installation count
-- **GitHub Stars**: Repository popularity
-- **Community Engagement**: Discussion and issue activity
+  - **Downloads**: Package download statistics
+  - **Installations**: Estimated installation count
+  - **GitHub Stars**: Repository popularity
+  - **Community Engagement**: Discussion and issue activity
 
 #### Satisfaction
-- **Issue Resolution**: User satisfaction with fixes
-- **Documentation Quality**: User feedback on docs
-- **Feature Requests**: User engagement and feedback
-- **Community Support**: Peer-to-peer assistance
+  - **Issue Resolution**: User satisfaction with fixes
+  - **Documentation Quality**: User feedback on docs
+  - **Feature Requests**: User engagement and feedback
+  - **Community Support**: Peer-to-peer assistance
 
 ---
 
@@ -515,30 +519,31 @@ Q4 2024:
 ### Project Roles
 
 #### Maintainers
-- **Lead Maintainer**: Overall project direction
-- **Code Maintainers**: Code review and merging
-- **Documentation Maintainer**: Documentation oversight
-- **Community Manager**: Community engagement
+  - **Lead Maintainer**: Overall project direction
+  - **Code Maintainers**: Code review and merging
+  - **Documentation Maintainer**: Documentation oversight
+  - **Community Manager**: Community engagement
 
 #### Responsibilities
 
-- **Code Review**: Ensure code quality and standards
-- **Release Management**: Coordinate releases and patches
-- **Community Support**: Respond to issues and discussions
-- **Strategic Planning**: Guide project direction
+  - **Code Review**: Ensure code quality and standards
+  - **Release Management**: Coordinate releases and patches
+  - **Community Support**: Respond to issues and discussions
+  - **Strategic Planning**: Guide project direction
 
 ### Decision Making
 
 #### Consensus Model
-- **Technical Decisions**: Maintainer consensus
-- **Feature Priorities**: Community input + maintainer decision
-- **Breaking Changes**: Supermajority approval required
-- **Security Issues**: Rapid response process
+  - **Technical Decisions**: Maintainer consensus
+  - **Feature Priorities**: Community input + maintainer decision
+  - **Breaking Changes**: Supermajority approval required
+  - **Security Issues**: Rapid response process
 
 #### Conflict Resolution
-- **Technical Disagreements**: Technical merit discussion
-- **Priority Conflicts**: Impact analysis and voting
-- **Community Issues**: Escalation to maintainers
-- **Code of Conduct**: Formal process for violations
+  - **Technical Disagreements**: Technical merit discussion
+  - **Priority Conflicts**: Impact analysis and voting
+  - **Community Issues**: Escalation to maintainers
+  - **Code of Conduct**: Formal process for violations
 
-This project management framework ensures consistent, high-quality releases while maintaining community engagement and project sustainability.
+This project management framework ensures consistent, high-quality releases while maintaining community engagement and
+project sustainability.

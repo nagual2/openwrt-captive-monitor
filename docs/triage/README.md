@@ -12,7 +12,7 @@ This directory contains PR queue audit reports and triage artifacts for the `ope
 
 ### Templates and Label Management
 
-- **[TEMPLATES_AND_LABELS.md](./TEMPLATES_AND_LABELS.md)** - Guide to modernized issue/PR templates and label taxonomy
+  - **[TEMPLATES_AND_LABELS.md](./TEMPLATES_AND_LABELS.md)** - Guide to modernized issue/PR templates and label taxonomy
   - GitHub Issue Forms usage and triage processes
   - PR template structure and review checklist
   - Label taxonomy and synchronization workflow
@@ -20,7 +20,7 @@ This directory contains PR queue audit reports and triage artifacts for the `ope
 
 ### Audit Reports
 
-- **[AUDIT_REPORT.md](./AUDIT_REPORT.md)** - Comprehensive PR queue audit report from 2025-10-30
+  - **[AUDIT_REPORT.md](./AUDIT_REPORT.md)** - Comprehensive PR queue audit report from 2025-10-30
   - Found 0 open PRs (clean queue)
   - All baseline tests passing (6/6)
   - Package build successful
@@ -28,7 +28,7 @@ This directory contains PR queue audit reports and triage artifacts for the `ope
 
 ### API Snapshots
 
-- **pr-status-20251030T123851Z.json** - GitHub API response snapshot
+  - **pr-status-20251030T123851Z.json** - GitHub API response snapshot
   - Captured during 2025-10-30 audit
   - Shows empty PR queue at audit time
 
@@ -36,15 +36,15 @@ This directory contains PR queue audit reports and triage artifacts for the `ope
 
 For historical context and prior triage work, see:
 
-- **[../project/BRANCHES_PR_AUDIT.md](../project/BRANCHES_PR_AUDIT.md)** - Original branch & PR inventory (2025-10-24)
+  - **[../project/BRANCHES_PR_AUDIT.md](../project/BRANCHES_PR_AUDIT.md)** - Original branch & PR inventory (2025-10-24)
    - Documents 17 PRs that existed before comprehensive triage
    - Provides cleanup checklist and branching strategy
 
-- **[../project/PR_TRIAGE.md](../project/PR_TRIAGE.md)** - Detailed triage analysis (2025-10-24)
+  - **[../project/PR_TRIAGE.md](../project/PR_TRIAGE.md)** - Detailed triage analysis (2025-10-24)
    - Explains closure rationale for PRs #6, #11, #12
    - Documents prior triage of PRs #1-#2
 
-- **[../project/CI_AUDIT_LAST_GREEN.md](../project/CI_AUDIT_LAST_GREEN.md)** - CI health tracking
+  - **[../project/CI_AUDIT_LAST_GREEN.md](../project/CI_AUDIT_LAST_GREEN.md)** - CI health tracking
    - Last green CI run information
    - Commit history since last green
    - Likely breakpoints analysis
@@ -61,9 +61,9 @@ PR queue audits follow this process:
 
 ## When to Run Next Audit
 
-- **Frequency:** Monthly or when PR count exceeds 5
-- **Trigger:** After major merges or releases
-- **Process:** Follow `docs/RELEASE_CHECKLIST.md` guidelines
+  - **Frequency:** Monthly or when PR count exceeds 5
+  - **Trigger:** After major merges or releases
+  - **Process:** Follow `docs/RELEASE_CHECKLIST.md` guidelines
 
 ## Contributing
 

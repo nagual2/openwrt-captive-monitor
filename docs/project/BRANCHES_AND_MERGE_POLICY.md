@@ -2,7 +2,9 @@
 
 _Last updated: 2025-10-24 on branch `protect-trunk-clean-branches-enforce-ci-pr-rules`._
 
-This document captures the authoritative trunk strategy, CI entry points, and branch protection expectations for **openwrt-captive-monitor**. It replaces the merge-order notes that were tied to the now-completed recovery pull requests and is intended to stay evergreen alongside `CONTRIBUTING.md`.
+This document captures the authoritative trunk strategy, CI entry points, and branch protection expectations for
+**openwrt-captive-monitor**. It replaces the merge-order notes that were tied to the now-completed recovery pull
+requests and is intended to stay evergreen alongside `CONTRIBUTING.md`.
 
 ---
 
@@ -12,18 +14,25 @@ This document captures the authoritative trunk strategy, CI entry points, and br
 | --- | --- |
 | Default branch | `main` (confirmed via `origin/HEAD`) |
 | Default branch rename required? | No. See Appendix A if `master` ever reappears. |
-| CI workflows covering trunk | ✅ `Lint` (`.github/workflows/shellcheck.yml`) and ✅ `Build OpenWrt packages` (`.github/workflows/openwrt-build.yml`) |
-| Trigger coverage | Workflows run on pushes to `main`, `feature/*`, `fix/*`, `chore/*`, `docs/*`, `hotfix/*` and on pull requests targeting `main`. |
-| Actions versions | `actions/checkout@v4.1.7`, `actions/upload-artifact@v4.3.3`, `softprops/action-gh-release@v2.4.1` (pinned). |
+| CI workflows covering trunk | ✅ `Lint` (`.github/workflows/shellcheck.yml`) and ✅ `Build OpenWrt packages`
+(`.github/workflows/openwrt-build.yml`) |
+| Trigger coverage | Workflows run on pushes to `main`, `feature/*`, `fix/*`, `chore/*`, `docs/*`, `hotfix/*` and on
+pull requests targeting `main`. |
+| Actions versions | `actions/checkout@v4.1.7`, `actions/upload-artifact@v4.3.3`, `softprops/action-gh-release@v2.4.1`
+(pinned). |
 
 ### 1.1 Workflow summary
 
 | Workflow | Purpose | Key jobs | When it runs |
 | --- | --- | --- | --- |
-| `Lint` | Shell formatting (`shfmt`) and static analysis (`shellcheck`). | `Shell lint` | `push` to allowed branch prefixes, `pull_request` to `main`. |
-| `Build OpenWrt packages` | Builds `.ipk` artifacts for ath79/ramips and publishes releases on tags. | `Build (ath79-generic)`, `Build (ramips-mt7621)`, `release` (tag only). | Same push filters as above, all PRs into `main`, tags `v*`. |
+| `Lint` | Shell formatting (`shfmt`) and static analysis (`shellcheck`). | `Shell lint` | `push` to allowed branch
+prefixes, `pull_request` to `main`. |
+| `Build OpenWrt packages` | Builds `.ipk` artifacts for ath79/ramips and publishes releases on tags. | `Build
+(ath79-generic)`, `Build (ramips-mt7621)`, `release` (tag only). | Same push filters as above, all PRs into `main`,
+tags `v*`. |
 
-Both workflows currently finish successfully on `main`. Administrators should mark the build jobs listed above as **required status checks** when enabling branch protection (section 3).
+Both workflows currently finish successfully on `main`. Administrators should mark the build jobs listed above as
+**required status checks** when enabling branch protection (section 3).
 
 ---
 
@@ -71,9 +80,11 @@ Contributors should follow these guardrails (mirrors the PR template):
 3. Fill in `.github/PULL_REQUEST_TEMPLATE.md`, including:
    - A concise summary of the change.
    - Test evidence (`shfmt`, `shellcheck`, `./scripts/build_ipk.sh`, and any hardware validation when applicable).
-   - Confirmation that the `Lint` and `Build OpenWrt packages` workflows are green (or marked not applicable when packaging files are untouched).
+- Confirmation that the `Lint` and `Build OpenWrt packages` workflows are green (or marked not applicable when
+packaging files are untouched).
 4. Obtain at least one approval from the CODEOWNERS list.
-5. Use squash merge once checks pass and ensure the final commit message follows Conventional Commit formatting (`feat(...)`, `fix(...)`, etc.).
+5. Use squash merge once checks pass and ensure the final commit message follows Conventional Commit formatting
+(`feat(...)`, `fix(...)`, etc.).
 
 ---
 
@@ -81,11 +92,13 @@ Contributors should follow these guardrails (mirrors the PR template):
 
 ### 5.1 Deleted branches
 
-No local or remote branches were deleted as part of this pass: the workspace has only `main` and the current feature branch, and remote deletions require maintainer privileges.
+No local or remote branches were deleted as part of this pass: the workspace has only `main` and the current feature
+branch, and remote deletions require maintainer privileges.
 
 ### 5.2 Stale branches (> 60 days without activity)
 
-None detected. All remote branches show activity within the last 60 days (see inventory below). Re-run the inventory script periodically to identify stale branches once development slows down:
+None detected. All remote branches show activity within the last 60 days (see inventory below). Re-run the inventory
+script periodically to identify stale branches once development slows down:
 
 ```bash
 git for-each-ref --format='%(committerdate:iso8601) %(refname:short)' \
@@ -97,15 +110,24 @@ git for-each-ref --format='%(committerdate:iso8601) %(refname:short)' \
 | Remote branch | Last commit (UTC) | Recommendation |
 | --- | --- | --- |
 | `origin/main` | 2025-10-25 00:47 | ✅ Trunk - keep protected. |
-| `origin/chore-trunk-merge-order-finish-2-prs-cleanup` | 2025-10-24 22:34 | Docs from previous cleanup; archive content into `main` (done) and then delete remotely. |
-| `origin/audit-merge-ci-release-v0-1-1` | 2025-10-23 18:54 | Historical audit branch; confirm notes are captured in docs, then delete. |
-| `origin/audit-pr-branching-openwrt-captive-monitor` | 2025-10-24 17:36 | Superseded by this policy; safe to delete after verification. |
-| `origin/feat-ci-shellcheck-ipk-sdk-matrix` | 2025-10-22 22:22 | Feature branch integrated into `main`; remove once artefacts are archived. |
-| `origin/restore/feat-captive-intercept-dns-http-redirect` | 2025-10-22 15:21 | Historical recovery branch; verify the merged commits exist on `main`, then delete. |
-| `origin/restore/feature-openwrt-captive-monitor-opkg` | 2025-10-22 19:04 | Same as above; safe to delete after confirming the diff is on trunk. |
-| `origin/release-v0.1.1-ci-fix-ipk-build-opkg-feed-publish` | 2025-10-23 21:40 | Release helper branch; convert to tag notes and delete. |
-| `origin/triage-3-failing-prs-check-main-close-or-fix-ci-add-pr-triage-md` | 2025-10-24 21:26 | Triage branch now redundant; integrate any doc updates and delete. |
-| (remaining `audit/*`, `triage/*`, `restore/*`) | 2025-10-22 to 2025-10-24 | Review ownership; if no outstanding PR, remove to keep the branch list lean. |
+| `origin/chore-trunk-merge-order-finish-2-prs-cleanup` | 2025-10-24 22:34 | Docs from previous cleanup; archive
+content into `main` (done) and then delete remotely. |
+| `origin/audit-merge-ci-release-v0-1-1` | 2025-10-23 18:54 | Historical audit branch; confirm notes are captured in
+docs, then delete. |
+| `origin/audit-pr-branching-openwrt-captive-monitor` | 2025-10-24 17:36 | Superseded by this policy; safe to delete
+after verification. |
+| `origin/feat-ci-shellcheck-ipk-sdk-matrix` | 2025-10-22 22:22 | Feature branch integrated into `main`; remove once
+artefacts are archived. |
+| `origin/restore/feat-captive-intercept-dns-http-redirect` | 2025-10-22 15:21 | Historical recovery branch; verify the
+merged commits exist on `main`, then delete. |
+| `origin/restore/feature-openwrt-captive-monitor-opkg` | 2025-10-22 19:04 | Same as above; safe to delete after
+confirming the diff is on trunk. |
+| `origin/release-v0.1.1-ci-fix-ipk-build-opkg-feed-publish` | 2025-10-23 21:40 | Release helper branch; convert to tag
+notes and delete. |
+| `origin/triage-3-failing-prs-check-main-close-or-fix-ci-add-pr-triage-md` | 2025-10-24 21:26 | Triage branch now
+redundant; integrate any doc updates and delete. |
+| (remaining `audit/*`, `triage/*`, `restore/*`) | 2025-10-22 to 2025-10-24 | Review ownership; if no outstanding PR,
+remove to keep the branch list lean. |
 
 To delete a remote branch once confirmed safe:
 
@@ -115,7 +137,8 @@ git push origin --delete <branch>
 
 ### 5.4 Automatic cleanup guardrail
 
-Ensure **Automatically delete head branches** remains enabled (see section 3) so future topic branches are removed after merge without manual intervention.
+Ensure **Automatically delete head branches** remains enabled (see section 3) so future topic branches are removed
+after merge without manual intervention.
 
 ---
 

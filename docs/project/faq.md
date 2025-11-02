@@ -6,19 +6,28 @@ Common questions and answers about **openwrt-captive-monitor**.
 
 ### Q: What is openwrt-captive-monitor?
 
-**A:** openwrt-captive-monitor is a lightweight OpenWrt service that monitors WAN connectivity, detects captive portals, and temporarily intercepts LAN DNS/HTTP traffic to help clients authenticate with the portal. Once internet access is restored, it automatically cleans up all modifications.
+**A:** openwrt-captive-monitor is a lightweight OpenWrt service that monitors WAN connectivity, detects captive
+portals, and temporarily intercepts LAN DNS/HTTP traffic to help clients authenticate with the portal. Once internet
+access is restored, it automatically cleans up all modifications.
 
 ### Q: Why do I need this service?
 
-**A:** When you connect to networks that require authentication (hotels, airports, coffee shops), your devices often can't access the internet until you authenticate through a captive portal. This service automatically detects such portals and redirects all client devices to the authentication page, making the process seamless for all users on your network.
+**A:** When you connect to networks that require authentication (hotels, airports, coffee shops), your devices often
+can't access the internet until you authenticate through a captive portal. This service automatically detects such
+portals and redirects all client devices to the authentication page, making the process seamless for all users on your
+network.
 
 ### Q: Does this work with all captive portals?
 
-**A:** The service works with most standard HTTP-based captive portals. It detects portals by analyzing HTTP responses from known detection URLs and redirects clients to the discovered portal URL. Some specialized or HTTPS-only portals may require manual intervention.
+**A:** The service works with most standard HTTP-based captive portals. It detects portals by analyzing HTTP responses
+from known detection URLs and redirects clients to the discovered portal URL. Some specialized or HTTPS-only portals
+may require manual intervention.
 
 ### Q: Is this safe to use? Does it compromise my security?
 
-**A:** Yes, it's safe. The service only intercepts HTTP traffic and DNS queries temporarily. HTTPS traffic is never intercepted (by design) to preserve security and HSTS compliance. All modifications are automatically reversed once internet access is restored.
+**A:** Yes, it's safe. The service only intercepts HTTP traffic and DNS queries temporarily. HTTPS traffic is never
+intercepted (by design) to preserve security and HSTS compliance. All modifications are automatically reversed once
+internet access is restored.
 
 ---
 
@@ -37,20 +46,21 @@ uci commit captive-monitor
 ### Q: What's the difference between "monitor" and "oneshot" modes?
 
 **A:** 
-- **Monitor mode**: Runs continuously, checking connectivity at specified intervals (default: 60 seconds)
-- **Oneshot mode**: Performs a single check and exits, useful for cron jobs or manual execution
+  - **Monitor mode**: Runs continuously, checking connectivity at specified intervals (default: 60 seconds)
+  - **Oneshot mode**: Performs a single check and exits, useful for cron jobs or manual execution
 
 ### Q: How often should I set the monitoring interval?
 
 **A:** 
-- **30 seconds**: High-availability environments, frequent checks
-- **60 seconds**: Standard home/office use (recommended default)
-- **300 seconds**: Resource-constrained devices, less frequent checks
-- **900 seconds**: Minimal monitoring, very slow detection
+  - **30 seconds**: High-availability environments, frequent checks
+  - **60 seconds**: Standard home/office use (recommended default)
+  - **300 seconds**: Resource-constrained devices, less frequent checks
+  - **900 seconds**: Minimal monitoring, very slow detection
 
 ### Q: Can I use this with multiple WiFi interfaces?
 
-**A:** Currently, the service monitors one primary WiFi interface specified in the configuration. For multiple interfaces, you can run multiple instances with different configurations, though this is an advanced use case.
+**A:** Currently, the service monitors one primary WiFi interface specified in the configuration. For multiple
+interfaces, you can run multiple instances with different configurations, though this is an advanced use case.
 
 ### Q: How do I change the ping servers?
 
@@ -75,18 +85,20 @@ uci commit captive-monitor
 
 ### Q: Does this work with IPv6?
 
-**A:** Yes, the service supports IPv6 networks. It can intercept IPv6 DNS queries and handle dual-stack configurations. IPv6 support can be enabled in the configuration.
+**A:** Yes, the service supports IPv6 networks. It can intercept IPv6 DNS queries and handle dual-stack configurations.
+IPv6 support can be enabled in the configuration.
 
 ### Q: Which firewall backend does it use?
 
 **A:** The service automatically detects and uses the appropriate firewall backend:
-- **iptables**: For OpenWrt 21.02 and legacy systems
-- **nftables**: For OpenWrt 22.03+ with fw4
-- **Auto-detection**: Default, picks the available backend
+  - **iptables**: For OpenWrt 21.02 and legacy systems
+  - **nftables**: For OpenWrt 22.03+ with fw4
+  - **Auto-detection**: Default, picks the available backend
 
 ### Q: Will this interfere with my existing firewall rules?
 
-**A:** No, the service creates isolated firewall chains and rules that don't conflict with existing configurations. All rules are properly labeled and cleaned up when no longer needed.
+**A:** No, the service creates isolated firewall chains and rules that don't conflict with existing configurations. All
+rules are properly labeled and cleaned up when no longer needed.
 
 ### Q: Can I use custom captive portal detection URLs?
 
@@ -103,22 +115,26 @@ uci commit captive-monitor
 
 ### Q: What happens to HTTPS traffic during captive mode?
 
-**A:** HTTPS traffic is NOT intercepted and passes through normally. This is by design to preserve security and avoid HSTS violations. Users may need to manually navigate to HTTP sites to trigger the captive portal detection.
+**A:** HTTPS traffic is NOT intercepted and passes through normally. This is by design to preserve security and avoid
+HSTS violations. Users may need to manually navigate to HTTP sites to trigger the captive portal detection.
 
 ### Q: How does DNS hijacking work? Is it safe?
 
-**A:** During captive mode, the service temporarily overrides DNS resolution to point all domains to the router's IP address, except for the captive portal domain. This is safe because:
+**A:** During captive mode, the service temporarily overrides DNS resolution to point all domains to the router's IP
+address, except for the captive portal domain. This is safe because:
 - It's temporary and automatically reversed
 - Only affects DNS queries, not actual traffic content
 - Preserves the real portal domain resolution
 
 ### Q: Will this affect devices that are already authenticated?
 
-**A:** No, once devices are authenticated and internet access is restored, the service detects this and automatically disables interception, restoring normal network operation for all devices.
+**A:** No, once devices are authenticated and internet access is restored, the service detects this and automatically
+disables interception, restoring normal network operation for all devices.
 
 ### Q: Can I exclude certain domains from DNS hijacking?
 
-**A:** Yes, the service automatically preserves the captive portal domain. You can manually configure additional exclusions if needed by modifying the DNS intercept configuration.
+**A:** Yes, the service automatically preserves the captive portal domain. You can manually configure additional
+exclusions if needed by modifying the DNS intercept configuration.
 
 ---
 
@@ -217,7 +233,8 @@ opkg install dist/opkg/all/openwrt-captive-monitor_*.ipk
 
 ### Q: Which package architecture should I use?
 
-**A:** Use `all` architecture for most cases since this is a shell script package. Architecture-specific packages are available if you prefer them.
+**A:** Use `all` architecture for most cases since this is a shell script package. Architecture-specific packages are
+available if you prefer them.
 
 ### Q: How do I uninstall the service?
 
@@ -231,7 +248,8 @@ uci commit captive-monitor
 
 ### Q: Can I install this alongside other network services?
 
-**A:** Yes, the service is designed to coexist with other network services. However, avoid running multiple services that modify firewall rules or DNS configuration simultaneously.
+**A:** Yes, the service is designed to coexist with other network services. However, avoid running multiple services
+that modify firewall rules or DNS configuration simultaneously.
 
 ---
 
@@ -307,7 +325,8 @@ EOF
 
 ### Q: Does this service read or modify my traffic content?
 
-**A:** No, the service only redirects traffic flow. It doesn't inspect, modify, or store any traffic content. HTTPS traffic is never touched.
+**A:** No, the service only redirects traffic flow. It doesn't inspect, modify, or store any traffic content. HTTPS
+traffic is never touched.
 
 ### Q: Is DNS hijacking secure?
 
@@ -327,7 +346,8 @@ EOF
 
 ### Q: What happens if the service crashes?
 
-**A:** The service includes cleanup mechanisms that run on termination. If it crashes unexpectedly, you can force cleanup:
+**A:** The service includes cleanup mechanisms that run on termination. If it crashes unexpectedly, you can force
+cleanup:
 ```bash
 /usr/sbin/openwrt_captive_monitor --force-cleanup
 ```
@@ -339,10 +359,10 @@ EOF
 ### Q: How much resources does this service use?
 
 **A:** Typical resource usage:
-- **CPU**: < 1% average, brief spikes during checks
-- **Memory**: 2-4 MB base, +1-2 MB when HTTP server is active
-- **Storage**: ~1 MB for package and configuration
-- **Network**: Minimal, only for connectivity checks
+  - **CPU**: < 1% average, brief spikes during checks
+  - **Memory**: 2-4 MB base, +1-2 MB when HTTP server is active
+  - **Storage**: ~1 MB for package and configuration
+  - **Network**: Minimal, only for connectivity checks
 
 ### Q: Will this slow down my network?
 
@@ -391,10 +411,10 @@ sh -x /usr/sbin/openwrt_captive_monitor --oneshot 2>&1 | tee /tmp/debug.log
 ### Q: Where can I get help?
 
 **A:** Multiple support channels:
-- **GitHub Issues**: Bug reports and feature requests
-- **GitHub Discussions**: General questions and help
-- **Documentation**: Comprehensive guides and references
-- **Community**: Other users may have similar questions
+  - **GitHub Issues**: Bug reports and feature requests
+  - **GitHub Discussions**: General questions and help
+  - **Documentation**: Comprehensive guides and references
+  - **Community**: Other users may have similar questions
 
 ---
 
@@ -414,11 +434,13 @@ sh -x /usr/sbin/openwrt_captive_monitor --oneshot 2>&1 | tee /tmp/debug.log
 
 ### Q: Will this work with mesh networks?
 
-**A:** It can work with mesh networks, but should be configured on the mesh gateway node that connects to the external network.
+**A:** It can work with mesh networks, but should be configured on the mesh gateway node that connects to the external
+network.
 
 ### Q: How does this compare to commercial solutions?
 
-**A:** This is a lightweight, open-source solution focused on detection and redirection. Commercial solutions often include billing, user management, and advanced features that are beyond the scope of this project.
+**A:** This is a lightweight, open-source solution focused on detection and redirection. Commercial solutions often
+include billing, user management, and advanced features that are beyond the scope of this project.
 
 ---
 

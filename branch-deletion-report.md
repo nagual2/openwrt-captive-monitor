@@ -4,7 +4,8 @@ Date: 2025-06-18
 
 ## Analysis Summary
 
-After thorough investigation, **NO branches can be safely deleted** according to the safety rules specified in this ticket.
+After thorough investigation, **NO branches can be safely deleted** according to the safety rules specified in this
+ticket.
 
 ## Branch Analysis Results
 
@@ -30,8 +31,8 @@ After thorough investigation, **NO branches can be safely deleted** according to
 ### 1. Safety Rule Violations Detected
 
 The ticket's safety rules explicitly state:
-- **"ONLY delete if git branch -r --merged origin/main returns it"**
-- **"DO NOT delete branches with unmerged commits"**
+  - **"ONLY delete if git branch -r --merged origin/main returns it"**
+  - **"DO NOT delete branches with unmerged commits"**
 
 **Command executed:** `git branch -r --merged origin/main`
 **Result:** Only `origin/main` and `origin/HEAD -> origin/main` are returned
@@ -102,9 +103,9 @@ git rev-list --left-right --count origin/main...origin/ci/check-workflows-after-
 
 ## Repository Status
 
-- **Branches deleted:** 0 (none safe to delete)
-- **Branches remaining:** 8 (7 remote branches + 1 HEAD reference)
-- **Repository status:** ✅ SAFE (no premature deletions)
+  - **Branches deleted:** 0 (none safe to delete)
+  - **Branches remaining:** 8 (7 remote branches + 1 HEAD reference)
+  - **Repository status:** ✅ SAFE (no premature deletions)
 
 ## Final Verification
 
@@ -126,6 +127,7 @@ git branch -r | wc -l
 
 ## Conclusion
 
-**NO BRANCHES WERE DELETED** because none of the branches listed in the ticket meet the safety criteria for deletion. The ticket appears to contain incorrect information about the merge status of these branches.
+**NO BRANCHES WERE DELETED** because none of the branches listed in the ticket meet the safety criteria for deletion.
+The ticket appears to contain incorrect information about the merge status of these branches.
 
 **Next action required:** Update the ticket with accurate branch analysis before proceeding with any deletions.

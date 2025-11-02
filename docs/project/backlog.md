@@ -4,10 +4,10 @@ Feature roadmap and development priorities for **openwrt-captive-monitor**.
 
 ## 📊 Priority Levels
 
-- **P0** - Critical for current release, blocks deployment
-- **P1** - Important for next release, significant improvement
-- **P2** - Nice to have, future enhancement
-- **P3** - Low priority, backlog item
+  - **P0** - Critical for current release, blocks deployment
+  - **P1** - Important for next release, significant improvement
+  - **P2** - Nice to have, future enhancement
+  - **P3** - Low priority, backlog item
 
 ---
 
@@ -17,17 +17,23 @@ Feature roadmap and development priorities for **openwrt-captive-monitor**.
 
 | Issue | Description | Estimate | Assignee | Status |
 |-------|-------------|-----------|----------|--------|
-| [#001](https://github.com/nagual2/openwrt-captive-monitor/issues/1) | Fix IPv6 DNS interception on dual-stack networks | 2d | @developer | In Progress |
-| [#002](https://github.com/nagual2/openwrt-captive-monitor/issues/2) | Resolve firewall backend detection on OpenWrt 23.05+ | 1d | @developer | Ready |
-| [#003](https://github.com/nagual2/openwrt-captive-monitor/issues/3) | Fix memory leak in long-running monitor mode | 3d | @developer | Blocked |
+| [#001](https://github.com/nagual2/openwrt-captive-monitor/issues/1) | Fix IPv6 DNS interception on dual-stack
+networks | 2d | @developer | In Progress |
+| [#002](https://github.com/nagual2/openwrt-captive-monitor/issues/2) | Resolve firewall backend detection on OpenWrt
+23.05+ | 1d | @developer | Ready |
+| [#003](https://github.com/nagual2/openwrt-captive-monitor/issues/3) | Fix memory leak in long-running monitor mode |
+3d | @developer | Blocked |
 
 ### P1 - High Priority
 
 | Issue | Description | Estimate | Assignee | Status |
 |-------|-------------|-----------|----------|--------|
-| [#010](https://github.com/nagual2/openwrt-captive-monitor/issues/10) | Add support for multiple WiFi interfaces | 5d | @developer | Backlog |
-| [#011](https://github.com/nagual2/openwrt-captive-monitor/issues/11) | Improve captive portal detection with machine learning | 8d | @research | Backlog |
-| [#012](https://github.com/nagual2/openwrt-captive-monitor/issues/12) | Add comprehensive logging and metrics | 3d | @developer | Backlog |
+| [#010](https://github.com/nagual2/openwrt-captive-monitor/issues/10) | Add support for multiple WiFi interfaces | 5d
+| @developer | Backlog |
+| [#011](https://github.com/nagual2/openwrt-captive-monitor/issues/11) | Improve captive portal detection with machine
+learning | 8d | @research | Backlog |
+| [#012](https://github.com/nagual2/openwrt-captive-monitor/issues/12) | Add comprehensive logging and metrics | 3d |
+@developer | Backlog |
 
 ---
 
@@ -131,7 +137,8 @@ Week 8: Testing and documentation
 #### Multi-interface Support
 
 **Description:** Monitor and manage multiple WiFi interfaces simultaneously
-**User Story:** As a network administrator, I want to monitor multiple WiFi networks so that I can provide redundant connectivity and automatic failover.
+**User Story:** As a network administrator, I want to monitor multiple WiFi networks so that I can provide redundant
+connectivity and automatic failover.
 
 **Acceptance Criteria:**
 - [ ] Support for 2+ WiFi interfaces
@@ -464,4 +471,5 @@ Week 8: Testing and documentation
 4. **Final Review** - Maintainer approval
 5. **Integration** - Merge into appropriate branch
 
-This backlog provides a clear roadmap for the project's future development while ensuring quality and reliability of current releases.
+This backlog provides a clear roadmap for the project's future development while ensuring quality and reliability of
+current releases.

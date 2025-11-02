@@ -4,7 +4,8 @@ This guide covers the complete workflow for building, packaging, and distributin
 
 ## Overview
 
-The project uses OpenWrt's native packaging system with custom tooling to simplify local builds and release automation. The packaging structure follows OpenWrt conventions and supports both development and production workflows.
+The project uses OpenWrt's native packaging system with custom tooling to simplify local builds and release automation.
+The packaging structure follows OpenWrt conventions and supports both development and production workflows.
 
 ## Package Structure
 

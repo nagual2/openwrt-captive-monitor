@@ -2,14 +2,18 @@
 
 ## Getting Help
 
-The openwrt-captive-monitor project provides several channels for getting support, reporting bugs, and asking questions. Choose the most appropriate channel for your needs.
+The openwrt-captive-monitor project provides several channels for getting support, reporting bugs, and asking
+questions. Choose the most appropriate channel for your needs.
 
 ## 🐛 Bug Reports
 
-**Where to file**: [GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues/new?assignees=&labels=bug&template=bug_report.md)
+**Where to file**: [GitHub
+Issues](https://github.com/nagual2/openwrt-captive-monitor/issues/new?assignees=&labels=bug&template=bug_report.md)
 
 **Before reporting**:
-1. Check existing [open issues](https://github.com/nagual2/openwrt-captive-monitor/issues?q=is%3Aissue+is%3Aopen+label%3Abug) to avoid duplicates
+1. Check existing [open
+issues](https://github.com/nagual2/openwrt-captive-monitor/issues?q=is%3Aissue+is%3Aopen+label%3Abug) to avoid
+duplicates
 2. Ensure you're using the latest version
 3. Test on a clean installation if possible
 4. Gather relevant logs and configuration details
@@ -28,16 +32,19 @@ The openwrt-captive-monitor project provides several channels for getting suppor
 * Perfect for troubleshooting that isn't clearly a bug
 * Community-driven support from other users and maintainers
 
-**GitHub Issues with "question" label**: [Create an issue](https://github.com/nagual2/openwrt-captive-monitor/issues/new?assignees=&labels=question&template=---)
+**GitHub Issues with "question" label**: [Create an
+issue](https://github.com/nagual2/openwrt-captive-monitor/issues/new?assignees=&labels=question&template=---)
 * Use when you have a specific question that might benefit from future users finding it
 * Good for clarifications about features or behavior
 
 ## 📚 Documentation
 
 **Primary documentation**:
-* [README.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/README.md) - Installation, configuration, and basic usage
+* [README.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/README.md) - Installation, configuration,
+and basic usage
 * [Extended documentation](docs/) - Advanced troubleshooting and deployment guides
-* [CHANGELOG.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/CHANGELOG.md) - Version history and release notes
+* [CHANGELOG.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/CHANGELOG.md) - Version history and
+release notes
 
 **Configuration reference**:
 * Default configuration in `/etc/config/captive-monitor` after installation
@@ -77,7 +84,8 @@ nslookup google.com
 
 ## 🏗️ Contributing
 
-Found a bug you want to fix or have a feature idea? Check out our [Contributing Guide](https://github.com/nagual2/openwrt-captive-monitor/blob/main/CONTRIBUTING.md) for:
+Found a bug you want to fix or have a feature idea? Check out our [Contributing
+Guide](https://github.com/nagual2/openwrt-captive-monitor/blob/main/CONTRIBUTING.md) for:
 
 * Development setup instructions
 * Code style and testing requirements
@@ -92,14 +100,17 @@ Use our private disclosure channels:
 * [GitHub Security Advisory](https://github.com/nagual2/openwrt-captive-monitor/security/advisories/new) (preferred)
 * Email: [security@nagual2.com](mailto:security@nagual2.com)
 
-See our [Security Policy](https://github.com/nagual2/openwrt-captive-monitor/blob/main/.github/SECURITY.md) for details on responsible disclosure.
+See our [Security Policy](https://github.com/nagual2/openwrt-captive-monitor/blob/main/.github/SECURITY.md) for details
+on responsible disclosure.
 
 ## 📋 Feature Requests
 
-**Where to file**: [GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues/new?assignees=&labels=enhancement&template=feature_request.md)
+**Where to file**: [GitHub
+Issues](https://github.com/nagual2/openwrt-captive-monitor/issues/new?assignees=&labels=enhancement&template=feature_request.md)
 
 **Before requesting**:
-1. Search existing [feature requests](https://github.com/nagual2/openwrt-captive-monitor/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+1. Search existing [feature
+requests](https://github.com/nagual2/openwrt-captive-monitor/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 2. Consider if this is a core feature that benefits all users
 3. Think about edge cases and implementation complexity
 
@@ -111,7 +122,8 @@ See our [Security Policy](https://github.com/nagual2/openwrt-captive-monitor/blo
 
 ## 🤝 Community Support
 
-This project is maintained by volunteers and community contributors. Response times vary based on maintainers' availability:
+This project is maintained by volunteers and community contributors. Response times vary based on maintainers'
+availability:
 
 * **Bug reports**: Typically reviewed within 1-2 weeks
 * **Feature requests**: Evaluated during roadmap planning
@@ -124,7 +136,8 @@ For urgent production issues, consider:
 
 ## 📞 Contact Information
 
-**Project maintainers**: See [CODEOWNERS](https://github.com/nagual2/openwrt-captive-monitor/blob/main/.github/CODEOWNERS)
+**Project maintainers**: See
+[CODEOWNERS](https://github.com/nagual2/openwrt-captive-monitor/blob/main/.github/CODEOWNERS)
 
 **Email**: For security issues only, use [security@nagual2.com](mailto:security@nagual2.com)
 

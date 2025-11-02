@@ -82,7 +82,8 @@ The helper will abort early with a descriptive error if any tool is missing.
 
 ### Sanity checks
 
-Run the BusyBox test harness (it now validates the `.ipk` layout, control metadata, and that `Packages.gz` matches `Packages`):
+Run the BusyBox test harness (it now validates the `.ipk` layout, control metadata, and that `Packages.gz` matches
+`Packages`):
 
 ```bash
 busybox sh tests/run.sh
@@ -119,13 +120,16 @@ busybox sh tests/run.sh
    git push origin v0.1.3
    ```
    Swap `v0.1.3` for the new version string on future releases.
-3. Monitor the **Build OpenWrt packages** workflow triggered by the tag, ensure the job succeeds, and confirm the GitHub Release lists:
+3. Monitor the **Build OpenWrt packages** workflow triggered by the tag, ensure the job succeeds, and confirm the
+GitHub Release lists:
 
    - `openwrt-captive-monitor_<version>-<release>_<arch>.ipk`
    - `Packages`
    - `Packages.gz`
 
-   Capture a screenshot of the artifact upload step or copy the workflow run URL into your release notes for traceability. If automation is unavailable, run `scripts/build_ipk.sh` manually (see the README fallback section) and upload the three files above to the release page by hand.
+Capture a screenshot of the artifact upload step or copy the workflow run URL into your release notes for
+traceability. If automation is unavailable, run `scripts/build_ipk.sh` manually (see the README fallback section) and
+upload the three files above to the release page by hand.
 
 ## 5. Host the opkg feed
 

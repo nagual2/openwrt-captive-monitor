@@ -1,6 +1,7 @@
 # Configuration Reference
 
-Complete reference for all configuration options available in **openwrt-captive-monitor**, including UCI settings, environment variables, and command-line flags.
+Complete reference for all configuration options available in **openwrt-captive-monitor**, including UCI settings,
+environment variables, and command-line flags.
 
 ## 📋 Configuration Methods
 
@@ -33,7 +34,8 @@ config captive_monitor 'config'
     
     # Connectivity checks
     option ping_servers '1.1.1.1 8.8.8.8 9.9.9.9'    # Ping servers
-    option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
+option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204
+http://detectportal.firefox.com/success.txt'
     
     # Timing settings
     option ping_timeout '2'               # Ping timeout (seconds)
@@ -346,7 +348,8 @@ config captive_monitor 'config'
     
     # === Connectivity Checks ===
     option ping_servers '1.1.1.1 8.8.8.8 9.9.9.9'
-    option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
+option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204
+http://detectportal.firefox.com/success.txt'
     
     # === Timing Settings ===
     option ping_timeout '2'               # Ping timeout (seconds)

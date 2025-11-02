@@ -593,7 +593,8 @@ echo "Debug report saved to /tmp/captive-debug-report.txt"
 
 1. **GitHub Issues**: [Create an issue](https://github.com/nagual2/openwrt-captive-monitor/issues)
 2. **GitHub Discussions**: [Start a discussion](https://github.com/nagual2/openwrt-captive-monitor/discussions)
-3. **Documentation**: [Check this guide and other docs](https://github.com/nagual2/openwrt-captive-monitor/tree/main/docs)
+3. **Documentation**: [Check this guide and other
+docs](https://github.com/nagual2/openwrt-captive-monitor/tree/main/docs)
 
 ### When Reporting Issues
 

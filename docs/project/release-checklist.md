@@ -1,6 +1,7 @@
 # Release Checklist
 
-This checklist documents the release process for **openwrt-captive-monitor** and should be followed for each new version.
+This checklist documents the release process for **openwrt-captive-monitor** and should be followed for each new
+version.
 
 ## 📋 Pre-Release Checklist
 
@@ -248,19 +249,19 @@ opkg remove openwrt-captive-monitor
 
 For each release, track:
 
-- **Release Date**: When release was published
-- **Issues Fixed**: Number and type of issues resolved
-- **Features Added**: New functionality introduced
-- **Breaking Changes**: Any incompatible changes
-- **Downloads**: Package download statistics
-- **Issues Reported**: Post-release issues and feedback
+  - **Release Date**: When release was published
+  - **Issues Fixed**: Number and type of issues resolved
+  - **Features Added**: New functionality introduced
+  - **Breaking Changes**: Any incompatible changes
+  - **Downloads**: Package download statistics
+  - **Issues Reported**: Post-release issues and feedback
 
 ### Quality Metrics
 
-- **Test Coverage**: Percentage of code covered by tests
-- **Bug Discovery Time**: Time between release and first bug report
-- **User Satisfaction**: Community feedback and issue resolution time
-- **Adoption Rate**: Speed of user upgrades to new version
+  - **Test Coverage**: Percentage of code covered by tests
+  - **Bug Discovery Time**: Time between release and first bug report
+  - **User Satisfaction**: Community feedback and issue resolution time
+  - **Adoption Rate**: Speed of user upgrades to new version
 
 ---
 
@@ -273,9 +274,9 @@ For each release, track:
 
 ## Highlights
 
-- **Feature**: Brief description of new feature
-- **Improvement**: Description of enhancement
-- **Fix**: Description of bug fix
+  - **Feature**: Brief description of new feature
+  - **Improvement**: Description of enhancement
+  - **Fix**: Description of bug fix
 
 ## 🔄 Changes
 
@@ -298,7 +299,8 @@ For each release, track:
 
 ### Prebuilt Packages
 ```bash
-wget https://github.com/nagual2/openwrt-captive-monitor/releases/download/v{VERSION}/openwrt-captive-monitor_{VERSION}-1_all.ipk
+wget
+https://github.com/nagual2/openwrt-captive-monitor/releases/download/v{VERSION}/openwrt-captive-monitor_{VERSION}-1_all.ipk
 opkg install openwrt-captive-monitor_{VERSION}-1_all.ipk
 ```
 

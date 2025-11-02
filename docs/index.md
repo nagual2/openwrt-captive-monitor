@@ -1,6 +1,8 @@
 # openwrt-captive-monitor Documentation
 
-Welcome to the comprehensive documentation for **openwrt-captive-monitor**, a lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily intercepts LAN DNS/HTTP traffic to facilitate client authentication.
+Welcome to the comprehensive documentation for **openwrt-captive-monitor**, a lightweight OpenWrt helper that monitors
+WAN connectivity, detects captive portals, and temporarily intercepts LAN DNS/HTTP traffic to facilitate client
+authentication.
 
 ## 📚 Documentation Structure
 
@@ -35,13 +37,16 @@ Welcome to the comprehensive documentation for **openwrt-captive-monitor**, a li
 
 ## 🔗 Quick Links
 
-- **Latest Release**: [GitHub Releases](https://github.com/nagual2/openwrt-captive-monitor/releases)
-- **Package Repository**: [OpenWrt Feed](https://github.com/nagual2/openwrt-captive-monitor/releases)
-- **Issue Tracker**: [GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)
+  - **Latest Release**: [GitHub Releases](https://github.com/nagual2/openwrt-captive-monitor/releases)
+  - **Package Repository**: [OpenWrt Feed](https://github.com/nagual2/openwrt-captive-monitor/releases)
+  - **Issue Tracker**: [GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)
+  - **Discussions**: [GitHub Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)
 
 ## 📖 About This Documentation
 
-This documentation is organized to serve both end-users who want to deploy and configure the captive monitor, as well as developers who want to contribute to the project. The markdown files can be viewed directly on GitHub or any markdown viewer.
+This documentation is organized to serve both end-users who want to deploy and configure the captive monitor, as well
+as developers who want to contribute to the project. The markdown files can be viewed directly on GitHub or any
+markdown viewer.
 
-For the most up-to-date information, always refer to the [main repository](https://github.com/nagual2/openwrt-captive-monitor).
+For the most up-to-date information, always refer to the [main
+repository](https://github.com/nagual2/openwrt-captive-monitor).

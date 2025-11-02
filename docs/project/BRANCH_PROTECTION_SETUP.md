@@ -40,9 +40,9 @@ To complete the trunk protection setup, configure these settings in your GitHub 
 **Settings → Rules → New rule set**
 
 Create a rule set for feature branches:
-- **Target**: Branch names matching `feature/*`, `fix/*`, `chore/*`, `docs/*`, `hotfix/*`
-- **Required status checks**: Same as main branch
-- **Restrict pushes**: ✅ Enable (require PRs for these branches too)
+  - **Target**: Branch names matching `feature/*`, `fix/*`, `chore/*`, `docs/*`, `hotfix/*`
+  - **Required status checks**: Same as main branch
+  - **Restrict pushes**: ✅ Enable (require PRs for these branches too)
 
 ## Verification Steps
 
@@ -68,13 +68,15 @@ After setup, verify:
 - Branch protection rules setup
 - Auto-delete branches enabled
 - Status checks enforcement
-- **GitHub Actions permissions**: Enable "Allow GitHub Actions to create and approve pull requests" in Settings → Actions → General (required for release-please automation)
+  - **GitHub Actions permissions**: Enable "Allow GitHub Actions to create and approve pull requests" in Settings →
+Actions → General (required for release-please automation)
 
 The repository is now ready for protected, systematic development with enforced CI and merge policies.
 
 ## Release Automation Notes
 
-The `release-please` workflow requires special permissions to create release PRs automatically. If GitHub Actions cannot create PRs:
+The `release-please` workflow requires special permissions to create release PRs automatically. If GitHub Actions
+cannot create PRs:
 
 1. **Enable Actions permissions** in repository settings (recommended)
 2. **Use PAT token** as documented in `RELEASE_PLEASE_TROUBLESHOOTING.md`

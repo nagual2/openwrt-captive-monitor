@@ -52,11 +52,11 @@
 
 ## Areas for Review Focus
 <!-- Optional: highlight specific areas where you'd like focused feedback. -->
-- **Code correctness**: 
-- **Security implications**: 
-- **Performance impact**: 
-- **User experience**: 
-- **Documentation clarity**: 
+  - **Code correctness**: 
+  - **Security implications**: 
+  - **Performance impact**: 
+  - **User experience**: 
+  - **Documentation clarity**: 
 
 ## Additional Context
 <!-- Any other information that would help reviewers understand this change. -->

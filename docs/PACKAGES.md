@@ -3,15 +3,16 @@
 ## Repository Files
 ❌ No .ipk files found in repository
 
-**Explanation**: `.ipk` files are intentionally excluded from version control via `.gitignore` to keep the repository clean. Packages are built on-demand via CI/CD or locally using the build script.
+**Explanation**: `.ipk` files are intentionally excluded from version control via `.gitignore` to keep the repository
+clean. Packages are built on-demand via CI/CD or locally using the build script.
 
 ### Local Build Information
-- **Current Version**: 0.1.3-1 (from `package/openwrt-captive-monitor/Makefile`)
-- **Architecture**: all
-- **Build Script**: `./scripts/build_ipk.sh`
-- **Output Location**: `dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk`
-- **Package Size**: 13,250 bytes (local build)
-- **Dependencies**: `dnsmasq`, `curl`
+  - **Current Version**: 0.1.3-1 (from `package/openwrt-captive-monitor/Makefile`)
+  - **Architecture**: all
+  - **Build Script**: `./scripts/build_ipk.sh`
+  - **Output Location**: `dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk`
+  - **Package Size**: 13,250 bytes (local build)
+  - **Dependencies**: `dnsmasq`, `curl`
 
 ### How to Build Locally
 ```bash
@@ -28,14 +29,14 @@
 ✅ Artifacts available
 
 ### Latest Build Information
-- **Workflow**: "Build OpenWrt packages"
-- **Latest Successful Run**: #18941818953 (2025-10-30T13:13:37Z)
-- **Branch**: main
-- **Status**: ✅ Success
-- **Artifact**: `openwrt-captive-monitor_0.1.3-1_all`
-- **Size**: 14,496 bytes
-- **Created**: 2025-10-30T13:14:14Z
-- **Expires**: 2026-01-28T13:13:38Z
+  - **Workflow**: "Build OpenWrt packages"
+  - **Latest Successful Run**: #18941818953 (2025-10-30T13:13:37Z)
+  - **Branch**: main
+  - **Status**: ✅ Success
+  - **Artifact**: `openwrt-captive-monitor_0.1.3-1_all`
+  - **Size**: 14,496 bytes
+  - **Created**: 2025-10-30T13:14:14Z
+  - **Expires**: 2026-01-28T13:13:38Z
 
 ### Download Instructions
 1. **Via GitHub Web Interface**:
@@ -62,15 +63,16 @@
 ❌ No package assets in releases
 
 ### Available Releases
-- **v0.1.0** (2025-10-23T12:26:42Z)
+  - **v0.1.0** (2025-10-23T12:26:42Z)
   - ❌ No package assets attached
   - Release notes: Initial release
 
 ### Missing Release Assets
-- **v0.1.2**: Tag exists but no release created
-- **v0.1.0**: Release exists but no package assets
+  - **v0.1.2**: Tag exists but no release created
+  - **v0.1.0**: Release exists but no package assets
 
-**Note**: The workflow is configured to publish release assets when tags are pushed, but it appears this hasn't been working or the assets weren't properly attached.
+**Note**: The workflow is configured to publish release assets when tags are pushed, but it appears this hasn't been
+working or the assets weren't properly attached.
 
 ## Package Metadata
 
@@ -98,11 +100,11 @@ Description: Captive portal connectivity monitor and auto-redirect helper
 | 0.1.0 | 2025-10-23 | ❌ Release exists but no assets | No |
 
 ## Summary
-- **Total .ipk files found**: 1 (current version via CI artifacts)
-- **Latest version**: v0.1.3-1
-- **Recommended download**: GitHub Actions artifacts (most recent)
-- **Repository status**: No packages stored (intentionally)
-- **Release status**: No package assets in releases
+  - **Total .ipk files found**: 1 (current version via CI artifacts)
+  - **Latest version**: v0.1.3-1
+  - **Recommended download**: GitHub Actions artifacts (most recent)
+  - **Repository status**: No packages stored (intentionally)
+  - **Release status**: No package assets in releases
 
 ## How to Download
 
@@ -158,10 +160,10 @@ GitHub Actions artifacts expire after 90 days. If the download links don't work:
 2. **Build locally** using the instructions above
 
 ### If Package Installation Fails
-- **Check dependencies**: Ensure `dnsmasq` and `curl` are installed
-- **Check architecture**: Package is built for `all` architectures
-- **Check OpenWrt version**: Compatible with modern OpenWrt releases
-- **Check disk space**: Package requires ~96KB installed space
+  - **Check dependencies**: Ensure `dnsmasq` and `curl` are installed
+  - **Check architecture**: Package is built for `all` architectures
+  - **Check OpenWrt version**: Compatible with modern OpenWrt releases
+  - **Check disk space**: Package requires ~96KB installed space
 
 ---
 

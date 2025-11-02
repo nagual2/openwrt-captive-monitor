@@ -3,40 +3,40 @@
 ## Changes Implemented
 
 ### 1. Consolidated CI Workflow (`.github/workflows/ci.yml`)
-- **Matrix Strategy**: Parallel execution of shfmt and shellcheck
-- **Shared Caching**: Apt package caching across all lint jobs
-- **Test Integration**: BusyBox ash test harness execution
-- **Artifact Management**: Test results uploaded with 7-day retention
+  - **Matrix Strategy**: Parallel execution of shfmt and shellcheck
+  - **Shared Caching**: Apt package caching across all lint jobs
+  - **Test Integration**: BusyBox ash test harness execution
+  - **Artifact Management**: Test results uploaded with 7-day retention
 
 ### 2. Enhanced Packaging Workflow (`.github/workflows/openwrt-build.yml`)
-- **Matrix Builds**: Support for generic, x86-64, armvirt-64, mips_24kc targets
-- **CI Dependency**: Requires CI workflow completion before building
-- **Concurrency Controls**: Automatic cancellation of outdated runs
-- **Artifact Retention**: 30-day retention for build artifacts
-- **Separate Release Job**: Dedicated job for tag-triggered releases
+  - **Matrix Builds**: Support for generic, x86-64, armvirt-64, mips_24kc targets
+  - **CI Dependency**: Requires CI workflow completion before building
+  - **Concurrency Controls**: Automatic cancellation of outdated runs
+  - **Artifact Retention**: 30-day retention for build artifacts
+  - **Separate Release Job**: Dedicated job for tag-triggered releases
 
 ### 3. Automated Release Management (`.github/workflows/release-please.yml`)
-- **Semantic Versioning**: Automatic version bumping based on conventional commits
-- **Changelog Generation**: Integrated with CHANGELOG.md updates
-- **Package Updates**: Automatic Makefile version updates
-- **GitHub Releases**: Automated release creation with assets
+  - **Semantic Versioning**: Automatic version bumping based on conventional commits
+  - **Changelog Generation**: Integrated with CHANGELOG.md updates
+  - **Package Updates**: Automatic Makefile version updates
+  - **GitHub Releases**: Automated release creation with assets
 
 ### 4. Dependency Management (`.github/dependabot.yml`)
-- **GitHub Actions**: Weekly updates with grouped PRs
-- **Auto-assignment**: Automatic reviewer and assignee configuration
+  - **GitHub Actions**: Weekly updates with grouped PRs
+  - **Auto-assignment**: Automatic reviewer and assignee configuration
 
 ### 5. Configuration Files
-- **`.shellcheckrc`**: Shell linting configuration for BusyBox ash compatibility
-- **`scripts/validate-workflows.sh`**: Workflow validation helper
+  - **`.shellcheckrc`**: Shell linting configuration for BusyBox ash compatibility
+  - **`scripts/validate-workflows.sh`**: Workflow validation helper
 
 ### 6. Documentation Updates
-- **README.md**: Updated badges to point to new workflows
-- **CONTRIBUTING.md**: Updated local development instructions and required status checks
-- **CI_NOTES.md**: Documented all CI changes
-- **CI_AUDIT_LAST_GREEN.md**: Updated with new pipeline structure
+  - **README.md**: Updated badges to point to new workflows
+  - **CONTRIBUTING.md**: Updated local development instructions and required status checks
+  - **CI_NOTES.md**: Documented all CI changes
+  - **CI_AUDIT_LAST_GREEN.md**: Updated with new pipeline structure
 
 ### 7. Cleanup
-- **Removed**: `shellcheck.yml` (consolidated into `ci.yml`)
+  - **Removed**: `shellcheck.yml` (consolidated into `ci.yml`)
 
 ## Acceptance Criteria Met
 
@@ -86,9 +86,9 @@ For administrators to configure in GitHub repository settings:
 
 ## Benefits Achieved
 
-- **Reduced CI Times**: Parallel linting and improved caching
-- **Better Coverage**: Added markdownlint and actionlint
-- **Automated Releases**: No more manual version bumping
-- **Dependency Hygiene**: Automated dependency updates
-- **Clear Separation**: Distinct workflows for CI, packaging, and releases
-- **Better Testing**: Matrix builds across multiple OpenWrt targets
+  - **Reduced CI Times**: Parallel linting and improved caching
+  - **Better Coverage**: Added markdownlint and actionlint
+  - **Automated Releases**: No more manual version bumping
+  - **Dependency Hygiene**: Automated dependency updates
+  - **Clear Separation**: Distinct workflows for CI, packaging, and releases
+  - **Better Testing**: Matrix builds across multiple OpenWrt targets

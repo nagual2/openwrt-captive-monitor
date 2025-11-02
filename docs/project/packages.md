@@ -67,7 +67,8 @@ ls -la dist/opkg/all/
 
 ```bash
 ## Download and extract OpenWrt SDK
-wget https://downloads.openwrt.org/releases/22.03.5/targets/ath79/generic/openwrt-sdk-22.03.5-ath79-generic_gcc-11.2.0_musl.Linux-x86_64.tar.xz
+wget
+https://downloads.openwrt.org/releases/22.03.5/targets/ath79/generic/openwrt-sdk-22.03.5-ath79-generic_gcc-11.2.0_musl.Linux-x86_64.tar.xz
 tar -xf openwrt-sdk-*.tar.xz
 cd openwrt-sdk-*
 
@@ -183,7 +184,8 @@ config captive_monitor 'config'
     option wifi_logical 'wwan'
     option monitor_interval '60'
     option ping_servers '1.1.1.1 8.8.8.8 9.9.9.9'
-    option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
+option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204
+http://detectportal.firefox.com/success.txt'
     option enable_syslog '1'
 ```
 
@@ -406,7 +408,8 @@ cat > "docs/releases/v$NEW_VERSION.md" <<EOF
 
 ### Prebuilt Packages
 \`\`\`bash
-wget https://github.com/nagual2/openwrt-captive-monitor/releases/download/v$NEW_VERSION/openwrt-captive-monitor_$NEW_VERSION-1_all.ipk
+wget
+https://github.com/nagual2/openwrt-captive-monitor/releases/download/v$NEW_VERSION/openwrt-captive-monitor_$NEW_VERSION-1_all.ipk
 opkg install openwrt-captive-monitor_$NEW_VERSION-1_all.ipk
 \`\`\`
 
@@ -548,15 +551,18 @@ $(curl -s https://api.github.com/repos/nagual2/openwrt-captive-monitor | jq '.fo
 $(curl -s https://api.github.com/repos/nagual2/openwrt-captive-monitor | jq '.open_issues_count')
 
 #### Closed Issues (Last 30 days)
-$(curl -s "https://api.github.com/repos/nagual2/openwrt-captive-monitor/issues?state=closed&since=$(date -d '30 days ago' -Iseconds | cut -d' ' -f2 | tr -d 'Z')" | jq 'length')
+$(curl -s "https://api.github.com/repos/nagual2/openwrt-captive-monitor/issues?state=closed&since=$(date -d '30 days
+ago' -Iseconds | cut -d' ' -f2 | tr -d 'Z')" | jq 'length')
 
 ## Community Engagement
 
 ### Recent Contributors
-$(curl -s https://api.github.com/repos/nagual2/openwrt-captive-monitor/contributors | jq -r '.[] | "- \(.login)" | head -10)
+$(curl -s https://api.github.com/repos/nagual2/openwrt-captive-monitor/contributors | jq -r '.[] | "- \(.login)" | head
+-10)
 
 ### Recent Issues
-$(curl -s https://api.github.com/repos/nagual2/openwrt-captive-monitor/issues?state=open | jq -r '.[] | "- #[\(.number)]: \(.title)" | head -5')
+$(curl -s https://api.github.com/repos/nagual2/openwrt-captive-monitor/issues?state=open | jq -r '.[] | "-
+#[\(.number)]: \(.title)" | head -5')
 
 ## Recommendations
 
@@ -776,4 +782,5 @@ else
 fi
 ```
 
-This comprehensive package management guide ensures high-quality, reliable packages for the openwrt-captive-monitor project.
+This comprehensive package management guide ensures high-quality, reliable packages for the openwrt-captive-monitor
+project.

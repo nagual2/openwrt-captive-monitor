@@ -534,11 +534,11 @@ echo "All tests passed!"
 ### 1. Test Case Documentation
 
 Each test case should include:
-- **Objective**: What is being tested
-- **Prerequisites**: Required setup
-- **Procedure**: Step-by-step instructions
-- **Expected Results**: What should happen
-- **Validation**: How to verify success
+  - **Objective**: What is being tested
+  - **Prerequisites**: Required setup
+  - **Procedure**: Step-by-step instructions
+  - **Expected Results**: What should happen
+  - **Validation**: How to verify success
 
 ### 2. Test Environment Setup
 
@@ -569,21 +569,21 @@ opkg install openwrt-captive-monitor_*.ipk
 
 ### 1. Coverage Metrics
 
-- **Code Coverage**: Percentage of code tested
-- **Feature Coverage**: Percentage of features tested
-- **Scenario Coverage**: Percentage of use cases tested
+  - **Code Coverage**: Percentage of code tested
+  - **Feature Coverage**: Percentage of features tested
+  - **Scenario Coverage**: Percentage of use cases tested
 
 ### 2. Quality Metrics
 
-- **Test Pass Rate**: Percentage of tests passing
-- **Bug Detection Rate**: Number of bugs found
-- **Regression Rate**: Number of regressions introduced
+  - **Test Pass Rate**: Percentage of tests passing
+  - **Bug Detection Rate**: Number of bugs found
+  - **Regression Rate**: Number of regressions introduced
 
 ### 3. Performance Metrics
 
-- **Resource Usage**: CPU, memory, disk usage
-- **Response Times**: Detection and cleanup times
-- **Throughput**: Clients supported simultaneously
+  - **Resource Usage**: CPU, memory, disk usage
+  - **Response Times**: Detection and cleanup times
+  - **Throughput**: Clients supported simultaneously
 
 ### 4. Reporting
 
@@ -603,30 +603,31 @@ opkg install openwrt-captive-monitor_*.ipk
 
 ### 1. Immediate Actions
 
-- **Stop the build/release process**
-- **Document the failure**
-- **Notify the development team**
-- **Preserve test environment for analysis**
+  - **Stop the build/release process**
+  - **Document the failure**
+  - **Notify the development team**
+  - **Preserve test environment for analysis**
 
 ### 2. Root Cause Analysis
 
-- **Examine test logs**
-- **Reproduce the failure**
-- **Identify the root cause**
-- **Determine fix scope**
+  - **Examine test logs**
+  - **Reproduce the failure**
+  - **Identify the root cause**
+  - **Determine fix scope**
 
 ### 3. Resolution Process
 
-- **Implement the fix**
-- **Verify the fix**
-- **Update tests if needed**
-- **Re-run the test suite**
+  - **Implement the fix**
+  - **Verify the fix**
+  - **Update tests if needed**
+  - **Re-run the test suite**
 
 ### 4. Prevention Measures
 
-- **Update test cases**
-- **Add regression tests**
-- **Improve documentation**
-- **Review development processes**
+  - **Update test cases**
+  - **Add regression tests**
+  - **Improve documentation**
+  - **Review development processes**
 
-This comprehensive test plan ensures the reliability, security, and performance of openwrt-captive-monitor across diverse environments and use cases.
+This comprehensive test plan ensures the reliability, security, and performance of openwrt-captive-monitor across
+diverse environments and use cases.

@@ -16,7 +16,8 @@ This guide covers the different ways to install **openwrt-captive-monitor** on y
 
 ### Step 1: Download Package
 
-Visit the [GitHub Releases](https://github.com/nagual2/openwrt-captive-monitor/releases) page and download the latest `.ipk` file for your architecture.
+Visit the [GitHub Releases](https://github.com/nagual2/openwrt-captive-monitor/releases) page and download the latest
+`.ipk` file for your architecture.
 
 ```bash
 ## Example for the latest release
@@ -65,7 +66,8 @@ EOSSH
 
 ```bash
 ## Example for OpenWrt 22.03.5, ath79 target
-wget https://downloads.openwrt.org/releases/22.03.5/targets/ath79/generic/openwrt-sdk-22.03.5-ath79-generic_gcc-11.2.0_musl.Linux-x86_64.tar.xz
+wget
+https://downloads.openwrt.org/releases/22.03.5/targets/ath79/generic/openwrt-sdk-22.03.5-ath79-generic_gcc-11.2.0_musl.Linux-x86_64.tar.xz
 tar -xf openwrt-sdk-*.tar.xz
 cd openwrt-sdk-*
 ```
@@ -199,7 +201,8 @@ EOSSH
 ```bash
 ssh root@192.168.1.1 <<'EOSSH'
 ## Download and install new version
-wget -O /tmp/new-package.ipk "https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_*.ipk"
+wget -O /tmp/new-package.ipk
+"https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_*.ipk"
 opkg install /tmp/new-package.ipk
 
 ## Restart service
@@ -209,7 +212,8 @@ EOSSH
 
 ### From Source
 
-Follow the same build process as above, then install the new package. The upgrade process preserves your UCI configuration.
+Follow the same build process as above, then install the new package. The upgrade process preserves your UCI
+configuration.
 
 ---
 

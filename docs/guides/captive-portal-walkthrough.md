@@ -34,7 +34,8 @@ config captive_monitor 'config'
     option wifi_logical 'wwan'
     option monitor_interval '30'          # Check every 30 seconds
     option ping_servers '1.1.1.1 8.8.8.8'
-    option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
+option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204
+http://detectportal.firefox.com/success.txt'
     option enable_syslog '1'
 ```
 
@@ -170,7 +171,8 @@ iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
 ## Expected rules:
 ## Chain CAPTIVE_HTTP_REDIRECT (1 references)
 ## pkts bytes target     prot opt in     out     source               destination
-##    0     0 DNAT       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80 to:192.168.1.1:8080
+##    0     0 DNAT       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp dpt:80
+to:192.168.1.1:8080
 
 ## Check PREROUTING chain
 iptables -t nat -L PREROUTING -n -v | grep CAPTIVE
@@ -331,7 +333,8 @@ Some networks have multiple captive portal URLs:
 
 ```bash
 ## Configure multiple detection URLs
-uci set captive-monitor.config.captive_check_urls='http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt http://captive.apple.com/hotspot-detect.html'
+uci set captive-monitor.config.captive_check_urls='http://connectivitycheck.gstatic.com/generate_204
+http://detectportal.firefox.com/success.txt http://captive.apple.com/hotspot-detect.html'
 
 ## Monitor detection process
 logread | grep captive-monitor
@@ -489,11 +492,12 @@ rm -f /tmp/dnsmasq.d/captive_intercept.conf
 
 ## 🎉 Conclusion
 
-This walkthrough demonstrates the complete captive portal detection and handling process. The **openwrt-captive-monitor** service provides:
+This walkthrough demonstrates the complete captive portal detection and handling process. The
+**openwrt-captive-monitor** service provides:
 
-- **Automatic Detection**: Identifies captive portals without user intervention
-- **Seamless Interception**: Redirects clients to authentication portals
-- **Automatic Cleanup**: Restores normal operation when authenticated
-- **Robust Operation**: Handles edge cases and network changes gracefully
+  - **Automatic Detection**: Identifies captive portals without user intervention
+  - **Seamless Interception**: Redirects clients to authentication portals
+  - **Automatic Cleanup**: Restores normal operation when authenticated
+  - **Robust Operation**: Handles edge cases and network changes gracefully
 
 For more advanced configuration options, see the [Advanced Configuration Guide](../configuration/advanced-config.md).

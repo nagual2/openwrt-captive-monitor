@@ -1,10 +1,13 @@
 # Contributing to openwrt-captive-monitor
 
-Thanks for taking the time to contribute! This project keeps OpenWrt routers online by recovering from captive portals and flaky uplinks, so changes need to be safe, reviewable, and well documented.
+Thanks for taking the time to contribute! This project keeps OpenWrt routers online by recovering from captive portals
+and flaky uplinks, so changes need to be safe, reviewable, and well documented.
 
-Please read our [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to understand the expectations for community participation.
+Please read our [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to understand the expectations for community
+participation.
 
-The repository follows a **trunk-based** workflow centred on the `main` branch. Short-lived topic branches, small pull requests, and fast feedback from CI keep releases predictable.
+The repository follows a **trunk-based** workflow centred on the `main` branch. Short-lived topic branches, small pull
+requests, and fast feedback from CI keep releases predictable.
 
 ---
 
@@ -17,13 +20,20 @@ The repository follows a **trunk-based** workflow centred on the `main` branch. 
    - `chore/<short-description>` for tooling, CI, or maintenance work
    - `docs/<short-description>` for documentation-only updates
    - `hotfix/<short-description>` for urgent production fixes that must land ahead of the regular release cadence
-   Refer to [`BRANCHES_AND_MERGE_POLICY.md`](./BRANCHES_AND_MERGE_POLICY.md) for the latest merge sequencing, branch protection checklist, and cleanup tasks.
-3. Prefer incremental pull requests (aim for < ~300 lines of net change). Split large efforts into multiple PRs that can be reviewed independently.
-4. Avoid long-lived release branches. If you need to ship a hotfix, branch from the appropriate tag, cherry-pick the fix, release, and merge the change back into `main` immediately afterwards.
+Refer to [`BRANCHES_AND_MERGE_POLICY.md`](./BRANCHES_AND_MERGE_POLICY.md) for the latest merge sequencing, branch
+protection checklist, and cleanup tasks.
+3. Prefer incremental pull requests (aim for < ~300 lines of net change). Split large efforts into multiple PRs that
+can be reviewed independently.
+4. Avoid long-lived release branches. If you need to ship a hotfix, branch from the appropriate tag, cherry-pick the
+fix, release, and merge the change back into `main` immediately afterwards.
 
 ### Why trunk-based over GitFlow?
 
-Trunk-based development keeps the integration surface small, which is important for shell tooling that is hard to test exhaustively. GitFlow introduces long-running `develop` and release branches that often diverge and amplify merge conflicts. Unless you are maintaining multiple historical versions in parallel, GitFlow’s additional ceremony rarely pays off here. If the project eventually needs LTS maintenance, treat it as an exception: cut a release branch, backport critical changes, and retire the branch after support ends.
+Trunk-based development keeps the integration surface small, which is important for shell tooling that is hard to test
+exhaustively. GitFlow introduces long-running `develop` and release branches that often diverge and amplify merge
+conflicts. Unless you are maintaining multiple historical versions in parallel, GitFlow’s additional ceremony rarely
+pays off here. If the project eventually needs LTS maintenance, treat it as an exception: cut a release branch,
+backport critical changes, and retire the branch after support ends.
 
 ---
 
@@ -39,7 +49,8 @@ Trunk-based development keeps the integration surface small, which is important 
     go install github.com/rhysd/actionlint/cmd/actionlint@latest
     ```
 2. Create a topic branch following the naming rules above.
-3. Make your changes and keep commits focused. Conventional Commit prefixes (`feat(wifi): …`, `fix(ci): …`, etc.) match the existing history and feed changelog automation.
+3. Make your changes and keep commits focused. Conventional Commit prefixes (`feat(wifi): …`, `fix(ci): …`, etc.)
+match the existing history and feed changelog automation.
 4. Before pushing:
     ```bash
     # Shell formatting
@@ -62,10 +73,12 @@ Trunk-based development keeps the integration surface small, which is important 
     # Action linting (optional)
     actionlint .github/workflows/*.yml
     ```
-5. Run any additional smoke tests that apply (e.g. running the script in `oneshot` mode, packaging via `scripts/build_ipk.sh`, or deploying to a test router).
+5. Run any additional smoke tests that apply (e.g. running the script in `oneshot` mode, packaging via
+`scripts/build_ipk.sh`, or deploying to a test router).
 6. Rebase on top of the latest `main` and resolve conflicts locally before opening the PR.
 
-> Tip: use `git rebase --onto` if you need to drop unrelated commits that slipped into older branches. Keeping branches short-lived eliminates most painful rebases.
+> Tip: use `git rebase --onto` if you need to drop unrelated commits that slipped into older branches. Keeping branches
+short-lived eliminates most painful rebases.
 
 ---
 
@@ -73,12 +86,14 @@ Trunk-based development keeps the integration surface small, which is important 
 
 - Fill out the PR template. It captures the summary, testing evidence, and review checklist all in one place.
 - Link the relevant issue or explain the motivation in the summary so that reviewers have context.
-- Request at least one reviewer (see [`CODEOWNERS`](./.github/CODEOWNERS)) and wait for an approval before merging. Self-approval is reserved for docs-only or CI-only changes with no risk.
+- Request at least one reviewer (see [`CODEOWNERS`](./.github/CODEOWNERS)) and wait for an approval before merging.
+Self-approval is reserved for docs-only or CI-only changes with no risk.
 - Ensure the GitHub Actions jobs finish green:
   - `lint (shfmt)`, `lint (shellcheck)`, `lint (markdownlint)`, `lint (actionlint)`
   - `test`
   - `build (generic)` (or other relevant matrix targets when packaging files change)
-- Squash-and-merge is the default. If a branch contains several independently useful commits, mention it explicitly in the PR so the reviewer can choose "Rebase and merge" instead.
+- Squash-and-merge is the default. If a branch contains several independently useful commits, mention it explicitly in
+the PR so the reviewer can choose "Rebase and merge" instead.
 
 ---
 
@@ -108,9 +123,12 @@ These checks keep the branch healthy and ensure contributors get feedback quickl
 
 ## 5. Issue triage & support
 
-- Use the GitHub Issue Forms to provide structured bug reports, feature requests, support questions, and documentation issues. The forms guide you through providing the necessary information for effective triage.
-- For detailed guidance on templates and label usage, see [docs/triage/TEMPLATES_AND_LABELS.md](./docs/triage/TEMPLATES_AND_LABELS.md).
-- Security problems should go through the private disclosure channel listed in our [Security Policy](.github/SECURITY.md) or GitHub security advisories.
+- Use the GitHub Issue Forms to provide structured bug reports, feature requests, support questions, and documentation
+issues. The forms guide you through providing the necessary information for effective triage.
+- For detailed guidance on templates and label usage, see
+[docs/triage/TEMPLATES_AND_LABELS.md](./docs/triage/TEMPLATES_AND_LABELS.md).
+- Security problems should go through the private disclosure channel listed in our [Security
+Policy](.github/SECURITY.md) or GitHub security advisories.
 - Tag issues with `good-first-issue` when they have a clear scope and minimal risk so newcomers can help.
 
 ---
@@ -131,7 +149,8 @@ These checks keep the branch healthy and ensure contributors get feedback quickl
    Replace `v0.1.3` with the new tag when cutting subsequent releases.
 4. Publish the generated `.ipk` artifacts and update the GitHub Release notes.
 
-If a regression requires a hotfix, branch from the affected tag, apply the fix, build/test, release, and cherry-pick the change back into `main` immediately.
+If a regression requires a hotfix, branch from the affected tag, apply the fix, build/test, release, and cherry-pick
+the change back into `main` immediately.
 
 ---
 
@@ -139,7 +158,8 @@ If a regression requires a hotfix, branch from the affected tag, apply the fix, 
 
 - Support options and guidance are available in our [Support Guide](.github/SUPPORT.md)
 - Discussions: open a GitHub Discussion or issue with the `question` label.
-- Real-world testing: share reproducible steps and logs in the PR or issue so maintainers can validate on similar hardware.
+- Real-world testing: share reproducible steps and logs in the PR or issue so maintainers can validate on similar
+hardware.
 - Documentation updates: if anything in this guide is unclear, submit a PR – meta-contributions are welcome!
 
 Thanks again for helping keep captive portal recovery on OpenWrt routers robust and user friendly.

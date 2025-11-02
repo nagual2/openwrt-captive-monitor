@@ -1,16 +1,17 @@
 # Oneshot Recovery Mode
 
-Complete guide to using **openwrt-captive-monitor** in oneshot mode for manual connectivity recovery and scheduled operations.
+Complete guide to using **openwrt-captive-monitor** in oneshot mode for manual connectivity recovery and scheduled
+operations.
 
 ## 🎯 What is Oneshot Mode?
 
 Oneshot mode performs a single connectivity check and exits, making it ideal for:
 
-- **Manual troubleshooting** and diagnostics
-- **Scheduled execution** via cron or other automation
-- **Integration** with custom scripts and workflows
-- **Testing** configuration changes
-- **Resource-constrained** environments where continuous monitoring isn't needed
+  - **Manual troubleshooting** and diagnostics
+  - **Scheduled execution** via cron or other automation
+  - **Integration** with custom scripts and workflows
+  - **Testing** configuration changes
+  - **Resource-constrained** environments where continuous monitoring isn't needed
 
 ---
 
@@ -542,4 +543,5 @@ time /usr/sbin/openwrt_captive_monitor --oneshot
 - [Captive Portal Walkthrough](captive-portal-walkthrough.md) - Complete captive portal handling example
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions
 
-Oneshot mode provides flexibility for manual operations, scheduled tasks, and custom integrations while maintaining the robust connectivity checking and captive portal detection capabilities of the full monitor mode.
+Oneshot mode provides flexibility for manual operations, scheduled tasks, and custom integrations while maintaining the
+robust connectivity checking and captive portal detection capabilities of the full monitor mode.

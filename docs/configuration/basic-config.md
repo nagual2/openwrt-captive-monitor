@@ -20,8 +20,8 @@ config captive_monitor 'config'
     option mode 'monitor'    # 'monitor' (default) or 'oneshot'
 ```
 
-- **monitor**: Continuous monitoring with specified interval
-- **oneshot**: Single check and exit (useful for cron-based execution)
+  - **monitor**: Continuous monitoring with specified interval
+  - **oneshot**: Single check and exit (useful for cron-based execution)
 
 ### WiFi Interface Configuration
 
@@ -43,7 +43,8 @@ config captive_monitor 'config'
 
 ```uci
 config captive_monitor 'config'
-    option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
+option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204
+http://detectportal.firefox.com/success.txt'
 ```
 
 ### Logging
@@ -193,7 +194,8 @@ config captive_monitor 'config'
     option mode='monitor'
     option monitor_interval='45'
     option ping_servers='1.1.1.1 8.8.8.8 208.67.222.222'
-    option captive_check_urls='http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt http://captive.apple.com/hotspot-detect.html'
+option captive_check_urls='http://connectivitycheck.gstatic.com/generate_204
+http://detectportal.firefox.com/success.txt http://captive.apple.com/hotspot-detect.html'
 ```
 
 ### Enterprise Environment
