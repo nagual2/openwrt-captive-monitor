@@ -32,10 +32,7 @@ HTTPD_PIDFILE="/tmp/captive_httpd.pid"
 
 TOTAL_TESTS=0
 PASSED_TESTS=0
-<<<<<<< HEAD
-=======
 LAST_STATUS=0
->>>>>>> origin/chore-audit-merge-active-branches
 LAST_OUTPUT=""
 
 reset_logs() {
@@ -148,10 +145,7 @@ run_with_env() {
         "$runner" "$@" > "$outfile" 2>&1
     )
     status=$?
-<<<<<<< HEAD
-=======
     LAST_STATUS=$status
->>>>>>> origin/chore-audit-merge-active-branches
     if [ -f "$outfile" ]; then
         LAST_OUTPUT=$(cat "$outfile" 2> /dev/null || printf '')
     else
