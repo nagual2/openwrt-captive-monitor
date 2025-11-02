@@ -447,21 +447,13 @@ This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LI
 
 ---
 
-<<<<<<< HEAD
-=======
 <div align="center">
-
->>>>>>> origin/chore-audit-merge-active-branches
 **[📖 Full Documentation](https://nagual2.github.io/openwrt-captive-monitor/)** •
 **[🚀 Quick Start](docs/usage/quick-start.md)** •
 **[⚙️ Configuration](docs/configuration/basic-config.md)** •
 **[🐛 Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)** •
 **[💬 Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)**
 
-<<<<<<< HEAD
-Made with ❤️ for the OpenWrt community
-=======
 Made with ❤️ for the OpenWrt community
 
 </div>
->>>>>>> origin/chore-audit-merge-active-branches

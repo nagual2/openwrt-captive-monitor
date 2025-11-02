@@ -27,3 +27,4 @@ __pycache__/
 # MkDocs
 .mkdocs/
 mkdocs.yml.local
+how --*
