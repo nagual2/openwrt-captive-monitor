@@ -28,24 +28,35 @@ The GitHub Actions workflow **Build OpenWrt packages** now:
   - `Packages`
   - `Packages.gz`
 
-Every push or pull request targeting `main` produces a verified feed under `dist/opkg/<arch>/` containing:
+Every push or pull request targeting `main` produces a verified feed under
+`dist/opkg/<arch>/` containing:
 
 - `openwrt-captive-monitor_<version>-<release>_<arch>.ipk`
 - `Packages`
 - `Packages.gz`
 
-Tag pushes reuse the same workflow to upload the artifacts directly to the GitHub Release via `softprops/action-gh-release`. Grab the run URL or artifact log snippet for the release notes so you can demonstrate that the binaries were attached successfully.
+Tag pushes reuse the same workflow to upload the artifacts directly to the
+GitHub Release via `softprops/action-gh-release`. Grab the run URL or artifact
+log snippet for the release notes to demonstrate successful binary attachment.
 
 ### Option A – quick packager
 
-When the repository only ships shell scripts (no native binaries) the helper
+When the repository only ships shell scripts (no native binaries), the helper
 below generates the `.ipk` plus a ready-to-serve opkg feed in one go:
 
 ```bash
 scripts/build_ipk.sh --arch mips_24kc          # pick the same arch as target
 ```
 
-Install `binutils`, `busybox`, `gzip`, `pigz`, `tar`, and `xz-utils` before invoking the helper; it aborts early with a descriptive error message if any tool is missing.
+Install these dependencies before running the helper:
+- `binutils`
+- `busybox`
+- `gzip`
+- `pigz`
+- `tar`
+- `xz-utils`
+
+The helper will abort early with a descriptive error if any tool is missing.
 
 - The command reads `PKG_VERSION`/`PKG_RELEASE` from
   `package/openwrt-captive-monitor/Makefile`.
