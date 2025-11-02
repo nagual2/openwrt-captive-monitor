@@ -7,13 +7,9 @@
 [![GitHub release](https://img.shields.io/github/release/nagual2/openwrt-captive-monitor.svg)](https://github.com/nagual2/openwrt-captive-monitor/releases)
 [![GitHub stars](https://img.shields.io/github/stars/nagual2/openwrt-captive-monitor.svg?style=social)](https://github.com/nagual2/openwrt-captive-monitor/stargazers)
 
-<<<<<<< HEAD
 A lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily
 intercepts LAN DNS/HTTP traffic so clients can authenticate. Once internet access is restored,
 the helper automatically cleans up dnsmasq overrides, HTTP redirects, and NAT rules.
-=======
-A lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily intercepts LAN DNS/HTTP traffic so clients can authenticate. Once internet access is restored, the helper automatically cleans up dnsmasq overrides, HTTP redirects, and NAT rules.
->>>>>>> origin/chore-audit-merge-active-branches
 
 ## ✨ Features
 
@@ -28,11 +24,7 @@ A lightweight OpenWrt helper that monitors WAN connectivity, detects captive por
 
 ## 🏗️ Architecture Overview
 
-<<<<<<< HEAD
 ```text
-=======
-```
->>>>>>> origin/chore-audit-merge-active-branches
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Client       │    │   Router       │    │   External      │
 │   Devices      │◄──►│  (OpenWrt +    │◄──►│   Network       │
@@ -42,10 +34,6 @@ A lightweight OpenWrt helper that monitors WAN connectivity, detects captive por
 ```
 
 The service integrates seamlessly with OpenWrt's networking stack:
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/chore-audit-merge-active-branches
 - **dnsmasq** - DNS hijacking for client redirection
 - **iptables/nftables** - Traffic interception and redirection
 - **procd** - Service management and monitoring
@@ -197,19 +185,11 @@ make package/openwrt-captive-monitor/compile V=s
 ### Dependencies
 
 **Runtime dependencies:**
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/chore-audit-merge-active-branches
 - `dnsmasq` - DNS and DHCP server
 - `curl` - HTTP probes and captive detection
 - `iptables` or `nftables` - Traffic redirection
 
 **Build dependencies:**
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/chore-audit-merge-active-branches
 - `binutils`, `busybox`, `gzip`, `pigz`, `tar`, `xz-utils`
 
 ## 🔧 Configuration
@@ -286,10 +266,6 @@ Single check and exit, ideal for cron:
 ### Monitoring
 
 **Service Status:**
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/chore-audit-merge-active-branches
 ```bash
 # Check if running
 ps aux | grep openwrt_captive_monitor
@@ -302,10 +278,6 @@ logread | grep captive-monitor | tail -20
 ```
 
 **Debug Mode:**
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/chore-audit-merge-active-branches
 ```bash
 # Verbose output
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose
@@ -320,10 +292,6 @@ export CAPTIVE_DEBUG="1"
 ### Common Issues
 
 **Service won't start:**
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/chore-audit-merge-active-branches
 ```bash
 # Check configuration
 uci show captive-monitor
@@ -336,10 +304,6 @@ ls -la /usr/sbin/openwrt_captive_monitor
 ```
 
 **Captive portal not detected:**
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/chore-audit-merge-active-branches
 ```bash
 # Test detection URLs manually
 curl -I http://connectivitycheck.gstatic.com/generate_204
@@ -350,10 +314,6 @@ uci add_list captive-monitor.config.captive_check_urls='http://your-portal.com/d
 ```
 
 **Redirection not working:**
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/chore-audit-merge-active-branches
 ```bash
 # Check firewall rules
 iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
