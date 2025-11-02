@@ -106,30 +106,30 @@ config captive_monitor 'config'
 ### Method 1: UCI Commands
 
 ```bash
-# Set configuration
+## Set configuration
 uci set captive-monitor.config.enabled='1'
 uci set captive-monitor.config.mode='monitor'
 uci set captive-monitor.config.monitor_interval='60'
 uci commit captive-monitor
 
-# Restart service
+## Restart service
 /etc/init.d/captive-monitor restart
 ```
 
 ### Method 2: Edit Configuration File
 
 ```bash
-# Edit the configuration file
+## Edit the configuration file
 vi /etc/config/captive-monitor
 
-# Apply changes
+## Apply changes
 /etc/init.d/captive-monitor restart
 ```
 
 ### Method 3: Environment Variables (Temporary)
 
 ```bash
-# Override configuration for single run
+## Override configuration for single run
 export MONITOR_INTERVAL=30
 /usr/sbin/openwrt_captive_monitor --oneshot
 ```
@@ -216,30 +216,30 @@ config captive_monitor 'config'
 ### Check Current Configuration
 
 ```bash
-# Show current configuration
+## Show current configuration
 uci show captive-monitor
 
-# Validate configuration syntax
+## Validate configuration syntax
 uci -c /tmp validate captive-monitor
 ```
 
 ### Test Configuration
 
 ```bash
-# Test with oneshot mode
+## Test with oneshot mode
 /usr/sbin/openwrt_captive_monitor --oneshot
 
-# Check logs for errors
+## Check logs for errors
 logread | grep captive-monitor | tail -20
 ```
 
 ### Verify Service Status
 
 ```bash
-# Check if service is running
+## Check if service is running
 /etc/init.d/captive-monitor status
 
-# Check recent logs
+## Check recent logs
 logread | grep captive-monitor | tail -10
 ```
 
@@ -279,41 +279,41 @@ uci commit captive-monitor
 ### Configuration Not Applied
 
 ```bash
-# Check if configuration is valid
+## Check if configuration is valid
 uci show captive-monitor
 
-# Force reload
+## Force reload
 uci commit captive-monitor
 /etc/init.d/captive-monitor restart
 
-# Check for syntax errors
+## Check for syntax errors
 logread | grep captive-monitor
 ```
 
 ### Service Won't Start
 
 ```bash
-# Check if enabled
+## Check if enabled
 uci get captive-monitor.config.enabled
 
-# Check configuration syntax
+## Check configuration syntax
 uci -c /tmp validate captive-monitor
 
-# Manual test
+## Manual test
 /usr/sbin/openwrt_captive_monitor --help
 ```
 
 ### Interface Detection Issues
 
 ```bash
-# Check available interfaces
+## Check available interfaces
 ip link show
 
-# Check network status
+## Check network status
 ifstatus wan
 ifstatus lan
 
-# Manually specify if needed
+## Manually specify if needed
 uci set captive-monitor.config.lan_interface='br-lan'
 uci commit captive-monitor
 ```

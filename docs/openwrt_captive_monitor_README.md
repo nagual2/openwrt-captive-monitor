@@ -19,7 +19,7 @@
 ### 1. Через opkg (рекомендуется)
 
 ```bash
-# Скопировать пакет на роутер и установить
+## Скопировать пакет на роутер и установить
 scp openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 ```
@@ -45,10 +45,10 @@ opkg remove openwrt-captive-monitor
 ### 2. Ручная установка (альтернатива)
 
 ```bash
-# Скопировать скрипт на OpenWRT роутер
+## Скопировать скрипт на OpenWRT роутер
 scp package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor root@192.168.1.1:/usr/sbin/
 
-# Сделать исполняемым
+## Сделать исполняемым
 ssh root@192.168.1.1 "chmod +x /usr/sbin/openwrt_captive_monitor"
 ```
 
@@ -85,7 +85,7 @@ chmod +x /etc/init.d/captive-monitor
 Добавьте в `/etc/crontabs/root`:
 
 ```bash
-# Проверка каждые 2 минуты
+## Проверка каждые 2 минуты
 */2 * * * * /usr/sbin/openwrt_captive_monitor --oneshot
 ```
 
@@ -162,13 +162,13 @@ export REQUESTED_FIREWALL_BACKEND="iptables"  # Принудительный в�
 ### Параметры командной строки
 
 ```bash
-# Однократная проверка
+## Однократная проверка
 openwrt_captive_monitor --oneshot
 
-# Постоянный мониторинг
+## Постоянный мониторинг
 openwrt_captive_monitor --monitor
 
-# Кастомные параметры
+## Кастомные параметры
 openwrt_captive_monitor --monitor \
   --interface wlan0 \
   --logical wan \
@@ -180,12 +180,12 @@ openwrt_captive_monitor --monitor \
 Секция `КОНФИГУРАЦИЯ` теперь разделена на значения по умолчанию (`DEFAULT_*`) и присваивания, которые можно переопределить через окружение:
 
 ```bash
-# Значения по умолчанию
+## Значения по умолчанию
 DEFAULT_PING_SERVERS="1.1.1.1 8.8.8.8 9.9.9.9"
 DEFAULT_INTERNET_CHECK_RETRIES=3
 DEFAULT_MONITOR_INTERVAL=60
 
-# Применение значений с поддержкой окружения
+## Применение значений с поддержкой окружения
 PING_SERVERS="${PING_SERVERS:-$DEFAULT_PING_SERVERS}"
 INTERNET_CHECK_RETRIES="${INTERNET_CHECK_RETRIES:-$DEFAULT_INTERNET_CHECK_RETRIES}"
 MONITOR_INTERVAL="${MONITOR_INTERVAL:-$DEFAULT_MONITOR_INTERVAL}"
@@ -221,16 +221,16 @@ openwrt_captive_monitor --monitor
 ### Примеры
 
 ```bash
-# Проверка с логированием
+## Проверка с логированием
 openwrt_captive_monitor --oneshot 2>&1 | tee /tmp/captive.log
 
-# Мониторинг в фоне
+## Мониторинг в фоне
 openwrt_captive_monitor --monitor &
 
-# Мониторинг с кастомным интервалом
+## Мониторинг с кастомным интервалом
 openwrt_captive_monitor --monitor --interval 30
 
-# Проверка конкретного интерфейса
+## Проверка конкретного интерфейса
 openwrt_captive_monitor --oneshot --interface wlan0 --logical wan
 ```
 
@@ -239,57 +239,57 @@ openwrt_captive_monitor --oneshot --interface wlan0 --logical wan
 ### Проверка логов
 
 ```bash
-# Системные логи
+## Системные логи
 logread | grep captive-monitor
 
-# Последние 50 записей
+## Последние 50 записей
 logread | grep captive-monitor | tail -50
 
-# Мониторинг в реальном времени
+## Мониторинг в реальном времени
 logread -f | grep captive-monitor
 ```
 
 ### Проверка состояния
 
 ```bash
-# Проверка интерфейса
+## Проверка интерфейса
 ip link show phy1-sta0
 ip addr show phy1-sta0
 
-# Проверка шлюза
+## Проверка шлюза
 ip route show dev phy1-sta0
 
-# Проверка правил iptables
+## Проверка правил iptables
 iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
 
-# Проверка всех редиректов
+## Проверка всех редиректов
 iptables -t nat -L PREROUTING -n -v | grep CAPTIVE_HTTP
 ```
 
 ### Проверка DNS spoofing
 
 ```bash
-# Проверка конфигурации dnsmasq
+## Проверка конфигурации dnsmasq
 cat /tmp/dnsmasq.d/captive_intercept.conf
 
-# Проверка работы DNS
+## Проверка работы DNS
 nslookup example.com
 nslookup portal.example.com
 
-# Большинство доменов должны возвращаться с IP LAN роутера; домен портала — с реальным IP
+## Большинство доменов должны возвращаться с IP LAN роутера; домен портала — с реальным IP
 ```
 
 ### Ручное тестирование
 
 ```bash
-# Проверка ping
+## Проверка ping
 ping -c 1 -W 2 8.8.8.8
 
-# Проверка шлюза
+## Проверка шлюза
 GATEWAY=$(ip route show dev phy1-sta0 | grep default | awk '{print $3}')
 ping -c 1 -W 2 $GATEWAY
 
-# Проверка DNS
+## Проверка DNS
 nslookup google.com
 dig google.com
 ```
@@ -299,45 +299,45 @@ dig google.com
 ### Проблема: Скрипт не запускается
 
 ```bash
-# Проверка прав
+## Проверка прав
 ls -la /usr/sbin/openwrt_captive_monitor
 
-# Должно быть: -rwxr-xr-x
+## Должно быть: -rwxr-xr-x
 chmod +x /usr/sbin/openwrt_captive_monitor
 
-# Проверка shebang
+## Проверка shebang
 head -1 /usr/sbin/openwrt_captive_monitor
-# Должно быть: #!/bin/sh
+## Должно быть: #!/bin/sh
 ```
 
 ### Проблема: WiFi не перезапускается
 
 ```bash
-# Проверка существования интерфейса
+## Проверка существования интерфейса
 ip link show phy1-sta0
 
-# Проверка логического интерфейса
+## Проверка логического интерфейса
 ifstatus wwan
 
-# Ручной перезапуск
+## Ручной перезапуск
 ifdown wwan && sleep 2 && ifup wwan
 ```
 
 ### Проблема: Редирект не работает
 
 ```bash
-# Проверка модулей iptables
+## Проверка модулей iptables
 lsmod | grep iptable_nat
 lsmod | grep nf_nat
 
-# Загрузка модулей (если нужно)
+## Загрузка модулей (если нужно)
 modprobe iptable_nat
 modprobe nf_nat
 
-# Проверка цепочки перехвата
+## Проверка цепочки перехвата
 iptables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v
 
-# Ручная установка перехвата
+## Ручная установка перехвата
 LAN_IF=br-lan
 LAN_IP=$(ip -4 addr show dev "$LAN_IF" | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
 PORTAL_URL="http://example.portal/login"
@@ -363,7 +363,7 @@ iptables -t nat -F CAPTIVE_HTTP_REDIRECT
 iptables -t nat -A CAPTIVE_HTTP_REDIRECT -p tcp --dport 80 -j DNAT --to-destination $LAN_IP:8080
 iptables -t nat -I PREROUTING 1 -i "$LAN_IF" -p tcp --dport 80 -j CAPTIVE_HTTP_REDIRECT
 
-# Очистка после проверки
+## Очистка после проверки
 kill $HTTPD_PID
 rm -rf /tmp/captive_debug
 rm -f /tmp/dnsmasq.d/captive_intercept.conf
@@ -376,36 +376,36 @@ iptables -t nat -X CAPTIVE_HTTP_REDIRECT
 ### Проблема: DNS не резолвится
 
 ```bash
-# Проверка dnsmasq
+## Проверка dnsmasq
 /etc/init.d/dnsmasq status
 
-# Перезапуск dnsmasq
+## Перезапуск dnsmasq
 /etc/init.d/dnsmasq restart
 
-# Проверка конфигурации
+## Проверка конфигурации
 cat /tmp/dnsmasq.d/captive_intercept.conf
 
-# Проверка DNS запросов
+## Проверка DNS запросов
 nslookup google.com
 dig google.com
 
-# Проверка логов dnsmasq
+## Проверка логов dnsmasq
 logread | grep dnsmasq
 ```
 
 ### Проблема: Интернет не восстанавливается
 
 ```bash
-# Проверка DNS
+## Проверка DNS
 cat /etc/resolv.conf
 
-# Проверка маршрутов
+## Проверка маршрутов
 ip route show
 
-# Проверка firewall
+## Проверка firewall
 iptables -L -n -v
 
-# Проверка connectivity check URLs
+## Проверка connectivity check URLs
 curl -I http://connectivitycheck.gstatic.com/generate_204
 curl -I http://captive.apple.com/hotspot-detect.html
 ```
@@ -415,7 +415,7 @@ curl -I http://captive.apple.com/hotspot-detect.html
 Скрипт можно интегрировать с вашим Python проектом:
 
 ```bash
-# Вызов из Python
+## Вызов из Python
 import subprocess
 
 result = subprocess.run(

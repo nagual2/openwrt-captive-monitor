@@ -15,13 +15,13 @@
 
 ### How to Build Locally
 ```bash
-# Build the package
+## Build the package
 ./scripts/build_ipk.sh
 
-# Output will be in:
-# dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk
-# dist/opkg/all/Packages
-# dist/opkg/all/Packages.gz
+## Output will be in:
+## dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk
+## dist/opkg/all/Packages
+## dist/opkg/all/Packages.gz
 ```
 
 ## GitHub Actions Artifacts
@@ -123,18 +123,18 @@ Description: Captive portal connectivity monitor and auto-redirect helper
 git clone https://github.com/nagual2/openwrt-captive-monitor.git
 cd openwrt-captive-monitor
 ./scripts/build_ipk.sh
-# Package will be in: dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk
+## Package will be in: dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk
 ```
 
 ### Package Installation on OpenWrt
 ```bash
-# Transfer the .ipk file to your OpenWrt device
+## Transfer the .ipk file to your OpenWrt device
 scp openwrt-captive-monitor_0.1.3-1_all.ipk root@192.168.1.1:/tmp/
 
-# Install the package
+## Install the package
 opkg install /tmp/openwrt-captive-monitor_0.1.3-1_all.ipk
 
-# Configure and enable
+## Configure and enable
 uci set captive-monitor.@monitor[0].enabled='1'
 uci commit captive-monitor
 /etc/init.d/captive-monitor enable

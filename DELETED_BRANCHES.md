@@ -61,12 +61,12 @@
 ## Cleanup Commands Used
 
 ```bash
-# Deleted merged branches
+## Deleted merged branches
 git push origin --delete fix-release-please-permissions
 git push origin --delete cleanup/remove-non-openwrt-deps-ci-scripts
 git push origin --delete fix-github-actions-tests-add-semver-changelog
 
-# Cleaned up local references
+## Cleaned up local references
 git fetch --all --prune
 git remote prune origin
 ```

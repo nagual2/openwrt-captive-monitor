@@ -96,7 +96,7 @@ This indicates that the Release Please workflow may have partially failed or not
 
 ### For Immediate Fix:
 ```bash
-# Fix version inconsistencies on main branch
+## Fix version inconsistencies on main branch
 echo "1.0.0" > VERSION
 sed -i 's/^PKG_VERSION:=.*/PKG_VERSION:=1.0.0/' package/openwrt-captive-monitor/Makefile
 git add VERSION package/openwrt-captive-monitor/Makefile

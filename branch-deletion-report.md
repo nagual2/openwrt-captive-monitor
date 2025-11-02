@@ -53,30 +53,30 @@ The ticket claims these branches are "merged into main" and references PRs #70-7
 ## Commands Executed
 
 ```bash
-# 1. Fetched latest state
+## 1. Fetched latest state
 git fetch --all --prune
 git checkout main
 git pull origin main
 
-# 2. Listed merged branches
+## 2. Listed merged branches
 git branch -r --merged origin/main
-# Result: only origin/main and origin/HEAD -> origin/main
+## Result: only origin/main and origin/HEAD -> origin/main
 
-# 3. Verified each branch status
+## 3. Verified each branch status
 git rev-list --left-right --count origin/main...origin/audit-branches-merged-status
-# Result: 1       160 (1 in main, 160 NOT in main)
+## Result: 1       160 (1 in main, 160 NOT in main)
 
 git rev-list --left-right --count origin/main...origin/chore/remove-label-sync-workflow-e01  
-# Result: 1       157 (1 in main, 157 NOT in main)
+## Result: 1       157 (1 in main, 157 NOT in main)
 
 git rev-list --left-right --count origin/main...origin/fix-ci-yaml-remove-go-use-docker-linters
-# Result: 1       159 (1 in main, 159 NOT in main)
+## Result: 1       159 (1 in main, 159 NOT in main)
 
 git rev-list --left-right --count origin/main...origin/fix-release-please-workflow-failure-e01
-# Result: 1       162 (1 in main, 162 NOT in main)
+## Result: 1       162 (1 in main, 162 NOT in main)
 
 git rev-list --left-right --count origin/main...origin/ci/check-workflows-after-pr-73
-# Result: 1       164 (1 in main, 164 NOT in main)
+## Result: 1       164 (1 in main, 164 NOT in main)
 ```
 
 ## Recommendations
@@ -109,19 +109,19 @@ git rev-list --left-right --count origin/main...origin/ci/check-workflows-after-
 ## Final Verification
 
 ```bash
-# Final branch count
+## Final branch count
 git branch -r | wc -l
-# Result: 8 branches total
+## Result: 8 branches total
 
-# Current branches:
-# - origin/HEAD -> origin/main
-# - origin/audit-branches-merged-status
-# - origin/chore/remove-label-sync-workflow-e01  
-# - origin/ci/check-workflows-after-pr-73
-# - origin/fix-ci-yaml-remove-go-use-docker-linters
-# - origin/fix-release-please-workflow-failure-e01
-# - origin/main (protected)
-# - origin/release-please--branches--main (protected)
+## Current branches:
+## - origin/HEAD -> origin/main
+## - origin/audit-branches-merged-status
+## - origin/chore/remove-label-sync-workflow-e01  
+## - origin/ci/check-workflows-after-pr-73
+## - origin/fix-ci-yaml-remove-go-use-docker-linters
+## - origin/fix-release-please-workflow-failure-e01
+## - origin/main (protected)
+## - origin/release-please--branches--main (protected)
 ```
 
 ## Conclusion

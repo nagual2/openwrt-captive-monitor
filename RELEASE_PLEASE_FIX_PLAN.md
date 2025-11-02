@@ -19,16 +19,16 @@ The Release Please workflow's `update-version` job may have:
 
 ### Step 1: Align all versions to 1.0.0 on main
 ```bash
-# Update VERSION file
+## Update VERSION file
 echo "1.0.0" > VERSION
 
-# Update Makefile PKG_VERSION
+## Update Makefile PKG_VERSION
 sed -i 's/^PKG_VERSION:=.*/PKG_VERSION:=1.0.0/' package/openwrt-captive-monitor/Makefile
 
-# Update release manifest to match
+## Update release manifest to match
 sed -i 's/"\.".*$/".": "1.0.0"/' .release-please-manifest.json
 
-# Commit and push
+## Commit and push
 git add VERSION package/openwrt-captive-monitor/Makefile .release-please-manifest.json
 git commit -m "fix: synchronize all version files to 1.0.0 for release"
 git push
@@ -36,16 +36,16 @@ git push
 
 ### Step 2: Verify Release PR
 ```bash
-# Check the release PR changes
+## Check the release PR changes
 git diff main..origin/release-please--branches--main
 
-# The release PR should now be ready to merge
+## The release PR should now be ready to merge
 ```
 
 ### Step 3: Merge Release PR
 ```bash
-# After verification, merge the release PR via GitHub web interface
-# This will create the v1.0.0 tag and release
+## After verification, merge the release PR via GitHub web interface
+## This will create the v1.0.0 tag and release
 ```
 
 ## Workflow Investigation
@@ -53,7 +53,7 @@ git diff main..origin/release-please--branches--main
 ### Check Release Please Configuration
 The workflow expects to update the Makefile version, but there might be a path issue:
 ```yaml
-# Current workflow line 72:
+## Current workflow line 72:
 sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=$VERSION/" package/openwrt-captive-monitor/Makefile
 ```
 

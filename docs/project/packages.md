@@ -49,37 +49,37 @@ Installed-Size: 12345
 ### Development Build
 
 ```bash
-# Clone repository
+## Clone repository
 git clone https://github.com/nagual2/openwrt-captive-monitor.git
 cd openwrt-captive-monitor
 
-# Install build dependencies
+## Install build dependencies
 sudo apt-get install -y binutils busybox gzip pigz tar xz-utils
 
-# Build package
+## Build package
 scripts/build_ipk.sh --arch all
 
-# Verify package
+## Verify package
 ls -la dist/opkg/all/
 ```
 
 ### OpenWrt SDK Build
 
 ```bash
-# Download and extract OpenWrt SDK
+## Download and extract OpenWrt SDK
 wget https://downloads.openwrt.org/releases/22.03.5/targets/ath79/generic/openwrt-sdk-22.03.5-ath79-generic_gcc-11.2.0_musl.Linux-x86_64.tar.xz
 tar -xf openwrt-sdk-*.tar.xz
 cd openwrt-sdk-*
 
-# Add package source
+## Add package source
 git clone https://github.com/nagual2/openwrt-captive-monitor.git package/openwrt-captive-monitor
 
-# Build package
+## Build package
 ./scripts/feeds update -a
 ./scripts/feeds install openwrt-captive-monitor
 make package/openwrt-captive-monitor/compile V=s
 
-# Locate built package
+## Locate built package
 find bin/packages -name "*openwrt-captive-monitor*.ipk"
 ```
 
@@ -87,7 +87,7 @@ find bin/packages -name "*openwrt-captive-monitor*.ipk"
 
 ```bash
 #!/bin/bash
-# build-all-arch.sh - Build for all supported architectures
+## build-all-arch.sh - Build for all supported architectures
 
 ARCHITECTURES=(
     "all"
@@ -120,7 +120,7 @@ echo "All builds completed successfully!"
 ### Makefile Structure
 
 ```makefile
-# package/openwrt-captive-monitor/Makefile
+## package/openwrt-captive-monitor/Makefile
 
 include $(TOPDIR)/rules.mk
 
@@ -257,15 +257,15 @@ openwrt-captive-monitor-feed/
 
 ```bash
 #!/bin/bash
-# generate-feed.sh - Generate opkg feed
+## generate-feed.sh - Generate opkg feed
 
 FEED_DIR="dist/opkg"
 PACKAGES_DIR="$FEED_DIR/packages"
 
-# Create package directories
+## Create package directories
 mkdir -p "$PACKAGES_DIR"/{base,mips_24kc,x86_64,aarch64_cortex-a53}
 
-# Move packages to appropriate directories
+## Move packages to appropriate directories
 for pkg in "$FEED_DIR"/*/*.ipk; do
     if [ -f "$pkg" ]; then
         arch=$(basename "$pkg" | sed -n 's/.*_\([^_]*\)\.ipk/\1/p')
@@ -274,7 +274,7 @@ for pkg in "$FEED_DIR"/*/*.ipk; do
     fi
 done
 
-# Generate Packages files
+## Generate Packages files
 for arch_dir in "$PACKAGES_DIR"/*; do
     if [ -d "$arch_dir" ]; then
         arch=$(basename "$arch_dir")
@@ -311,16 +311,16 @@ echo "Feed generation complete!"
 
 ```bash
 #!/bin/bash
-# deploy-gh-pages.sh - Deploy feed to GitHub Pages
+## deploy-gh-pages.sh - Deploy feed to GitHub Pages
 
-# Checkout gh-pages branch
+## Checkout gh-pages branch
 git checkout --orphan gh-pages
 rm -rf *
 
-# Copy feed content
+## Copy feed content
 cp -r dist/opkg/* .
 
-# Create index.html
+## Create index.html
 cat > index.html <<'EOF'
 <!DOCTYPE html>
 <html>
@@ -335,7 +335,7 @@ cat > index.html <<'EOF'
     <ul>
 EOF
 
-# List packages
+## List packages
 find . -name "*.ipk" | while read pkg; do
     pkg_name=$(basename "$pkg")
     echo "        <li><a href=\"$pkg_name\">$pkg_name</a></li>" >> index.html
@@ -347,7 +347,7 @@ cat >> index.html <<'EOF'
 </html>
 EOF
 
-# Commit and push
+## Commit and push
 git add .
 git commit -m "Update package feed"
 git push -f origin gh-pages
@@ -363,7 +363,7 @@ echo "Feed deployed to GitHub Pages!"
 
 ```bash
 #!/bin/bash
-# update-version.sh - Update package version
+## update-version.sh - Update package version
 
 NEW_VERSION=$1
 if [ -z "$NEW_VERSION" ]; then
@@ -373,18 +373,18 @@ fi
 
 echo "Updating version to $NEW_VERSION"
 
-# Update Makefile
+## Update Makefile
 sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=$NEW_VERSION/" package/openwrt-captive-monitor/Makefile
 
-# Update main script
+## Update main script
 sed -i "s/VERSION=.*/VERSION=\"$NEW_VERSION\"/" openwrt_captive_monitor.sh
 
-# Update documentation
+## Update documentation
 sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v$NEW_VERSION/g" README.md docs/*.md
 
-# Create release notes template
+## Create release notes template
 cat > "docs/releases/v$NEW_VERSION.md" <<EOF
-# openwrt-captive-monitor v$NEW_VERSION
+## openwrt-captive-monitor v$NEW_VERSION
 
 ## Highlights
 
@@ -427,7 +427,7 @@ echo "Don't forget to push with: git push && git push --tags"
 
 ```bash
 #!/bin/bash
-# check-dependencies.sh - Verify package dependencies
+## check-dependencies.sh - Verify package dependencies
 
 PACKAGES_DIR="dist/opkg"
 REQUIRED_DEPS="dnsmasq curl iptables busybox"
@@ -473,15 +473,15 @@ fi
 
 ```bash
 #!/bin/bash
-# track-downloads.sh - Track package downloads
+## track-downloads.sh - Track package downloads
 
 GITHUB_API="https://api.github.com/repos/nagual2/openwrt-captive-monitor/releases"
 DOWNLOADS_FILE="downloads.json"
 
-# Get release information
+## Get release information
 curl -s "$GITHUB_API" > releases.json
 
-# Process downloads
+## Process downloads
 echo "{" > "$DOWNLOADS_FILE"
 echo "  \"total_downloads\": 0," >> "$DOWNLOADS_FILE"
 echo "  \"releases\": [" >> "$DOWNLOADS_FILE"
@@ -519,12 +519,12 @@ jq '.' "$DOWNLOADS_FILE"
 
 ```bash
 #!/bin/bash
-# generate-usage-report.sh - Generate usage analytics
+## generate-usage-report.sh - Generate usage analytics
 
 REPORT_FILE="usage-report-$(date +%Y%m%d).md"
 
 cat > "$REPORT_FILE" <<EOF
-# OpenWrt Captive Monitor Usage Report
+## OpenWrt Captive Monitor Usage Report
 
 Generated: $(date)
 
@@ -589,7 +589,7 @@ echo "Usage report generated: $REPORT_FILE"
 
 ```bash
 #!/bin/bash
-# validate-package.sh - Comprehensive package validation
+## validate-package.sh - Comprehensive package validation
 
 PACKAGE=$1
 if [ -z "$PACKAGE" ]; then
@@ -599,17 +599,17 @@ fi
 
 echo "Validating package: $PACKAGE"
 
-# Check file format
+## Check file format
 if ! file "$PACKAGE" | grep -q "gzip compressed"; then
     echo "✗ Package is not a valid gzip file"
     exit 1
 fi
 
-# Extract and validate structure
+## Extract and validate structure
 TEMP_DIR=$(mktemp -d)
 tar -xzf "$PACKAGE" -C "$TEMP_DIR"
 
-# Required files
+## Required files
 REQUIRED_FILES=(
     "./control"
     "./data.tar.gz"
@@ -624,7 +624,7 @@ for file in "${REQUIRED_FILES[@]}"; do
     fi
 done
 
-# Validate control file
+## Validate control file
 CONTROL_FILE="$TEMP_DIR/control"
 if ! grep -q "^Package: openwrt-captive-monitor" "$CONTROL_FILE"; then
     echo "✗ Invalid package name in control file"
@@ -638,7 +638,7 @@ if ! grep -q "^Version:" "$CONTROL_FILE"; then
     exit 1
 fi
 
-# Validate data contents
+## Validate data contents
 tar -tzf "$TEMP_DIR/data.tar.gz" > "$TEMP_DIR/files.txt"
 
 REQUIRED_DATA_FILES=(
@@ -655,7 +655,7 @@ for file in "${REQUIRED_DATA_FILES[@]}"; do
     fi
 done
 
-# Check executable permissions
+## Check executable permissions
 tar -xf "$TEMP_DIR/data.tar.gz" -C "$TEMP_DIR"
 
 if [ ! -x "$TEMP_DIR/usr/sbin/openwrt_captive_monitor" ]; then
@@ -670,7 +670,7 @@ if [ ! -x "$TEMP_DIR/etc/init.d/captive-monitor" ]; then
     exit 1
 fi
 
-# Cleanup
+## Cleanup
 rm -rf "$TEMP_DIR"
 
 echo "✓ Package validation passed"
@@ -680,7 +680,7 @@ echo "✓ Package validation passed"
 
 ```bash
 #!/bin/bash
-# test-installation.sh - Test package installation and removal
+## test-installation.sh - Test package installation and removal
 
 PACKAGE=$1
 TEST_DEVICE=$2
@@ -692,15 +692,15 @@ fi
 
 echo "Testing package installation on $TEST_DEVICE"
 
-# Copy package to device
+## Copy package to device
 scp "$PACKAGE" "$TEST_DEVICE:/tmp/test-package.ipk"
 
-# Test installation
+## Test installation
 ssh "$TEST_DEVICE" <<'EOSSH'
-# Remove existing installation
+## Remove existing installation
 opkg remove openwrt-captive-monitor 2>/dev/null || true
 
-# Install package
+## Install package
 echo "Installing package..."
 if opkg install /tmp/test-package.ipk; then
     echo "✓ Package installed successfully"
@@ -709,7 +709,7 @@ else
     exit 1
 fi
 
-# Verify files
+## Verify files
 echo "Verifying installation..."
 if [ -f "/usr/sbin/openwrt_captive_monitor" ]; then
     echo "✓ Main executable present"
@@ -732,7 +732,7 @@ else
     exit 1
 fi
 
-# Test service
+## Test service
 echo "Testing service..."
 if /etc/init.d/captive-monitor status; then
     echo "✓ Service status check works"
@@ -740,7 +740,7 @@ else
     echo "✗ Service status check failed"
 fi
 
-# Test configuration
+## Test configuration
 if uci show captive-monitor >/dev/null 2>&1; then
     echo "✓ UCI configuration works"
 else
@@ -748,7 +748,7 @@ else
     exit 1
 fi
 
-# Test removal
+## Test removal
 echo "Testing removal..."
 if opkg remove openwrt-captive-monitor; then
     echo "✓ Package removed successfully"
@@ -757,7 +757,7 @@ else
     exit 1
 fi
 
-# Verify cleanup
+## Verify cleanup
 if [ ! -f "/usr/sbin/openwrt_captive_monitor" ]; then
     echo "✓ Files cleaned up on removal"
 else

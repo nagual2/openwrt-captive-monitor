@@ -24,13 +24,13 @@ This checklist documents the release process for **openwrt-captive-monitor** and
 ### 3. Build Verification
 
 ```bash
-# Test package building
+## Test package building
 scripts/build_ipk.sh --arch all
 
-# Verify package contents
+## Verify package contents
 tar -tzf dist/opkg/all/openwrt-captive-monitor_*.ipk
 
-# Run test suite
+## Run test suite
 busybox sh tests/run.sh
 ```
 
@@ -46,13 +46,13 @@ busybox sh tests/run.sh
 ### 1. Create Release Branch
 
 ```bash
-# Create release branch from develop
+## Create release branch from develop
 git checkout develop
 git pull origin develop
 git checkout -b release/vX.Y.Z
 
-# Update version if needed
-# Edit package/openwrt-captive-monitor/Makefile
+## Update version if needed
+## Edit package/openwrt-captive-monitor/Makefile
 git add package/openwrt-captive-monitor/Makefile
 git commit -m "bump: version X.Y.Z"
 ```
@@ -68,16 +68,16 @@ git commit -m "bump: version X.Y.Z"
 ### 3. Tag and Merge
 
 ```bash
-# Merge to main
+## Merge to main
 git checkout main
 git merge --no-ff release/vX.Y.Z
 git tag -a vX.Y.Z -m "Release vX.Y.Z"
 
-# Merge back to develop
+## Merge back to develop
 git checkout develop
 git merge --no-ff release/vX.Y.Z
 
-# Push changes
+## Push changes
 git push origin main
 git push origin develop
 git push origin vX.Y.Z
@@ -113,15 +113,15 @@ The GitHub Actions workflow automatically:
 ### 2. Manual Build (if needed)
 
 ```bash
-# Build for specific architecture
+## Build for specific architecture
 scripts/build_ipk.sh --arch mips_24kc
 
-# Build for all architectures
+## Build for all architectures
 for arch in mips_24kc aarch64_cortex-a53 x86_64; do
     scripts/build_ipk.sh --arch $arch
 done
 
-# Generate checksums
+## Generate checksums
 cd dist/opkg
 find . -type f -name "*.ipk" -exec sha256sum {} + > SHA256SUMS
 find . -type f -name "Packages*" -exec sha256sum {} + >> SHA256SUMS
@@ -149,7 +149,7 @@ find . -type f -name "Packages*" -exec sha256sum {} + >> SHA256SUMS
 ### 3. Branch Cleanup
 
 ```bash
-# Delete release branch
+## Delete release branch
 git branch -d release/vX.Y.Z
 git push origin --delete release/vX.Y.Z
 ```
@@ -168,34 +168,34 @@ git push origin --delete release/vX.Y.Z
 ### Package Validation
 
 ```bash
-# Verify package structure
+## Verify package structure
 tar -tzf openwrt-captive-monitor_*.ipk
 
-# Check control file
+## Check control file
 tar -xf openwrt-captive-monitor_*.ipk
 cat ./control
 
-# Verify conffiles
+## Verify conffiles
 cat ./conffiles
 
-# Check file permissions
+## Check file permissions
 tar -tf openwrt-captive-monitor_*.ipk | xargs -I {} tar -xf openwrt-captive-monitor_*.ipk {} --to-command=ls -l {}
 ```
 
 ### Installation Testing
 
 ```bash
-# Test installation
+## Test installation
 opkg install openwrt-captive-monitor_*.ipk
 
-# Verify files
+## Verify files
 opkg files openwrt-captive-monitor
 
-# Test service
+## Test service
 /etc/init.d/captive-monitor status
 uci show captive-monitor
 
-# Test removal
+## Test removal
 opkg remove openwrt-captive-monitor
 ```
 
@@ -269,7 +269,7 @@ For each release, track:
 ### Release Notes Template
 
 ```markdown
-# openwrt-captive-monitor v{VERSION}
+## openwrt-captive-monitor v{VERSION}
 
 ## Highlights
 
@@ -338,7 +338,7 @@ Thanks to contributors who helped with this release:
 
 ```bash
 #!/bin/bash
-# release.sh - Automated release helper
+## release.sh - Automated release helper
 
 set -e
 
@@ -350,23 +350,23 @@ fi
 
 echo "Releasing version $VERSION"
 
-# Update version
+## Update version
 sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=$VERSION/" package/openwrt-captive-monitor/Makefile
 git add package/openwrt-captive-monitor/Makefile
 git commit -m "bump: version $VERSION"
 
-# Create release branch
+## Create release branch
 git checkout -b release/v$VERSION develop
 
-# Run tests
+## Run tests
 echo "Running tests..."
 busybox sh tests/run.sh
 
-# Build package
+## Build package
 echo "Building package..."
 scripts/build_ipk.sh --arch all
 
-# Tag and push
+## Tag and push
 git checkout main
 git merge --no-ff release/v$VERSION
 git tag -a v$VERSION -m "Release $VERSION"
@@ -380,7 +380,7 @@ echo "git push origin v$VERSION"
 
 ```bash
 #!/bin/bash
-# validate-release.sh - Release validation
+## validate-release.sh - Release validation
 
 set -e
 
@@ -389,19 +389,19 @@ PACKAGE="openwrt-captive-monitor_${VERSION}-1_all.ipk"
 
 echo "Validating release $VERSION"
 
-# Check if package exists
+## Check if package exists
 if [ ! -f "dist/opkg/all/$PACKAGE" ]; then
     echo "ERROR: Package not found: $PACKAGE"
     exit 1
 fi
 
-# Validate package structure
+## Validate package structure
 echo "Validating package structure..."
 tar -tzf "dist/opkg/all/$PACKAGE" | while read file; do
     echo "  $file"
 done
 
-# Check required files
+## Check required files
 REQUIRED_FILES=(
     "./control"
     "./conffiles"
