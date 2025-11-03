@@ -23,7 +23,12 @@ The repository follows a **trunk-based** workflow centred on the `main` branch. 
 
 ### Why trunk-based over GitFlow?
 
-Trunk-based development keeps the integration surface small, which is important for shell tooling that is hard to test exhaustively. GitFlow introduces long-running `develop` and release branches that often diverge and amplify merge conflicts. Unless you are maintaining multiple historical versions in parallel, GitFlow’s additional ceremony rarely pays off here. If the project eventually needs LTS maintenance, treat it as an exception: cut a release branch, backport critical changes, and retire the branch after support ends.
+Trunk-based development keeps the integration surface small, which is important for shell tooling that is hard to test exhaustively.
+GitFlow introduces long-running `develop` and release branches that often diverge and amplify merge conflicts.
+Unless you are maintaining multiple historical versions in parallel, GitFlow's additional ceremony rarely pays off here.
+
+If the project eventually needs LTS maintenance, treat it as an exception: cut a release branch, backport critical changes, and retire the branch after support ends.
+
 
 ---
 
@@ -108,7 +113,8 @@ These checks keep the branch healthy and ensure contributors get feedback quickl
 
 ## 5. Issue triage & support
 
-- Use the GitHub Issue Forms to provide structured bug reports, feature requests, support questions, and documentation issues. The forms guide you through providing the necessary information for effective triage.
+- Use the GitHub Issue Forms to provide structured bug reports, feature requests, support questions, and documentation issues.
+  The forms guide you through providing the necessary information for effective triage.
 - For detailed guidance on templates and label usage, see [docs/triage/TEMPLATES_AND_LABELS.md](./docs/triage/TEMPLATES_AND_LABELS.md).
 - Security problems should go through the private disclosure channel listed in our [Security Policy](.github/SECURITY.md) or GitHub security advisories.
 - Tag issues with `good-first-issue` when they have a clear scope and minimal risk so newcomers can help.
