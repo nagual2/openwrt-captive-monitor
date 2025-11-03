@@ -12,7 +12,7 @@
 
 #### Markdown Lint Action
 - **Before:** `avto-dev/markdown-lint@v1` (deprecated)
-- **After:** `DavidAnson/markdownlint-action2@v2` (actively maintained)
+- **After:** `DavidAnson/markdownlint-cli2-action@v18` (actively maintained)
 - **Files updated:**
   - `.github/workflows/ci.yml` (line 92): Updated action and parameter name `args` → `files`
 
@@ -46,7 +46,7 @@
 | `actions/upload-artifact` | `@v4` | ✅ Standardized |
 | `actions/download-artifact` | `@v4` | ✅ Standardized |
 | `actions/github-script` | `@v7` | ✅ Latest |
-| `DavidAnson/markdownlint-action2` | `@v2` | ✅ Updated from deprecated |
+| `DavidAnson/markdownlint-cli2-action` | `@v18` | ✅ Updated from deprecated |
 | `reviewdog/action-actionlint` | `@v1` | ✅ Current |
 | `softprops/action-gh-release` | `@v2` | ✅ Current |
 | `google-github-actions/release-please-action` | `@v4` | ✅ Current |

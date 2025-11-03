@@ -89,7 +89,7 @@ jobs:
 
       - name: Run markdownlint
         if: matrix.linter == 'markdownlint'
-        uses: DavidAnson/markdownlint-action2@v2
+        uses: DavidAnson/markdownlint-cli2-action@v18
         with:
           config: '.markdownlint.json'
           files: '**/*.md'
