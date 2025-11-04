@@ -14,8 +14,7 @@
     {"type":"ci","section":"Continuous Integration","hidden":false}
   ],
   "changelog-path": "CHANGELOG.md",
-  "version-file": "package/openwrt-captive-monitor/Makefile",
-  "version-regex": "^PKG_VERSION:=([0-9]+\\.[0-9]+\\.[0-9]+)",
+  "version-file": "VERSION",
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true
 }
