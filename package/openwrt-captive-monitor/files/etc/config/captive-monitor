@@ -7,6 +7,7 @@ config captive_monitor 'config'
 	option ping_servers '1.1.1.1 8.8.8.8 9.9.9.9'
 	option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
 	option enable_syslog '1'
+	option language 'en'  # 'en' for English, 'ru' for Russian
 	option lan_interface ''
 	option lan_ip ''
 	option lan_ipv6 ''
