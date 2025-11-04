@@ -32,7 +32,7 @@ PATCH: Bug fixes (backward compatible)
 
 #### Version Examples
 
-- `0.1.3` - Initial development releases
+- `1.0.1` - Current stable release
 - `1.0.0` - First stable release
 - `1.1.0` - New features added
 - `1.1.1` - Bug fixes

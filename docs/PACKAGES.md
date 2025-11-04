@@ -6,10 +6,10 @@
 **Explanation**: `.ipk` files are intentionally excluded from version control via `.gitignore` to keep the repository clean. Packages are built on-demand via CI/CD or locally using the build script.
 
 ### Local Build Information
-- **Current Version**: 0.1.3-1 (from `package/openwrt-captive-monitor/Makefile`)
+- **Current Version**: 1.0.1-1 (from `package/openwrt-captive-monitor/Makefile`)
 - **Architecture**: all
 - **Build Script**: `./scripts/build_ipk.sh`
-- **Output Location**: `dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk`
+- **Output Location**: `dist/opkg/all/openwrt-captive-monitor_1.0.1-1_all.ipk`
 - **Package Size**: 13,250 bytes (local build)
 - **Dependencies**: `dnsmasq`, `curl`
 
@@ -19,7 +19,7 @@
 ./scripts/build_ipk.sh
 
 ## Output will be in:
-## dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk
+## dist/opkg/all/openwrt-captive-monitor_1.0.1-1_all.ipk
 ## dist/opkg/all/Packages
 ## dist/opkg/all/Packages.gz
 ```
@@ -32,7 +32,7 @@
 - **Latest Successful Run**: #18941818953 (2025-10-30T13:13:37Z)
 - **Branch**: main
 - **Status**: ✅ Success
-- **Artifact**: `openwrt-captive-monitor_0.1.3-1_all`
+- **Artifact**: `openwrt-captive-monitor_1.0.1-1_all`
 - **Size**: 14,496 bytes
 - **Created**: 2025-10-30T13:14:14Z
 - **Expires**: 2026-01-28T13:13:38Z
@@ -42,13 +42,13 @@
    - Go to: https://github.com/nagual2/openwrt-captive-monitor/actions
    - Click on "Build OpenWrt packages" workflow
    - Select the latest successful run (Run #18941818953)
-   - Download the "openwrt-captive-monitor_0.1.3-1_all" artifact
+   - Download the "openwrt-captive-monitor_1.0.1-1_all" artifact
 
 2. **Via API** (requires authentication):
    ```bash
    curl -H "Authorization: token YOUR_TOKEN" \
         -L https://api.github.com/repos/nagual2/openwrt-captive-monitor/actions/artifacts/4417725839/zip \
-        -o openwrt-captive-monitor_0.1.3-1_all.zip
+        -o openwrt-captive-monitor_1.0.1-1_all.zip
    ```
 
 ### Recent Build History
@@ -74,10 +74,10 @@
 
 ## Package Metadata
 
-### Current Version (0.1.3-1)
+### Current Version (1.0.1-1)
 ```
 Package: openwrt-captive-monitor
-Version: 0.1.3-1
+Version: 1.0.1-1
 Architecture: all
 Maintainer: Kombai AI Assistant
 License: MIT
@@ -93,13 +93,13 @@ Description: Captive portal connectivity monitor and auto-redirect helper
 ### Version History
 | Version | Tag Date | Build Status | Package Available |
 |---------|----------|--------------|-------------------|
-| 0.1.3 | Current | ✅ Available via CI artifacts | Yes |
+| 1.0.1 | Current | ✅ Available via CI artifacts | Yes |
 | 0.1.2 | 2025-10-26 | ❌ CI ran but no artifacts preserved | No |
 | 0.1.0 | 2025-10-23 | ❌ Release exists but no assets | No |
 
 ## Summary
 - **Total .ipk files found**: 1 (current version via CI artifacts)
-- **Latest version**: v0.1.3-1
+- **Latest version**: v1.0.1-1
 - **Recommended download**: GitHub Actions artifacts (most recent)
 - **Repository status**: No packages stored (intentionally)
 - **Release status**: No package assets in releases
@@ -111,7 +111,7 @@ Description: Captive portal connectivity monitor and auto-redirect helper
    - URL: https://github.com/nagual2/openwrt-captive-monitor/actions
    - Click "Build OpenWrt packages" workflow
    - Select latest successful run
-   - Download "openwrt-captive-monitor_0.1.3-1_all" artifact
+   - Download "openwrt-captive-monitor_1.0.1-1_all" artifact
 
 2. **Direct Download** (requires GitHub login):
    ```
@@ -123,16 +123,16 @@ Description: Captive portal connectivity monitor and auto-redirect helper
 git clone https://github.com/nagual2/openwrt-captive-monitor.git
 cd openwrt-captive-monitor
 ./scripts/build_ipk.sh
-## Package will be in: dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk
+## Package will be in: dist/opkg/all/openwrt-captive-monitor_1.0.1-1_all.ipk
 ```
 
 ### Package Installation on OpenWrt
 ```bash
 ## Transfer the .ipk file to your OpenWrt device
-scp openwrt-captive-monitor_0.1.3-1_all.ipk root@192.168.1.1:/tmp/
+scp openwrt-captive-monitor_1.0.1-1_all.ipk root@192.168.1.1:/tmp/
 
 ## Install the package
-opkg install /tmp/openwrt-captive-monitor_0.1.3-1_all.ipk
+opkg install /tmp/openwrt-captive-monitor_1.0.1-1_all.ipk
 
 ## Configure and enable
 uci set captive-monitor.@monitor[0].enabled='1'

@@ -17,7 +17,7 @@ The repository follows a **trunk-based** workflow centred on the `main` branch. 
    - `chore/<short-description>` for tooling, CI, or maintenance work
    - `docs/<short-description>` for documentation-only updates
    - `hotfix/<short-description>` for urgent production fixes that must land ahead of the regular release cadence
-   Refer to [`BRANCHES_AND_MERGE_POLICY.md`](./BRANCHES_AND_MERGE_POLICY.md) for the latest merge sequencing, branch protection checklist, and cleanup tasks.
+   Refer to [`BRANCHES_AND_MERGE_POLICY.md`](./docs/project/BRANCHES_AND_MERGE_POLICY.md) for the latest merge sequencing, branch protection checklist, and cleanup tasks.
 3. Prefer incremental pull requests (aim for < ~300 lines of net change). Split large efforts into multiple PRs that can be reviewed independently.
 4. Avoid long-lived release branches. If you need to ship a hotfix, branch from the appropriate tag, cherry-pick the fix, release, and merge the change back into `main` immediately afterwards.
 
@@ -131,10 +131,10 @@ These checks keep the branch healthy and ensure contributors get feedback quickl
    Swap `all` for a target-specific architecture if you maintain per-target feeds.
 3. Tag and push the release from `main`:
    ```bash
-   git tag -a v0.1.3 -m "openwrt-captive-monitor v0.1.3"
-   git push origin v0.1.3
-   ```
-   Replace `v0.1.3` with the new tag when cutting subsequent releases.
+   git tag -a v1.0.1 -m "openwrt-captive-monitor v1.0.1"
+   git push origin v1.0.1
+
+   Replace `v1.0.1` with the new tag when cutting subsequent releases.
 4. Publish the generated `.ipk` artifacts and update the GitHub Release notes.
 
 If a regression requires a hotfix, branch from the affected tag, apply the fix, build/test, release, and cherry-pick the change back into `main` immediately.
