@@ -30,7 +30,7 @@ package/
 ## Build package using defaults
 ./scripts/build_ipk.sh
 
-## Output: dist/opkg/all/openwrt-captive-monitor_0.1.3-1_all.ipk
+## Output: dist/opkg/all/openwrt-captive-monitor_1.0.1-1_all.ipk
 ```
 
 ### Custom Builds
@@ -72,7 +72,7 @@ Release mode provides:
 | Field | Value | Description |
 |-------|-------|-------------|
 | `PKG_NAME` | `openwrt-captive-monitor` | Package identifier |
-| `PKG_VERSION` | `0.1.3` | Semantic version |
+| `PKG_VERSION` | `1.0.1` | Semantic version |
 | `PKG_RELEASE` | `1` | Package release number |
 | `PKG_LICENSE` | `MIT` | SPDX license identifier |
 | `PKG_LICENSE_FILES` | `LICENSE` | License file reference |
@@ -120,7 +120,7 @@ The project includes automated building via GitHub Actions:
 Update version in `package/openwrt-captive-monitor/Makefile`:
 
 ```makefile
-PKG_VERSION:=0.1.4
+PKG_VERSION:=1.0.2
 PKG_RELEASE:=1
 ```
 
@@ -131,7 +131,7 @@ PKG_RELEASE:=1
 ./scripts/build_ipk.sh --release-mode
 
 ## This creates:
-## - dist/opkg/all/openwrt-captive-monitor_0.1.4-1_all.ipk
+## - dist/opkg/all/openwrt-captive-monitor_1.0.2-1_all.ipk
 ## - dist/opkg/all/Packages
 ## - dist/opkg/all/Packages.gz
 ## - dist/opkg/all/release-metadata.json
@@ -140,14 +140,14 @@ PKG_RELEASE:=1
 ### 3. Tag and Push
 
 ```bash
-git tag -a v0.1.4 -m "Release v0.1.4"
-git push origin v0.1.4
+git tag -a v1.0.2 -m "Release v1.0.2"
+git push origin v1.0.2
 ```
 
 ### 4. GitHub Release
 
 1. Go to GitHub Releases page
-2. Create new release from tag `v0.1.4`
+2. Create new release from tag `v1.0.2`
 3. Upload artifacts from `dist/opkg/all/`
 4. Use release metadata for description
 
@@ -186,7 +186,7 @@ git push origin v0.1.4
    mkdir -p all
    cp dist/opkg/all/* all/
    git add all/
-   git commit -m "Add package v0.1.4"
+   git commit -m "Add package v1.0.2"
    git push origin gh-pages
    ```
 
@@ -206,7 +206,7 @@ git push origin v0.1.4
 
 set -eu
 
-VERSION=${1:-"0.1.4"}
+VERSION=${1:-"1.0.2"}
 MAINTAINER=${2:-"OpenWrt Captive Monitor Team"}
 EMAIL=${3:-"team@example.com"}
 
