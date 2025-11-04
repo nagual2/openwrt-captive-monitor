@@ -16,11 +16,12 @@ LANGUAGE="en"  # Default language
 
 # Function to get localized message
 get_msg() {
-    local key="$1"
-
+    local key=$1
+    local lang=$LANGUAGE
+    
     # English messages
-    if [ "$LANGUAGE" = "en" ]; then
-        case "$key" in
+    if [ "$lang" = "en" ]; then
+        case $key in
             installing) echo "Installing OpenWRT Captive Monitor..." ;;
             installing_deps) echo "Installing required dependencies..." ;;
             creating_dirs) echo "Creating necessary directories..." ;;
@@ -44,7 +45,7 @@ get_msg() {
             *) echo "$key" ;;
         esac
     # Russian messages
-    elif [ "$LANGUAGE" = "ru" ]; then
+    elif [ "$lang" = "ru" ]; then
         case $key in
             installing) echo "Установка OpenWRT Captive Monitor..." ;;
             installing_deps) echo "Установка необходимых зависимостей..." ;;
@@ -82,17 +83,10 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Parse command line arguments
-while [ $# -gt 0 ]; do
-    case "$1" in
+for arg in "$@"; do
+    case $arg in
         --lang=*)
-            LANGUAGE="${1#*=}"
-            shift
-            ;;
-        install|uninstall|status|help|--help|-h)
-            COMMAND="$1"
-            shift
-            ;;
-        *)
+            LANGUAGE="${arg#*=}"
             shift
             ;;
     esac
@@ -130,11 +124,7 @@ install_package() {
 # Function to configure the package
 configure_package() {
     # Get language from config or use default
-    CONFIG_LANG=$(uci -q get captive-monitor.@captive_monitor[0].language || echo "$LANGUAGE")
-    if [ -n "$CONFIG_LANG" ]; then
-        LANGUAGE="$CONFIG_LANG"
-    fi
-    
+    LANGUAGE=$(uci -q get captive-monitor.@captive_monitor[0].language || echo "en")
     echo -e "${GREEN}$(get_msg configuring)${NC}"
     
     # Enable the service
@@ -144,7 +134,6 @@ configure_package() {
     uci set captive-monitor.@captive_monitor[0].monitor_interval="$MONITOR_INTERVAL"
     uci set captive-monitor.@captive_monitor[0].ping_servers="$PING_SERVERS"
     uci set captive-monitor.@captive_monitor[0].captive_check_urls="$CHECK_URLS"
-    uci set captive-monitor.@captive_monitor[0].language="$LANGUAGE"
     uci commit captive-monitor
     
     echo -e "${GREEN}$(get_msg starting_service)${NC}"
@@ -161,11 +150,7 @@ configure_package() {
 # Function to uninstall the package
 uninstall_package() {
     # Get language from config or use default
-    CONFIG_LANG=$(uci -q get captive-monitor.@captive_monitor[0].language || echo "$LANGUAGE")
-    if [ -n "$CONFIG_LANG" ]; then
-        LANGUAGE="$CONFIG_LANG"
-    fi
-    
+    LANGUAGE=$(uci -q get captive-monitor.@captive_monitor[0].language || echo "en")
     echo -e "${RED}$(get_msg uninstalling)${NC}"
     
     # Stop and disable the service
@@ -187,10 +172,7 @@ uninstall_package() {
 # Function to show service status
 show_status() {
     # Get language from config or use default
-    CONFIG_LANG=$(uci -q get captive-monitor.@captive_monitor[0].language || echo "$LANGUAGE")
-    if [ -n "$CONFIG_LANG" ]; then
-        LANGUAGE="$CONFIG_LANG"
-    fi
+    LANGUAGE=$(uci -q get captive-monitor.@captive_monitor[0].language || echo "en")
     
     echo -e "${GREEN}$(get_msg service_status)${NC}"
     /etc/init.d/captive-monitor status 2>/dev/null || echo -e "${YELLOW}$(get_msg not_running)${NC}"
@@ -208,7 +190,7 @@ show_status() {
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 [options] [command]"
+    echo "Usage: $0 [command] [options]"
     echo "Commands:"
     echo "  install     - Install and configure the package"
     echo "  uninstall   - Uninstall the package"
@@ -220,7 +202,8 @@ show_usage() {
 }
 
 # Main script
-case "$COMMAND" in
+shift
+case "$1" in
     install)
         install_package
         configure_package
@@ -232,8 +215,12 @@ case "$COMMAND" in
     status)
         show_status
         ;;
-    help|--help|-h|*)
+    help|--help|-h)
         show_usage
+        ;;
+    *)
+        show_usage
+        exit 1
         ;;
 esac
 
