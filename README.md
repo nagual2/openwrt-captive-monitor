@@ -1,8 +1,9 @@
-# openwrt-captive-monitor
+# OpenWrt Captive Monitor
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Shell Script](https://img.shields.io/badge/Shell-Script-green.svg)](https://www.gnu.org/software/bash/)
-[![OpenWrt](https://img.shields.io/badge/OpenWrt-21.02%2B-blue.svg)](https://openwrt.org/)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/nagual2/openwrt-captive-monitor/actions)
+[![GitHub release](https://img.shields.io/github/v/release/nagual2/openwrt-captive-monitor)](https://github.com/nagual2/openwrt-captive-monitor/releases)
+[![License](https://img.shields.io/github/license/nagual2/openwrt-captive-monitor)](LICENSE)
+[![OpenWrt](https://img.shields.io/badge/OpenWrt-compatible-blue)](https://openwrt.org/)
 
 A lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily
 intercepts LAN DNS/HTTP traffic so clients can authenticate. Once internet access is restored,
@@ -130,26 +131,6 @@ ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
 - [License](#-license)
 - [Acknowledgments](#-acknowledgments)
 - [Related Projects](#-related-projects)
-
-- [Installation](#installation)
-  - [Prerequisites](#prerequisites)
-  - [Installation Options](#installation-options)
-  - [Configuration](#configuration)
-- [Usage](#usage)
-  - [Operation Modes](#operation-modes)
-  - [Monitoring](#monitoring)
-  - [Troubleshooting](#troubleshooting)
-- [Configuration](#configuration-1)
-  - [Basic Settings](#basic-settings)
-  - [Advanced Options](#advanced-options)
-- [Development](#development)
-  - [Building](#building)
-  - [Testing](#testing)
-  - [Contributing](#contributing)
-- [Community](#community)
-  - [Support](#support)
-  - [Security](#security)
-  - [License](#license)
 
 
 ## 📦 Installation Options
