@@ -12,7 +12,7 @@ WIFI_LOGICAL="wwan"
 MONITOR_INTERVAL=60
 PING_SERVERS="1.1.1.1 8.8.8.8 9.9.9.9"
 CHECK_URLS="http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt"
-LANGUAGE="en"  # Default language
+LANGUAGE="en" # Default language
 
 # Function to get localized message
 get_msg() {
@@ -89,7 +89,7 @@ while [ $# -gt 0 ]; do
             LANGUAGE="${1#*=}"
             shift
             ;;
-        install|uninstall|status|help|--help|-h)
+        install | uninstall | status | help | --help | -h)
             COMMAND="$1"
             shift
             ;;
@@ -102,29 +102,29 @@ done
 # Function to install the package
 install_package() {
     echo -e "${GREEN}$(get_msg installing)${NC}"
-    
+
     echo -e "${GREEN}$(get_msg installing_deps)${NC}"
     opkg update
     opkg install dnsmasq curl ca-bundle
-    
+
     echo -e "${GREEN}$(get_msg creating_dirs)${NC}"
     mkdir -p /usr/sbin/ /etc/init.d/ /etc/config/ /etc/uci-defaults/ /usr/share/licenses/openwrt-captive-monitor/
-    
+
     echo -e "${GREEN}$(get_msg copying_files)${NC}"
     cp /tmp/openwrt-captive-monitor/package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor /usr/sbin/
     cp /tmp/openwrt-captive-monitor/package/openwrt-captive-monitor/files/etc/init.d/captive-monitor /etc/init.d/
     cp /tmp/openwrt-captive-monitor/package/openwrt-captive-monitor/files/etc/config/captive-monitor /etc/config/
-    
+
     echo -e "${GREEN}$(get_msg setting_perms)${NC}"
     sed -i 's/\r$//' /usr/sbin/openwrt_captive_monitor
     sed -i 's/\r$//' /etc/init.d/captive-monitor
     chmod +x /usr/sbin/openwrt_captive_monitor
     chmod +x /etc/init.d/captive-monitor
-    
+
     # Set language in config
     uci set captive-monitor.@captive_monitor[0].language="$LANGUAGE"
     uci commit captive-monitor
-    
+
     echo -e "${GREEN}$(get_msg install_success)${NC}"
 }
 
@@ -135,9 +135,9 @@ configure_package() {
     if [ -n "$CONFIG_LANG" ]; then
         LANGUAGE="$CONFIG_LANG"
     fi
-    
+
     echo -e "${GREEN}$(get_msg configuring)${NC}"
-    
+
     # Enable the service
     uci set captive-monitor.@captive_monitor[0].enabled='1'
     uci set captive-monitor.@captive_monitor[0].wifi_interface="$WIFI_INTERFACE"
@@ -147,15 +147,15 @@ configure_package() {
     uci set captive-monitor.@captive_monitor[0].captive_check_urls="$CHECK_URLS"
     uci set captive-monitor.@captive_monitor[0].language="$LANGUAGE"
     uci commit captive-monitor
-    
+
     echo -e "${GREEN}$(get_msg starting_service)${NC}"
     /etc/init.d/captive-monitor enable
     /etc/init.d/captive-monitor start
-    
-    if ! /etc/init.d/captive-monitor status >/dev/null 2>&1; then
+
+    if ! /etc/init.d/captive-monitor status > /dev/null 2>&1; then
         echo -e "${RED}$(get_msg service_failed)${NC}"
     fi
-    
+
     echo -e "${GREEN}$(get_msg config_complete)${NC}"
 }
 
@@ -166,22 +166,22 @@ uninstall_package() {
     if [ -n "$CONFIG_LANG" ]; then
         LANGUAGE="$CONFIG_LANG"
     fi
-    
+
     echo -e "${RED}$(get_msg uninstalling)${NC}"
-    
+
     # Stop and disable the service
-    /etc/init.d/captive-monitor stop 2>/dev/null
-    /etc/init.d/captive-monitor disable 2>/dev/null
-    
+    /etc/init.d/captive-monitor stop 2> /dev/null
+    /etc/init.d/captive-monitor disable 2> /dev/null
+
     echo -e "${GREEN}$(get_msg removing_files)${NC}"
     rm -f /usr/sbin/openwrt_captive_monitor
     rm -f /etc/init.d/captive-monitor
     rm -f /etc/config/captive-monitor
-    
+
     # Optionally remove dependencies (commented out by default)
     # echo -e "${GREEN}$(get_msg removing_deps)${NC}"
     # opkg remove dnsmasq curl ca-bundle
-    
+
     echo -e "${GREEN}$(get_msg uninstall_success)${NC}"
 }
 
@@ -192,15 +192,15 @@ show_status() {
     if [ -n "$CONFIG_LANG" ]; then
         LANGUAGE="$CONFIG_LANG"
     fi
-    
+
     echo -e "${GREEN}$(get_msg service_status)${NC}"
-    /etc/init.d/captive-monitor status 2>/dev/null || echo -e "${YELLOW}$(get_msg not_running)${NC}"
-    
+    /etc/init.d/captive-monitor status 2> /dev/null || echo -e "${YELLOW}$(get_msg not_running)${NC}"
+
     echo -e "\n${GREEN}$(get_msg configuration)${NC}"
-    uci show captive-monitor 2>/dev/null || echo -e "${YELLOW}$(get_msg no_config)${NC}"
-    
+    uci show captive-monitor 2> /dev/null || echo -e "${YELLOW}$(get_msg no_config)${NC}"
+
     echo -e "\n${GREEN}$(get_msg process_status)${NC}"
-    if pgrep -f "openwrt_captive_monitor" >/dev/null; then
+    if pgrep -f "openwrt_captive_monitor" > /dev/null; then
         echo -e "${GREEN}$(get_msg running)${NC}"
     else
         echo -e "${YELLOW}$(get_msg not_running)${NC}"
@@ -233,7 +233,7 @@ case "$COMMAND" in
     status)
         show_status
         ;;
-    help|--help|-h|*)
+    help | --help | -h | *)
         show_usage
         ;;
 esac
