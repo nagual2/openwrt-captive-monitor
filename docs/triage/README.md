@@ -4,7 +4,7 @@ This directory contains PR queue audit reports and triage artifacts for the `ope
 
 ## Current Status
 
-📊 **Latest Audit:** [AUDIT_REPORT.md](./AUDIT_REPORT.md) (2025-10-30)
+📊 **Latest Audit:** No current audit reports available
 
 **Summary:** ✅ **0 open PRs** - Queue clean, all tests passing
 
@@ -20,11 +20,7 @@ This directory contains PR queue audit reports and triage artifacts for the `ope
 
 ### Audit Reports
 
-- **[AUDIT_REPORT.md](./AUDIT_REPORT.md)** - Comprehensive PR queue audit report from 2025-10-30
-  - Found 0 open PRs (clean queue)
-  - All baseline tests passing (6/6)
-  - Package build successful
-  - Repository health: excellent
+- No current audit reports available. Previous reports have been archived as part of repository cleanup.
 
 ### API Snapshots
 
@@ -44,10 +40,7 @@ For historical context and prior triage work, see:
    - Explains closure rationale for PRs #6, #11, #12
    - Documents prior triage of PRs #1-#2
 
-- **[../project/CI_AUDIT_LAST_GREEN.md](../project/CI_AUDIT_LAST_GREEN.md)** - CI health tracking
-   - Last green CI run information
-   - Commit history since last green
-   - Likely breakpoints analysis
+- CI health tracking information has been archived as part of repository cleanup
 
 ## Audit Process
 
@@ -72,7 +65,7 @@ When conducting PR triage:
 1. Review existing audit reports in this directory
 2. Follow trunk-based workflow from `BRANCHES_AND_MERGE_POLICY.md`
 3. Document closure rationale for declined PRs
-4. Update CI tracking in `CI_AUDIT_LAST_GREEN.md`
+4. Archive audit reports after completion
 
 ---
 

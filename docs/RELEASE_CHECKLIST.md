@@ -1,6 +1,6 @@
 # Release & Feed Publication Checklist
 
-This checklist documents the flow we used for the `v0.1.3` release (update the
+This checklist documents the flow we used for the `v1.0.1` release (update the
 version string whenever you cut the next release) and can be repeated for
 subsequent versions.
 
@@ -115,10 +115,10 @@ busybox sh tests/run.sh
    and make sure the test harness is green (`busybox sh tests/run.sh`).
 2. Tag and push the release:
    ```bash
-   git tag -a v0.1.3 -m "openwrt-captive-monitor v0.1.3"
-   git push origin v0.1.3
-   ```
-   Swap `v0.1.3` for the new version string on future releases.
+   git tag -a v1.0.1 -m "openwrt-captive-monitor v1.0.1"
+   git push origin v1.0.1
+
+   Swap `v1.0.1` for the new version string on future releases.
 3. Monitor the **Build OpenWrt packages** workflow triggered by the tag, ensure the job succeeds, and confirm the GitHub Release lists:
 
    - `openwrt-captive-monitor_<version>-<release>_<arch>.ipk`
@@ -136,7 +136,7 @@ busybox sh tests/run.sh
    rm -rf *
    cp -r ../dist/opkg/* .
    git add .
-   git commit -m "Publish feed for v0.1.3"
+   git commit -m "Publish feed for v1.0.1"
    git push -f origin gh-pages
    ```
 2. Record the feed URL, e.g.:
