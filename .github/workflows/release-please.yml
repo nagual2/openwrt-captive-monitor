@@ -46,6 +46,9 @@ jobs:
           TAG="${{ needs.release-please.outputs.tag_name }}"
           VERSION="${TAG#v}"
           
+          # Update VERSION file
+          echo "$VERSION" > VERSION
+          
           # Update Makefile
           sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=$VERSION/" package/openwrt-captive-monitor/Makefile
           
@@ -55,6 +58,6 @@ jobs:
           # Commit changes
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add package/openwrt-captive-monitor/Makefile
+          git add VERSION package/openwrt-captive-monitor/Makefile
           git commit -m "chore(release): bump version to $VERSION"
           git push
