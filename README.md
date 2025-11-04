@@ -1,11 +1,9 @@
-# openwrt-captive-monitor
+# OpenWrt Captive Monitor
 
-[![CI](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/ci.yml/badge.svg?branch=main&label=CI)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/ci.yml?query=branch%3Amain)
-[![Package Build](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml/badge.svg?branch=main&label=Package%20Build)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml?query=branch%3Amain)
-[![Release](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/release-please.yml/badge.svg?branch=main&label=Release)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/release-please.yml?query=branch%3Amain)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub release](https://img.shields.io/github/release/nagual2/openwrt-captive-monitor.svg)](https://github.com/nagual2/openwrt-captive-monitor/releases)
-[![GitHub stars](https://img.shields.io/github/stars/nagual2/openwrt-captive-monitor.svg?style=social)](https://github.com/nagual2/openwrt-captive-monitor/stargazers)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/nagual2/openwrt-captive-monitor/actions)
+[![GitHub release](https://img.shields.io/github/v/release/nagual2/openwrt-captive-monitor)](https://github.com/nagual2/openwrt-captive-monitor/releases)
+[![License](https://img.shields.io/github/license/nagual2/openwrt-captive-monitor)](LICENSE)
+[![OpenWrt](https://img.shields.io/badge/OpenWrt-compatible-blue)](https://openwrt.org/)
 
 A lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily
 intercepts LAN DNS/HTTP traffic so clients can authenticate. Once internet access is restored,
@@ -133,26 +131,6 @@ ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
 - [License](#-license)
 - [Acknowledgments](#-acknowledgments)
 - [Related Projects](#-related-projects)
-
-- [Installation](#installation)
-  - [Prerequisites](#prerequisites)
-  - [Installation Options](#installation-options)
-  - [Configuration](#configuration)
-- [Usage](#usage)
-  - [Operation Modes](#operation-modes)
-  - [Monitoring](#monitoring)
-  - [Troubleshooting](#troubleshooting)
-- [Configuration](#configuration-1)
-  - [Basic Settings](#basic-settings)
-  - [Advanced Options](#advanced-options)
-- [Development](#development)
-  - [Building](#building)
-  - [Testing](#testing)
-  - [Contributing](#contributing)
-- [Community](#community)
-  - [Support](#support)
-  - [Security](#security)
-  - [License](#license)
 
 
 ## 📦 Installation Options
@@ -409,9 +387,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ### Latest Release
 
-- **Version**: [![GitHub release](https://img.shields.io/github/release/nagual2/openwrt-captive-monitor.svg)](https://github.com/nagual2/openwrt-captive-monitor/releases)
-- **Downloads**: [![GitHub all releases](https://img.shields.io/github/downloads/nagual2/openwrt-captive-monitor/total.svg)](https://github.com/nagual2/openwrt-captive-monitor/releases)
-- **Build Status**: [![Package Build](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml/badge.svg?branch=main&label=Package%20Build)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml?query=branch%3Amain)
+- **Version**: v1.0.1 (See [releases page](https://github.com/nagual2/openwrt-captive-monitor/releases) for details)
+- **License**: [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+- **Platform**: [![OpenWrt](https://img.shields.io/badge/OpenWrt-21.02%2B-blue.svg)](https://openwrt.org/)
 
 ### Compatibility
 

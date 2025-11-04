@@ -45,7 +45,7 @@ get_msg() {
         esac
     # Russian messages
     elif [ "$LANGUAGE" = "ru" ]; then
-        case "$key" in
+        case $key in
             installing) echo "Установка OpenWRT Captive Monitor..." ;;
             installing_deps) echo "Установка необходимых зависимостей..." ;;
             creating_dirs) echo "Создание необходимых директорий..." ;;
@@ -82,7 +82,6 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Parse command line arguments
-COMMAND=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --lang=*)
