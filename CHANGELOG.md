@@ -1,9 +1,21 @@
 # Changelog
 
+## [1.0.1](https://github.com/nagual2/openwrt-captive-monitor/compare/v0.1.2...v1.0.1)
+
+### Documentation & Cleanup
+- Comprehensive markdown file audit and cleanup
+- Removed temporary/technical reports and audit files
+- Updated version references throughout documentation to 1.0.1
+- Cleaned up repository structure by removing obsolete files
+
+### Version Management
+- Synchronized all version files to 1.0.1
+- Updated package documentation with current version
+- Standardized version references across all documentation
+
 ## [0.1.2](https://github.com/nagual2/openwrt-captive-monitor/compare/v0.1.1...v0.1.2)
 
 ### Documentation & Reporting
-- Add comprehensive PROJECT_COMMIT_REPORT.md with detailed analysis of all 59 commits
 - Enhanced project documentation with complete commit history and categorization
 - Improved README with better contribution guidelines and project overview
 
