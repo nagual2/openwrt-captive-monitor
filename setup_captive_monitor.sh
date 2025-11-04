@@ -6,7 +6,7 @@ WIFI_LOGICAL="wwan"
 MONITOR_INTERVAL=60
 PING_SERVERS="1.1.1.1 8.8.8.8 9.9.9.9"
 CHECK_URLS="http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt"
-LANGUAGE="en"  # Default language
+LANGUAGE="en" # Default language
 
 # Function to get localized message
 get_msg() {
@@ -198,15 +198,15 @@ show_status() {
     fi
     
     echo "$(get_msg service_status)"
-    if [ -f /etc/init.d/captive-monitor ]; then
-        /etc/init.d/captive-monitor status 2>/dev/null || echo "$(get_msg not_running)"
+    if [ -f "/etc/init.d/captive-monitor" ]; then
+        /etc/init.d/captive-monitor status 2>/dev/null || echo -e "${YELLOW}$(get_msg not_running)${NC}"
     else
         echo "Service not installed"
     fi
     
     echo ""
     echo "$(get_msg configuration)"
-    if [ -f /etc/config/captive-monitor ]; then
+    if [ -f "/etc/config/captive-monitor" ]; then
         uci show captive-monitor 2>/dev/null || echo "$(get_msg no_config)"
     else
         echo "No configuration file found"
@@ -214,7 +214,7 @@ show_status() {
     
     echo ""
     echo "$(get_msg process_status)"
-    if pgrep -f "openwrt_captive_monitor" >/dev/null; then
+    if pgrep -f "openwrt_captive_monitor" > /dev/null; then
         echo "$(get_msg running)"
     else
         echo "$(get_msg not_running)"
@@ -273,7 +273,7 @@ case "$COMMAND" in
     status)
         show_status
         ;;
-    help|--help|-h|*)
+    help | --help | -h | *)
         show_usage
         ;;
 esac
