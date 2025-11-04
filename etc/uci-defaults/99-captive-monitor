@@ -1,0 +1,31 @@
+#!/bin/sh
+# shellcheck shell=ash
+
+CONFIG="captive-monitor"
+SECTION="config"
+
+if uci -q get "${CONFIG}.${SECTION}" > /dev/null 2>&1; then
+    rm -f "/etc/uci-defaults/99-captive-monitor"
+    exit 0
+fi
+
+uci -q batch << 'EOF'
+set captive-monitor.config=captive_monitor
+set captive-monitor.config.enabled='0'
+set captive-monitor.config.mode='monitor'
+set captive-monitor.config.wifi_interface='phy1-sta0'
+set captive-monitor.config.wifi_logical='wwan'
+set captive-monitor.config.monitor_interval='60'
+set captive-monitor.config.ping_servers='1.1.1.1 8.8.8.8 9.9.9.9'
+set captive-monitor.config.captive_check_urls='http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
+set captive-monitor.config.enable_syslog='1'
+set captive-monitor.config.lan_interface=''
+set captive-monitor.config.lan_ip=''
+set captive-monitor.config.lan_ipv6=''
+set captive-monitor.config.firewall_backend='auto'
+commit captive-monitor
+EOF
+
+rm -f "/etc/uci-defaults/99-captive-monitor"
+
+exit 0
