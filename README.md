@@ -66,7 +66,7 @@ cd openwrt-captive-monitor
 scripts/build_ipk.sh --arch all
 
 ## For advanced packaging options and release automation, see:
-## https://nagual2.github.io/openwrt-captive-monitor/packaging/
+## docs/packaging.md
 
 ## Install built package
 scp dist/opkg/all/openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
@@ -355,7 +355,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📚 Documentation
 
-- **[Full Documentation](https://nagual2.github.io/openwrt-captive-monitor/)** - Complete guides and reference
+- **[Documentation Index](docs/index.md)** - Complete guides and reference
 - **[Quick Start Guide](docs/usage/quick-start.md)** - Get started in minutes
 - **[Configuration Reference](docs/configuration/reference.md)** - All configuration options
 - **[Troubleshooting Guide](docs/guides/troubleshooting.md)** - Common issues and solutions
@@ -367,7 +367,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 - **[GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)** - Bug reports and feature requests
 - **[GitHub Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)** - General questions and help
-- **[Documentation](https://nagual2.github.io/openwrt-captive-monitor/)** - Comprehensive guides and reference
+- **[Documentation](docs/index.md)** - Comprehensive guides and reference
 
 ### Security
 
@@ -423,7 +423,7 @@ This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LI
 ---
 
 <div align="center">
-**[📖 Full Documentation](https://nagual2.github.io/openwrt-captive-monitor/)** •
+**[📖 Documentation](docs/index.md)** •
 **[🚀 Quick Start](docs/usage/quick-start.md)** •
 **[⚙️ Configuration](docs/configuration/basic-config.md)** •
 **[🐛 Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)** •
