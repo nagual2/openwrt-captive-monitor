@@ -355,30 +355,30 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📚 Documentation
 
-- **[Documentation Index](docs/index.md)** - Complete guides and reference
-- **[Quick Start Guide](docs/usage/quick-start.md)** - Get started in minutes
-- **[Configuration Reference](docs/configuration/reference.md)** - All configuration options
-- **[Troubleshooting Guide](docs/guides/troubleshooting.md)** - Common issues and solutions
-- **[Architecture Overview](docs/guides/architecture.md)** - System design and components
+- [Documentation Index](docs/index.md) - Complete guides and reference
+- [Quick Start Guide](docs/usage/quick-start.md) - Get started in minutes
+- [Configuration Reference](docs/configuration/reference.md) - All configuration options
+- [Troubleshooting Guide](docs/guides/troubleshooting.md) - Common issues and solutions
+- [Architecture Overview](docs/guides/architecture.md) - System design and components
 
 ## 🤝 Community
 
 ### Support
 
-- **[GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)** - Bug reports and feature requests
-- **[GitHub Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)** - General questions and help
-- **[Documentation](docs/index.md)** - Comprehensive guides and reference
+- [GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues) - Bug reports and feature requests
+- [GitHub Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions) - General questions and help
+- [Documentation](docs/index.md) - Comprehensive guides and reference
 
 ### Security
 
-- **[Security Policy](.github/SECURITY.md)** - Security vulnerability reporting
-- **[Security Advisories](https://github.com/nagual2/openwrt-captive-monitor/security/advisories)** - Security notifications
+- [Security Policy](.github/SECURITY.md) - Security vulnerability reporting
+- [Security Advisories](https://github.com/nagual2/openwrt-captive-monitor/security/advisories) - Security notifications
 
 ### Contributing
 
-- **[Contributing Guide](CONTRIBUTING.md)** - Development guidelines and process
-- **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community guidelines
-- **[Project Management](docs/project/management.md)** - Roadmap and release process
+- [Contributing Guide](CONTRIBUTING.md) - Development guidelines and process
+- [Code of Conduct](CODE_OF_CONDUCT.md) - Community guidelines
+- [Project Management](docs/project/management.md) - Roadmap and release process
 
 ## 📊 Project Status
 
@@ -416,18 +416,14 @@ This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LI
 
 ## 🔗 Related Projects
 
-- **[uspot](https://github.com/f00b4r0/uspot)** - Full-featured captive portal for OpenWrt
-- **[apfree-wifidog](https://github.com/liudf0716/apfree-wifidog)** - High-performance captive portal
-- **[CaptivePortalAutologin](https://github.com/jsparber/CaptivePortalAutologin)** - Android auto-login app
+- [uspot](https://github.com/f00b4r0/uspot) - Full-featured captive portal for OpenWrt
+- [apfree-wifidog](https://github.com/liudf0716/apfree-wifidog) - High-performance captive portal
+- [CaptivePortalAutologin](https://github.com/jsparber/CaptivePortalAutologin) - Android auto-login app
 
 ---
 
 <div align="center">
-**[📖 Documentation](docs/index.md)** •
-**[🚀 Quick Start](docs/usage/quick-start.md)** •
-**[⚙️ Configuration](docs/configuration/basic-config.md)** •
-**[🐛 Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)** •
-**[💬 Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)**
+[📖 Documentation](docs/) • [🐛 Issues](https://github.com/nagual2/openwrt-captive-monitor/issues) • [💬 Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)
 
 Made with ❤️ for the OpenWrt community
 
