@@ -6,18 +6,18 @@ mock_log nslookup "$@"
 
 host=""
 for arg in "$@"; do
-    case "$arg" in
-        -*) ;;
-        *)
-            if [ -z "$host" ]; then
-                host="$arg"
-            fi
-            ;;
-    esac
+  case "$arg" in
+    -*) ;;
+    *)
+      if [ -z "$host" ]; then
+        host="$arg"
+      fi
+      ;;
+  esac
 done
 
 if [ -z "$host" ]; then
-    host="captive.test"
+  host="captive.test"
 fi
 
 ip4="${MOCK_NSLOOKUP_IPV4:-10.10.10.10}"
@@ -26,9 +26,9 @@ ip6="${MOCK_NSLOOKUP_IPV6:-}"
 printf 'Server: %s\n' "${2:-127.0.0.1}"
 printf 'Name: %s\n' "$host"
 if [ -n "$ip4" ]; then
-    printf 'Address 1: %s\n' "$ip4"
+  printf 'Address 1: %s\n' "$ip4"
 fi
 if [ -n "$ip6" ]; then
-    printf 'Address 2: %s\n' "$ip6"
+  printf 'Address 2: %s\n' "$ip6"
 fi
 exit 0

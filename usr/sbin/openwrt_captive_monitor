@@ -7,8 +7,8 @@
 set -eu
 
 if (set -o pipefail) 2> /dev/null; then
-    # shellcheck disable=SC3040
-    set -o pipefail
+  # shellcheck disable=SC3040
+  set -o pipefail
 fi
 
 # OpenWRT Captive Portal Monitor and Auto-Redirect Script
@@ -137,64 +137,64 @@ ENABLE_SYSLOG="${ENABLE_SYSLOG:-$DEFAULT_ENABLE_SYSLOG}"
 DEFAULT_MODE="oneshot"
 
 uci_safe_get() {
-    if command -v uci > /dev/null 2>&1; then
-        uci -q get "$1" 2> /dev/null || true
-    else
-        printf ''
-    fi
+  if command -v uci > /dev/null 2>&1; then
+    uci -q get "$1" 2> /dev/null || true
+  else
+    printf ''
+  fi
 }
 
 load_uci_config() {
-    if ! command -v uci > /dev/null 2>&1; then
-        return 0
-    fi
+  if ! command -v uci > /dev/null 2>&1; then
+    return 0
+  fi
 
-    local section="captive-monitor.config"
-    local value
+  local section="captive-monitor.config"
+  local value
 
-    value=$(uci_safe_get "${section}.wifi_interface")
-    [ -n "$value" ] && WIFI_INTERFACE="$value"
+  value=$(uci_safe_get "${section}.wifi_interface")
+  [ -n "$value" ] && WIFI_INTERFACE="$value"
 
-    value=$(uci_safe_get "${section}.wifi_logical")
-    [ -n "$value" ] && WIFI_LOGICAL="$value"
+  value=$(uci_safe_get "${section}.wifi_logical")
+  [ -n "$value" ] && WIFI_LOGICAL="$value"
 
-    value=$(uci_safe_get "${section}.lan_interface")
-    [ -n "$value" ] && LAN_INTERFACE="$value"
+  value=$(uci_safe_get "${section}.lan_interface")
+  [ -n "$value" ] && LAN_INTERFACE="$value"
 
-    value=$(uci_safe_get "${section}.lan_ip")
-    [ -n "$value" ] && LAN_IP="$value"
+  value=$(uci_safe_get "${section}.lan_ip")
+  [ -n "$value" ] && LAN_IP="$value"
 
-    value=$(uci_safe_get "${section}.lan_ipv6")
-    [ -n "$value" ] && LAN_IPV6="$value"
+  value=$(uci_safe_get "${section}.lan_ipv6")
+  [ -n "$value" ] && LAN_IPV6="$value"
 
-    value=$(uci_safe_get "${section}.firewall_backend")
-    [ -n "$value" ] && REQUESTED_FIREWALL_BACKEND="$value"
+  value=$(uci_safe_get "${section}.firewall_backend")
+  [ -n "$value" ] && REQUESTED_FIREWALL_BACKEND="$value"
 
-    value=$(uci_safe_get "${section}.monitor_interval")
-    [ -n "$value" ] && MONITOR_INTERVAL="$value"
+  value=$(uci_safe_get "${section}.monitor_interval")
+  [ -n "$value" ] && MONITOR_INTERVAL="$value"
 
-    value=$(uci_safe_get "${section}.ping_servers")
-    [ -n "$value" ] && PING_SERVERS="$value"
+  value=$(uci_safe_get "${section}.ping_servers")
+  [ -n "$value" ] && PING_SERVERS="$value"
 
-    value=$(uci_safe_get "${section}.captive_check_urls")
-    [ -n "$value" ] && CAPTIVE_CHECK_URLS="$value"
+  value=$(uci_safe_get "${section}.captive_check_urls")
+  [ -n "$value" ] && CAPTIVE_CHECK_URLS="$value"
 
-    value=$(uci_safe_get "${section}.enable_syslog")
-    case "$value" in
-        0 | false | no | disabled)
-            ENABLE_SYSLOG=0
-            ;;
-        1 | true | yes | enabled)
-            ENABLE_SYSLOG=1
-            ;;
-    esac
+  value=$(uci_safe_get "${section}.enable_syslog")
+  case "$value" in
+    0 | false | no | disabled)
+      ENABLE_SYSLOG=0
+      ;;
+    1 | true | yes | enabled)
+      ENABLE_SYSLOG=1
+      ;;
+  esac
 
-    value=$(uci_safe_get "${section}.mode")
-    case "$value" in
-        monitor | oneshot)
-            DEFAULT_MODE="$value"
-            ;;
-    esac
+  value=$(uci_safe_get "${section}.mode")
+  case "$value" in
+    monitor | oneshot)
+      DEFAULT_MODE="$value"
+      ;;
+  esac
 }
 
 # ============================================================================
@@ -202,21 +202,21 @@ load_uci_config() {
 # ============================================================================
 
 log_info() {
-    local msg="$1"
-    echo "[INFO] $msg"
-    [ "$ENABLE_SYSLOG" = "1" ] && logger -t "$LOG_TAG" -p user.info "$msg"
+  local msg="$1"
+  echo "[INFO] $msg"
+  [ "$ENABLE_SYSLOG" = "1" ] && logger -t "$LOG_TAG" -p user.info "$msg"
 }
 
 log_warn() {
-    local msg="$1"
-    echo "[WARN] $msg" >&2
-    [ "$ENABLE_SYSLOG" = "1" ] && logger -t "$LOG_TAG" -p user.warn "$msg"
+  local msg="$1"
+  echo "[WARN] $msg" >&2
+  [ "$ENABLE_SYSLOG" = "1" ] && logger -t "$LOG_TAG" -p user.warn "$msg"
 }
 
 log_error() {
-    local msg="$1"
-    echo "[ERROR] $msg" >&2
-    [ "$ENABLE_SYSLOG" = "1" ] && logger -t "$LOG_TAG" -p user.err "$msg"
+  local msg="$1"
+  echo "[ERROR] $msg" >&2
+  [ "$ENABLE_SYSLOG" = "1" ] && logger -t "$LOG_TAG" -p user.err "$msg"
 }
 
 # ============================================================================
@@ -224,74 +224,74 @@ log_error() {
 # ============================================================================
 
 trim() {
-    local value="$1"
-    value="${value%\r}"
-    echo "$value"
+  local value="$1"
+  value="${value%\r}"
+  echo "$value"
 }
 
 normalize_url() {
-    local raw="$1"
-    local base="$2"
-    local scheme host base_dir
+  local raw="$1"
+  local base="$2"
+  local scheme host base_dir
 
-    case "$raw" in
-        http://* | https://*)
-            echo "$raw"
-            return 0
-            ;;
-        //*)
-            echo "http:${raw}"
-            return 0
-            ;;
-        /*)
-            scheme="${base%%://*}"
-            [ -z "$scheme" ] && scheme="http"
-            host=$(echo "$base" | cut -d/ -f3)
-            echo "${scheme}://${host}${raw}"
-            return 0
-            ;;
-    esac
+  case "$raw" in
+    http://* | https://*)
+      echo "$raw"
+      return 0
+      ;;
+    //*)
+      echo "http:${raw}"
+      return 0
+      ;;
+    /*)
+      scheme="${base%%://*}"
+      [ -z "$scheme" ] && scheme="http"
+      host=$(echo "$base" | cut -d/ -f3)
+      echo "${scheme}://${host}${raw}"
+      return 0
+      ;;
+  esac
 
-    base_dir=$(echo "$base" | sed 's#[^/]*$##')
-    if [ -n "$base_dir" ]; then
-        echo "${base_dir}${raw}"
-    else
-        echo "$raw"
-    fi
+  base_dir=$(echo "$base" | sed 's#[^/]*$##')
+  if [ -n "$base_dir" ]; then
+    echo "${base_dir}${raw}"
+  else
+    echo "$raw"
+  fi
 }
 
 extract_host_from_url() {
-    local url="$1"
-    url="${url#http://}"
-    url="${url#https://}"
-    url="${url#//}"
-    url="${url%%/*}"
-    url="${url%%:*}"
-    echo "$url"
+  local url="$1"
+  url="${url#http://}"
+  url="${url#https://}"
+  url="${url#//}"
+  url="${url%%/*}"
+  url="${url%%:*}"
+  echo "$url"
 }
 
 execute_with_timeout() {
-    local duration="$1"
-    shift
+  local duration="$1"
+  shift
 
-    case "$duration" in
-        "" | 0)
-            "$@"
-            ;;
-        *)
-            if command -v timeout > /dev/null 2>&1; then
-                timeout "$duration" "$@"
-            else
-                "$@"
-            fi
-            ;;
-    esac
+  case "$duration" in
+    "" | 0)
+      "$@"
+      ;;
+    *)
+      if command -v timeout > /dev/null 2>&1; then
+        timeout "$duration" "$@"
+      else
+        "$@"
+      fi
+      ;;
+  esac
 }
 
 extract_first_address() {
-    local family="$1"
+  local family="$1"
 
-    awk -v family="$family" '
+  awk -v family="$family" '
         function is_ipv4(value) {
             return value ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/
         }
@@ -332,85 +332,85 @@ extract_first_address() {
 }
 
 dns_lookup_with_nslookup() {
-    local host="$1"
-    local family="$2"
-    local server="${3:-}"
-    local output ip
+  local host="$1"
+  local family="$2"
+  local server="${3:-}"
+  local output ip
 
-    if ! command -v nslookup > /dev/null 2>&1; then
-        return 1
-    fi
-
-    if [ -n "$server" ]; then
-        if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" nslookup "$host" "$server" 2> /dev/null); then
-            return 1
-        fi
-    else
-        if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" nslookup "$host" 2> /dev/null); then
-            return 1
-        fi
-    fi
-
-    ip=$(printf '%s\n' "$output" | extract_first_address "$family")
-    if [ -n "$ip" ]; then
-        printf '%s\n' "$ip"
-        return 0
-    fi
-
+  if ! command -v nslookup > /dev/null 2>&1; then
     return 1
+  fi
+
+  if [ -n "$server" ]; then
+    if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" nslookup "$host" "$server" 2> /dev/null); then
+      return 1
+    fi
+  else
+    if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" nslookup "$host" 2> /dev/null); then
+      return 1
+    fi
+  fi
+
+  ip=$(printf '%s\n' "$output" | extract_first_address "$family")
+  if [ -n "$ip" ]; then
+    printf '%s\n' "$ip"
+    return 0
+  fi
+
+  return 1
 }
 
 dns_lookup_with_host() {
-    local host="$1"
-    local family="$2"
-    local server="${3:-}"
-    local output ip record
+  local host="$1"
+  local family="$2"
+  local server="${3:-}"
+  local output ip record
 
-    if ! command -v host > /dev/null 2>&1; then
-        return 1
-    fi
-
-    case "$family" in
-        4)
-            record="A"
-            ;;
-        6)
-            record="AAAA"
-            ;;
-        *)
-            record=""
-            ;;
-    esac
-
-    if [ -n "$record" ]; then
-        if [ -n "$server" ]; then
-            if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host -t "$record" "$host" "$server" 2> /dev/null); then
-                return 1
-            fi
-        else
-            if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host -t "$record" "$host" 2> /dev/null); then
-                return 1
-            fi
-        fi
-    else
-        if [ -n "$server" ]; then
-            if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host "$host" "$server" 2> /dev/null); then
-                return 1
-            fi
-        else
-            if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host "$host" 2> /dev/null); then
-                return 1
-            fi
-        fi
-    fi
-
-    ip=$(printf '%s\n' "$output" | extract_first_address "$family")
-    if [ -n "$ip" ]; then
-        printf '%s\n' "$ip"
-        return 0
-    fi
-
+  if ! command -v host > /dev/null 2>&1; then
     return 1
+  fi
+
+  case "$family" in
+    4)
+      record="A"
+      ;;
+    6)
+      record="AAAA"
+      ;;
+    *)
+      record=""
+      ;;
+  esac
+
+  if [ -n "$record" ]; then
+    if [ -n "$server" ]; then
+      if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host -t "$record" "$host" "$server" 2> /dev/null); then
+        return 1
+      fi
+    else
+      if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host -t "$record" "$host" 2> /dev/null); then
+        return 1
+      fi
+    fi
+  else
+    if [ -n "$server" ]; then
+      if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host "$host" "$server" 2> /dev/null); then
+        return 1
+      fi
+    else
+      if ! output=$(execute_with_timeout "$DNS_LOOKUP_TIMEOUT" host "$host" 2> /dev/null); then
+        return 1
+      fi
+    fi
+  fi
+
+  ip=$(printf '%s\n' "$output" | extract_first_address "$family")
+  if [ -n "$ip" ]; then
+    printf '%s\n' "$ip"
+    return 0
+  fi
+
+  return 1
 }
 
 # ============================================================================
@@ -418,157 +418,157 @@ dns_lookup_with_host() {
 # ============================================================================
 
 ping_host() {
-    local host="$1"
-    local timeout="${2:-$PING_TIMEOUT}"
-    ping -c "$PING_COUNT" -W "$timeout" "$host" > /dev/null 2>&1
+  local host="$1"
+  local timeout="${2:-$PING_TIMEOUT}"
+  ping -c "$PING_COUNT" -W "$timeout" "$host" > /dev/null 2>&1
 }
 
 get_gateway_ip() {
-    local iface="${1:-$WIFI_INTERFACE}"
-    local gateway
+  local iface="${1:-$WIFI_INTERFACE}"
+  local gateway
 
-    gateway=$(ip route show dev "$iface" 2> /dev/null | grep '^default' | awk '{print $3}' | head -n1)
+  gateway=$(ip route show dev "$iface" 2> /dev/null | grep '^default' | awk '{print $3}' | head -n1)
+  [ -n "$gateway" ] && {
+    echo "$gateway"
+    return 0
+  }
+
+  gateway=$(ip route 2> /dev/null | grep "^default.*dev $iface" | awk '{print $3}' | head -n1)
+  [ -n "$gateway" ] && {
+    echo "$gateway"
+    return 0
+  }
+
+  gateway=$(route -n 2> /dev/null | grep "^0.0.0.0.*$iface" | awk '{print $2}' | head -n1)
+  [ -n "$gateway" ] && {
+    echo "$gateway"
+    return 0
+  }
+
+  if [ -f "/tmp/dhcpc.resolv.conf" ]; then
+    gateway=$(grep "$iface" /tmp/dhcpc.resolv.conf 2> /dev/null | awk '{print $3}' | head -n1)
     [ -n "$gateway" ] && {
-        echo "$gateway"
-        return 0
+      echo "$gateway"
+      return 0
     }
+  fi
 
-    gateway=$(ip route 2> /dev/null | grep "^default.*dev $iface" | awk '{print $3}' | head -n1)
+  if command -v uci > /dev/null 2>&1; then
+    local logical="${WIFI_LOGICAL:-$iface}"
+    gateway=$(uci_safe_get "network.${logical}.gateway")
     [ -n "$gateway" ] && {
-        echo "$gateway"
-        return 0
+      echo "$gateway"
+      return 0
     }
+  fi
 
-    gateway=$(route -n 2> /dev/null | grep "^0.0.0.0.*$iface" | awk '{print $2}' | head -n1)
-    [ -n "$gateway" ] && {
-        echo "$gateway"
-        return 0
-    }
+  gateway=$(ip route 2> /dev/null | grep '^default' | awk '{print $3}' | head -n1)
+  [ -n "$gateway" ] && {
+    log_warn "Используем общий default gateway: $gateway"
+    echo "$gateway"
+    return 0
+  }
 
-    if [ -f "/tmp/dhcpc.resolv.conf" ]; then
-        gateway=$(grep "$iface" /tmp/dhcpc.resolv.conf 2> /dev/null | awk '{print $3}' | head -n1)
-        [ -n "$gateway" ] && {
-            echo "$gateway"
-            return 0
-        }
-    fi
-
-    if command -v uci > /dev/null 2>&1; then
-        local logical="${WIFI_LOGICAL:-$iface}"
-        gateway=$(uci_safe_get "network.${logical}.gateway")
-        [ -n "$gateway" ] && {
-            echo "$gateway"
-            return 0
-        }
-    fi
-
-    gateway=$(ip route 2> /dev/null | grep '^default' | awk '{print $3}' | head -n1)
-    [ -n "$gateway" ] && {
-        log_warn "Используем общий default gateway: $gateway"
-        echo "$gateway"
-        return 0
-    }
-
-    return 1
+  return 1
 }
 
 check_gateway() {
-    local attempt=1
-    local gateway
-    local delay="$GATEWAY_CHECK_DELAY"
+  local attempt=1
+  local gateway
+  local delay="$GATEWAY_CHECK_DELAY"
 
-    while [ "$attempt" -le "$GATEWAY_CHECK_RETRIES" ]; do
-        if gateway=$(get_gateway_ip); then
-            if [ -n "$gateway" ] && ping_host "$gateway" "$GATEWAY_PING_TIMEOUT"; then
-                log_info "Шлюз $gateway доступен"
-                return 0
-            fi
-            if [ -n "$gateway" ]; then
-                log_warn "Шлюз $gateway не отвечает (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
-            else
-                log_warn "Шлюз не найден (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
-            fi
-        else
-            gateway=""
-            log_warn "Шлюз не найден (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
-        fi
+  while [ "$attempt" -le "$GATEWAY_CHECK_RETRIES" ]; do
+    if gateway=$(get_gateway_ip); then
+      if [ -n "$gateway" ] && ping_host "$gateway" "$GATEWAY_PING_TIMEOUT"; then
+        log_info "Шлюз $gateway доступен"
+        return 0
+      fi
+      if [ -n "$gateway" ]; then
+        log_warn "Шлюз $gateway не отвечает (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
+      else
+        log_warn "Шлюз не найден (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
+      fi
+    else
+      gateway=""
+      log_warn "Шлюз не найден (попытка $attempt/$GATEWAY_CHECK_RETRIES)"
+    fi
 
-        if [ "$attempt" -lt "$GATEWAY_CHECK_RETRIES" ]; then
-            log_info "Повторная проверка шлюза через ${delay}с (попытка $((attempt + 1))/$GATEWAY_CHECK_RETRIES)"
-            sleep "$delay"
-            delay=$((delay * 2))
-        fi
+    if [ "$attempt" -lt "$GATEWAY_CHECK_RETRIES" ]; then
+      log_info "Повторная проверка шлюза через ${delay}с (попытка $((attempt + 1))/$GATEWAY_CHECK_RETRIES)"
+      sleep "$delay"
+      delay=$((delay * 2))
+    fi
 
-        attempt=$((attempt + 1))
-    done
+    attempt=$((attempt + 1))
+  done
 
-    log_error "Шлюз недоступен после $GATEWAY_CHECK_RETRIES попыток"
-    return 1
+  log_error "Шлюз недоступен после $GATEWAY_CHECK_RETRIES попыток"
+  return 1
 }
 
 http_probe_internet() {
-    local url
-    local status
+  local url
+  local status
 
-    HTTP_PROBE_RESULT_URL=""
-    HTTP_PROBE_RESULT_CODE=""
+  HTTP_PROBE_RESULT_URL=""
+  HTTP_PROBE_RESULT_CODE=""
 
-    if [ -z "$INTERNET_HTTP_PROBES" ]; then
-        return 1
-    fi
-
-    if ! command -v curl > /dev/null 2>&1; then
-        return 1
-    fi
-
-    for url in $INTERNET_HTTP_PROBES; do
-        status=$(curl -sS -o /dev/null -m "$HTTP_PROBE_TIMEOUT" -w '%{http_code}' "$url" 2> /dev/null || printf '')
-        case "$status" in
-            2?? | 3??)
-                HTTP_PROBE_RESULT_URL="$url"
-                HTTP_PROBE_RESULT_CODE="$status"
-                return 0
-                ;;
-        esac
-    done
-
+  if [ -z "$INTERNET_HTTP_PROBES" ]; then
     return 1
+  fi
+
+  if ! command -v curl > /dev/null 2>&1; then
+    return 1
+  fi
+
+  for url in $INTERNET_HTTP_PROBES; do
+    status=$(curl -sS -o /dev/null -m "$HTTP_PROBE_TIMEOUT" -w '%{http_code}' "$url" 2> /dev/null || printf '')
+    case "$status" in
+      2?? | 3??)
+        HTTP_PROBE_RESULT_URL="$url"
+        HTTP_PROBE_RESULT_CODE="$status"
+        return 0
+        ;;
+    esac
+  done
+
+  return 1
 }
 
 check_internet() {
-    local attempt=1
-    local server
-    local delay="$INTERNET_CHECK_DELAY"
+  local attempt=1
+  local server
+  local delay="$INTERNET_CHECK_DELAY"
 
-    while [ "$attempt" -le "$INTERNET_CHECK_RETRIES" ]; do
-        for server in $PING_SERVERS; do
-            if ping_host "$server" "$INTERNET_PING_TIMEOUT"; then
-                log_info "Интернет доступен по ICMP (сервер: $server)"
-                return 0
-            fi
-        done
-
-        if http_probe_internet; then
-            local probe_url="$HTTP_PROBE_RESULT_URL"
-            local probe_code="$HTTP_PROBE_RESULT_CODE"
-            [ -z "$probe_url" ] && probe_url="unknown"
-            [ -z "$probe_code" ] && probe_code="n/a"
-            log_info "Интернет доступен по HTTP/HTTPS (probe: $probe_url, статус: $probe_code)"
-            return 0
-        fi
-
-        if [ "$attempt" -lt "$INTERNET_CHECK_RETRIES" ]; then
-            log_warn "Интернет недоступен (попытка $attempt/$INTERNET_CHECK_RETRIES)"
-            log_info "Повторная проверка через ${delay}с (попытка $((attempt + 1))/$INTERNET_CHECK_RETRIES)"
-            sleep "$delay"
-            delay=$((delay * 2))
-        fi
-
-        attempt=$((attempt + 1))
+  while [ "$attempt" -le "$INTERNET_CHECK_RETRIES" ]; do
+    for server in $PING_SERVERS; do
+      if ping_host "$server" "$INTERNET_PING_TIMEOUT"; then
+        log_info "Интернет доступен по ICMP (сервер: $server)"
+        return 0
+      fi
     done
 
-    log_warn "Интернет недоступен после $INTERNET_CHECK_RETRIES попыток"
-    return 1
+    if http_probe_internet; then
+      local probe_url="$HTTP_PROBE_RESULT_URL"
+      local probe_code="$HTTP_PROBE_RESULT_CODE"
+      [ -z "$probe_url" ] && probe_url="unknown"
+      [ -z "$probe_code" ] && probe_code="n/a"
+      log_info "Интернет доступен по HTTP/HTTPS (probe: $probe_url, статус: $probe_code)"
+      return 0
+    fi
+
+    if [ "$attempt" -lt "$INTERNET_CHECK_RETRIES" ]; then
+      log_warn "Интернет недоступен (попытка $attempt/$INTERNET_CHECK_RETRIES)"
+      log_info "Повторная проверка через ${delay}с (попытка $((attempt + 1))/$INTERNET_CHECK_RETRIES)"
+      sleep "$delay"
+      delay=$((delay * 2))
+    fi
+
+    attempt=$((attempt + 1))
+  done
+
+  log_warn "Интернет недоступен после $INTERNET_CHECK_RETRIES попыток"
+  return 1
 }
 
 # ============================================================================
@@ -576,80 +576,80 @@ check_internet() {
 # ============================================================================
 
 interface_exists() {
-    local iface="${1:-$WIFI_INTERFACE}"
-    ip link show "$iface" > /dev/null 2>&1
+  local iface="${1:-$WIFI_INTERFACE}"
+  ip link show "$iface" > /dev/null 2>&1
 }
 
 is_interface_up() {
-    local iface="${1:-$WIFI_INTERFACE}"
-    ip link show "$iface" 2> /dev/null | grep -q "state UP"
+  local iface="${1:-$WIFI_INTERFACE}"
+  ip link show "$iface" 2> /dev/null | grep -q "state UP"
 }
 
 restart_wifi_logical() {
-    local logical="${1:-$WIFI_LOGICAL}"
-    log_info "Перезапуск логического интерфейса: $logical"
-    ifdown "$logical" 2> /dev/null || true
-    sleep 2
-    if ifup "$logical" 2> /dev/null; then
-        log_info "Логический интерфейс $logical успешно поднят"
-        return 0
-    fi
-    log_error "Ошибка при поднятии логического интерфейса $logical"
-    return 1
+  local logical="${1:-$WIFI_LOGICAL}"
+  log_info "Перезапуск логического интерфейса: $logical"
+  ifdown "$logical" 2> /dev/null || true
+  sleep 2
+  if ifup "$logical" 2> /dev/null; then
+    log_info "Логический интерфейс $logical успешно поднят"
+    return 0
+  fi
+  log_error "Ошибка при поднятии логического интерфейса $logical"
+  return 1
 }
 
 restart_wifi_physical() {
-    local iface="${1:-$WIFI_INTERFACE}"
-    log_info "Перезапуск физического интерфейса: $iface"
+  local iface="${1:-$WIFI_INTERFACE}"
+  log_info "Перезапуск физического интерфейса: $iface"
 
-    if ! interface_exists "$iface"; then
-        log_error "Интерфейс $iface не существует"
-        return 1
+  if ! interface_exists "$iface"; then
+    log_error "Интерфейс $iface не существует"
+    return 1
+  fi
+
+  ip link set dev "$iface" down 2> /dev/null || true
+  sleep 2
+
+  if ! ip link set dev "$iface" up 2> /dev/null; then
+    log_error "Ошибка при поднятии интерфейса $iface"
+    return 1
+  fi
+
+  log_info "Интерфейс $iface успешно поднят"
+
+  local start_time
+  start_time=$(date +%s)
+  local current_time elapsed gateway
+
+  while true; do
+    current_time=$(date +%s)
+    elapsed=$((current_time - start_time))
+    if [ "$elapsed" -ge "$MAX_WAIT_TIME" ]; then
+      log_error "Таймаут ожидания готовности интерфейса ($MAX_WAIT_TIME сек)"
+      return 1
     fi
-
-    ip link set dev "$iface" down 2> /dev/null || true
-    sleep 2
-
-    if ! ip link set dev "$iface" up 2> /dev/null; then
-        log_error "Ошибка при поднятии интерфейса $iface"
-        return 1
+    if is_interface_up "$iface" && ip -4 addr show dev "$iface" | grep -q 'inet '; then
+      log_info "Интерфейс $iface получил IP адрес"
+      if gateway=$(get_gateway_ip "$iface"); then
+        if [ -n "$gateway" ] && ping_host "$gateway" "$GATEWAY_PING_TIMEOUT"; then
+          log_info "Шлюз $gateway доступен, интерфейс готов"
+          return 0
+        fi
+      fi
     fi
-
-    log_info "Интерфейс $iface успешно поднят"
-
-    local start_time
-    start_time=$(date +%s)
-    local current_time elapsed gateway
-
-    while true; do
-        current_time=$(date +%s)
-        elapsed=$((current_time - start_time))
-        if [ "$elapsed" -ge "$MAX_WAIT_TIME" ]; then
-            log_error "Таймаут ожидания готовности интерфейса ($MAX_WAIT_TIME сек)"
-            return 1
-        fi
-        if is_interface_up "$iface" && ip -4 addr show dev "$iface" | grep -q 'inet '; then
-            log_info "Интерфейс $iface получил IP адрес"
-            if gateway=$(get_gateway_ip "$iface"); then
-                if [ -n "$gateway" ] && ping_host "$gateway" "$GATEWAY_PING_TIMEOUT"; then
-                    log_info "Шлюз $gateway доступен, интерфейс готов"
-                    return 0
-                fi
-            fi
-        fi
-        sleep 3
-    done
+    sleep 3
+  done
 }
 
 restart_wifi() {
-    log_info "Начало перезапуска WiFi"
-    if [ -n "$WIFI_LOGICAL" ] && [ "$WIFI_LOGICAL" != "$WIFI_INTERFACE" ]; then
-        if restart_wifi_logical "$WIFI_LOGICAL"; then
-            return 0
-        fi
-        log_warn "Перезапуск через логический интерфейс не удался, пробуем физический"
+  log_info "Начало перезапуска WiFi"
+  if [ -n "$WIFI_LOGICAL" ] && [ "$WIFI_LOGICAL" != "$WIFI_INTERFACE" ]; then
+    if restart_wifi_logical "$WIFI_LOGICAL"; then
+      return 0
     fi
-    restart_wifi_physical "$WIFI_INTERFACE"
+    log_warn "Перезапуск через логический интерфейс не удался, пробуем физический"
+  fi
+  restart_wifi_physical "$WIFI_INTERFACE"
 }
 
 # ============================================================================
@@ -657,143 +657,143 @@ restart_wifi() {
 # ============================================================================
 
 ensure_lan_interface() {
-    if [ -n "$LAN_INTERFACE" ] && ip link show "$LAN_INTERFACE" > /dev/null 2>&1; then
-        return 0
-    fi
+  if [ -n "$LAN_INTERFACE" ] && ip link show "$LAN_INTERFACE" > /dev/null 2>&1; then
+    return 0
+  fi
 
-    if command -v uci > /dev/null 2>&1; then
-        LAN_INTERFACE=$(uci_safe_get "network.lan.device")
-        if [ -z "$LAN_INTERFACE" ]; then
-            LAN_INTERFACE=$(uci_safe_get "network.lan.ifname")
-            if echo "$LAN_INTERFACE" | grep -q ' '; then
-                LAN_INTERFACE=$(echo "$LAN_INTERFACE" | awk '{print $1}')
-            fi
-        fi
+  if command -v uci > /dev/null 2>&1; then
+    LAN_INTERFACE=$(uci_safe_get "network.lan.device")
+    if [ -z "$LAN_INTERFACE" ]; then
+      LAN_INTERFACE=$(uci_safe_get "network.lan.ifname")
+      if echo "$LAN_INTERFACE" | grep -q ' '; then
+        LAN_INTERFACE=$(echo "$LAN_INTERFACE" | awk '{print $1}')
+      fi
     fi
+  fi
 
-    [ -z "$LAN_INTERFACE" ] && LAN_INTERFACE="br-lan"
+  [ -z "$LAN_INTERFACE" ] && LAN_INTERFACE="br-lan"
 
-    if ! ip link show "$LAN_INTERFACE" > /dev/null 2>&1; then
-        log_warn "LAN интерфейс $LAN_INTERFACE не найден, используем br-lan"
-        LAN_INTERFACE="br-lan"
-    fi
+  if ! ip link show "$LAN_INTERFACE" > /dev/null 2>&1; then
+    log_warn "LAN интерфейс $LAN_INTERFACE не найден, используем br-lan"
+    LAN_INTERFACE="br-lan"
+  fi
 }
 
 ensure_lan_ip() {
-    ensure_lan_interface
-    if [ -n "$LAN_IP" ]; then
-        return 0
-    fi
+  ensure_lan_interface
+  if [ -n "$LAN_IP" ]; then
+    return 0
+  fi
 
-    LAN_IP=$(ip -4 addr show dev "$LAN_INTERFACE" 2> /dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 | head -n1)
-    if [ -z "$LAN_IP" ] && command -v uci > /dev/null 2>&1; then
-        LAN_IP=$(uci_safe_get "network.lan.ipaddr")
-    fi
+  LAN_IP=$(ip -4 addr show dev "$LAN_INTERFACE" 2> /dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 | head -n1)
+  if [ -z "$LAN_IP" ] && command -v uci > /dev/null 2>&1; then
+    LAN_IP=$(uci_safe_get "network.lan.ipaddr")
+  fi
 
-    if [ -z "$LAN_IP" ]; then
-        LAN_IP="192.168.1.1"
-        log_warn "Не удалось определить LAN IP, используем $LAN_IP"
-    fi
+  if [ -z "$LAN_IP" ]; then
+    LAN_IP="192.168.1.1"
+    log_warn "Не удалось определить LAN IP, используем $LAN_IP"
+  fi
 }
 
 ensure_lan_ipv6() {
-    ensure_lan_interface
-    if [ -n "$LAN_IPV6" ]; then
-        return 0
-    fi
+  ensure_lan_interface
+  if [ -n "$LAN_IPV6" ]; then
+    return 0
+  fi
 
-    if command -v ip > /dev/null 2>&1; then
-        LAN_IPV6=$(ip -6 addr show dev "$LAN_INTERFACE" scope global 2> /dev/null | awk '{print $2}' | cut -d/ -f1 | head -n1)
-    fi
+  if command -v ip > /dev/null 2>&1; then
+    LAN_IPV6=$(ip -6 addr show dev "$LAN_INTERFACE" scope global 2> /dev/null | awk '{print $2}' | cut -d/ -f1 | head -n1)
+  fi
 
-    if [ -z "$LAN_IPV6" ] && command -v uci > /dev/null 2>&1; then
-        local tmp
-        tmp=$(uci_safe_get "network.lan.ip6addr")
-        if [ -n "$tmp" ]; then
-            LAN_IPV6="${tmp%%/*}"
-        fi
+  if [ -z "$LAN_IPV6" ] && command -v uci > /dev/null 2>&1; then
+    local tmp
+    tmp=$(uci_safe_get "network.lan.ip6addr")
+    if [ -n "$tmp" ]; then
+      LAN_IPV6="${tmp%%/*}"
     fi
+  fi
 
-    if [ -n "$LAN_IPV6" ]; then
-        return 0
-    fi
+  if [ -n "$LAN_IPV6" ]; then
+    return 0
+  fi
 
-    return 1
+  return 1
 }
 
 get_upstream_dns() {
-    local resolv="/tmp/resolv.conf.d/resolv.conf.auto"
-    if [ -f "$resolv" ]; then
-        awk '/^nameserver/ {print $2; exit 0}' "$resolv"
-        return 0
-    fi
-    return 1
+  local resolv="/tmp/resolv.conf.d/resolv.conf.auto"
+  if [ -f "$resolv" ]; then
+    awk '/^nameserver/ {print $2; exit 0}' "$resolv"
+    return 0
+  fi
+  return 1
 }
 
 resolve_portal_ipv4() {
-    local host="$1"
-    local dns=""
-    local ip=""
+  local host="$1"
+  local dns=""
+  local ip=""
 
-    if ! dns=$(get_upstream_dns); then
-        dns=""
+  if ! dns=$(get_upstream_dns); then
+    dns=""
+  fi
+
+  if [ -n "$dns" ]; then
+    if ip=$(dns_lookup_with_nslookup "$host" 4 "$dns"); then
+      printf '%s\n' "$ip"
+      return 0
     fi
-
-    if [ -n "$dns" ]; then
-        if ip=$(dns_lookup_with_nslookup "$host" 4 "$dns"); then
-            printf '%s\n' "$ip"
-            return 0
-        fi
-        if ip=$(dns_lookup_with_host "$host" 4 "$dns"); then
-            printf '%s\n' "$ip"
-            return 0
-        fi
+    if ip=$(dns_lookup_with_host "$host" 4 "$dns"); then
+      printf '%s\n' "$ip"
+      return 0
     fi
+  fi
 
-    if ip=$(dns_lookup_with_nslookup "$host" 4); then
-        printf '%s\n' "$ip"
-        return 0
-    fi
+  if ip=$(dns_lookup_with_nslookup "$host" 4); then
+    printf '%s\n' "$ip"
+    return 0
+  fi
 
-    if ip=$(dns_lookup_with_host "$host" 4); then
-        printf '%s\n' "$ip"
-        return 0
-    fi
+  if ip=$(dns_lookup_with_host "$host" 4); then
+    printf '%s\n' "$ip"
+    return 0
+  fi
 
-    return 1
+  return 1
 }
 
 resolve_portal_ipv6() {
-    local host="$1"
-    local dns=""
-    local ip=""
+  local host="$1"
+  local dns=""
+  local ip=""
 
-    if ! dns=$(get_upstream_dns); then
-        dns=""
+  if ! dns=$(get_upstream_dns); then
+    dns=""
+  fi
+
+  if [ -n "$dns" ]; then
+    if ip=$(dns_lookup_with_nslookup "$host" 6 "$dns"); then
+      printf '%s\n' "$ip"
+      return 0
     fi
-
-    if [ -n "$dns" ]; then
-        if ip=$(dns_lookup_with_nslookup "$host" 6 "$dns"); then
-            printf '%s\n' "$ip"
-            return 0
-        fi
-        if ip=$(dns_lookup_with_host "$host" 6 "$dns"); then
-            printf '%s\n' "$ip"
-            return 0
-        fi
+    if ip=$(dns_lookup_with_host "$host" 6 "$dns"); then
+      printf '%s\n' "$ip"
+      return 0
     fi
+  fi
 
-    if ip=$(dns_lookup_with_nslookup "$host" 6); then
-        printf '%s\n' "$ip"
-        return 0
-    fi
+  if ip=$(dns_lookup_with_nslookup "$host" 6); then
+    printf '%s\n' "$ip"
+    return 0
+  fi
 
-    if ip=$(dns_lookup_with_host "$host" 6); then
-        printf '%s\n' "$ip"
-        return 0
-    fi
+  if ip=$(dns_lookup_with_host "$host" 6); then
+    printf '%s\n' "$ip"
+    return 0
+  fi
 
-    return 1
+  return 1
 }
 
 # ============================================================================
@@ -801,118 +801,118 @@ resolve_portal_ipv6() {
 # ============================================================================
 
 extract_meta_refresh_url() {
-    local file="$1"
-    local line lower candidate
+  local file="$1"
+  local line lower candidate
 
-    while IFS= read -r line; do
-        lower=$(echo "$line" | tr '[:upper:]' '[:lower:]')
-        case "$lower" in
-            *http-equiv*refresh*)
-                candidate=$(echo "$line" | sed -n 's/.*[Uu][Rr][Ll]=["'"'"']\([^"'"'"' >]*\).*/\1/p')
-                [ -n "$candidate" ] && {
-                    echo "$candidate"
-                    return 0
-                }
-                ;;
-        esac
-    done < "$file"
-    return 1
+  while IFS= read -r line; do
+    lower=$(echo "$line" | tr '[:upper:]' '[:lower:]')
+    case "$lower" in
+      *http-equiv*refresh*)
+        candidate=$(echo "$line" | sed -n 's/.*[Uu][Rr][Ll]=["'"'"']\([^"'"'"' >]*\).*/\1/p')
+        [ -n "$candidate" ] && {
+          echo "$candidate"
+          return 0
+        }
+        ;;
+    esac
+  done < "$file"
+  return 1
 }
 
 extract_first_href() {
-    local file="$1"
-    local candidate
+  local file="$1"
+  local candidate
 
-    while IFS= read -r line; do
-        echo "$line" | grep -qi "href" || continue
-        candidate=$(echo "$line" | sed -n 's/.*href=["'"'"']\([^"'"'"'# >]*\).*/\1/p' | head -n1)
-        if [ -n "$candidate" ] && echo "$candidate" | grep -q '^http'; then
-            echo "$candidate"
-            return 0
-        fi
-    done < "$file"
-    return 1
+  while IFS= read -r line; do
+    echo "$line" | grep -qi "href" || continue
+    candidate=$(echo "$line" | sed -n 's/.*href=["'"'"']\([^"'"'"'# >]*\).*/\1/p' | head -n1)
+    if [ -n "$candidate" ] && echo "$candidate" | grep -q '^http'; then
+      echo "$candidate"
+      return 0
+    fi
+  done < "$file"
+  return 1
 }
 
 detect_captive_portal() {
-    local url
-    local header_file body_file status location candidate portal_url host
+  local url
+  local header_file body_file status location candidate portal_url host
 
-    if ! command -v curl > /dev/null 2>&1; then
-        log_error "curl не найден, невозможно выполнить проверку captive-портала"
-        return 1
+  if ! command -v curl > /dev/null 2>&1; then
+    log_error "curl не найден, невозможно выполнить проверку captive-портала"
+    return 1
+  fi
+
+  header_file=$(mktemp /tmp/captive_hdr.XXXXXX) || return 1
+  body_file=$(mktemp /tmp/captive_body.XXXXXX) || {
+    rm -f "$header_file"
+    return 1
+  }
+
+  CAPTIVE_PORTAL_URL=""
+  CAPTIVE_PORTAL_HOST=""
+
+  for url in $CAPTIVE_CHECK_URLS; do
+    log_info "Проверка captive-портала через $url"
+    portal_url=""
+    if ! curl -sS -m "$CAPTIVE_CURL_TIMEOUT" -D "$header_file" -o "$body_file" "$url" > /dev/null 2>&1; then
+      log_warn "curl для $url завершился ошибкой"
+      continue
     fi
 
-    header_file=$(mktemp /tmp/captive_hdr.XXXXXX) || return 1
-    body_file=$(mktemp /tmp/captive_body.XXXXXX) || {
-        rm -f "$header_file"
+    status=$(head -n1 "$header_file" | awk '{print $2}')
+    location=$(grep -i '^Location:' "$header_file" | tail -n1 | cut -d' ' -f2-)
+    location=$(trim "$location")
+
+    if [ "$status" = "204" ]; then
+      rm -f "$header_file" "$body_file"
+      return 1
+    fi
+
+    if [ "$status" = "200" ]; then
+      if grep -qi '^success' "$body_file"; then
+        rm -f "$header_file" "$body_file"
         return 1
-    }
+      fi
+    fi
 
-    CAPTIVE_PORTAL_URL=""
-    CAPTIVE_PORTAL_HOST=""
-
-    for url in $CAPTIVE_CHECK_URLS; do
-        log_info "Проверка captive-портала через $url"
-        portal_url=""
-        if ! curl -sS -m "$CAPTIVE_CURL_TIMEOUT" -D "$header_file" -o "$body_file" "$url" > /dev/null 2>&1; then
-            log_warn "curl для $url завершился ошибкой"
-            continue
+    if [ -n "$location" ]; then
+      if echo "$location" | grep -q '^http'; then
+        portal_url="$location"
+      else
+        portal_url=$(normalize_url "$location" "$url")
+      fi
+    else
+      candidate=""
+      if candidate=$(extract_meta_refresh_url "$body_file"); then
+        if [ -n "$candidate" ]; then
+          portal_url=$(normalize_url "$candidate" "$url")
         fi
-
-        status=$(head -n1 "$header_file" | awk '{print $2}')
-        location=$(grep -i '^Location:' "$header_file" | tail -n1 | cut -d' ' -f2-)
-        location=$(trim "$location")
-
-        if [ "$status" = "204" ]; then
-            rm -f "$header_file" "$body_file"
-            return 1
+      fi
+      if [ -z "$portal_url" ]; then
+        candidate=""
+        if candidate=$(extract_first_href "$body_file"); then
+          if [ -n "$candidate" ]; then
+            portal_url=$(normalize_url "$candidate" "$url")
+          fi
         fi
+      fi
+    fi
 
-        if [ "$status" = "200" ]; then
-            if grep -qi '^success' "$body_file"; then
-                rm -f "$header_file" "$body_file"
-                return 1
-            fi
-        fi
+    if [ -n "$portal_url" ]; then
+      host=$(extract_host_from_url "$portal_url")
+      if [ -n "$host" ]; then
+        CAPTIVE_PORTAL_URL="$portal_url"
+        CAPTIVE_PORTAL_HOST="$host"
+        rm -f "$header_file" "$body_file"
+        log_info "Обнаружен captive-портал: $CAPTIVE_PORTAL_URL"
+        return 0
+      fi
+    fi
+  done
 
-        if [ -n "$location" ]; then
-            if echo "$location" | grep -q '^http'; then
-                portal_url="$location"
-            else
-                portal_url=$(normalize_url "$location" "$url")
-            fi
-        else
-            candidate=""
-            if candidate=$(extract_meta_refresh_url "$body_file"); then
-                if [ -n "$candidate" ]; then
-                    portal_url=$(normalize_url "$candidate" "$url")
-                fi
-            fi
-            if [ -z "$portal_url" ]; then
-                candidate=""
-                if candidate=$(extract_first_href "$body_file"); then
-                    if [ -n "$candidate" ]; then
-                        portal_url=$(normalize_url "$candidate" "$url")
-                    fi
-                fi
-            fi
-        fi
-
-        if [ -n "$portal_url" ]; then
-            host=$(extract_host_from_url "$portal_url")
-            if [ -n "$host" ]; then
-                CAPTIVE_PORTAL_URL="$portal_url"
-                CAPTIVE_PORTAL_HOST="$host"
-                rm -f "$header_file" "$body_file"
-                log_info "Обнаружен captive-портал: $CAPTIVE_PORTAL_URL"
-                return 0
-            fi
-        fi
-    done
-
-    rm -f "$header_file" "$body_file"
-    return 1
+  rm -f "$header_file" "$body_file"
+  return 1
 }
 
 # ============================================================================
@@ -920,64 +920,64 @@ detect_captive_portal() {
 # ============================================================================
 
 write_dnsmasq_intercept() {
-    local portal_host="$1"
-    local portal_ip4="$2"
-    local portal_ip6="$3"
+  local portal_host="$1"
+  local portal_ip4="$2"
+  local portal_ip6="$3"
 
-    ensure_lan_ip
-    ensure_lan_ipv6 || true
+  ensure_lan_ip
+  ensure_lan_ipv6 || true
 
-    mkdir -p "$DNSMASQ_CAPTIVE_DIR"
+  mkdir -p "$DNSMASQ_CAPTIVE_DIR"
 
-    {
-        echo "# Captive portal intercept"
-        echo "# generated $(date)"
-        echo "address=/#/$LAN_IP"
-        if [ "$HTTPD_IPV6_READY" = "1" ] && [ -n "$LAN_IPV6" ]; then
-            echo "address=/#/$LAN_IPV6"
-        fi
-        echo "local-ttl=0"
-        echo "min-cache-ttl=0"
-        echo "max-cache-ttl=0"
-        echo "no-negcache"
-        if [ -n "$portal_host" ] && [ -n "$portal_ip4" ]; then
-            echo "address=/$portal_host/$portal_ip4"
-        fi
-        if [ "$HTTPD_IPV6_READY" = "1" ] && [ -n "$portal_host" ] && [ -n "$portal_ip6" ]; then
-            echo "address=/$portal_host/$portal_ip6"
-        fi
-    } > "$DNSMASQ_CAPTIVE_CONF"
-
-    if [ -n "$DNSMASQ_SERVICE" ] && "$DNSMASQ_SERVICE" reload > /dev/null 2>&1; then
-        log_info "dnsmasq перезагружен с конфигурацией перехвата"
-    else
-        log_warn "Не удалось выполнить reload dnsmasq"
+  {
+    echo "# Captive portal intercept"
+    echo "# generated $(date)"
+    echo "address=/#/$LAN_IP"
+    if [ "$HTTPD_IPV6_READY" = "1" ] && [ -n "$LAN_IPV6" ]; then
+      echo "address=/#/$LAN_IPV6"
     fi
+    echo "local-ttl=0"
+    echo "min-cache-ttl=0"
+    echo "max-cache-ttl=0"
+    echo "no-negcache"
+    if [ -n "$portal_host" ] && [ -n "$portal_ip4" ]; then
+      echo "address=/$portal_host/$portal_ip4"
+    fi
+    if [ "$HTTPD_IPV6_READY" = "1" ] && [ -n "$portal_host" ] && [ -n "$portal_ip6" ]; then
+      echo "address=/$portal_host/$portal_ip6"
+    fi
+  } > "$DNSMASQ_CAPTIVE_CONF"
+
+  if [ -n "$DNSMASQ_SERVICE" ] && "$DNSMASQ_SERVICE" reload > /dev/null 2>&1; then
+    log_info "dnsmasq перезагружен с конфигурацией перехвата"
+  else
+    log_warn "Не удалось выполнить reload dnsmasq"
+  fi
 }
 
 remove_dns_intercept() {
-    if [ -f "$DNSMASQ_CAPTIVE_CONF" ]; then
-        rm -f "$DNSMASQ_CAPTIVE_CONF"
-        if [ -n "$DNSMASQ_SERVICE" ] && "$DNSMASQ_SERVICE" reload > /dev/null 2>&1; then
-            log_info "dnsmasq конфигурация перехвата удалена"
-        fi
+  if [ -f "$DNSMASQ_CAPTIVE_CONF" ]; then
+    rm -f "$DNSMASQ_CAPTIVE_CONF"
+    if [ -n "$DNSMASQ_SERVICE" ] && "$DNSMASQ_SERVICE" reload > /dev/null 2>&1; then
+      log_info "dnsmasq конфигурация перехвата удалена"
     fi
+  fi
 }
 
 start_captive_httpd() {
-    local portal_url="$1"
-    local pid
-    local attempt
-    local started
+  local portal_url="$1"
+  local pid
+  local attempt
+  local started
 
-    stop_captive_httpd
-    HTTPD_IPV6_READY=0
-    ensure_lan_ip
-    ensure_lan_ipv6 || true
+  stop_captive_httpd
+  HTTPD_IPV6_READY=0
+  ensure_lan_ip
+  ensure_lan_ipv6 || true
 
-    mkdir -p "$HTTPD_ROOT"
+  mkdir -p "$HTTPD_ROOT"
 
-    cat > "$HTTPD_INDEX" << EOF_HTML
+  cat > "$HTTPD_INDEX" << EOF_HTML
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -994,472 +994,472 @@ start_captive_httpd() {
 </html>
 EOF_HTML
 
-    busybox httpd -f -p "0.0.0.0:$HTTPD_PORT" -p "[::]:$HTTPD_PORT" -h "$HTTPD_ROOT" > /dev/null 2>&1 &
-    pid=$!
-    started=0
-    for attempt in 1 2 3; do
-        if kill -0 "$pid" 2> /dev/null; then
-            started=1
-            break
-        fi
-        sleep 1
-    done
-
-    if [ "$started" = "1" ]; then
-        HTTPD_IPV6_READY=1
-        echo "$pid" > "$HTTPD_PIDFILE"
-        log_info "Запущен busybox httpd (PID $pid) для редиректа (IPv4/IPv6)"
-        return 0
+  busybox httpd -f -p "0.0.0.0:$HTTPD_PORT" -p "[::]:$HTTPD_PORT" -h "$HTTPD_ROOT" > /dev/null 2>&1 &
+  pid=$!
+  started=0
+  for attempt in 1 2 3; do
+    if kill -0 "$pid" 2> /dev/null; then
+      started=1
+      break
     fi
+    sleep 1
+  done
 
-    wait "$pid" 2> /dev/null || true
-    log_warn "Не удалось запустить busybox httpd с IPv6, пробуем только IPv4"
+  if [ "$started" = "1" ]; then
+    HTTPD_IPV6_READY=1
+    echo "$pid" > "$HTTPD_PIDFILE"
+    log_info "Запущен busybox httpd (PID $pid) для редиректа (IPv4/IPv6)"
+    return 0
+  fi
 
-    busybox httpd -f -p "0.0.0.0:$HTTPD_PORT" -h "$HTTPD_ROOT" > /dev/null 2>&1 &
-    pid=$!
-    started=0
-    for attempt in 1 2 3; do
-        if kill -0 "$pid" 2> /dev/null; then
-            started=1
-            break
-        fi
-        sleep 1
-    done
+  wait "$pid" 2> /dev/null || true
+  log_warn "Не удалось запустить busybox httpd с IPv6, пробуем только IPv4"
 
-    if [ "$started" = "1" ]; then
-        HTTPD_IPV6_READY=0
-        echo "$pid" > "$HTTPD_PIDFILE"
-        log_info "Запущен busybox httpd (PID $pid) для редиректа (IPv4)"
-        return 0
+  busybox httpd -f -p "0.0.0.0:$HTTPD_PORT" -h "$HTTPD_ROOT" > /dev/null 2>&1 &
+  pid=$!
+  started=0
+  for attempt in 1 2 3; do
+    if kill -0 "$pid" 2> /dev/null; then
+      started=1
+      break
     fi
+    sleep 1
+  done
 
-    wait "$pid" 2> /dev/null || true
-    log_error "Не удалось запустить busybox httpd для captive-портала"
-    rm -f "$HTTPD_PIDFILE"
-    return 1
+  if [ "$started" = "1" ]; then
+    HTTPD_IPV6_READY=0
+    echo "$pid" > "$HTTPD_PIDFILE"
+    log_info "Запущен busybox httpd (PID $pid) для редиректа (IPv4)"
+    return 0
+  fi
+
+  wait "$pid" 2> /dev/null || true
+  log_error "Не удалось запустить busybox httpd для captive-портала"
+  rm -f "$HTTPD_PIDFILE"
+  return 1
 }
 
 stop_captive_httpd() {
-    if [ -f "$HTTPD_PIDFILE" ]; then
-        local pid
-        pid=$(cat "$HTTPD_PIDFILE")
-        if [ -n "$pid" ] && kill -0 "$pid" 2> /dev/null; then
-            kill "$pid" > /dev/null 2>&1
-            if ! wait "$pid" 2> /dev/null; then
-                :
-            fi
-            log_info "Остановлен busybox httpd (PID $pid)"
-        fi
-        rm -f "$HTTPD_PIDFILE"
+  if [ -f "$HTTPD_PIDFILE" ]; then
+    local pid
+    pid=$(cat "$HTTPD_PIDFILE")
+    if [ -n "$pid" ] && kill -0 "$pid" 2> /dev/null; then
+      kill "$pid" > /dev/null 2>&1
+      if ! wait "$pid" 2> /dev/null; then
+        :
+      fi
+      log_info "Остановлен busybox httpd (PID $pid)"
     fi
-    HTTPD_IPV6_READY=0
-    rm -rf "$HTTPD_ROOT"
+    rm -f "$HTTPD_PIDFILE"
+  fi
+  HTTPD_IPV6_READY=0
+  rm -rf "$HTTPD_ROOT"
 }
 
 detect_firewall_backend() {
-    if [ "$FIREWALL_BACKEND_DETECTED" = "1" ] && [ -n "$FIREWALL_BACKEND" ]; then
-        return 0
-    fi
+  if [ "$FIREWALL_BACKEND_DETECTED" = "1" ] && [ -n "$FIREWALL_BACKEND" ]; then
+    return 0
+  fi
 
-    local requested=""
-    if [ -n "${CAPTIVE_FIREWALL_BACKEND:-}" ]; then
-        requested=$(printf '%s' "$CAPTIVE_FIREWALL_BACKEND" | tr '[:upper:]' '[:lower:]')
-    elif [ -n "$REQUESTED_FIREWALL_BACKEND" ]; then
-        requested=$(printf '%s' "$REQUESTED_FIREWALL_BACKEND" | tr '[:upper:]' '[:lower:]')
-    fi
+  local requested=""
+  if [ -n "${CAPTIVE_FIREWALL_BACKEND:-}" ]; then
+    requested=$(printf '%s' "$CAPTIVE_FIREWALL_BACKEND" | tr '[:upper:]' '[:lower:]')
+  elif [ -n "$REQUESTED_FIREWALL_BACKEND" ]; then
+    requested=$(printf '%s' "$REQUESTED_FIREWALL_BACKEND" | tr '[:upper:]' '[:lower:]')
+  fi
 
-    case "$requested" in
-        nft | nftables | fw4)
-            if command -v nft > /dev/null 2>&1; then
-                FIREWALL_BACKEND="nftables"
-            else
-                log_warn "Запрошен backend nftables, но утилита nft недоступна; используем iptables"
-                FIREWALL_BACKEND="iptables"
-            fi
-            ;;
-        ipt | iptables | fw3)
-            FIREWALL_BACKEND="iptables"
-            ;;
-        "" | auto)
-            if command -v fw4 > /dev/null 2>&1 && command -v nft > /dev/null 2>&1; then
-                FIREWALL_BACKEND="nftables"
-            else
-                FIREWALL_BACKEND="iptables"
-            fi
-            ;;
-        *)
-            log_warn "Неизвестное значение firewall_backend: $requested, используем автоопределение"
-            if command -v fw4 > /dev/null 2>&1 && command -v nft > /dev/null 2>&1; then
-                FIREWALL_BACKEND="nftables"
-            else
-                FIREWALL_BACKEND="iptables"
-            fi
-            ;;
-    esac
+  case "$requested" in
+    nft | nftables | fw4)
+      if command -v nft > /dev/null 2>&1; then
+        FIREWALL_BACKEND="nftables"
+      else
+        log_warn "Запрошен backend nftables, но утилита nft недоступна; используем iptables"
+        FIREWALL_BACKEND="iptables"
+      fi
+      ;;
+    ipt | iptables | fw3)
+      FIREWALL_BACKEND="iptables"
+      ;;
+    "" | auto)
+      if command -v fw4 > /dev/null 2>&1 && command -v nft > /dev/null 2>&1; then
+        FIREWALL_BACKEND="nftables"
+      else
+        FIREWALL_BACKEND="iptables"
+      fi
+      ;;
+    *)
+      log_warn "Неизвестное значение firewall_backend: $requested, используем автоопределение"
+      if command -v fw4 > /dev/null 2>&1 && command -v nft > /dev/null 2>&1; then
+        FIREWALL_BACKEND="nftables"
+      else
+        FIREWALL_BACKEND="iptables"
+      fi
+      ;;
+  esac
 
-    FIREWALL_BACKEND_DETECTED=1
-    log_info "Используется firewall backend: $FIREWALL_BACKEND"
+  FIREWALL_BACKEND_DETECTED=1
+  log_info "Используется firewall backend: $FIREWALL_BACKEND"
 }
 
 setup_firewall_redirects() {
-    local portal_ip4="$1"
-    local portal_ip6="$2"
+  local portal_ip4="$1"
+  local portal_ip6="$2"
 
-    detect_firewall_backend
+  detect_firewall_backend
 
-    case "$FIREWALL_BACKEND" in
-        nftables)
-            setup_firewall_redirects_nft "$portal_ip4" "$portal_ip6"
-            ;;
-        *)
-            setup_firewall_redirects_iptables "$portal_ip4" "$portal_ip6"
-            ;;
-    esac
+  case "$FIREWALL_BACKEND" in
+    nftables)
+      setup_firewall_redirects_nft "$portal_ip4" "$portal_ip6"
+      ;;
+    *)
+      setup_firewall_redirects_iptables "$portal_ip4" "$portal_ip6"
+      ;;
+  esac
 }
 
 cleanup_firewall_redirects() {
-    if [ "$FIREWALL_BACKEND_DETECTED" != "1" ]; then
-        cleanup_firewall_redirects_nft
-        cleanup_firewall_redirects_iptables
-        return 0
-    fi
+  if [ "$FIREWALL_BACKEND_DETECTED" != "1" ]; then
+    cleanup_firewall_redirects_nft
+    cleanup_firewall_redirects_iptables
+    return 0
+  fi
 
-    case "$FIREWALL_BACKEND" in
-        nftables)
-            cleanup_firewall_redirects_nft
-            ;;
-        *)
-            cleanup_firewall_redirects_iptables
-            ;;
-    esac
+  case "$FIREWALL_BACKEND" in
+    nftables)
+      cleanup_firewall_redirects_nft
+      ;;
+    *)
+      cleanup_firewall_redirects_iptables
+      ;;
+  esac
 }
 
 setup_firewall_redirects_iptables() {
-    local portal_ip4="$1"
-    local portal_ip6="$2"
+  local portal_ip4="$1"
+  local portal_ip6="$2"
 
-    ensure_lan_interface
-    ensure_lan_ip
+  ensure_lan_interface
+  ensure_lan_ip
 
-    if ! command -v iptables > /dev/null 2>&1; then
-        log_error "iptables не найден, невозможно настроить перехват"
-        return 1
+  if ! command -v iptables > /dev/null 2>&1; then
+    log_error "iptables не найден, невозможно настроить перехват"
+    return 1
+  fi
+
+  if ! iptables -t nat -L "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1; then
+    if ! iptables -t nat -N "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1; then
+      log_error "Не удалось создать цепочку $CAPTIVE_NAT_CHAIN в iptables"
+      return 1
     fi
+  else
+    iptables -t nat -F "$CAPTIVE_NAT_CHAIN"
+  fi
 
-    if ! iptables -t nat -L "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1; then
-        if ! iptables -t nat -N "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1; then
-            log_error "Не удалось создать цепочку $CAPTIVE_NAT_CHAIN в iptables"
-            return 1
-        fi
-    else
-        iptables -t nat -F "$CAPTIVE_NAT_CHAIN"
+  if [ -n "$portal_ip4" ]; then
+    iptables -t nat -A "$CAPTIVE_NAT_CHAIN" -d "$portal_ip4" -p tcp --dport 80 -j RETURN -m comment --comment "captive-http-bypass-v4"
+  fi
+
+  iptables -t nat -A "$CAPTIVE_NAT_CHAIN" -p tcp --dport 80 -j DNAT --to-destination "$LAN_IP:$HTTPD_PORT" -m comment --comment "captive-http-redirect-v4"
+
+  if ! iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2> /dev/null; then
+    iptables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" -m comment --comment "captive-http-intercept-v4"
+  fi
+
+  if ! iptables -t nat -L "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1; then
+    if ! iptables -t nat -N "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1; then
+      log_error "Не удалось создать цепочку $CAPTIVE_DNS_CHAIN в iptables"
+      return 1
     fi
+  else
+    iptables -t nat -F "$CAPTIVE_DNS_CHAIN"
+  fi
 
-    if [ -n "$portal_ip4" ]; then
-        iptables -t nat -A "$CAPTIVE_NAT_CHAIN" -d "$portal_ip4" -p tcp --dport 80 -j RETURN -m comment --comment "captive-http-bypass-v4"
-    fi
+  iptables -t nat -A "$CAPTIVE_DNS_CHAIN" -p udp --dport 53 -j DNAT --to-destination "$LAN_IP" -m comment --comment "captive-dns-redirect-udp-v4"
+  iptables -t nat -A "$CAPTIVE_DNS_CHAIN" -p tcp --dport 53 -j DNAT --to-destination "$LAN_IP" -m comment --comment "captive-dns-redirect-tcp-v4"
 
-    iptables -t nat -A "$CAPTIVE_NAT_CHAIN" -p tcp --dport 80 -j DNAT --to-destination "$LAN_IP:$HTTPD_PORT" -m comment --comment "captive-http-redirect-v4"
+  if ! iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; then
+    iptables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" -m comment --comment "captive-dns-intercept-udp-v4"
+  fi
 
-    if ! iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2> /dev/null; then
-        iptables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" -m comment --comment "captive-http-intercept-v4"
-    fi
+  if ! iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; then
+    iptables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" -m comment --comment "captive-dns-intercept-tcp-v4"
+  fi
 
-    if ! iptables -t nat -L "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1; then
-        if ! iptables -t nat -N "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1; then
-            log_error "Не удалось создать цепочку $CAPTIVE_DNS_CHAIN в iptables"
-            return 1
-        fi
-    else
-        iptables -t nat -F "$CAPTIVE_DNS_CHAIN"
-    fi
-
-    iptables -t nat -A "$CAPTIVE_DNS_CHAIN" -p udp --dport 53 -j DNAT --to-destination "$LAN_IP" -m comment --comment "captive-dns-redirect-udp-v4"
-    iptables -t nat -A "$CAPTIVE_DNS_CHAIN" -p tcp --dport 53 -j DNAT --to-destination "$LAN_IP" -m comment --comment "captive-dns-redirect-tcp-v4"
-
-    if ! iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; then
-        iptables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" -m comment --comment "captive-dns-intercept-udp-v4"
-    fi
-
-    if ! iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; then
-        iptables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" -m comment --comment "captive-dns-intercept-tcp-v4"
-    fi
-
-    if [ "$HTTPD_IPV6_READY" = "1" ]; then
-        if command -v ip6tables > /dev/null 2>&1; then
-            if ensure_lan_ipv6; then
-                local ipv6_chain_ready=1
-                if ip6tables -t nat -L "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1; then
-                    ip6tables -t nat -F "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1 || true
-                elif ip6tables -t nat -N "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1; then
-                    :
-                else
-                    ipv6_chain_ready=0
-                    log_warn "ip6tables nat недоступен, пропускаем IPv6 HTTP перехват"
-                fi
-
-                if [ "$ipv6_chain_ready" = "1" ]; then
-                    if [ -n "$portal_ip6" ]; then
-                        if ! ip6tables -t nat -A "$CAPTIVE_NAT_CHAIN" -d "$portal_ip6" -p tcp --dport 80 -j RETURN -m comment --comment "captive-http-bypass-v6"; then
-                            log_warn "Не удалось добавить IPv6 правило обхода портала в ip6tables"
-                        fi
-                    fi
-
-                    local lan_ipv6_target="[$LAN_IPV6]:$HTTPD_PORT"
-                    if ! ip6tables -t nat -A "$CAPTIVE_NAT_CHAIN" -p tcp --dport 80 -j DNAT --to-destination "$lan_ipv6_target" -m comment --comment "captive-http-redirect-v6"; then
-                        log_warn "Не удалось добавить IPv6 HTTP DNAT в ip6tables"
-                    fi
-
-                    if ! ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2> /dev/null; then
-                        if ! ip6tables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" -m comment --comment "captive-http-intercept-v6"; then
-                            log_warn "Не удалось добавить IPv6 правило перехвата HTTP в ip6tables"
-                        fi
-                    fi
-                fi
-
-                local ipv6_dns_chain_ready=1
-                if ip6tables -t nat -L "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1; then
-                    ip6tables -t nat -F "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1 || true
-                elif ip6tables -t nat -N "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1; then
-                    :
-                else
-                    ipv6_dns_chain_ready=0
-                    log_warn "ip6tables nat недоступен, пропускаем IPv6 DNS перехват"
-                fi
-
-                if [ "$ipv6_dns_chain_ready" = "1" ]; then
-                    local lan_ipv6_dns="[$LAN_IPV6]"
-                    if ! ip6tables -t nat -A "$CAPTIVE_DNS_CHAIN" -p udp --dport 53 -j DNAT --to-destination "$lan_ipv6_dns" -m comment --comment "captive-dns-redirect-udp-v6"; then
-                        log_warn "Не удалось добавить IPv6 UDP DNS DNAT в ip6tables"
-                    fi
-                    if ! ip6tables -t nat -A "$CAPTIVE_DNS_CHAIN" -p tcp --dport 53 -j DNAT --to-destination "$lan_ipv6_dns" -m comment --comment "captive-dns-redirect-tcp-v6"; then
-                        log_warn "Не удалось добавить IPv6 TCP DNS DNAT в ip6tables"
-                    fi
-
-                    if ! ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; then
-                        if ! ip6tables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" -m comment --comment "captive-dns-intercept-udp-v6"; then
-                            log_warn "Не удалось добавить IPv6 правило перехвата UDP DNS в ip6tables"
-                        fi
-                    fi
-
-                    if ! ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; then
-                        if ! ip6tables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" -m comment --comment "captive-dns-intercept-tcp-v6"; then
-                            log_warn "Не удалось добавить IPv6 правило перехвата TCP DNS в ip6tables"
-                        fi
-                    fi
-                fi
-            else
-                log_warn "IPv6 адрес LAN не найден, пропускаем настройки ip6tables"
-            fi
+  if [ "$HTTPD_IPV6_READY" = "1" ]; then
+    if command -v ip6tables > /dev/null 2>&1; then
+      if ensure_lan_ipv6; then
+        local ipv6_chain_ready=1
+        if ip6tables -t nat -L "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1; then
+          ip6tables -t nat -F "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1 || true
+        elif ip6tables -t nat -N "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1; then
+          :
         else
-            log_warn "ip6tables не найден, пропускаем IPv6 редирект"
+          ipv6_chain_ready=0
+          log_warn "ip6tables nat недоступен, пропускаем IPv6 HTTP перехват"
         fi
-    else
-        if [ -n "$LAN_IPV6" ] || [ -n "$portal_ip6" ]; then
-            log_warn "HTTP сервер не слушает IPv6, пропускаем настройки ip6tables"
-        fi
-    fi
 
-    log_info "iptables настроен для перехвата HTTP и DNS на интерфейсе $LAN_INTERFACE"
-    return 0
+        if [ "$ipv6_chain_ready" = "1" ]; then
+          if [ -n "$portal_ip6" ]; then
+            if ! ip6tables -t nat -A "$CAPTIVE_NAT_CHAIN" -d "$portal_ip6" -p tcp --dport 80 -j RETURN -m comment --comment "captive-http-bypass-v6"; then
+              log_warn "Не удалось добавить IPv6 правило обхода портала в ip6tables"
+            fi
+          fi
+
+          local lan_ipv6_target="[$LAN_IPV6]:$HTTPD_PORT"
+          if ! ip6tables -t nat -A "$CAPTIVE_NAT_CHAIN" -p tcp --dport 80 -j DNAT --to-destination "$lan_ipv6_target" -m comment --comment "captive-http-redirect-v6"; then
+            log_warn "Не удалось добавить IPv6 HTTP DNAT в ip6tables"
+          fi
+
+          if ! ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2> /dev/null; then
+            if ! ip6tables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" -m comment --comment "captive-http-intercept-v6"; then
+              log_warn "Не удалось добавить IPv6 правило перехвата HTTP в ip6tables"
+            fi
+          fi
+        fi
+
+        local ipv6_dns_chain_ready=1
+        if ip6tables -t nat -L "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1; then
+          ip6tables -t nat -F "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1 || true
+        elif ip6tables -t nat -N "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1; then
+          :
+        else
+          ipv6_dns_chain_ready=0
+          log_warn "ip6tables nat недоступен, пропускаем IPv6 DNS перехват"
+        fi
+
+        if [ "$ipv6_dns_chain_ready" = "1" ]; then
+          local lan_ipv6_dns="[$LAN_IPV6]"
+          if ! ip6tables -t nat -A "$CAPTIVE_DNS_CHAIN" -p udp --dport 53 -j DNAT --to-destination "$lan_ipv6_dns" -m comment --comment "captive-dns-redirect-udp-v6"; then
+            log_warn "Не удалось добавить IPv6 UDP DNS DNAT в ip6tables"
+          fi
+          if ! ip6tables -t nat -A "$CAPTIVE_DNS_CHAIN" -p tcp --dport 53 -j DNAT --to-destination "$lan_ipv6_dns" -m comment --comment "captive-dns-redirect-tcp-v6"; then
+            log_warn "Не удалось добавить IPv6 TCP DNS DNAT в ip6tables"
+          fi
+
+          if ! ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; then
+            if ! ip6tables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" -m comment --comment "captive-dns-intercept-udp-v6"; then
+              log_warn "Не удалось добавить IPv6 правило перехвата UDP DNS в ip6tables"
+            fi
+          fi
+
+          if ! ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; then
+            if ! ip6tables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" -m comment --comment "captive-dns-intercept-tcp-v6"; then
+              log_warn "Не удалось добавить IPv6 правило перехвата TCP DNS в ip6tables"
+            fi
+          fi
+        fi
+      else
+        log_warn "IPv6 адрес LAN не найден, пропускаем настройки ip6tables"
+      fi
+    else
+      log_warn "ip6tables не найден, пропускаем IPv6 редирект"
+    fi
+  else
+    if [ -n "$LAN_IPV6" ] || [ -n "$portal_ip6" ]; then
+      log_warn "HTTP сервер не слушает IPv6, пропускаем настройки ip6tables"
+    fi
+  fi
+
+  log_info "iptables настроен для перехвата HTTP и DNS на интерфейсе $LAN_INTERFACE"
+  return 0
 }
 
 cleanup_firewall_redirects_iptables() {
-    ensure_lan_interface
+  ensure_lan_interface
 
-    if command -v iptables > /dev/null 2>&1; then
-        while iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2> /dev/null; do
-            iptables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN"
-        done
-        while iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; do
-            iptables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN"
-        done
-        while iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; do
-            iptables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN"
-        done
-        iptables -t nat -F "$CAPTIVE_NAT_CHAIN" 2> /dev/null || true
-        iptables -t nat -X "$CAPTIVE_NAT_CHAIN" 2> /dev/null || true
-        iptables -t nat -F "$CAPTIVE_DNS_CHAIN" 2> /dev/null || true
-        iptables -t nat -X "$CAPTIVE_DNS_CHAIN" 2> /dev/null || true
-    fi
+  if command -v iptables > /dev/null 2>&1; then
+    while iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2> /dev/null; do
+      iptables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN"
+    done
+    while iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; do
+      iptables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN"
+    done
+    while iptables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; do
+      iptables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN"
+    done
+    iptables -t nat -F "$CAPTIVE_NAT_CHAIN" 2> /dev/null || true
+    iptables -t nat -X "$CAPTIVE_NAT_CHAIN" 2> /dev/null || true
+    iptables -t nat -F "$CAPTIVE_DNS_CHAIN" 2> /dev/null || true
+    iptables -t nat -X "$CAPTIVE_DNS_CHAIN" 2> /dev/null || true
+  fi
 
-    if command -v ip6tables > /dev/null 2>&1; then
-        while ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2> /dev/null; do
-            ip6tables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" || true
-        done
-        while ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; do
-            ip6tables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" || true
-        done
-        while ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; do
-            ip6tables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" || true
-        done
-        ip6tables -t nat -F "$CAPTIVE_NAT_CHAIN" 2> /dev/null || true
-        ip6tables -t nat -X "$CAPTIVE_NAT_CHAIN" 2> /dev/null || true
-        ip6tables -t nat -F "$CAPTIVE_DNS_CHAIN" 2> /dev/null || true
-        ip6tables -t nat -X "$CAPTIVE_DNS_CHAIN" 2> /dev/null || true
-    fi
+  if command -v ip6tables > /dev/null 2>&1; then
+    while ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2> /dev/null; do
+      ip6tables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" || true
+    done
+    while ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; do
+      ip6tables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" || true
+    done
+    while ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; do
+      ip6tables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" || true
+    done
+    ip6tables -t nat -F "$CAPTIVE_NAT_CHAIN" 2> /dev/null || true
+    ip6tables -t nat -X "$CAPTIVE_NAT_CHAIN" 2> /dev/null || true
+    ip6tables -t nat -F "$CAPTIVE_DNS_CHAIN" 2> /dev/null || true
+    ip6tables -t nat -X "$CAPTIVE_DNS_CHAIN" 2> /dev/null || true
+  fi
 }
 
 setup_firewall_redirects_nft() {
-    local portal_ip4="$1"
-    local portal_ip6="$2"
+  local portal_ip4="$1"
+  local portal_ip6="$2"
 
-    ensure_lan_interface
-    ensure_lan_ip
-    ensure_lan_ipv6 || true
+  ensure_lan_interface
+  ensure_lan_ip
+  ensure_lan_ipv6 || true
 
-    local nft_ipv6_enabled=0
-    if [ "$HTTPD_IPV6_READY" = "1" ] && [ -n "$LAN_IPV6" ]; then
-        nft_ipv6_enabled=1
+  local nft_ipv6_enabled=0
+  if [ "$HTTPD_IPV6_READY" = "1" ] && [ -n "$LAN_IPV6" ]; then
+    nft_ipv6_enabled=1
+  fi
+
+  if ! command -v nft > /dev/null 2>&1; then
+    log_error "nft не найден, невозможно настроить перехват"
+    return 1
+  fi
+
+  if ! nft list table inet "$NFT_TABLE_NAME" > /dev/null 2>&1; then
+    if ! nft add table inet "$NFT_TABLE_NAME" > /dev/null 2>&1; then
+      log_error "Не удалось создать таблицу nftables $NFT_TABLE_NAME"
+      return 1
     fi
+  fi
 
-    if ! command -v nft > /dev/null 2>&1; then
-        log_error "nft не найден, невозможно настроить перехват"
-        return 1
+  if ! nft list chain inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" > /dev/null 2>&1; then
+    if ! nft add chain inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" '{ type nat hook prerouting priority dstnat; policy accept; }' > /dev/null 2>&1; then
+      log_error "Не удалось создать цепочку nftables $NFT_CHAIN_NAME"
+      return 1
     fi
+  fi
 
-    if ! nft list table inet "$NFT_TABLE_NAME" > /dev/null 2>&1; then
-        if ! nft add table inet "$NFT_TABLE_NAME" > /dev/null 2>&1; then
-            log_error "Не удалось создать таблицу nftables $NFT_TABLE_NAME"
-            return 1
-        fi
+  if ! nft flush chain inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" > /dev/null 2>&1; then
+    log_error "Не удалось очистить цепочку nftables $NFT_CHAIN_NAME"
+    return 1
+  fi
+
+  if [ -n "$portal_ip4" ]; then
+    nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip daddr "$portal_ip4" tcp dport 80 return comment "captive-http-bypass-v4" > /dev/null 2>&1 || log_warn "Не удалось добавить правило обхода IPv4 портала в nftables"
+  fi
+
+  if [ "$nft_ipv6_enabled" = "1" ] && [ -n "$portal_ip6" ]; then
+    nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip6 daddr "$portal_ip6" tcp dport 80 return comment "captive-http-bypass-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило обхода IPv6 портала в nftables"
+  elif [ -n "$portal_ip6" ] && [ "$HTTPD_IPV6_READY" != "1" ]; then
+    log_warn "HTTP сервер не слушает IPv6, пропускаем правило обхода портала в nftables"
+  fi
+
+  if ! nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv4 tcp dport 80 dnat to "$LAN_IP:$HTTPD_PORT" comment "captive-http-redirect-v4" > /dev/null 2>&1; then
+    log_error "Не удалось добавить правило IPv4 HTTP DNAT в nftables"
+    return 1
+  fi
+
+  if [ "$nft_ipv6_enabled" = "1" ]; then
+    nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv6 tcp dport 80 dnat to "[$LAN_IPV6]:$HTTPD_PORT" comment "captive-http-redirect-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило IPv6 HTTP DNAT в nftables"
+  else
+    if [ "$HTTPD_IPV6_READY" = "1" ] && [ -z "$LAN_IPV6" ]; then
+      log_warn "IPv6 адрес LAN не найден, пропускаем IPv6 HTTP DNAT в nftables"
+    elif [ "$HTTPD_IPV6_READY" != "1" ] && [ -n "$LAN_IPV6" ]; then
+      log_warn "HTTP сервер не слушает IPv6, пропускаем IPv6 HTTP DNAT в nftables"
     fi
+  fi
 
-    if ! nft list chain inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" > /dev/null 2>&1; then
-        if ! nft add chain inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" '{ type nat hook prerouting priority dstnat; policy accept; }' > /dev/null 2>&1; then
-            log_error "Не удалось создать цепочку nftables $NFT_CHAIN_NAME"
-            return 1
-        fi
+  if ! nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv4 udp dport 53 dnat to "$LAN_IP" comment "captive-dns-redirect-udp-v4" > /dev/null 2>&1; then
+    log_error "Не удалось добавить правило IPv4 UDP DNS DNAT в nftables"
+    return 1
+  fi
+
+  if ! nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv4 tcp dport 53 dnat to "$LAN_IP" comment "captive-dns-redirect-tcp-v4" > /dev/null 2>&1; then
+    log_error "Не удалось добавить правило IPv4 TCP DNS DNAT в nftables"
+    return 1
+  fi
+
+  if [ "$nft_ipv6_enabled" = "1" ]; then
+    nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv6 udp dport 53 dnat to "[$LAN_IPV6]" comment "captive-dns-redirect-udp-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило IPv6 UDP DNS DNAT в nftables"
+    nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv6 tcp dport 53 dnat to "[$LAN_IPV6]" comment "captive-dns-redirect-tcp-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило IPv6 TCP DNS DNAT в nftables"
+  else
+    if [ "$HTTPD_IPV6_READY" = "1" ] && [ -z "$LAN_IPV6" ]; then
+      log_warn "IPv6 адрес LAN не найден, пропускаем IPv6 DNS DNAT в nftables"
+    elif [ "$HTTPD_IPV6_READY" != "1" ] && [ -n "$LAN_IPV6" ]; then
+      log_warn "HTTP сервер не слушает IPv6, пропускаем IPv6 DNS DNAT в nftables"
     fi
+  fi
 
-    if ! nft flush chain inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" > /dev/null 2>&1; then
-        log_error "Не удалось очистить цепочку nftables $NFT_CHAIN_NAME"
-        return 1
-    fi
-
-    if [ -n "$portal_ip4" ]; then
-        nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip daddr "$portal_ip4" tcp dport 80 return comment "captive-http-bypass-v4" > /dev/null 2>&1 || log_warn "Не удалось добавить правило обхода IPv4 портала в nftables"
-    fi
-
-    if [ "$nft_ipv6_enabled" = "1" ] && [ -n "$portal_ip6" ]; then
-        nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip6 daddr "$portal_ip6" tcp dport 80 return comment "captive-http-bypass-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило обхода IPv6 портала в nftables"
-    elif [ -n "$portal_ip6" ] && [ "$HTTPD_IPV6_READY" != "1" ]; then
-        log_warn "HTTP сервер не слушает IPv6, пропускаем правило обхода портала в nftables"
-    fi
-
-    if ! nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv4 tcp dport 80 dnat to "$LAN_IP:$HTTPD_PORT" comment "captive-http-redirect-v4" > /dev/null 2>&1; then
-        log_error "Не удалось добавить правило IPv4 HTTP DNAT в nftables"
-        return 1
-    fi
-
-    if [ "$nft_ipv6_enabled" = "1" ]; then
-        nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv6 tcp dport 80 dnat to "[$LAN_IPV6]:$HTTPD_PORT" comment "captive-http-redirect-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило IPv6 HTTP DNAT в nftables"
-    else
-        if [ "$HTTPD_IPV6_READY" = "1" ] && [ -z "$LAN_IPV6" ]; then
-            log_warn "IPv6 адрес LAN не найден, пропускаем IPv6 HTTP DNAT в nftables"
-        elif [ "$HTTPD_IPV6_READY" != "1" ] && [ -n "$LAN_IPV6" ]; then
-            log_warn "HTTP сервер не слушает IPv6, пропускаем IPv6 HTTP DNAT в nftables"
-        fi
-    fi
-
-    if ! nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv4 udp dport 53 dnat to "$LAN_IP" comment "captive-dns-redirect-udp-v4" > /dev/null 2>&1; then
-        log_error "Не удалось добавить правило IPv4 UDP DNS DNAT в nftables"
-        return 1
-    fi
-
-    if ! nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv4 tcp dport 53 dnat to "$LAN_IP" comment "captive-dns-redirect-tcp-v4" > /dev/null 2>&1; then
-        log_error "Не удалось добавить правило IPv4 TCP DNS DNAT в nftables"
-        return 1
-    fi
-
-    if [ "$nft_ipv6_enabled" = "1" ]; then
-        nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv6 udp dport 53 dnat to "[$LAN_IPV6]" comment "captive-dns-redirect-udp-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило IPv6 UDP DNS DNAT в nftables"
-        nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv6 tcp dport 53 dnat to "[$LAN_IPV6]" comment "captive-dns-redirect-tcp-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило IPv6 TCP DNS DNAT в nftables"
-    else
-        if [ "$HTTPD_IPV6_READY" = "1" ] && [ -z "$LAN_IPV6" ]; then
-            log_warn "IPv6 адрес LAN не найден, пропускаем IPv6 DNS DNAT в nftables"
-        elif [ "$HTTPD_IPV6_READY" != "1" ] && [ -n "$LAN_IPV6" ]; then
-            log_warn "HTTP сервер не слушает IPv6, пропускаем IPv6 DNS DNAT в nftables"
-        fi
-    fi
-
-    log_info "nftables настроен для перехвата HTTP и DNS на интерфейсе $LAN_INTERFACE"
-    return 0
+  log_info "nftables настроен для перехвата HTTP и DNS на интерфейсе $LAN_INTERFACE"
+  return 0
 }
 
 cleanup_firewall_redirects_nft() {
-    if ! command -v nft > /dev/null 2>&1; then
-        return 0
-    fi
+  if ! command -v nft > /dev/null 2>&1; then
+    return 0
+  fi
 
-    if nft list table inet "$NFT_TABLE_NAME" > /dev/null 2>&1; then
-        if nft delete table inet "$NFT_TABLE_NAME" > /dev/null 2>&1; then
-            log_info "Удалена таблица nftables $NFT_TABLE_NAME"
-        else
-            nft flush table inet "$NFT_TABLE_NAME" > /dev/null 2>&1 || true
-        fi
+  if nft list table inet "$NFT_TABLE_NAME" > /dev/null 2>&1; then
+    if nft delete table inet "$NFT_TABLE_NAME" > /dev/null 2>&1; then
+      log_info "Удалена таблица nftables $NFT_TABLE_NAME"
+    else
+      nft flush table inet "$NFT_TABLE_NAME" > /dev/null 2>&1 || true
     fi
+  fi
 }
 
 setup_captive_intercept() {
-    local portal_url="$1"
-    local portal_host="$2"
-    local portal_ip4="$3"
-    local portal_ip6="$4"
+  local portal_url="$1"
+  local portal_host="$2"
+  local portal_ip4="$3"
+  local portal_ip6="$4"
 
-    ensure_lan_ip
+  ensure_lan_ip
 
-    if [ "$CAPTIVE_ACTIVE" = "1" ] && [ "$ACTIVE_PORTAL_URL" = "$portal_url" ]; then
-        log_info "Перехват уже активен для $portal_url"
-        return 0
-    fi
-
-    if [ "$CAPTIVE_ACTIVE" = "1" ]; then
-        cleanup_captive_intercept
-    fi
-
-    if ! start_captive_httpd "$portal_url"; then
-        remove_dns_intercept
-        return 1
-    fi
-
-    write_dnsmasq_intercept "$portal_host" "$portal_ip4" "$portal_ip6"
-
-    if ! setup_firewall_redirects "$portal_ip4" "$portal_ip6"; then
-        cleanup_firewall_redirects
-        stop_captive_httpd
-        remove_dns_intercept
-        return 1
-    fi
-
-    CAPTIVE_ACTIVE=1
-    ACTIVE_PORTAL_URL="$portal_url"
-    ACTIVE_PORTAL_HOST="$portal_host"
-    ACTIVE_PORTAL_IP="$portal_ip4"
-    ACTIVE_PORTAL_IP6="$portal_ip6"
-
-    log_info "Перехват captive-портала включен"
+  if [ "$CAPTIVE_ACTIVE" = "1" ] && [ "$ACTIVE_PORTAL_URL" = "$portal_url" ]; then
+    log_info "Перехват уже активен для $portal_url"
     return 0
-}
+  fi
 
-cleanup_captive_intercept() {
-    if [ "$CAPTIVE_ACTIVE" = "1" ] || [ -f "$DNSMASQ_CAPTIVE_CONF" ] || [ -f "$HTTPD_PIDFILE" ]; then
-        if [ -n "$ACTIVE_PORTAL_URL" ]; then
-            log_info "Очистка перехвата captive-портала для $ACTIVE_PORTAL_URL (host: ${ACTIVE_PORTAL_HOST:--}, ipv4: ${ACTIVE_PORTAL_IP:--}, ipv6: ${ACTIVE_PORTAL_IP6:--})"
-        else
-            log_info "Очистка перехвата captive-портала"
-        fi
-    fi
+  if [ "$CAPTIVE_ACTIVE" = "1" ]; then
+    cleanup_captive_intercept
+  fi
 
+  if ! start_captive_httpd "$portal_url"; then
+    remove_dns_intercept
+    return 1
+  fi
+
+  write_dnsmasq_intercept "$portal_host" "$portal_ip4" "$portal_ip6"
+
+  if ! setup_firewall_redirects "$portal_ip4" "$portal_ip6"; then
     cleanup_firewall_redirects
     stop_captive_httpd
     remove_dns_intercept
+    return 1
+  fi
 
-    CAPTIVE_ACTIVE=0
-    ACTIVE_PORTAL_URL=""
-    ACTIVE_PORTAL_HOST=""
-    ACTIVE_PORTAL_IP=""
-    ACTIVE_PORTAL_IP6=""
+  CAPTIVE_ACTIVE=1
+  ACTIVE_PORTAL_URL="$portal_url"
+  ACTIVE_PORTAL_HOST="$portal_host"
+  ACTIVE_PORTAL_IP="$portal_ip4"
+  ACTIVE_PORTAL_IP6="$portal_ip6"
+
+  log_info "Перехват captive-портала включен"
+  return 0
+}
+
+cleanup_captive_intercept() {
+  if [ "$CAPTIVE_ACTIVE" = "1" ] || [ -f "$DNSMASQ_CAPTIVE_CONF" ] || [ -f "$HTTPD_PIDFILE" ]; then
+    if [ -n "$ACTIVE_PORTAL_URL" ]; then
+      log_info "Очистка перехвата captive-портала для $ACTIVE_PORTAL_URL (host: ${ACTIVE_PORTAL_HOST:--}, ipv4: ${ACTIVE_PORTAL_IP:--}, ipv6: ${ACTIVE_PORTAL_IP6:--})"
+    else
+      log_info "Очистка перехвата captive-портала"
+    fi
+  fi
+
+  cleanup_firewall_redirects
+  stop_captive_httpd
+  remove_dns_intercept
+
+  CAPTIVE_ACTIVE=0
+  ACTIVE_PORTAL_URL=""
+  ACTIVE_PORTAL_HOST=""
+  ACTIVE_PORTAL_IP=""
+  ACTIVE_PORTAL_IP6=""
 }
 
 # ============================================================================
@@ -1467,95 +1467,95 @@ cleanup_captive_intercept() {
 # ============================================================================
 
 wait_for_internet_after_intercept() {
-    local elapsed=0
+  local elapsed=0
 
-    while [ "$elapsed" -lt "$CAPTIVE_RECOVERY_TIMEOUT" ]; do
-        sleep "$CAPTIVE_RECHECK_DELAY"
-        elapsed=$((elapsed + CAPTIVE_RECHECK_DELAY))
-        if check_internet; then
-            log_info "Интернет доступен, отключаем перехват"
-            cleanup_captive_intercept
-            return 0
-        fi
-        log_info "Интернет все еще недоступен (ожидание ${elapsed}/${CAPTIVE_RECOVERY_TIMEOUT}с)"
-    done
+  while [ "$elapsed" -lt "$CAPTIVE_RECOVERY_TIMEOUT" ]; do
+    sleep "$CAPTIVE_RECHECK_DELAY"
+    elapsed=$((elapsed + CAPTIVE_RECHECK_DELAY))
+    if check_internet; then
+      log_info "Интернет доступен, отключаем перехват"
+      cleanup_captive_intercept
+      return 0
+    fi
+    log_info "Интернет все еще недоступен (ожидание ${elapsed}/${CAPTIVE_RECOVERY_TIMEOUT}с)"
+  done
 
-    log_warn "Интернет не восстановился за $CAPTIVE_RECOVERY_TIMEOUT секунд"
-    return 1
+  log_warn "Интернет не восстановился за $CAPTIVE_RECOVERY_TIMEOUT секунд"
+  return 1
 }
 
 check_and_fix_connection() {
-    log_info "=== Проверка подключения ==="
+  log_info "=== Проверка подключения ==="
 
-    ensure_lan_ip
+  ensure_lan_ip
 
-    if check_internet; then
-        if [ "$CAPTIVE_ACTIVE" = "1" ]; then
-            cleanup_captive_intercept
+  if check_internet; then
+    if [ "$CAPTIVE_ACTIVE" = "1" ]; then
+      cleanup_captive_intercept
+    fi
+    return 0
+  fi
+
+  log_warn "Интернет недоступен, пробуем диагностировать captive-портал"
+
+  if detect_captive_portal; then
+    local portal_ip4=""
+    local portal_ip6=""
+    if [ -n "$CAPTIVE_PORTAL_HOST" ]; then
+      if portal_ip4=$(resolve_portal_ipv4 "$CAPTIVE_PORTAL_HOST"); then
+        if [ -n "$portal_ip4" ]; then
+          log_info "IPv4 адрес портала: $portal_ip4"
         fi
+      else
+        portal_ip4=""
+      fi
+      if portal_ip6=$(resolve_portal_ipv6 "$CAPTIVE_PORTAL_HOST"); then
+        if [ -n "$portal_ip6" ]; then
+          log_info "IPv6 адрес портала: $portal_ip6"
+        fi
+      else
+        portal_ip6=""
+      fi
+    fi
+    if setup_captive_intercept "$CAPTIVE_PORTAL_URL" "$CAPTIVE_PORTAL_HOST" "$portal_ip4" "$portal_ip6"; then
+      if wait_for_internet_after_intercept; then
         return 0
+      fi
+      return 1
     fi
-
-    log_warn "Интернет недоступен, пробуем диагностировать captive-портал"
-
-    if detect_captive_portal; then
-        local portal_ip4=""
-        local portal_ip6=""
-        if [ -n "$CAPTIVE_PORTAL_HOST" ]; then
-            if portal_ip4=$(resolve_portal_ipv4 "$CAPTIVE_PORTAL_HOST"); then
-                if [ -n "$portal_ip4" ]; then
-                    log_info "IPv4 адрес портала: $portal_ip4"
-                fi
-            else
-                portal_ip4=""
-            fi
-            if portal_ip6=$(resolve_portal_ipv6 "$CAPTIVE_PORTAL_HOST"); then
-                if [ -n "$portal_ip6" ]; then
-                    log_info "IPv6 адрес портала: $portal_ip6"
-                fi
-            else
-                portal_ip6=""
-            fi
-        fi
-        if setup_captive_intercept "$CAPTIVE_PORTAL_URL" "$CAPTIVE_PORTAL_HOST" "$portal_ip4" "$portal_ip6"; then
-            if wait_for_internet_after_intercept; then
-                return 0
-            fi
-            return 1
-        fi
-        log_warn "Не удалось настроить перехват captive-портала"
-        return 1
-    fi
-
-    log_warn "Captive-портал не обнаружен, пробуем перезапустить WiFi"
-    if restart_wifi; then
-        if check_internet; then
-            cleanup_captive_intercept
-            return 0
-        fi
-    fi
-
-    log_warn "Сеть остаётся недоступной после всех действий"
+    log_warn "Не удалось настроить перехват captive-портала"
     return 1
+  fi
+
+  log_warn "Captive-портал не обнаружен, пробуем перезапустить WiFi"
+  if restart_wifi; then
+    if check_internet; then
+      cleanup_captive_intercept
+      return 0
+    fi
+  fi
+
+  log_warn "Сеть остаётся недоступной после всех действий"
+  return 1
 }
 
 monitor_mode() {
-    log_info "Запуск в режиме мониторинга (интервал: ${MONITOR_INTERVAL}с)"
-    while true; do
-        if ! check_and_fix_connection; then
-            log_warn "Проверка подключения завершилась с ошибкой"
-        fi
-        log_info "Следующая проверка через ${MONITOR_INTERVAL}с"
-        sleep "$MONITOR_INTERVAL"
-    done
+  log_info "Запуск в режиме мониторинга (интервал: ${MONITOR_INTERVAL}с)"
+  while true; do
+    if ! check_and_fix_connection; then
+      log_warn "Проверка подключения завершилась с ошибкой"
+    fi
+    log_info "Следующая проверка через ${MONITOR_INTERVAL}с"
+    sleep "$MONITOR_INTERVAL"
+  done
 }
 
 oneshot_mode() {
-    log_info "Запуск в режиме однократной проверки"
-    if check_and_fix_connection; then
-        exit 0
-    fi
-    exit 1
+  log_info "Запуск в режиме однократной проверки"
+  if check_and_fix_connection; then
+    exit 0
+  fi
+  exit 1
 }
 
 # ============================================================================
@@ -1563,7 +1563,7 @@ oneshot_mode() {
 # ============================================================================
 
 show_usage() {
-    cat << 'EOF'
+  cat << 'EOF'
 Использование: $0 [ОПЦИИ]
 
 Опции:
@@ -1588,56 +1588,56 @@ load_uci_config
 MODE="$DEFAULT_MODE"
 
 while [ $# -gt 0 ]; do
-    case "$1" in
-        -m | --monitor)
-            MODE="monitor"
-            shift
-            ;;
-        -o | --oneshot)
-            MODE="oneshot"
-            shift
-            ;;
-        -i | --interface)
-            WIFI_INTERFACE="$2"
-            shift 2
-            ;;
-        -l | --logical)
-            WIFI_LOGICAL="$2"
-            shift 2
-            ;;
-        -t | --interval)
-            MONITOR_INTERVAL="$2"
-            shift 2
-            ;;
-        -h | --help)
-            show_usage
-            exit 0
-            ;;
-        *)
-            echo "Неизвестная опция: $1" >&2
-            show_usage
-            exit 1
-            ;;
-    esac
+  case "$1" in
+    -m | --monitor)
+      MODE="monitor"
+      shift
+      ;;
+    -o | --oneshot)
+      MODE="oneshot"
+      shift
+      ;;
+    -i | --interface)
+      WIFI_INTERFACE="$2"
+      shift 2
+      ;;
+    -l | --logical)
+      WIFI_LOGICAL="$2"
+      shift 2
+      ;;
+    -t | --interval)
+      MONITOR_INTERVAL="$2"
+      shift 2
+      ;;
+    -h | --help)
+      show_usage
+      exit 0
+      ;;
+    *)
+      echo "Неизвестная опция: $1" >&2
+      show_usage
+      exit 1
+      ;;
+  esac
 done
 
 if [ "$(id -u)" -ne 0 ]; then
-    log_error "Скрипт требует прав root"
-    exit 1
+  log_error "Скрипт требует прав root"
+  exit 1
 fi
 
 trap 'cleanup_captive_intercept' EXIT
 trap 'exit 0' INT TERM
 
 case "$MODE" in
-    monitor)
-        monitor_mode
-        ;;
-    oneshot)
-        oneshot_mode
-        ;;
-    *)
-        log_error "Неизвестный режим: $MODE"
-        exit 1
-        ;;
+  monitor)
+    monitor_mode
+    ;;
+  oneshot)
+    oneshot_mode
+    ;;
+  *)
+    log_error "Неизвестный режим: $MODE"
+    exit 1
+    ;;
 esac
