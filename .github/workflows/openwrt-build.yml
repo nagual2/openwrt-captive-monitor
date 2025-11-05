@@ -83,6 +83,7 @@ jobs:
             binutils \
             busybox \
             gzip \
+            opkg-utils \
             pigz \
             tar \
             xz-utils
