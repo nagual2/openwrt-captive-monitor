@@ -41,7 +41,8 @@ remote_exec "ls -la /usr/bin/captive-monitor || echo 'captive-monitor not found 
 remote_exec "find / -name 'captive-monitor' 2>/dev/null || echo 'captive-monitor not found in system'"
 
 # Проверяем PATH
-remote_exec "echo \$PATH"  # shellcheck disable=SC2016
+# shellcheck disable=SC2016
+remote_exec "echo \$PATH"
 
 # Запускаем базовые тесты
 echo "[5/7] Запускаем тесты..."
