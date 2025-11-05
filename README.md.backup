@@ -1,11 +1,14 @@
-# openwrt-captive-monitor
+# OpenWrt Captive Monitor
 
-[![CI](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/ci.yml/badge.svg?branch=main&label=CI)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/ci.yml?query=branch%3Amain)
-[![Package Build](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml/badge.svg?branch=main&label=Package%20Build)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml?query=branch%3Amain)
-[![Release](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/release-please.yml/badge.svg?branch=main&label=Release)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/release-please.yml?query=branch%3Amain)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub release](https://img.shields.io/github/release/nagual2/openwrt-captive-monitor.svg)](https://github.com/nagual2/openwrt-captive-monitor/releases)
-[![GitHub stars](https://img.shields.io/github/stars/nagual2/openwrt-captive-monitor.svg?style=social)](https://github.com/nagual2/openwrt-captive-monitor/stargazers)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/nagual2/openwrt-captive-monitor/actions)
+[![GitHub release](https://img.shields.io/github/v/release/nagual2/openwrt-captive-monitor)](https://github.com/nagual2/openwrt-captive-monitor/releases)
+[![License](https://img.shields.io/github/license/nagual2/openwrt-captive-monitor)](LICENSE)
+[![OpenWrt](https://img.shields.io/badge/OpenWrt-compatible-blue)](https://openwrt.org/)
+
+A lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily
+intercepts LAN DNS/HTTP traffic so clients can authenticate. Once internet access is restored,
+the helper automatically cleans up dnsmasq overrides, HTTP redirects, and NAT rules.
+
 ## ✨ Features
 
 - **🔍 Automatic Detection** - Detects captive portals without user intervention
@@ -66,7 +69,7 @@ cd openwrt-captive-monitor
 scripts/build_ipk.sh --arch all
 
 ## For advanced packaging options and release automation, see:
-## docs/packaging.md
+## https://nagual2.github.io/openwrt-captive-monitor/packaging/
 
 ## Install built package
 scp dist/opkg/all/openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
@@ -355,36 +358,36 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📚 Documentation
 
-- [Documentation Index](docs/index.md) - Complete guides and reference
-- [Quick Start Guide](docs/usage/quick-start.md) - Get started in minutes
-- [Configuration Reference](docs/configuration/reference.md) - All configuration options
-- [Troubleshooting Guide](docs/guides/troubleshooting.md) - Common issues and solutions
-- [Architecture Overview](docs/guides/architecture.md) - System design and components
+- **[Full Documentation](https://nagual2.github.io/openwrt-captive-monitor/)** - Complete guides and reference
+- **[Quick Start Guide](docs/usage/quick-start.md)** - Get started in minutes
+- **[Configuration Reference](docs/configuration/reference.md)** - All configuration options
+- **[Troubleshooting Guide](docs/guides/troubleshooting.md)** - Common issues and solutions
+- **[Architecture Overview](docs/guides/architecture.md)** - System design and components
 
 ## 🤝 Community
 
 ### Support
 
-- [GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues) - Bug reports and feature requests
-- [GitHub Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions) - General questions and help
-- [Documentation](docs/index.md) - Comprehensive guides and reference
+- **[GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)** - Bug reports and feature requests
+- **[GitHub Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)** - General questions and help
+- **[Documentation](https://nagual2.github.io/openwrt-captive-monitor/)** - Comprehensive guides and reference
 
 ### Security
 
-- [Security Policy](.github/SECURITY.md) - Security vulnerability reporting
-- [Security Advisories](https://github.com/nagual2/openwrt-captive-monitor/security/advisories) - Security notifications
+- **[Security Policy](.github/SECURITY.md)** - Security vulnerability reporting
+- **[Security Advisories](https://github.com/nagual2/openwrt-captive-monitor/security/advisories)** - Security notifications
 
 ### Contributing
 
-- [Contributing Guide](CONTRIBUTING.md) - Development guidelines and process
-- [Code of Conduct](CODE_OF_CONDUCT.md) - Community guidelines
-- [Project Management](docs/project/management.md) - Roadmap and release process
+- **[Contributing Guide](CONTRIBUTING.md)** - Development guidelines and process
+- **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community guidelines
+- **[Project Management](docs/project/management.md)** - Roadmap and release process
 
 ## 📊 Project Status
 
 ### Latest Release
 
-- **Version**: v1.0.3 (See [releases page](https://github.com/nagual2/openwrt-captive-monitor/releases) for details)
+- **Version**: v1.0.1 (See [releases page](https://github.com/nagual2/openwrt-captive-monitor/releases) for details)
 - **License**: [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 - **Platform**: [![OpenWrt](https://img.shields.io/badge/OpenWrt-21.02%2B-blue.svg)](https://openwrt.org/)
 
@@ -416,14 +419,18 @@ This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LI
 
 ## 🔗 Related Projects
 
-- [uspot](https://github.com/f00b4r0/uspot) - Full-featured captive portal for OpenWrt
-- [apfree-wifidog](https://github.com/liudf0716/apfree-wifidog) - High-performance captive portal
-- [CaptivePortalAutologin](https://github.com/jsparber/CaptivePortalAutologin) - Android auto-login app
+- **[uspot](https://github.com/f00b4r0/uspot)** - Full-featured captive portal for OpenWrt
+- **[apfree-wifidog](https://github.com/liudf0716/apfree-wifidog)** - High-performance captive portal
+- **[CaptivePortalAutologin](https://github.com/jsparber/CaptivePortalAutologin)** - Android auto-login app
 
 ---
 
 <div align="center">
-[📖 Documentation](docs/) • [🐛 Issues](https://github.com/nagual2/openwrt-captive-monitor/issues) • [💬 Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)
+**[📖 Full Documentation](https://nagual2.github.io/openwrt-captive-monitor/)** •
+**[🚀 Quick Start](docs/usage/quick-start.md)** •
+**[⚙️ Configuration](docs/configuration/basic-config.md)** •
+**[🐛 Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)** •
+**[💬 Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)**
 
 Made with ❤️ for the OpenWrt community
 

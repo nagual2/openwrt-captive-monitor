@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.3](https://github.com/nagual2/openwrt-captive-monitor/compare/v1.0.1...v1.0.3)
+
+### Changed
+- Updated documentation and fixed broken links
+- Fixed CI workflows and markdown linting
+- Synchronized versioning across all files
+
+### Fixed
+- GitHub Actions permissions issues
+- Markdown formatting in README
+- Test suite issues
+
 ## [1.0.1](https://github.com/nagual2/openwrt-captive-monitor/compare/v0.1.2...v1.0.1)
 
 ### Documentation & Cleanup
