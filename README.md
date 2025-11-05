@@ -384,7 +384,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ### Latest Release
 
-- **Version**: v1.0.3 (See [releases page](https://github.com/nagual2/openwrt-captive-monitor/releases) for details)
+- **Version**: v1.0.4 (See [releases page](https://github.com/nagual2/openwrt-captive-monitor/releases) for details)
 - **License**: [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 - **Platform**: [![OpenWrt](https://img.shields.io/badge/OpenWrt-21.02%2B-blue.svg)](https://openwrt.org/)
 
