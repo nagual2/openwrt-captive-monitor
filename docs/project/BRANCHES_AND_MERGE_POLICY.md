@@ -105,7 +105,7 @@ git for-each-ref --format='%(committerdate:iso8601) %(refname:short)' \
 | `origin/restore/feature-openwrt-captive-monitor-opkg` | 2025-10-22 19:04 | Same as above; safe to delete after confirming the diff is on trunk. |
 | `origin/release-v0.1.1-ci-fix-ipk-build-opkg-feed-publish` | 2025-10-23 21:40 | Release helper branch; convert to tag notes and delete. |
 | `origin/triage-3-failing-prs-check-main-close-or-fix-ci-add-pr-triage-md` | 2025-10-24 21:26 | Triage branch now redundant; integrate any doc updates and delete. |
-| (remaining `audit/*`, `triage/*`, `restore/*`) | 2025-10-22 to 2025-10-24 | Review ownership; if no outstanding PR, remove to keep the branch list lean. |
+| `origin/audit/*`, `origin/triage/*`, `origin/restore/*` | 2025-10-22 to 2025-10-24 | Review ownership; if no outstanding PR, remove to keep the branch list lean. |
 
 To delete a remote branch once confirmed safe:
 
