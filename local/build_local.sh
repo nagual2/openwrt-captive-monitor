@@ -27,7 +27,7 @@ chmod +x "$PKG_DIR/etc/init.d/captive-monitor"
 cp package/openwrt-captive-monitor/files/etc/config/captive-monitor "$PKG_DIR/etc/config/"
 
 # Create control file
-cat > /tmp/opkg-feed/control <<EOL
+cat > /tmp/opkg-feed/control << EOL
 Package: openwrt-captive-monitor
 Version: 0.1.2-1
 Depends: dnsmasq, curl
@@ -38,7 +38,7 @@ Description: Captive portal connectivity monitor and auto-redirect helper
 EOL
 
 # Create postinst script
-cat > /tmp/opkg-feed/postinst <<'EOL'
+cat > /tmp/opkg-feed/postinst << 'EOL'
 #!/bin/sh
 [ "${IPKG_NO_SCRIPT}" = "1" ] && exit 0
 [ -x "${IPKG_INSTROOT}/etc/uci-defaults/99-captive-monitor" ] && "${IPKG_INSTROOT}/etc/uci-defaults/99-captive-monitor"
@@ -55,7 +55,7 @@ echo "2.0" > debian-binary
 tar czf openwrt-captive-monitor_0.1.2-1_all.ipk ./control ./data.tar.gz ./postinst ./debian-binary
 
 # Create Packages file
-cat > /tmp/opkg-feed/Packages <<EOL
+cat > /tmp/opkg-feed/Packages << EOL
 Package: openwrt-captive-monitor
 Version: 0.1.2-1
 Depends: dnsmasq, curl
