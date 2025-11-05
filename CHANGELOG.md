@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.4](https://github.com/nagual2/openwrt-captive-monitor/compare/v1.0.3...v1.0.4)
+
+### Added
+- Delivered a production-ready `openwrt_captive_monitor` service with IPv4/IPv6 checks, DNS/HTTP interception, and localized captive portal landing page generation.
+- Bundled OpenWrt integration assets (procd init script, UCI defaults, packaging helpers, and test harness) to simplify installation and verification.
+
+### Changed
+- Hardened connectivity detection with configurable ping and HTTP probes, BusyBox-friendly DNS resolution, and smarter timeout handling.
+- Improved firewall orchestration for nftables and iptables backends to ensure reliable cleanup after captive sessions.
+- Expanded project documentation to cover architecture, troubleshooting, packaging, and release workflows.
+
+### Fixed
+- Resolved CI and shell test regressions so release automation remains green.
+
 ## [1.0.3](https://github.com/nagual2/openwrt-captive-monitor/compare/v1.0.1...v1.0.3)
 
 ### Changed
