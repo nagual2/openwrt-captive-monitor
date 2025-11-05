@@ -8,14 +8,14 @@ REMOTE_TEMP_DIR="/tmp/captive_test_manual"
 
 # Function to execute remote commands
 remote_exec() {
-  ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$REMOTE" "$1"
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$REMOTE" "$1"
 }
 
 # Function to copy files to remote
 remote_copy() {
-  local src="$1"
-  local dst="$2"
-  scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$src" "$REMOTE:$dst"
+    local src="$1"
+    local dst="$2"
+    scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$src" "$REMOTE:$dst"
 }
 
 echo "[1/5] Preparing remote device..."
