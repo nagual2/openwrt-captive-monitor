@@ -14,69 +14,6 @@ fi
 # OpenWRT Captive Portal Monitor and Auto-Redirect Script
 # Проверяет интернет, перехватывает HTTP-трафик клиентов LAN на captive portal
 
-# Function to get current language
-get_language() {
-  local lang="$(uci -q get captive-monitor.@captive_monitor[0].language || echo 'en')"
-  [ -z "$lang" ] && lang="en"
-  echo "$lang" | tr '[:upper:]' '[:lower:]'
-}
-
-# Function to get localized message
-get_msg() {
-  local key="$1"
-  local lang="$(get_language)"
-
-  case "$lang" in
-    ru)
-      case "$key" in
-        title) echo "Перенаправление на портал авторизации" ;;
-        redirecting) echo "Перенаправление на страницу авторизации..." ;;
-        manual) echo "Открыть портал вручную" ;;
-        check_connection) echo "=== Проверка подключения ===" ;;
-        internet_available) echo "Интернет доступен по ICMP (сервер: %s)" ;;
-        next_check) echo "Следующая проверка через %dс" ;;
-        starting_check) echo "Запуск проверки соединения" ;;
-        *) echo "$key" ;;
-      esac
-      ;;
-    *)
-      case "$key" in
-        title) echo "Redirecting to Authorization Portal" ;;
-        redirecting) echo "Redirecting to login page..." ;;
-        manual) echo "Open portal manually" ;;
-        check_connection) echo "=== Connection Check ===" ;;
-        internet_available) echo "Internet is available via ICMP (server: %s)" ;;
-        next_check) echo "Next check in %ds" ;;
-        starting_check) echo "Starting connection check" ;;
-        *) echo "$key" ;;
-      esac
-      ;;
-  esac
-}
-
-# Function to generate HTML with proper language
-generate_html() {
-  local portal_url="$1"
-  local lang="$(get_language)"
-
-  cat << EOF_HTML
-<!DOCTYPE html>
-<html lang="$lang">
-<head>
-<meta charset="UTF-8">
-<title>$(get_msg title)</title>
-<meta http-equiv="refresh" content="0; url=$portal_url">
-<style>body{font-family:sans-serif;text-align:center;margin-top:40px;}</style>
-<script>window.location.replace('$portal_url');</script>
-</head>
-<body>
-<p>$(get_msg redirecting)</p>
-<p><a href="$portal_url">$(get_msg manual)</a></p>
-</body>
-</html>
-EOF_HTML
-}
-
 # ============================================================================
 # КОНФИГУРАЦИЯ
 # ============================================================================
@@ -1040,8 +977,22 @@ start_captive_httpd() {
 
   mkdir -p "$HTTPD_ROOT"
 
-  # Generate HTML with proper language
-  generate_html "$portal_url" > "$HTTPD_INDEX"
+  cat > "$HTTPD_INDEX" << EOF_HTML
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Captive Portal Redirect</title>
+<meta http-equiv="refresh" content="0; url=$portal_url">
+<style>body{font-family:sans-serif;text-align:center;margin-top:40px;}</style>
+<script>window.location.replace('$portal_url');</script>
+</head>
+<body>
+<p>Перенаправление на страницу авторизации...</p>
+<p><a href="$portal_url">Открыть портал вручную</a></p>
+</body>
+</html>
+EOF_HTML
 
   busybox httpd -f -p "0.0.0.0:$HTTPD_PORT" -p "[::]:$HTTPD_PORT" -h "$HTTPD_ROOT" > /dev/null 2>&1 &
   pid=$!

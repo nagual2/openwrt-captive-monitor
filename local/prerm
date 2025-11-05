@@ -1,0 +1,6 @@
+#!/bin/sh
+if [ -z "$IPKG_INSTROOT" ]; then
+  /etc/init.d/captive-monitor disable > /dev/null 2>&1 || true
+  /etc/init.d/captive-monitor stop > /dev/null 2>&1 || true
+fi
+exit 0

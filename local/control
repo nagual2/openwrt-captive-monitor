@@ -1,0 +1,10 @@
+Package: openwrt-captive-monitor
+Version: 1.0.1-1
+Architecture: all
+Maintainer: OpenWrt Captive Monitor Team <https://github.com/nagual2/openwrt-captive-monitor>
+License: MIT
+Section: net
+Priority: optional
+Source: https://github.com/nagual2/openwrt-captive-monitor
+Installed-Size: 112
+Description: OpenWrt captive portal monitor
