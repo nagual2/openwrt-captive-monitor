@@ -100,7 +100,7 @@ git for-each-ref --format='%(committerdate:iso8601) %(refname:short)' \
 | `origin/chore-trunk-merge-order-finish-2-prs-cleanup` | 2025-10-24 22:34 | Docs from previous cleanup; archive content into `main` (done) and then delete remotely. |
 | `origin/audit-merge-ci-release-v0-1-1` | 2025-10-23 18:54 | Historical audit branch; confirm notes are captured in docs, then delete. |
 | `origin/audit-pr-branching-openwrt-captive-monitor` | 2025-10-24 17:36 | Superseded by this policy; safe to delete after verification. |
-| `origin/feat-ci-shellcheck-ipk-sdk-matrix` | 2025-10-22 22:22 | Feature branch integrated into `main`; remove once artefacts are archived. |
+| `origin/feat-ci-shellcheck-ipk-sdk-matrix` | 2025-10-22 22:22 | Feature branch integrated into `main`; remove once artifacts are archived. |
 | `origin/restore/feat-captive-intercept-dns-http-redirect` | 2025-10-22 15:21 | Historical recovery branch; verify the merged commits exist on `main`, then delete. |
 | `origin/restore/feature-openwrt-captive-monitor-opkg` | 2025-10-22 19:04 | Same as above; safe to delete after confirming the diff is on trunk. |
 | `origin/release-v0.1.1-ci-fix-ipk-build-opkg-feed-publish` | 2025-10-23 21:40 | Release helper branch; convert to tag notes and delete. |
