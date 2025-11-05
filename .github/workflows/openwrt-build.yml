@@ -97,7 +97,7 @@ jobs:
         run: |
           set -euxo pipefail
           rm -rf dist/opkg
-          TARGET_ARCH=${{ matrix.target }} ./scripts/build_ipk.sh
+          ./scripts/build_ipk.sh --arch "${{ matrix.target }}"
 
       - name: Collect package metadata
         id: pkg
