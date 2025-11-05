@@ -1,12 +1,30 @@
 #!/bin/sh
 
+# Colors for output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+YELLOW='\033[1;33m'
+
 # Default configuration
 WIFI_INTERFACE="phy1-sta0"
 WIFI_LOGICAL="wwan"
 MONITOR_INTERVAL=60
 PING_SERVERS="1.1.1.1 8.8.8.8 9.9.9.9"
 CHECK_URLS="http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt"
+
+# Language handling
 LANGUAGE="en" # Default language
+
+# Parse command line arguments
+for arg in "$@"; do
+    case $arg in
+        --lang=*)
+            LANGUAGE="${arg#*=}"
+            shift
+            ;;
+    esac
+done
 
 # Function to get localized message
 get_msg() {
@@ -77,54 +95,63 @@ get_msg() {
 
 # Check if running as root
 if [ "$(id -u)" -ne 0 ]; then
-    echo "Error: This script must be run as root" >&2
+    echo -e "${RED}Error: This script must be run as root${NC}" >&2
     exit 1
 fi
 
 # Function to install the package
 install_package() {
-    echo "$(get_msg installing)"
+    echo -e "${GREEN}$(get_msg installing)${NC}"
 
-    echo "$(get_msg installing_deps)"
-    opkg update || {
-        echo "Error: Failed to update package lists" >&2
+    echo -e "${GREEN}$(get_msg installing_deps)${NC}"
+    if ! opkg update; then
+        echo -e "${RED}Error: Failed to update package lists${NC}" >&2
+        return 1
+    fi
+
+    if ! opkg install dnsmasq curl ca-bundle; then
+        echo -e "${YELLOW}Warning: Some dependencies failed to install. Continuing anyway...${NC}" >&2
+    fi
+
+    echo -e "${GREEN}$(get_msg creating_dirs)${NC}"
+    mkdir -p /usr/sbin/ /etc/init.d/ /etc/config/ /etc/uci-defaults/ /usr/share/licenses/openwrt-captive-monitor/ || {
+        echo -e "${RED}Error: Failed to create directories${NC}" >&2
         return 1
     }
-    opkg install dnsmasq curl ca-bundle || {
-        echo "Error: Failed to install dependencies" >&2
+
+    echo -e "${GREEN}$(get_msg copying_files)${NC}"
+    if [ ! -d "/tmp/openwrt-captive-monitor/package" ]; then
+        echo -e "${RED}Error: Package files not found in /tmp/openwrt-captive-monitor/${NC}" >&2
+        return 1
+    fi
+
+    cp /tmp/openwrt-captive-monitor/package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor /usr/sbin/ || {
+        echo -e "${RED}Error: Failed to copy openwrt_captive_monitor${NC}" >&2
         return 1
     }
 
-    echo "$(get_msg creating_dirs)"
-    mkdir -p /usr/sbin/ /etc/init.d/ /etc/config/ /etc/uci-defaults/ /usr/share/licenses/openwrt-captive-monitor/ ||
-        {
-            echo "Error: Failed to create directories" >&2
-            return 1
-        }
+    cp /tmp/openwrt-captive-monitor/package/openwrt-captive-monitor/files/etc/init.d/captive-monitor /etc/init.d/ || {
+        echo -e "${RED}Error: Failed to copy init script${NC}" >&2
+        return 1
+    }
 
-    echo "$(get_msg copying_files)"
-    cp /tmp/openwrt-captive-monitor/package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor /usr/sbin/ ||
-        {
-            echo "Error: Failed to copy openwrt_captive_monitor" >&2
-            return 1
+    if [ -f "/tmp/openwrt-captive-monitor/package/openwrt-captive-monitor/files/etc/config/captive-monitor" ]; then
+        cp /tmp/openwrt-captive-monitor/package/openwrt-captive-monitor/files/etc/config/captive-monitor /etc/config/ || {
+            echo -e "${YELLOW}Warning: Failed to copy config file, using defaults${NC}" >&2
         }
-    cp /tmp/openwrt-captive-monitor/package/openwrt-captive-monitor/files/etc/init.d/captive-monitor /etc/init.d/ ||
-        {
-            echo "Error: Failed to copy init script" >&2
-            return 1
-        }
-    cp /tmp/openwrt-captive-monitor/package/openwrt-captive-monitor/files/etc/config/captive-monitor /etc/config/ ||
-        echo "Warning: No config file found, using defaults" >&2
+    else
+        echo -e "${YELLOW}Warning: No config file found, using defaults${NC}" >&2
+    fi
 
-    echo "$(get_msg setting_perms)"
-    sed -i 's/\r$//' /usr/sbin/openwrt_captive_monitor
-    sed -i 's/\r$//' /etc/init.d/captive-monitor
+    echo -e "${GREEN}$(get_msg setting_perms)${NC}"
+    sed -i 's/\r$//' /usr/sbin/openwrt_captive_monitor 2> /dev/null
+    sed -i 's/\r$//' /etc/init.d/captive-monitor 2> /dev/null
     chmod +x /usr/sbin/openwrt_captive_monitor || {
-        echo "Error: Failed to set executable permissions" >&2
+        echo -e "${RED}Error: Failed to set executable permissions${NC}" >&2
         return 1
     }
     chmod +x /etc/init.d/captive-monitor || {
-        echo "Error: Failed to set executable permissions" >&2
+        echo -e "${RED}Error: Failed to set executable permissions${NC}" >&2
         return 1
     }
 
@@ -135,28 +162,31 @@ install_package() {
 
     # Set language in config
     uci set captive-monitor.@captive_monitor[0].language="$LANGUAGE"
-    uci commit captive-monitor || echo "Warning: Failed to save configuration" >&2
+    uci commit captive-monitor || {
+        echo -e "${YELLOW}Warning: Failed to save configuration${NC}" >&2
+    }
 
-    echo "$(get_msg install_success)"
+    echo -e "${GREEN}$(get_msg install_success)${NC}"
     return 0
 }
 
 # Function to configure the package
 configure_package() {
     # Get language from config or use default
-    CONFIG_LANG=$(uci -q get captive-monitor.@captive_monitor[0].language || echo "$LANGUAGE")
-    if [ -n "$CONFIG_LANG" ]; then
-        LANGUAGE="$CONFIG_LANG"
+    local config_lang
+    config_lang=$(uci -q get captive-monitor.@captive_monitor[0].language || echo "$LANGUAGE")
+    if [ -n "$config_lang" ]; then
+        LANGUAGE="$config_lang"
     fi
 
-    echo "$(get_msg configuring)"
+    echo -e "${GREEN}$(get_msg configuring)${NC}"
 
     # Initialize UCI config if it doesn't exist
     if ! uci -q get captive-monitor.@captive_monitor[0] > /dev/null; then
         uci add captive-monitor captive_monitor
     fi
 
-    # Enable the service
+    # Set configuration values
     uci set captive-monitor.@captive_monitor[0].enabled='1'
     uci set captive-monitor.@captive_monitor[0].wifi_interface="$WIFI_INTERFACE"
     uci set captive-monitor.@captive_monitor[0].wifi_logical="$WIFI_LOGICAL"
@@ -164,91 +194,96 @@ configure_package() {
     uci set captive-monitor.@captive_monitor[0].ping_servers="$PING_SERVERS"
     uci set captive-monitor.@captive_monitor[0].captive_check_urls="$CHECK_URLS"
     uci set captive-monitor.@captive_monitor[0].language="$LANGUAGE"
-    uci commit captive-monitor || { echo "Warning: Failed to save configuration" >&2; }
 
-    echo "$(get_msg starting_service)"
-    /etc/init.d/captive-monitor enable || { echo "Warning: Failed to enable service" >&2; }
-    /etc/init.d/captive-monitor start || {
-        echo "$(get_msg service_failed)" >&2
-        return 1
+    if ! uci commit captive-monitor; then
+        echo -e "${YELLOW}Warning: Failed to save configuration${NC}" >&2
+    fi
+
+    echo -e "${GREEN}$(get_msg starting_service)${NC}"
+    /etc/init.d/captive-monitor enable || {
+        echo -e "${YELLOW}Warning: Failed to enable service${NC}" >&2
     }
 
-    if ! /etc/init.d/captive-monitor status > /dev/null 2>&1; then
-        echo "$(get_msg service_failed)" >&2
+    if ! /etc/init.d/captive-monitor start; then
+        echo -e "${RED}$(get_msg service_failed)${NC}" >&2
         return 1
     fi
 
-    echo "$(get_msg config_complete)"
+    if ! /etc/init.d/captive-monitor status > /dev/null 2>&1; then
+        echo -e "${RED}$(get_msg service_failed)${NC}" >&2
+        return 1
+    fi
+
+    echo -e "${GREEN}$(get_msg config_complete)${NC}"
     return 0
 }
 
 # Function to uninstall the package
 uninstall_package() {
     # Get language from config or use default
-    CONFIG_LANG=$(uci -q get captive-monitor.@captive_monitor[0].language || echo "$LANGUAGE")
-    if [ -n "$CONFIG_LANG" ]; then
-        LANGUAGE="$CONFIG_LANG"
+    local config_lang
+    config_lang=$(uci -q get captive-monitor.@captive_monitor[0].language || echo "$LANGUAGE")
+    if [ -n "$config_lang" ]; then
+        LANGUAGE="$config_lang"
     fi
 
-    echo "$(get_msg uninstalling)"
+    echo -e "${RED}$(get_msg uninstalling)${NC}"
 
     # Stop and disable the service if it exists
-    if [ -f /etc/init.d/captive-monitor ]; then
+    if [ -f "/etc/init.d/captive-monitor" ]; then
         /etc/init.d/captive-monitor stop 2> /dev/null || true
         /etc/init.d/captive-monitor disable 2> /dev/null || true
     fi
 
-    echo "$(get_msg removing_files)"
+    echo -e "${GREEN}$(get_msg removing_files)${NC}"
     rm -f /usr/sbin/openwrt_captive_monitor
     rm -f /etc/init.d/captive-monitor
-
-    # Don't remove config file to preserve settings
-    # rm -f /etc/config/captive-monitor
+    rm -f /etc/config/captive-monitor
 
     # Optionally remove dependencies (commented out by default)
-    # echo "$(get_msg removing_deps)"
+    # echo -e "${GREEN}$(get_msg removing_deps)${NC}"
     # opkg remove dnsmasq curl ca-bundle
 
-    echo "$(get_msg uninstall_success)"
+    echo -e "${GREEN}$(get_msg uninstall_success)${NC}"
     return 0
 }
 
 # Function to show service status
 show_status() {
     # Get language from config or use default
-    CONFIG_LANG=$(uci -q get captive-monitor.@captive_monitor[0].language 2> /dev/null || echo "$LANGUAGE")
-    if [ -n "$CONFIG_LANG" ]; then
-        LANGUAGE="$CONFIG_LANG"
+    local config_lang
+    config_lang=$(uci -q get captive-monitor.@captive_monitor[0].language || echo "$LANGUAGE")
+    if [ -n "$config_lang" ]; then
+        LANGUAGE="$config_lang"
     fi
 
-    echo "$(get_msg service_status)"
-    if [ -f /etc/init.d/captive-monitor ]; then
-        /etc/init.d/captive-monitor status 2> /dev/null || echo "$(get_msg not_running)"
+    echo -e "\n${GREEN}$(get_msg service_status)${NC}"
+    if [ -f "/etc/init.d/captive-monitor" ]; then
+        /etc/init.d/captive-monitor status 2> /dev/null || echo -e "${YELLOW}$(get_msg not_running)${NC}"
     else
-        echo "Service not installed"
+        echo -e "${YELLOW}Service not installed${NC}"
     fi
 
-    echo ""
-    echo "$(get_msg configuration)"
-    if [ -f /etc/config/captive-monitor ]; then
-        uci show captive-monitor 2> /dev/null || echo "$(get_msg no_config)"
+    echo -e "\n${GREEN}$(get_msg configuration)${NC}"
+    if uci -q get captive-monitor.@captive_monitor[0] > /dev/null; then
+        uci show captive-monitor 2> /dev/null || echo -e "${YELLOW}$(get_msg no_config)${NC}"
     else
-        echo "No configuration file found"
+        echo -e "${YELLOW}$(get_msg no_config)${NC}"
     fi
 
-    echo ""
-    echo "$(get_msg process_status)"
+    echo -e "\n${GREEN}$(get_msg process_status)${NC}"
     if pgrep -f "openwrt_captive_monitor" > /dev/null; then
-        echo "$(get_msg running)"
+        echo -e "${GREEN}$(get_msg running)${NC}"
+        return 0
     else
-        echo "$(get_msg not_running)"
+        echo -e "${YELLOW}$(get_msg not_running)${NC}"
+        return 1
     fi
-    return 0
 }
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 [options] [command]"
+    echo "Usage: $0 [command] [options]"
     echo "Commands:"
     echo "  install     - Install and configure the package"
     echo "  uninstall   - Uninstall the package"
@@ -256,40 +291,46 @@ show_usage() {
     echo "  help        - Show this help message"
     echo ""
     echo "Options:"
-    echo "  --lang=XX   - Set language (en/ru), default: en"
-    return 0
+    echo "  --lang=code  Set the language (en/ru)"
+    echo ""
+    echo "Examples:"
+    echo "  $0 install --lang=ru"
+    echo "  $0 status"
+    echo "  $0 uninstall"
 }
 
-# Parse command line arguments
+# Main script
 COMMAND=""
-LANGUAGE="en"
 
-# First parse language if specified
-for arg in "$@"; do
-    if [ "${arg#--lang=}" != "$arg" ]; then
-        LANGUAGE="${arg#--lang=}"
-        break
-    fi
-done
-
-# Then parse command
-for arg in "$@"; do
-    case "$arg" in
+# Parse command line arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --lang=*)
+            LANGUAGE="${1#*=}"
+            shift
+            ;;
         install | uninstall | status | help | --help | -h)
-            COMMAND="$arg"
-            break
+            COMMAND="$1"
+            shift
+            ;;
+        *)
+            echo -e "${RED}Error: Unknown option: $1${NC}" >&2
+            show_usage
+            exit 1
             ;;
     esac
 done
 
-# If no command specified, show usage
-[ -z "$COMMAND" ] && COMMAND="help"
+# Default to help if no command provided
+if [ -z "$COMMAND" ]; then
+    show_usage
+    exit 0
+fi
 
-# Main script execution
+# Execute the requested command
 case "$COMMAND" in
     install)
-        install_package
-        configure_package
+        install_package && configure_package
         ;;
     uninstall)
         uninstall_package
@@ -297,8 +338,13 @@ case "$COMMAND" in
     status)
         show_status
         ;;
-    help | --help | -h | *)
+    help | --help | -h)
         show_usage
+        ;;
+    *)
+        echo -e "${RED}Error: Unknown command: $COMMAND${NC}" >&2
+        show_usage
+        exit 1
         ;;
 esac
 
