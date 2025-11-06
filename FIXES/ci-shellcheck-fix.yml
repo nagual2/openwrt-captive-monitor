@@ -1,0 +1,23 @@
+# Fix for Shellcheck Installation Failure
+# Replace the "Install dependencies" step in .github/workflows/ci.yml
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          case "${{ matrix.linter }}" in
+            shfmt|shellcheck)
+              # FIX: Install shellcheck from official GitHub releases
+              SHELLCHECK_VERSION="0.9.0"
+              wget -qO- "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" | tar -xJv
+              sudo mv "shellcheck-v${SHELLCHECK_VERSION}/shellcheck" /usr/bin/
+              sudo chmod +x /usr/bin/shellcheck
+              # Install other packages
+              sudo apt-get install -y busybox shfmt
+              ;;
+            markdownlint|actionlint)
+              # Use docker/actions instead, no packages needed
+              echo "Using docker-based linters"
+              ;;
+          esac

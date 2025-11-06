@@ -1,0 +1,34 @@
+# Fix for OpenWrt Build Architecture Mismatch
+# Replace the "Collect package metadata" step in .github/workflows/openwrt-build.yml
+
+      - name: Collect package metadata
+        id: pkg
+        env:
+          TARGET_ARCH: ${{ matrix.target }}
+        run: |
+          set -euxo pipefail
+          pkg_makefile="package/openwrt-captive-monitor/Makefile"
+          pkg_name=$(awk -F':=' '/^PKG_NAME:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_name" ] || pkg_name="openwrt-captive-monitor"
+          pkg_version=$(awk -F':=' '/^PKG_VERSION:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_version" ] || pkg_version="0.0.0"
+          pkg_release=$(awk -F':=' '/^PKG_RELEASE:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_release" ] || pkg_release="1"
+          pkg_arch=$(awk -F':=' '/^PKG_ARCH:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_arch" ] || pkg_arch="all"
+          build_arch="$TARGET_ARCH"
+          
+          # FIX: Use pkg_arch for directory and filename to match build script behavior
+          feed_dir="dist/opkg/$pkg_arch"
+          pkg_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}.ipk"
+          
+          {
+            echo "name=$pkg_name"
+            echo "version=$pkg_version"
+            echo "release=$pkg_release"
+            echo "arch=$pkg_arch"
+            echo "build_arch=$build_arch"
+            echo "feed_dir=$feed_dir"
+            echo "ipk=$pkg_ipk"
+            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}_${build_arch}"
+          } >> "$GITHUB_OUTPUT"
