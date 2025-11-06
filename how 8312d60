@@ -1,0 +1,49 @@
+[33mcommit 62af3364952f6416035533935fe98c8a16660584[m[33m ([m[1;31morigin/hotfix-ci-failing-tests-pr-103[m[33m)[m
+Author: engine-labs-app[bot] <140088366+engine-labs-app[bot]@users.noreply.github.com>
+Date:   Thu Nov 6 00:14:04 2025 +0000
+
+    fix(ci): resolve package build artifacts mismatch after arch bump
+    
+    Main branch CI was failing after a release PR updated PKG_ARCH to "all" but workflows and Makefile logic were not aligned on artifact output paths. This change ensures GitHub Actions build and verify steps correctly use the matrix architecture for package and feed outputs regardless of PKG_ARCH value in the Makefile.
+    
+    - Fixes workflow logic to use the actual build architecture (matrix.target)
+    - Makes artifact detection robust to PKG_ARCH changes (e.g., "all")
+    - Unblocks CI/CD release workflows and OpenWrt package builds
+    
+    This improves reliability for future multi-arch support and prevents broken main branch builds.
+
+[1mdiff --git a/.github/workflows/openwrt-build.yml b/.github/workflows/openwrt-build.yml[m
+[1mindex 4b8fc4a..8fc220f 100644[m
+[1m--- a/.github/workflows/openwrt-build.yml[m
+[1m+++ b/.github/workflows/openwrt-build.yml[m
+[36m@@ -101,6 +101,8 @@[m [mjobs:[m
+ [m
+       - name: Collect package metadata[m
+         id: pkg[m
+[32m+[m[32m        env:[m
+[32m+[m[32m          TARGET_ARCH: ${{ matrix.target }}[m
+         run: |[m
+           set -euxo pipefail[m
+           pkg_makefile="package/openwrt-captive-monitor/Makefile"[m
+[36m@@ -112,16 +114,18 @@[m [mjobs:[m
+           [ -n "$pkg_release" ] || pkg_release="1"[m
+           pkg_arch=$(awk -F':=' '/^PKG_ARCH:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")[m
+           [ -n "$pkg_arch" ] || pkg_arch="all"[m
+[31m-          feed_dir="dist/opkg/$pkg_arch"[m
+[31m-          pkg_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}.ipk"[m
+[32m+[m[32m          build_arch="$TARGET_ARCH"[m
+[32m+[m[32m          feed_dir="dist/opkg/$build_arch"[m
+[32m+[m[32m          pkg_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${build_arch}.ipk"[m
+           {[m
+             echo "name=$pkg_name"[m
+             echo "version=$pkg_version"[m
+             echo "release=$pkg_release"[m
+             echo "arch=$pkg_arch"[m
+[32m+[m[32m            echo "build_arch=$build_arch"[m
+             echo "feed_dir=$feed_dir"[m
+             echo "ipk=$pkg_ipk"[m
+[31m-            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}_${{ matrix.target }}"[m
+[32m+[m[32m            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}_${TARGET_ARCH}"[m
+           } >> "$GITHUB_OUTPUT"[m
+ [m
+       - name: Verify build outputs[m
