@@ -101,6 +101,8 @@ jobs:
 
       - name: Collect package metadata
         id: pkg
+        env:
+          TARGET_ARCH: ${{ matrix.target }}
         run: |
           set -euxo pipefail
           pkg_makefile="package/openwrt-captive-monitor/Makefile"
@@ -112,16 +114,18 @@ jobs:
           [ -n "$pkg_release" ] || pkg_release="1"
           pkg_arch=$(awk -F':=' '/^PKG_ARCH:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
           [ -n "$pkg_arch" ] || pkg_arch="all"
-          feed_dir="dist/opkg/$pkg_arch"
-          pkg_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}.ipk"
+          build_arch="$TARGET_ARCH"
+          feed_dir="dist/opkg/$build_arch"
+          pkg_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${build_arch}.ipk"
           {
             echo "name=$pkg_name"
             echo "version=$pkg_version"
             echo "release=$pkg_release"
             echo "arch=$pkg_arch"
+            echo "build_arch=$build_arch"
             echo "feed_dir=$feed_dir"
             echo "ipk=$pkg_ipk"
-            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}_${{ matrix.target }}"
+            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}_${TARGET_ARCH}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Verify build outputs
