@@ -9,8 +9,8 @@
 - No *.ipk files found (already clean)
 - No Packages* files found (already clean)
 - No .opkg/ directories found (already clean)
-- No temporary files (*.tmp, *.log, *.bak, *~, .DS_Store) found
-- No editor backup files (*.orig, *.rej, *.swp, .#*) found
+- No temporary files (*.tmp,*.log,*.bak,*~,.DS_Store) found
+- No editor backup files (*.orig,*.rej,*.swp,.#*) found
 
 ### Git Status Verification
 - Working tree clean: ✅
