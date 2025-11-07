@@ -25,7 +25,7 @@
 
 ## Information Found and Removed
 
-### 1. [CRITICAL] GitHub Personal Access Token in ` .git/config:7`
+### 1. [CRITICAL] GitHub Personal Access Token in `.git/config:7`
    - **What**: GitHub Personal Access Token (PAT) exposed in git remote URL
    - **Value**: `ghs_s1O4XcIZEDFDK8rKZfqk7vr8gO77B21FGnNJ`
    - **Removed**: YES ✅
