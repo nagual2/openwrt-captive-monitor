@@ -34,17 +34,8 @@ defaults:
 
 jobs:
   build:
-    name: Build (${{ matrix.target }})
+    name: Build universal package
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        target:
-          - generic
-          - x86-64
-          - armvirt-64
-          - mips_24kc
-      fail-fast: false
 
     steps:
       - name: Check out repository
@@ -96,7 +87,7 @@ jobs:
         run: |
           set -euxo pipefail
           rm -rf dist/opkg
-          TARGET_ARCH=${{ matrix.target }} ./scripts/build_ipk.sh
+          ./scripts/build_ipk.sh
 
       - name: Collect package metadata
         id: pkg
@@ -120,7 +111,7 @@ jobs:
             echo "arch=$pkg_arch"
             echo "feed_dir=$feed_dir"
             echo "ipk=$pkg_ipk"
-            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}_${{ matrix.target }}"
+            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Verify build outputs
@@ -178,8 +169,8 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: ${{ steps.pkg.outputs.name }}_${{ steps.pkg.outputs.version }}-${{ steps.pkg.outputs.release }}_${{ steps.pkg.outputs.arch }}_*
-          merge-multiple: true
+          name: ${{ steps.pkg.outputs.name }}_${{ steps.pkg.outputs.version }}-${{ steps.pkg.outputs.release }}_${{ steps.pkg.outputs.arch }}
+          path: dist/
 
       - name: Publish release assets
         uses: softprops/action-gh-release@v2
