@@ -34,17 +34,8 @@ defaults:
 
 jobs:
   build:
-    name: Build (${{ matrix.target }})
+    name: Build (all)
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        target:
-          - generic
-          - x86-64
-          - armvirt-64
-          - mips_24kc
-      fail-fast: false
 
     steps:
       - name: Check out repository
@@ -97,12 +88,10 @@ jobs:
         run: |
           set -euxo pipefail
           rm -rf dist/opkg
-          ./scripts/build_ipk.sh --arch "${{ matrix.target }}"
+          ./scripts/build_ipk.sh
 
       - name: Collect package metadata
         id: pkg
-        env:
-          TARGET_ARCH: ${{ matrix.target }}
         run: |
           set -euxo pipefail
           pkg_makefile="package/openwrt-captive-monitor/Makefile"
@@ -114,9 +103,9 @@ jobs:
           [ -n "$pkg_release" ] || pkg_release="1"
           pkg_arch=$(awk -F':=' '/^PKG_ARCH:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
           [ -n "$pkg_arch" ] || pkg_arch="all"
-          build_arch="$TARGET_ARCH"
+          build_arch="$pkg_arch"
           feed_dir="dist/opkg/$build_arch"
-          pkg_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${build_arch}.ipk"
+          pkg_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}.ipk"
           {
             echo "name=$pkg_name"
             echo "version=$pkg_version"
@@ -125,7 +114,7 @@ jobs:
             echo "build_arch=$build_arch"
             echo "feed_dir=$feed_dir"
             echo "ipk=$pkg_ipk"
-            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}_${TARGET_ARCH}"
+            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Verify build outputs
@@ -183,7 +172,7 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: ${{ steps.pkg.outputs.name }}_${{ steps.pkg.outputs.version }}-${{ steps.pkg.outputs.release }}_${{ steps.pkg.outputs.arch }}_*
+          pattern: ${{ steps.pkg.outputs.name }}_${{ steps.pkg.outputs.version }}-${{ steps.pkg.outputs.release }}_${{ steps.pkg.outputs.arch }}
           merge-multiple: true
 
       - name: Publish release assets
