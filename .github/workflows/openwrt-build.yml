@@ -50,13 +50,6 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Download test results
-        uses: actions/download-artifact@v4
-        with:
-          name: test-results
-          path: tests/_out/
-        continue-on-error: true
-
       - name: Cache apt packages
         uses: actions/cache@v4
         with:
@@ -81,17 +74,11 @@ jobs:
             -o Acquire::Retries=3 \
             install -y --no-install-recommends \
             binutils \
-            busybox \
             gzip \
             opkg-utils \
             pigz \
             tar \
             xz-utils
-
-      - name: Run shell test harness
-        run: |
-          set -euxo pipefail
-          busybox sh tests/run.sh
 
       - name: Build .ipk package
         run: |
