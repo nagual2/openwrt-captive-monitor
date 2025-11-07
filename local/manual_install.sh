@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Configuration
-REMOTE="root@192.168.35.170"
-PACKAGE_NAME="openwrt-captive-monitor_1.0.1-1_all.ipk"
-LOCAL_PACKAGE="/mnt/c/git/openwrt-captive-monitor/dist/opkg/all/${PACKAGE_NAME}"
+# Configuration (use environment variables)
+REMOTE="${SSH_REMOTE:-root@192.168.1.1}"
+PACKAGE_NAME="${PACKAGE_NAME:-openwrt-captive-monitor_1.0.1-1_all.ipk}"
+LOCAL_PACKAGE="${PACKAGE_PATH:-./dist/opkg/all}/${PACKAGE_NAME}"
 REMOTE_TEMP_DIR="/tmp/captive_test_manual"
 
 # Function to execute remote commands

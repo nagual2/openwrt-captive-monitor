@@ -56,18 +56,25 @@ def test_ssh_connection(hostname, username, key_path=None, password=None):
             print("Таймаут подключения. Проверьте доступность хоста и сеть.")
 
 if __name__ == "__main__":
-    # Параметры подключения
-    HOST = "192.168.35.170"
-    USER = "root"
+    # Параметры подключения (используйте переменные окружения)
+    import os
+    HOST = os.getenv("SSH_HOST", "192.168.1.1")
+    USER = os.getenv("SSH_USER", "root")
     
-    # Пути к ключам (проверяем оба варианта)
-    key_paths = [
-        "/mnt/c/Users/Администратор/.ssh/id_rsa",
-        "/mnt/c/Users/Администратор/.ssh/2.key"
+    # Пути к ключам (используйте переменные окружения или пути по умолчанию)
+    default_key_paths = [
+        os.path.expanduser("~/.ssh/id_rsa"),
+        os.path.expanduser("~/.ssh/id_ed25519"),
+        os.path.expanduser("~/.ssh/id_ecdsa")
     ]
     
+    # Дополнительные пути из переменных окружения
+    custom_key_path = os.getenv("SSH_KEY_PATH")
+    if custom_key_path:
+        default_key_paths.insert(0, custom_key_path)
+    
     print("Проверка доступных ключей...")
-    available_keys = [k for k in key_paths if os.path.exists(k)]
+    available_keys = [k for k in default_key_paths if os.path.exists(k)]
     
     if available_keys:
         print(f"Найдены ключи: {', '.join(available_keys)}")

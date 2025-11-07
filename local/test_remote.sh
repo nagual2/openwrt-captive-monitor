@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Configuration
-REMOTE="root@192.168.35.170"
-PACKAGE_NAME="openwrt-captive-monitor_0.1.2-1_all.ipk"
-LOCAL_PACKAGE_DIR="/mnt/c/git/openwrt-captive-monitor/dist/opkg/all/"
+# Configuration (use environment variables)
+REMOTE="${SSH_REMOTE:-root@192.168.1.1}"
+PACKAGE_NAME="${PACKAGE_NAME:-openwrt-captive-monitor_0.1.2-1_all.ipk}"
+LOCAL_PACKAGE_DIR="${PACKAGE_DIR:-./dist/opkg/all/}"
 REMOTE_TEMP_DIR="/tmp/captive_test"
 
 # Enable debug output

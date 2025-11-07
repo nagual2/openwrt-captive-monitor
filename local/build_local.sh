@@ -1,9 +1,12 @@
 #!/bin/bash
 set -e
 
+# Get repository root directory
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 # Create necessary directories
 mkdir -p /tmp/opkg-feed
-cd /mnt/c/git/openwrt-captive-monitor
+cd "$REPO_ROOT"
 
 # Clean previous builds
 rm -rf /tmp/opkg-feed/*
@@ -71,5 +74,6 @@ gzip -c /tmp/opkg-feed/Packages > /tmp/opkg-feed/Packages.gz
 
 echo "Package built: /tmp/opkg-feed/openwrt-captive-monitor_0.1.2-1_all.ipk"
 echo "To install on the router, run:"
-echo "  scp /tmp/opkg-feed/openwrt-captive-monitor_0.1.2-1_all.ipk root@192.168.35.170:/tmp/"
-echo "  ssh root@192.168.35.170 'opkg install /tmp/openwrt-captive-monitor_0.1.2-1_all.ipk'"
+TARGET_HOST="${SSH_REMOTE:-root@192.168.1.1}"
+echo "  scp /tmp/opkg-feed/openwrt-captive-monitor_0.1.2-1_all.ipk $TARGET_HOST:/tmp/"
+echo "  ssh $TARGET_HOST 'opkg install /tmp/openwrt-captive-monitor_0.1.2-1_all.ipk'"
