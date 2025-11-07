@@ -11,14 +11,14 @@ set -x
 
 # Функция для выполнения команд на удаленном устройстве
 remote_exec() {
-  ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$REMOTE" "$1"
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$REMOTE" "$1"
 }
 
 # Функция для копирования файлов на удаленное устройство
 remote_copy() {
-  local src="$1"
-  local dst="$2"
-  scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$src" "$REMOTE:$dst"
+    local src="$1"
+    local dst="$2"
+    scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$src" "$REMOTE:$dst"
 }
 
 echo "[1/7] Подготовка удаленного устройства..."
