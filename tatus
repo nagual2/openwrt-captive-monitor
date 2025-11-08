@@ -1,0 +1,48 @@
+[1mdiff --git a/scripts/verify_package.sh b/scripts/verify_package.sh[m
+[1mindex 45ed4d2..614ce43 100755[m
+[1m--- a/scripts/verify_package.sh[m
+[1m+++ b/scripts/verify_package.sh[m
+[36m@@ -11,7 +11,7 @@[m [mrepo_root=$(cd "$script_dir/.." && pwd)[m
+ [m
+ require_command() {[m
+     local cmd="$1"[m
+[31m-    if ! command -v "$cmd" >/dev/null 2>&1; then[m
+[32m+[m[32m    if ! command -v "$cmd" > /dev/null 2>&1; then[m
+         echo "error: required command '$cmd' not found in PATH" >&2[m
+         exit 1[m
+     fi[m
+[36m@@ -36,7 +36,7 @@[m [mresolve_path() {[m
+ }[m
+ [m
+ print_usage() {[m
+[31m-    cat <<'EOF'[m
+[32m+[m[32m    cat << 'EOF'[m
+ Usage: scripts/verify_package.sh [package.ipk][m
+ [m
+ When no package path is provided, the script searches under dist/opkg for the[m
+[36m@@ -70,7 +70,7 @@[m [melse[m
+ [m
+     latest_ipk=""[m
+     for candidate in "${ipk_candidates[@]}"; do[m
+[31m-        if [ -z "$latest_ipk" ] || [[ "$candidate" > "$latest_ipk" ]]; then[m
+[32m+[m[32m        if [ -z "$latest_ipk" ] || [ "$candidate" \> "$latest_ipk" ]; then[m
+             latest_ipk="$candidate"[m
+         fi[m
+     done[m
+[36m@@ -116,7 +116,7 @@[m [mfor archive in data.tar.gz control.tar.gz; do[m
+         echo "error: expected $archive inside $package_rel" >&2[m
+         exit 1[m
+     fi[m
+[31m-    if ! tar -tzf "$work_dir/$archive" >/dev/null 2>&1; then[m
+[32m+[m[32m    if ! tar -tzf "$work_dir/$archive" > /dev/null 2>&1; then[m
+         echo "error: unable to list $archive contents" >&2[m
+         exit 1[m
+     fi[m
+[36m@@ -129,7 +129,6 @@[m [mecho ""[m
+ echo "=== Control Archive Contents ==="[m
+ tar -tzf "$work_dir/control.tar.gz" | sort[m
+ [m
+[31m-[m
+ data_dir="$temp_dir/data"[m
+ control_dir="$temp_dir/control"[m
+ mkdir -p "$data_dir" "$control_dir"[m
