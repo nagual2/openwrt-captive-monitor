@@ -6,10 +6,10 @@
 **Explanation**: `.ipk` files are intentionally excluded from version control via `.gitignore` to keep the repository clean. Packages are built on-demand via CI/CD or locally using the build script.
 
 ### Local Build Information
-- **Current Version**: 1.0.1-1 (from `package/openwrt-captive-monitor/Makefile`)
+- **Current Version**: 1.0.3-1 (from `package/openwrt-captive-monitor/Makefile`)
 - **Architecture**: all
 - **Build Script**: `./scripts/build_ipk.sh`
-- **Output Location**: `dist/opkg/all/openwrt-captive-monitor_1.0.1-1_all.ipk`
+- **Output Location**: `dist/opkg/all/openwrt-captive-monitor_1.0.3-1_all.ipk`
 - **Package Size**: 13,250 bytes (local build)
 - **Dependencies**: `dnsmasq`, `curl`
 
@@ -19,7 +19,7 @@
 ./scripts/build_ipk.sh
 
 ## Output will be in:
-## dist/opkg/all/openwrt-captive-monitor_1.0.1-1_all.ipk
+## dist/opkg/all/openwrt-captive-monitor_1.0.3-1_all.ipk
 ## dist/opkg/all/Packages
 ## dist/opkg/all/Packages.gz
 ```
@@ -74,12 +74,12 @@
 
 ## Package Metadata
 
-### Current Version (1.0.1-1)
+### Current Version (1.0.3-1)
 ```
 Package: openwrt-captive-monitor
-Version: 1.0.1-1
+Version: 1.0.3-1
 Architecture: all
-Maintainer: Kombai AI Assistant
+Maintainer: OpenWrt Captive Monitor Team
 License: MIT
 Section: net
 Category: Network
@@ -93,13 +93,14 @@ Description: Captive portal connectivity monitor and auto-redirect helper
 ### Version History
 | Version | Tag Date | Build Status | Package Available |
 |---------|----------|--------------|-------------------|
-| 1.0.1 | Current | ✅ Available via CI artifacts | Yes |
+| 1.0.3 | Current | ✅ Available via CI artifacts | Yes |
+| 1.0.1 | 2025-11-01 | ✅ Available via CI artifacts | Yes |
 | 0.1.2 | 2025-10-26 | ❌ CI ran but no artifacts preserved | No |
 | 0.1.0 | 2025-10-23 | ❌ Release exists but no assets | No |
 
 ## Summary
 - **Total .ipk files found**: 1 (current version via CI artifacts)
-- **Latest version**: v1.0.1-1
+- **Latest version**: v1.0.3-1
 - **Recommended download**: GitHub Actions artifacts (most recent)
 - **Repository status**: No packages stored (intentionally)
 - **Release status**: No package assets in releases
@@ -123,16 +124,16 @@ Description: Captive portal connectivity monitor and auto-redirect helper
 git clone https://github.com/nagual2/openwrt-captive-monitor.git
 cd openwrt-captive-monitor
 ./scripts/build_ipk.sh
-## Package will be in: dist/opkg/all/openwrt-captive-monitor_1.0.1-1_all.ipk
+## Package will be in: dist/opkg/all/openwrt-captive-monitor_1.0.3-1_all.ipk
 ```
 
 ### Package Installation on OpenWrt
 ```bash
 ## Transfer the .ipk file to your OpenWrt device
-scp openwrt-captive-monitor_1.0.1-1_all.ipk root@192.168.1.1:/tmp/
+scp openwrt-captive-monitor_1.0.3-1_all.ipk root@192.168.1.1:/tmp/
 
 ## Install the package
-opkg install /tmp/openwrt-captive-monitor_1.0.1-1_all.ipk
+opkg install /tmp/openwrt-captive-monitor_1.0.3-1_all.ipk
 
 ## Configure and enable
 uci set captive-monitor.@monitor[0].enabled='1'
