@@ -339,11 +339,7 @@ shfmt -i 2 -ci -sr -d openwrt_captive_monitor.sh
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose
 ```
 
-
-### How to Contribute
-
 ### Contributing
-
 
 1. Fork repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)
