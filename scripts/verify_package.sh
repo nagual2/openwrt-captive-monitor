@@ -11,7 +11,7 @@ repo_root=$(cd "$script_dir/.." && pwd)
 
 require_command() {
     local cmd="$1"
-    if ! command -v "$cmd" >/dev/null 2>&1; then
+    if ! command -v "$cmd" > /dev/null 2>&1; then
         echo "error: required command '$cmd' not found in PATH" >&2
         exit 1
     fi
@@ -36,7 +36,7 @@ resolve_path() {
 }
 
 print_usage() {
-    cat <<'EOF'
+    cat << 'EOF'
 Usage: scripts/verify_package.sh [package.ipk]
 
 When no package path is provided, the script searches under dist/opkg for the
@@ -70,7 +70,7 @@ else
 
     latest_ipk=""
     for candidate in "${ipk_candidates[@]}"; do
-        if [ -z "$latest_ipk" ] || [[ "$candidate" > "$latest_ipk" ]]; then
+        if [ -z "$latest_ipk" ] || [ "$candidate" \> "$latest_ipk" ]; then
             latest_ipk="$candidate"
         fi
     done
@@ -116,7 +116,7 @@ for archive in data.tar.gz control.tar.gz; do
         echo "error: expected $archive inside $package_rel" >&2
         exit 1
     fi
-    if ! tar -tzf "$work_dir/$archive" >/dev/null 2>&1; then
+    if ! tar -tzf "$work_dir/$archive" > /dev/null 2>&1; then
         echo "error: unable to list $archive contents" >&2
         exit 1
     fi
@@ -128,7 +128,6 @@ tar -tzf "$work_dir/data.tar.gz" | sort
 echo ""
 echo "=== Control Archive Contents ==="
 tar -tzf "$work_dir/control.tar.gz" | sort
-
 
 data_dir="$temp_dir/data"
 control_dir="$temp_dir/control"
