@@ -1,5 +1,5 @@
 Package: openwrt-captive-monitor
-Version: 1.0.1-1
+Version: 1.0.3-1
 Architecture: all
 Maintainer: OpenWrt Captive Monitor Team <https://github.com/nagual2/openwrt-captive-monitor>
 License: MIT
