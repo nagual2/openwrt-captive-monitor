@@ -30,7 +30,7 @@ package/
 ## Build package using defaults
 ./scripts/build_ipk.sh
 
-## Output: dist/opkg/all/openwrt-captive-monitor_1.0.1-1_all.ipk
+## Output: dist/opkg/all/openwrt-captive-monitor_1.0.3-1_all.ipk
 ```
 
 ### Custom Builds
@@ -72,7 +72,7 @@ Release mode provides:
 | Field | Value | Description |
 |-------|-------|-------------|
 | `PKG_NAME` | `openwrt-captive-monitor` | Package identifier |
-| `PKG_VERSION` | `1.0.1` | Semantic version |
+| `PKG_VERSION` | `1.0.3` | Semantic version |
 | `PKG_RELEASE` | `1` | Package release number |
 | `PKG_LICENSE` | `MIT` | SPDX license identifier |
 | `PKG_LICENSE_FILES` | `LICENSE` | License file reference |
