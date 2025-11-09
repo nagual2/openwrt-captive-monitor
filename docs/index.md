@@ -29,6 +29,7 @@ Welcome to the comprehensive documentation for **openwrt-captive-monitor**, a li
 ### 📋 Development
 - [Release Checklist](project/release-checklist.md) - Step-by-step release process
 - [Test Plan](project/test-plan.md) - Testing procedures and validation
+- [Virtualized Testing Guide](guides/virtualized-testing.md) - VM-based testing strategy and automation
 - [Backlog](project/backlog.md) - Feature roadmap and priorities
 - [Package Management](project/packages.md) - Build and distribution details
 - [Packaging and Distribution](packaging.md) - Complete packaging workflow and automation
