@@ -114,6 +114,11 @@ jobs:
             echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Validate .ipk package
+        run: |
+          set -euxo pipefail
+          ./scripts/validate_ipk.sh "${{ steps.pkg.outputs.ipk }}"
+
       - name: Verify build outputs
         run: |
           set -euxo pipefail
@@ -124,6 +129,33 @@ jobs:
           test -f "${{ steps.pkg.outputs.feed_dir }}/Packages.gz"
           test -s "${{ steps.pkg.outputs.feed_dir }}/Packages.gz"
           gzip -t "${{ steps.pkg.outputs.feed_dir }}/Packages.gz"
+          
+          # Verify IPK package structure
+          temp_dir=$(mktemp -d)
+          cd "$temp_dir"
+          ar x "${{ steps.pkg.outputs.ipk }}"
+          test -f "debian-binary"
+          test -f "control.tar.gz"
+          test -f "data.tar.gz"
+          
+          # Verify control.tar.gz contains valid control file
+          mkdir control
+          tar -xzf control.tar.gz -C control/
+          test -f "control/control"
+          grep -q "Package: ${{ steps.pkg.outputs.name }}" control/control
+          grep -q "Version: ${{ steps.pkg.outputs.version }}-${{ steps.pkg.outputs.release }}" control/control
+          grep -q "Architecture: ${{ steps.pkg.outputs.arch }}" control/control
+          
+          # Verify data.tar.gz contains expected files
+          mkdir data
+          tar -xzf data.tar.gz -C data/
+          test -f "data/usr/sbin/openwrt_captive_monitor"
+          test -f "data/etc/init.d/captive-monitor"
+          test -f "data/etc/config/captive-monitor"
+          test -f "data/etc/uci-defaults/99-captive-monitor"
+          
+          rm -rf "$temp_dir"
+          echo "IPK package verification successful"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -172,13 +204,23 @@ jobs:
           name: ${{ steps.pkg.outputs.name }}_${{ steps.pkg.outputs.version }}-${{ steps.pkg.outputs.release }}_${{ steps.pkg.outputs.arch }}
           path: dist/
 
+      - name: Verify release artifacts
+        run: |
+          set -euxo pipefail
+          # Verify all expected files exist
+          test -f "dist/opkg/${{ steps.pkg.outputs.arch }}/${{ steps.pkg.outputs.name }}_${{ steps.pkg.outputs.version }}-${{ steps.pkg.outputs.release }}_${{ steps.pkg.outputs.arch }}.ipk"
+          test -f "dist/opkg/${{ steps.pkg.outputs.arch }}/Packages"
+          test -f "dist/opkg/${{ steps.pkg.outputs.arch }}/Packages.gz"
+          # List files for debugging
+          find dist/ -type f -ls
+
       - name: Publish release assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            **/*.ipk
-            **/Packages
-            **/Packages.gz
+            dist/opkg/${{ steps.pkg.outputs.arch }}/${{ steps.pkg.outputs.name }}_${{ steps.pkg.outputs.version }}-${{ steps.pkg.outputs.release }}_${{ steps.pkg.outputs.arch }}.ipk
+            dist/opkg/${{ steps.pkg.outputs.arch }}/Packages
+            dist/opkg/${{ steps.pkg.outputs.arch }}/Packages.gz
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
