@@ -101,12 +101,30 @@ echo "  Version: $pkg_version"
 echo "  Architecture: $pkg_arch"
 
 # Verify control file format
-grep -q "^Package:" "$control_file" || { echo "error: missing Package field" >&2; exit 1; }
-grep -q "^Version:" "$control_file" || { echo "error: missing Version field" >&2; exit 1; }
-grep -q "^Architecture:" "$control_file" || { echo "error: missing Architecture field" >&2; exit 1; }
-grep -q "^Maintainer:" "$control_file" || { echo "error: missing Maintainer field" >&2; exit 1; }
-grep -q "^License:" "$control_file" || { echo "error: missing License field" >&2; exit 1; }
-grep -q "^Description:" "$control_file" || { echo "error: missing Description field" >&2; exit 1; }
+if ! grep -q "^Package:" "$control_file"; then
+    echo "error: missing Package field" >&2
+    exit 1
+fi
+if ! grep -q "^Version:" "$control_file"; then
+    echo "error: missing Version field" >&2
+    exit 1
+fi
+if ! grep -q "^Architecture:" "$control_file"; then
+    echo "error: missing Architecture field" >&2
+    exit 1
+fi
+if ! grep -q "^Maintainer:" "$control_file"; then
+    echo "error: missing Maintainer field" >&2
+    exit 1
+fi
+if ! grep -q "^License:" "$control_file"; then
+    echo "error: missing License field" >&2
+    exit 1
+fi
+if ! grep -q "^Description:" "$control_file"; then
+    echo "error: missing Description field" >&2
+    exit 1
+fi
 
 # Extract and verify data.tar.gz
 echo "Extracting data.tar.gz..."
