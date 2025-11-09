@@ -331,6 +331,9 @@ tar -tzf dist/opkg/all/openwrt-captive-monitor_*.ipk
 ## Run test suite
 busybox sh tests/run.sh
 
+## VM-based end-to-end testing
+./scripts/run_openwrt_vm.sh
+
 ## Linting
 shellcheck openwrt_captive_monitor.sh
 shfmt -i 2 -ci -sr -d openwrt_captive_monitor.sh
@@ -338,6 +341,29 @@ shfmt -i 2 -ci -sr -d openwrt_captive_monitor.sh
 ## Manual testing
 /usr/sbin/openwrt_captive_monitor --oneshot --verbose
 ```
+
+#### VM Test Harness
+
+The project includes a comprehensive VM-based testing system that automates end-to-end validation:
+
+- **Automated OpenWrt VM provisioning** with QEMU/KVM
+- **Package building and installation** in isolated environment
+- **Smoke tests** for baseline, captive portal, and monitor modes
+- **Artifact collection** for debugging and analysis
+- **CI/CD ready** with fallback to TCG emulation
+
+```bash
+# Basic VM testing
+./scripts/run_openwrt_vm.sh
+
+# Custom configuration
+./scripts/run_openwrt_vm.sh --openwrt-version 23.05 --workdir /tmp/test
+
+# CI environment (no KVM)
+./scripts/run_openwrt_vm.sh --reuse-vm --no-kvm
+```
+
+See [Virtualization Guide](docs/guides/virtualization.md) for detailed VM testing documentation.
 
 ### Contributing
 
