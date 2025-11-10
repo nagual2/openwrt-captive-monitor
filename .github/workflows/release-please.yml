@@ -61,3 +61,15 @@ jobs:
           git add VERSION package/openwrt-captive-monitor/Makefile
           git commit -m "chore(release): bump version to $VERSION"
           git push
+
+  trigger-sdk-build:
+    runs-on: ubuntu-latest
+    needs: [release-please, update-version]
+    if: needs.release-please.outputs.release_created == 'true'
+    
+    steps:
+      - name: Trigger SDK build
+        run: |
+          echo "Release created: ${{ needs.release-please.outputs.tag_name }}"
+          echo "The tag push will automatically trigger the SDK build workflow"
+          echo "Check the Actions tab for build progress"

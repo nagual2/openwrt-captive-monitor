@@ -31,6 +31,7 @@ Welcome to the comprehensive documentation for **openwrt-captive-monitor**, a li
 - [Test Plan](project/test-plan.md) - Testing procedures and validation
 - [Virtualization Guide](guides/virtualization.md) - VM-based end-to-end testing
 - [Virtualized Testing Guide](guides/virtualized-testing.md) - VM-based testing strategy and automation
+- [SDK Build Workflow](guides/sdk-build-workflow.md) - OpenWrt SDK-based CI/CD pipeline
 - [Backlog](project/backlog.md) - Feature roadmap and priorities
 - [Package Management](project/packages.md) - Build and distribution details
 - [Packaging and Distribution](packaging.md) - Complete packaging workflow and automation
