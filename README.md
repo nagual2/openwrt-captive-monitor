@@ -1,7 +1,7 @@
 # openwrt-captive-monitor
 
 [![CI](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/ci.yml/badge.svg?branch=main&label=CI)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/ci.yml?query=branch%3Amain)
-[![Package Build](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml/badge.svg?branch=main&label=Package%20Build)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/openwrt-build.yml?query=branch%3Amain)
+[![SDK Build](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/build.yml/badge.svg?branch=main&label=SDK%20Build)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/build.yml?query=branch%3Amain)
 [![Release](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/release-please.yml/badge.svg?branch=main&label=Release)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/release-please.yml?query=branch%3Amain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/nagual2/openwrt-captive-monitor.svg)](https://github.com/nagual2/openwrt-captive-monitor/releases)
@@ -57,21 +57,39 @@ ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 
 #### Option 2: Build from Source
 
+**Local Build (Simple):**
 ```bash
 ## Clone repository
 git clone https://github.com/nagual2/openwrt-captive-monitor.git
 cd openwrt-captive-monitor
 
-## Build package
+## Build package locally
 scripts/build_ipk.sh --arch all
-
-## For advanced packaging options and release automation, see:
-## docs/packaging.md
 
 ## Install built package
 scp dist/opkg/all/openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 ```
+
+**SDK Build (Official):**
+```bash
+## Clone repository
+git clone https://github.com/nagual2/openwrt-captive-monitor.git
+cd openwrt-captive-monitor
+
+## The project uses OpenWrt SDK for official builds
+## See: docs/guides/sdk-build-workflow.md
+
+## For local SDK builds:
+wget https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+tar -xf openwrt-sdk-*.tar.xz
+cd openwrt-sdk-*/
+cp -r ../package/openwrt-captive-monitor package/
+./scripts/feeds update -a && ./scripts/feeds install -a
+make package/openwrt-captive-monitor/compile V=s
+```
+
+> **Note**: The CI/CD pipeline automatically builds packages using the official OpenWrt SDK. See [docs/guides/sdk-build-workflow.md](docs/guides/sdk-build-workflow.md) for details.
 
 ### Basic Configuration
 

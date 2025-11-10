@@ -7,9 +7,6 @@ PKG_RELEASE:=1
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=OpenWrt Captive Monitor Team <https://github.com/nagual2/openwrt-captive-monitor>
-PKG_SOURCE_URL:=https://github.com/nagual2/openwrt-captive-monitor
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_ARCH:=all
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
