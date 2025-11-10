@@ -88,6 +88,8 @@ jobs:
           set -euxo pipefail
           rm -rf dist/opkg
           ./scripts/build_ipk.sh
+          echo "=== Build outputs ==="
+          ls -laR dist/
 
       - name: Collect package metadata
         id: pkg
@@ -131,9 +133,10 @@ jobs:
           gzip -t "${{ steps.pkg.outputs.feed_dir }}/Packages.gz"
           
           # Verify IPK package structure
+          ipk_abs_path="$(pwd)/${{ steps.pkg.outputs.ipk }}"
           temp_dir=$(mktemp -d)
           cd "$temp_dir"
-          ar x "${{ steps.pkg.outputs.ipk }}"
+          ar x "$ipk_abs_path"
           test -f "debian-binary"
           test -f "control.tar.gz"
           test -f "data.tar.gz"
