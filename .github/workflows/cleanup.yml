@@ -34,7 +34,7 @@ jobs:
 
       - name: Delete old artifacts (scheduled)
         if: ${{ github.event_name == 'schedule' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { data: artifacts } = await github.rest.actions.listArtifactsForRepo({
@@ -64,7 +64,7 @@ jobs:
             }
 
       - name: Cleanup workflow runs
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
