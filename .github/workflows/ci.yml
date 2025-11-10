@@ -89,7 +89,7 @@ jobs:
 
       - name: Run markdownlint
         if: matrix.linter == 'markdownlint'
-        uses: DavidAnson/markdownlint-cli2-action@v18
+        uses: DavidAnson/markdownlint-cli2-action@v20
         with:
           config: '.markdownlint.json'
           files: '**/*.md'
@@ -130,7 +130,7 @@ jobs:
           busybox ash tests/run.sh
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: test-results
@@ -178,7 +178,7 @@ jobs:
             xz-utils
 
       - name: Download test results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: test-results
           path: tests/_out/
@@ -231,7 +231,7 @@ jobs:
           ./scripts/validate_ipk.sh "${{ steps.pkg.outputs.ipk }}"
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.pkg.outputs.artifact_name }}
           path: |
