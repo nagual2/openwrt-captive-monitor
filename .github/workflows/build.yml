@@ -195,16 +195,19 @@ jobs:
             install -y --no-install-recommends \
             build-essential \
             ccache \
+            curl \
             file \
             g++ \
+            gawk \
             gcc \
-            libc6-dev \
+            gettext \
+            git \
             libncurses5-dev \
             libssl-dev \
             make \
+            perl \
             python3 \
-            python3-distutils \
-            python3-setuptools \
+            python3-dev \
             rsync \
             unzip \
             wget \
