@@ -1,0 +1,519 @@
+name: Build OpenWrt Package with SDK
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'feature-*'
+      - 'fix/**'
+      - 'fix-*'
+      - 'chore/**'
+      - 'chore-*'
+      - 'docs/**'
+      - 'docs-*'
+      - 'hotfix/**'
+      - 'hotfix-*'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  OPENWRT_VERSION: "23.05.3"
+  OPENWRT_ARCH: "x86_64"
+  SDK_CACHE_VERSION: "v1"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        linter:
+          - shfmt
+          - shellcheck
+          - markdownlint
+          - actionlint
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/*.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          case "${{ matrix.linter }}" in
+            shfmt|shellcheck)
+              sudo apt-get install -y busybox shfmt shellcheck
+              ;;
+            markdownlint|actionlint)
+              echo "Using docker-based linters"
+              ;;
+          esac
+
+      - name: Run shfmt
+        if: matrix.linter == 'shfmt'
+        run: |
+          set -euo pipefail
+          shfmt -d -s -i 4 -ci -sr .
+
+      - name: Run shellcheck
+        if: matrix.linter == 'shellcheck'
+        run: |
+          set -euo pipefail
+          find . -type f -name "*.sh" -exec shellcheck {} +
+          shellcheck openwrt_captive_monitor.sh
+
+      - name: Run markdownlint
+        if: matrix.linter == 'markdownlint'
+        uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          config: '.markdownlint.json'
+          files: '**/*.md'
+
+      - name: Run actionlint
+        if: matrix.linter == 'actionlint'
+        uses: reviewdog/action-actionlint@v1
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/*.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      - name: Install BusyBox and test dependencies
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install -y busybox
+
+      - name: Run test harness with BusyBox ash
+        run: |
+          set -euo pipefail
+          busybox ash tests/run.sh
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: test-results
+          path: tests/_out/
+          retention-days: 7
+          if-no-files-found: warn
+
+  build-sdk:
+    name: Build with OpenWrt SDK
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Download test results
+        uses: actions/download-artifact@v6
+        with:
+          name: test-results
+          path: tests/_out/
+        continue-on-error: true
+
+      - name: Cache OpenWrt SDK
+        id: cache-sdk
+        uses: actions/cache@v4
+        with:
+          path: |
+            openwrt-sdk-*
+            sdk-cache
+          key: ${{ runner.os }}-openwrt-sdk-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_ARCH }}-${{ env.SDK_CACHE_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-openwrt-sdk-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_ARCH }}-
+
+      - name: Cache OpenWrt feeds
+        id: cache-feeds
+        uses: actions/cache@v4
+        with:
+          path: |
+            openwrt-sdk-*/feeds/
+            openwrt-sdk-*/dl/
+          key: ${{ runner.os }}-openwrt-feeds-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_ARCH }}-${{ hashFiles('package/*/Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-openwrt-feeds-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_ARCH }}-
+
+      - name: Install build dependencies
+        run: |
+          set -euxo pipefail
+          sudo rm -f /etc/apt/sources.list.d/microsoft*.list
+          sudo apt-get update \
+            -o Acquire::http::Timeout=30 \
+            -o Acquire::https::Timeout=30 \
+            -o Acquire::Retries=3 || true
+          sudo apt-get -o Acquire::http::Timeout=30 \
+            -o Acquire::https::Timeout=30 \
+            -o Acquire::Retries=3 \
+            install -y --no-install-recommends \
+            build-essential \
+            ccache \
+            file \
+            g++ \
+            gcc \
+            libc6-dev \
+            libncurses5-dev \
+            libssl-dev \
+            make \
+            python3 \
+            python3-distutils \
+            python3-setuptools \
+            rsync \
+            unzip \
+            wget \
+            zlib1g-dev
+
+      - name: Download OpenWrt SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          SDK_URL="https://downloads.openwrt.org/releases/${{ env.OPENWRT_VERSION }}/targets/x86/64/openwrt-sdk-${{ env.OPENWRT_VERSION }}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          SDK_FILE="openwrt-sdk-${{ env.OPENWRT_VERSION }}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          
+          echo "=== Downloading OpenWrt SDK ==="
+          echo "URL: $SDK_URL"
+          
+          wget --timeout=300 --tries=3 -O "$SDK_FILE" "$SDK_URL"
+          
+          echo "=== Verifying SDK download ==="
+          if [ ! -f "$SDK_FILE" ]; then
+            echo "ERROR: SDK download failed"
+            exit 1
+          fi
+          
+          SDK_SIZE=$(stat -c%s "$SDK_FILE")
+          echo "SDK size: $SDK_SIZE bytes"
+          
+          if [ "$SDK_SIZE" -lt 100000000 ]; then
+            echo "ERROR: SDK file too small, download may be incomplete"
+            exit 1
+          fi
+
+      - name: Extract OpenWrt SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          SDK_FILE="openwrt-sdk-${{ env.OPENWRT_VERSION }}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          
+          echo "=== Extracting OpenWrt SDK ==="
+          tar -xf "$SDK_FILE"
+          
+          SDK_DIR="openwrt-sdk-${{ env.OPENWRT_VERSION }}-x86-64_gcc-12.3.0_musl.Linux-x86_64"
+          if [ ! -d "$SDK_DIR" ]; then
+            echo "ERROR: SDK extraction failed"
+            exit 1
+          fi
+          
+          echo "=== Verifying SDK structure ==="
+          [ -f "$SDK_DIR/Makefile" ] || { echo "ERROR: SDK Makefile not found"; exit 1; }
+          [ -d "$SDK_DIR/package" ] || { echo "ERROR: SDK package directory not found"; exit 1; }
+          [ -d "$SDK_DIR/scripts" ] || { echo "ERROR: SDK scripts directory not found"; exit 1; }
+          
+          echo "SDK extracted successfully to: $SDK_DIR"
+
+      - name: Find SDK directory
+        id: sdk
+        run: |
+          SDK_DIR=$(find . -maxdepth 1 -type d -name "openwrt-sdk-*" | head -n1)
+          if [ -z "$SDK_DIR" ]; then
+            echo "ERROR: SDK directory not found"
+            exit 1
+          fi
+          echo "sdk_dir=$SDK_DIR" >> "$GITHUB_OUTPUT"
+          echo "Found SDK directory: $SDK_DIR"
+
+      - name: Setup SDK environment
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          
+          echo "=== Setting up SDK environment ==="
+          cd "$SDK_DIR"
+          
+          # Verify SDK is working
+          make defconfig
+          
+          echo "SDK environment setup complete"
+
+      - name: Copy package to SDK
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          
+          echo "=== Copying package to SDK ==="
+          cp -r package/openwrt-captive-monitor "$SDK_DIR/package/"
+          
+          # Verify package structure
+          PKG_DIR="$SDK_DIR/package/openwrt-captive-monitor"
+          [ -f "$PKG_DIR/Makefile" ] || { echo "ERROR: Package Makefile not found"; exit 1; }
+          [ -d "$PKG_DIR/files" ] || { echo "ERROR: Package files directory not found"; exit 1; }
+          
+          echo "Package copied successfully"
+
+      - name: Update feeds
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          
+          echo "=== Updating OpenWrt feeds ==="
+          cd "$SDK_DIR"
+          
+          # Update feeds
+          ./scripts/feeds update -a
+          
+          # Install feeds
+          ./scripts/feeds install -a
+          
+          echo "Feeds updated successfully"
+
+      - name: Build package with SDK
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          
+          echo "=== Building package with OpenWrt SDK ==="
+          cd "$SDK_DIR"
+          
+          # Configure for package build only
+          echo "CONFIG_PACKAGE_openwrt-captive-monitor=y" >> .config
+          
+          # Build the package
+          make package/openwrt-captive-monitor/compile V=s || {
+            echo "=== Build failed, showing logs ==="
+            find . -name "*.log" -exec echo "=== {} ===" \; -exec cat {} \;
+            exit 1
+          }
+          
+          echo "=== Build completed successfully ==="
+
+      - name: Find built package
+        id: package
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          
+          echo "=== Locating built package ==="
+          
+          # Find the built IPK package
+          IPK_FILE=$(find "$SDK_DIR/bin/packages" -name "openwrt-captive-monitor_*.ipk" | head -n1)
+          if [ -z "$IPK_FILE" ]; then
+            echo "ERROR: Built IPK package not found"
+            find "$SDK_DIR/bin" -type f -name "*.ipk" -ls || echo "No IPK files found"
+            exit 1
+          fi
+          
+          echo "Found IPK: $IPK_FILE"
+          
+          # Extract package info
+          PKG_NAME=$(basename "$IPK_FILE" | sed 's/_.*//')
+          PKG_VERSION=$(basename "$IPK_FILE" | sed 's/^[^_]*_\([^_]*\)_.*/\1/')
+          PKG_ARCH=$(basename "$IPK_FILE" | sed 's/^[^_]*_[^_]*_\([^.]*\).*/\1/')
+          
+          echo "Package info:"
+          echo "  Name: $PKG_NAME"
+          echo "  Version: $PKG_VERSION"
+          echo "  Architecture: $PKG_ARCH"
+          
+          # Copy to workspace for upload
+          mkdir -p dist/
+          cp "$IPK_FILE" dist/
+          
+          # Find Packages files if they exist
+          PACKAGES_DIR=$(dirname "$IPK_FILE")
+          if [ -f "$PACKAGES_DIR/Packages" ]; then
+            cp "$PACKAGES_DIR/Packages" dist/
+          fi
+          if [ -f "$PACKAGES_DIR/Packages.gz" ]; then
+            cp "$PACKAGES_DIR/Packages.gz" dist/
+          fi
+          
+          {
+            echo "name=$PKG_NAME"
+            echo "version=$PKG_VERSION"
+            echo "arch=$PKG_ARCH"
+            echo "ipk=$IPK_FILE"
+            echo "workspace_ipk=dist/$(basename "$IPK_FILE")"
+          } >> "$GITHUB_OUTPUT"
+          
+          echo "=== Package location complete ==="
+
+      - name: Validate built package
+        run: |
+          set -euxo pipefail
+          IPK_FILE="${{ steps.package.outputs.workspace_ipk }}"
+          
+          echo "=== Validating built package ==="
+          ./scripts/validate_ipk.sh "$IPK_FILE"
+          
+          echo "Package validation successful"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}-${{ steps.package.outputs.arch }}-sdk
+          path: |
+            ${{ steps.package.outputs.workspace_ipk }}
+            dist/Packages
+            dist/Packages.gz
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Build summary
+        run: |
+          echo "=== OpenWrt SDK Build Summary ==="
+          echo "OpenWrt Version: ${{ env.OPENWRT_VERSION }}"
+          echo "Architecture: ${{ env.OPENWRT_ARCH }}"
+          echo "Package: ${{ steps.package.outputs.name }}"
+          echo "Version: ${{ steps.package.outputs.version }}"
+          echo "Architecture: ${{ steps.package.outputs.arch }}"
+          echo "IPK File: ${{ steps.package.outputs.workspace_ipk }}"
+          
+          if [ -f "${{ steps.package.outputs.workspace_ipk }}" ]; then
+            SIZE=$(stat -c%s "${{ steps.package.outputs.workspace_ipk }}")
+            echo "Package Size: $SIZE bytes"
+          fi
+
+  release:
+    name: Release SDK Artifacts
+    runs-on: ubuntu-latest
+    needs: build-sdk
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Collect package metadata
+        id: pkg
+        run: |
+          set -euxo pipefail
+          pkg_makefile="package/openwrt-captive-monitor/Makefile"
+          pkg_name=$(awk -F':=' '/^PKG_NAME:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_name" ] || pkg_name="openwrt-captive-monitor"
+          pkg_version=$(awk -F':=' '/^PKG_VERSION:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_version" ] || pkg_version="0.0.0"
+          pkg_release=$(awk -F':=' '/^PKG_RELEASE:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_release" ] || pkg_release="1"
+          pkg_arch=$(awk -F':=' '/^PKG_ARCH:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
+          [ -n "$pkg_arch" ] || pkg_arch="all"
+          {
+            echo "name=$pkg_name"
+            echo "version=$pkg_version"
+            echo "release=$pkg_release"
+            echo "arch=$pkg_arch"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{ steps.pkg.outputs.name }}-${{ steps.pkg.outputs.version }}-${{ steps.pkg.outputs.release }}-${{ steps.pkg.outputs.arch }}-sdk
+          path: dist/
+        continue-on-error: true
+
+      - name: Verify release artifacts
+        run: |
+          set -euxo pipefail
+          expected_ipk="${{ steps.pkg.outputs.name }}_${{ steps.pkg.outputs.version }}-${{ steps.pkg.outputs.release }}_${{ steps.pkg.outputs.arch }}.ipk"
+          if [ -f "dist/$expected_ipk" ]; then
+            echo "✓ Found expected IPK: $expected_ipk"
+            ls -la "dist/$expected_ipk"
+          else
+            echo "Available files in dist:"
+            find dist/ -type f -ls || true
+            echo "WARNING: Expected IPK not found, trying to find any IPK"
+            find dist/ -name "*.ipk" -exec echo "Found: {}" \; || true
+          fi
+          
+          if [ -f "dist/Packages" ]; then
+            echo "✓ Found Packages index"
+          fi
+          
+          if [ -f "dist/Packages.gz" ]; then
+            echo "✓ Found Packages.gz index"
+          fi
+
+      - name: Validate release artifacts
+        run: |
+          set -euxo pipefail
+          for ipk in dist/*.ipk; do
+            if [ -f "$ipk" ]; then
+              echo "Validating $ipk"
+              ./scripts/validate_ipk.sh "$ipk"
+            fi
+          done
+
+      - name: Publish SDK artifacts to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.ipk
+            dist/Packages
+            dist/Packages.gz
+          fail_on_unmatched_files: false
+          draft: false
+          prerelease: false
+          body: |
+            ## OpenWrt SDK-built Release
+            
+            This release was built using the official OpenWrt ${{ env.OPENWRT_VERSION }} SDK.
+            
+            ### Installation
+            Download the `.ipk` file and install it on your OpenWrt device:
+            ```bash
+            opkg install openwrt-captive-monitor_*.ipk
+            ```
+            
+            ### Build Information
+            - **OpenWrt Version**: ${{ env.OPENWRT_VERSION }}
+            - **Architecture**: ${{ env.OPENWRT_ARCH }}
+            - **Build Method**: Official OpenWrt SDK
+            - **Package Version**: ${{ steps.pkg.outputs.version }}-${{ steps.pkg.outputs.release }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
