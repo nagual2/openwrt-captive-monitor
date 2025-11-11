@@ -12,10 +12,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 defaults:
   run:
     shell: bash
@@ -29,51 +25,52 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Cache OpenWrt SDK
-        uses: actions/cache@v4
-        with:
-          path: |
-            openwrt-sdk-*
-            sdk-cache
-          key: ${{ runner.os }}-openwrt-sdk-23.05.3-x86-64-${{ hashFiles('**/Makefile', '**/package/*/Makefile') }}
-          restore-keys: |
-            ${{ runner.os }}-openwrt-sdk-23.05.3-x86-64-
-
-      - name: Download OpenWrt SDK
+      - name: Set SDK URL and paths
         run: |
           set -euo pipefail
-          if [ ! -d "openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64" ]; then
-            echo "Downloading OpenWrt SDK 23.05.3 for x86/64..."
-            wget -O openwrt-sdk.tar.xz \
-              "https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
-            echo "Extracting SDK..."
-            tar -xf openwrt-sdk.tar.xz
-            rm openwrt-sdk.tar.xz
-          else
-            echo "SDK already cached"
-          fi
-          SDK_DIR=$(find . -maxdepth 1 -type d -name "openwrt-sdk-23.05.3-*" | head -n1)
-          echo "SDK_DIR=$SDK_DIR" >> "$GITHUB_ENV"
-          echo "Found SDK at: $SDK_DIR"
+          {
+            echo "SDK_URL=https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+            echo "SDK_DIR=openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64"
+            echo "PACKAGE_NAME=openwrt-captive-monitor"
+          } >> "$GITHUB_ENV"
 
-      - name: Prepare package in SDK
+      - name: Download and extract OpenWrt SDK
+        run: |
+          set -euo pipefail
+          echo "Downloading OpenWrt SDK 23.05.3 for x86/64..."
+          wget -O openwrt-sdk.tar.xz "${{ env.SDK_URL }}"
+          echo "Extracting SDK..."
+          tar -xf openwrt-sdk.tar.xz
+          rm openwrt-sdk.tar.xz
+          echo "SDK extracted to: ${{ env.SDK_DIR }}"
+
+      - name: Sync package to SDK with clean copy strategy
         run: |
           set -euo pipefail
           SDK_DIR="${{ env.SDK_DIR }}"
-          PACKAGE_DIR="$SDK_DIR/package/openwrt-captive-monitor"
+          PACKAGE_DIR="$SDK_DIR/package/${{ env.PACKAGE_NAME }}"
           
-          # Clean any existing package directory
+          # Clean any existing package directory completely
           rm -rf "$PACKAGE_DIR"
           
-          # Create package directory and copy sources
+          # Create fresh package directory
           mkdir -p "$PACKAGE_DIR"
-          cp -r package/openwrt-captive-monitor/* "$PACKAGE_DIR/"
           
-          # Copy additional necessary files
-          cp LICENSE "$PACKAGE_DIR/files/" 2>/dev/null || true
+          # Copy package contents including VERSION file and license
+          cp -r package/${{ env.PACKAGE_NAME }}/* "$PACKAGE_DIR/"
           
-          echo "Package prepared at: $PACKAGE_DIR"
+          # Copy VERSION file to package directory
+          cp VERSION "$PACKAGE_DIR/"
+          
+          # Copy LICENSE file to files subdirectory
+          mkdir -p "$PACKAGE_DIR/files/"
+          cp LICENSE "$PACKAGE_DIR/files/"
+          
+          echo "Package synced to SDK at: $PACKAGE_DIR"
+          echo "Package contents:"
           ls -la "$PACKAGE_DIR/"
+          echo "Files subdirectory contents:"
+          ls -la "$PACKAGE_DIR/files/" 2>/dev/null || true
 
       - name: Update and install feeds
         run: |
@@ -89,18 +86,18 @@ jobs:
           
           echo "Feeds updated and installed successfully"
 
-      - name: Build package
+      - name: Compile package
         run: |
           set -euo pipefail
           SDK_DIR="${{ env.SDK_DIR }}"
           cd "$SDK_DIR"
           
-          echo "Building openwrt-captive-monitor package..."
-          make package/openwrt-captive-monitor/compile V=s
+          echo "Compiling ${{ env.PACKAGE_NAME }} package..."
+          make package/${{ env.PACKAGE_NAME }}/compile V=s
           
-          echo "Package build completed"
+          echo "Package compilation completed"
 
-      - name: Find and prepare artifacts
+      - name: Locate built package and prepare artifacts
         run: |
           set -euo pipefail
           SDK_DIR="${{ env.SDK_DIR }}"
@@ -116,7 +113,7 @@ jobs:
           echo "Found packages directory: $PKG_DIR"
           
           # Find the IPK file
-          IPK_FILE=$(find "$PKG_DIR" -name "openwrt-captive-monitor_*.ipk" | head -n1)
+          IPK_FILE=$(find "$PKG_DIR" -name "${{ env.PACKAGE_NAME }}_*.ipk" | head -n1)
           if [ -z "$IPK_FILE" ]; then
             echo "Error: Could not find built .ipk file"
             find "$PKG_DIR" -name "*.ipk" | head -10
@@ -131,11 +128,11 @@ jobs:
           mkdir -p artifacts
           cp "$IPK_FILE" artifacts/
           
-          # Copy any Packages files if they exist
+          # Copy any Packages* index files if they exist
           find "$PKG_DIR" -name "Packages*" -exec cp {} artifacts/ \;
           
-          # List artifacts for debugging
-          echo "Artifacts to upload:"
+          # List artifacts for verification
+          echo "Artifacts prepared for upload:"
           ls -la artifacts/
 
       - name: Validate built package
@@ -145,12 +142,15 @@ jobs:
             echo "Validating built package..."
             ./scripts/validate_ipk.sh "${{ env.IPK_FILE }}"
             echo "Package validation successful"
+          else
+            echo "Error: IPK_FILE environment variable not set"
+            exit 1
           fi
 
-      - name: Upload build artifacts
+      - name: Upload package artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: openwrt-captive-monitor-package
+          name: ${{ env.PACKAGE_NAME }}-package
           path: artifacts/
           retention-days: 30
           if-no-files-found: error
