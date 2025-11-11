@@ -311,8 +311,8 @@ if [ -z "$IPKG_INSTROOT" ]; then
     if [ -x /etc/uci-defaults/99-captive-monitor ]; then
         /etc/uci-defaults/99-captive-monitor || true
     fi
-    /etc/init.d/captive-monitor disable >/dev/null 2>&1 || true
-    /etc/init.d/captive-monitor stop >/dev/null 2>&1 || true
+    /etc/init.d/captive-monitor disable > /dev/null 2>&1 || true
+    /etc/init.d/captive-monitor stop > /dev/null 2>&1 || true
 fi
 exit 0
 EOF
@@ -320,8 +320,8 @@ EOF
 cat << 'EOF' > "$control_dir/prerm"
 #!/bin/sh
 if [ -z "$IPKG_INSTROOT" ]; then
-    /etc/init.d/captive-monitor disable >/dev/null 2>&1 || true
-    /etc/init.d/captive-monitor stop >/dev/null 2>&1 || true
+    /etc/init.d/captive-monitor disable > /dev/null 2>&1 || true
+    /etc/init.d/captive-monitor stop > /dev/null 2>&1 || true
 fi
 exit 0
 EOF
@@ -329,7 +329,7 @@ EOF
 cat << 'EOF' > "$control_dir/postrm"
 #!/bin/sh
 if [ -z "$IPKG_INSTROOT" ]; then
-    /etc/init.d/captive-monitor stop >/dev/null 2>&1 || true
+    /etc/init.d/captive-monitor stop > /dev/null 2>&1 || true
 fi
 exit 0
 EOF
