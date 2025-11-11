@@ -1,0 +1,177 @@
+name: Build OpenWrt Package
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build OpenWrt package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Cache OpenWrt SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            openwrt-sdk-*
+            sdk-cache
+          key: ${{ runner.os }}-openwrt-sdk-23.05.3-x86-64-${{ hashFiles('**/Makefile', '**/package/*/Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-openwrt-sdk-23.05.3-x86-64-
+
+      - name: Download OpenWrt SDK
+        run: |
+          set -euo pipefail
+          if [ ! -d "openwrt-sdk-23.05.3-x86_64-generic_gcc-12.3.0_musl.Linux-x86_64" ]; then
+            echo "Downloading OpenWrt SDK 23.05.3 for x86/64..."
+            wget -O openwrt-sdk.tar.xz \
+              "https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86_64-generic_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+            echo "Extracting SDK..."
+            tar -xf openwrt-sdk.tar.xz
+            rm openwrt-sdk.tar.xz
+          else
+            echo "SDK already cached"
+          fi
+          SDK_DIR=$(find . -maxdepth 1 -type d -name "openwrt-sdk-23.05.3-*" | head -n1)
+          echo "SDK_DIR=$SDK_DIR" >> "$GITHUB_ENV"
+          echo "Found SDK at: $SDK_DIR"
+
+      - name: Prepare package in SDK
+        run: |
+          set -euo pipefail
+          SDK_DIR="${{ env.SDK_DIR }}"
+          PACKAGE_DIR="$SDK_DIR/package/openwrt-captive-monitor"
+          
+          # Clean any existing package directory
+          rm -rf "$PACKAGE_DIR"
+          
+          # Create package directory and copy sources
+          mkdir -p "$PACKAGE_DIR"
+          cp -r package/openwrt-captive-monitor/* "$PACKAGE_DIR/"
+          
+          # Copy additional necessary files
+          cp LICENSE "$PACKAGE_DIR/files/" 2>/dev/null || true
+          
+          echo "Package prepared at: $PACKAGE_DIR"
+          ls -la "$PACKAGE_DIR/"
+
+      - name: Update and install feeds
+        run: |
+          set -euo pipefail
+          SDK_DIR="${{ env.SDK_DIR }}"
+          cd "$SDK_DIR"
+          
+          echo "Updating feeds..."
+          ./scripts/feeds update -a
+          
+          echo "Installing feeds..."
+          ./scripts/feeds install -a
+          
+          echo "Feeds updated and installed successfully"
+
+      - name: Build package
+        run: |
+          set -euo pipefail
+          SDK_DIR="${{ env.SDK_DIR }}"
+          cd "$SDK_DIR"
+          
+          echo "Building openwrt-captive-monitor package..."
+          make package/openwrt-captive-monitor/compile V=s
+          
+          echo "Package build completed"
+
+      - name: Find and prepare artifacts
+        run: |
+          set -euo pipefail
+          SDK_DIR="${{ env.SDK_DIR }}"
+          
+          # Find the built packages directory
+          PKG_DIR=$(find "$SDK_DIR/bin" -type d -name "packages" | head -n1)
+          if [ -z "$PKG_DIR" ]; then
+            echo "Error: Could not find packages directory"
+            find "$SDK_DIR/bin" -type d | head -10
+            exit 1
+          fi
+          
+          echo "Found packages directory: $PKG_DIR"
+          
+          # Find the IPK file
+          IPK_FILE=$(find "$PKG_DIR" -name "openwrt-captive-monitor_*.ipk" | head -n1)
+          if [ -z "$IPK_FILE" ]; then
+            echo "Error: Could not find built .ipk file"
+            find "$PKG_DIR" -name "*.ipk" | head -10
+            exit 1
+          fi
+          
+          echo "Found IPK: $IPK_FILE"
+          echo "IPK_FILE=$IPK_FILE" >> "$GITHUB_ENV"
+          echo "IPK_NAME=$(basename "$IPK_FILE")" >> "$GITHUB_ENV"
+          
+          # Create artifacts directory
+          mkdir -p artifacts
+          cp "$IPK_FILE" artifacts/
+          
+          # Copy any Packages files if they exist
+          find "$PKG_DIR" -name "Packages*" -exec cp {} artifacts/ \;
+          
+          # List artifacts for debugging
+          echo "Artifacts to upload:"
+          ls -la artifacts/
+
+      - name: Validate built package
+        run: |
+          set -euo pipefail
+          if [ -n "${{ env.IPK_FILE }}" ]; then
+            echo "Validating built package..."
+            ./scripts/validate_ipk.sh "${{ env.IPK_FILE }}"
+            echo "Package validation successful"
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-captive-monitor-package
+          path: artifacts/
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Display package information
+        run: |
+          set -euo pipefail
+          if [ -n "${{ env.IPK_FILE }}" ]; then
+            echo "=== Package Information ==="
+            echo "File: ${{ env.IPK_NAME }}"
+            echo "Size: $(stat -c%s "${{ env.IPK_FILE }}") bytes"
+            
+            # Extract and display control information
+            TEMP_DIR=$(mktemp -d)
+            cd "$TEMP_DIR"
+            ar x "${{ env.IPK_FILE }}"
+            tar -xzf control.tar.gz
+            
+            echo ""
+            echo "=== Package Control Information ==="
+            cat control
+            
+            rm -rf "$TEMP_DIR"
+          fi
