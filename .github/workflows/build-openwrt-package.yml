@@ -42,10 +42,10 @@ jobs:
       - name: Download OpenWrt SDK
         run: |
           set -euo pipefail
-          if [ ! -d "openwrt-sdk-23.05.3-x86_64-generic_gcc-12.3.0_musl.Linux-x86_64" ]; then
+          if [ ! -d "openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64" ]; then
             echo "Downloading OpenWrt SDK 23.05.3 for x86/64..."
             wget -O openwrt-sdk.tar.xz \
-              "https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86_64-generic_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+              "https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
             echo "Extracting SDK..."
             tar -xf openwrt-sdk.tar.xz
             rm openwrt-sdk.tar.xz
