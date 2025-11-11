@@ -308,8 +308,24 @@ jobs:
           echo "=== Updating OpenWrt feeds ==="
           cd "$SDK_DIR"
           
-          # Update feeds
-          ./scripts/feeds update -a
+          # Update feeds with retry logic
+          set +e
+          n=0
+          until [ "$n" -ge 3 ]
+          do
+            ./scripts/feeds update -a && break
+            n=$((n+1))
+            if [ "$n" -lt 3 ]; then
+              echo "Feed update failed, retrying in 10 seconds... (attempt $n/3)"
+              sleep 10
+            fi
+          done
+          set -e
+          
+          if [ "$n" -ge 3 ]; then
+            echo "Failed to update feeds after 3 retries. Aborting."
+            exit 1
+          fi
           
           # Install feeds
           ./scripts/feeds install -a
