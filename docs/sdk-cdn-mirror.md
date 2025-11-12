@@ -30,10 +30,9 @@ https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.
 
 ## Implementation Details
 
-### Workflows Updated
+### Workflows Using SDK CDN
 
-1. **`.github/workflows/build.yml`** - Main build workflow
-2. **`.github/workflows/build-openwrt-package.yml`** - Standalone package build
+- **`.github/workflows/ci.yml`** - Main CI/CD pipeline (lint → test → SDK build)
 
 ### Download Logic
 

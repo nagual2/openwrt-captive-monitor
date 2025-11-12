@@ -19,14 +19,12 @@ subsequent versions.
 
 ## 2. Build the release artifacts
 
-The GitHub Actions workflow **Build OpenWrt packages** now:
-- Provisions the packaging toolchain
+The GitHub Actions workflow **CI** (`.github/workflows/ci.yml`) now:
+- Runs linting and formatting checks
 - Executes the BusyBox test harness
-- Runs `scripts/build_ipk.sh`
-- Refuses to continue if any of these files are missing:
-  - `.ipk`
-  - `Packages`
-  - `Packages.gz`
+- Builds package with OpenWrt SDK
+- Validates the built `.ipk` file
+- Uploads artifacts (`.ipk`, `Packages`, `Packages.gz`)
 
 Every push or pull request targeting `main` produces a verified feed under
 `dist/opkg/<arch>/` containing:
@@ -119,7 +117,7 @@ busybox sh tests/run.sh
    git push origin v1.0.1
 
    Swap `v1.0.1` for the new version string on future releases.
-3. Monitor the **Build OpenWrt packages** workflow triggered by the tag, ensure the job succeeds, and confirm the GitHub Release lists:
+3. Monitor the **CI** workflow triggered by the tag, ensure the SDK build job succeeds, and confirm the GitHub Release lists:
 
    - `openwrt-captive-monitor_<version>-<release>_<arch>.ipk`
    - `Packages`

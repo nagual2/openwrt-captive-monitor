@@ -14,21 +14,29 @@ on:
       - 'docs-*'
       - 'hotfix/**'
       - 'hotfix-*'
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - main
   workflow_dispatch:
 
 permissions:
-  contents: write  # Needed for uploading artifacts
+  contents: write
   pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
+
+env:
+  OPENWRT_VERSION: "23.05.3"
+  OPENWRT_ARCH: "x86_64"
+  SDK_CHECKSUM: "f90d60c7a00a50a1c80807fb32fd4c12bed1fb65871328f3c2171caf9b711254"
 
 jobs:
   lint:
@@ -67,7 +75,6 @@ jobs:
               sudo apt-get install -y busybox shfmt shellcheck
               ;;
             markdownlint|actionlint)
-              # Use docker/actions instead, no packages needed
               echo "Using docker-based linters"
               ;;
           esac
@@ -82,9 +89,7 @@ jobs:
         if: matrix.linter == 'shellcheck'
         run: |
           set -euo pipefail
-          # Find all shell scripts and check them
           find . -type f -name "*.sh" -exec shellcheck {} +
-          # Also check the main script
           shellcheck openwrt_captive_monitor.sh
 
       - name: Run markdownlint
@@ -138,8 +143,8 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-  build:
-    name: Build Package
+  build-sdk:
+    name: Build with OpenWrt SDK
     runs-on: ubuntu-latest
     needs: [lint, test]
     
@@ -147,96 +152,316 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Cache apt packages
+      - name: Cache OpenWrt SDK
+        id: cache-sdk
         uses: actions/cache@v4
         with:
-          path: |
-            /var/cache/apt/archives
-            /var/lib/apt/lists
-          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/*.yml') }}
+          path: openwrt-sdk-*
+          key: ${{ runner.os }}-openwrt-sdk-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_ARCH }}-v3
           restore-keys: |
-            ${{ runner.os }}-apt-
+            ${{ runner.os }}-openwrt-sdk-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_ARCH }}-
 
-      - name: Install packaging prerequisites
-        timeout-minutes: 5
+      - name: Install build dependencies
         run: |
           set -euxo pipefail
           sudo rm -f /etc/apt/sources.list.d/microsoft*.list
-          sudo apt-get update \
-            -o Acquire::http::Timeout=30 \
-            -o Acquire::https::Timeout=30 \
-            -o Acquire::Retries=3 || true
-          sudo apt-get -o Acquire::http::Timeout=30 \
-            -o Acquire::https::Timeout=30 \
-            -o Acquire::Retries=3 \
-            install -y --no-install-recommends \
-            binutils \
-            busybox \
-            gzip \
-            pigz \
-            tar \
-            xz-utils
+          
+          echo 'Acquire::http::Timeout "30";' | sudo tee -a /etc/apt/apt.conf.d/99timeout
+          echo 'Acquire::https::Timeout "30";' | sudo tee -a /etc/apt/apt.conf.d/99timeout
+          echo 'Acquire::Retries "3";' | sudo tee -a /etc/apt/apt.conf.d/99retry
+          
+          for attempt in {1..3}; do
+            echo "Attempt $attempt/3: Updating package lists..."
+            if sudo apt-get update -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=3; then
+              echo "✓ Package update successful"
+              break
+            else
+              if [ "$attempt" -lt 3 ]; then
+                echo "✗ Package update failed, retrying in 10s..."
+                sleep 10
+              else
+                echo "❌ Package update failed after 3 attempts"
+                exit 1
+              fi
+            fi
+          done
+          
+          for attempt in {1..3}; do
+            echo "Attempt $attempt/3: Installing dependencies..."
+            if sudo apt-get -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=3 \
+              install -y --no-install-recommends \
+              build-essential \
+              ccache \
+              curl \
+              file \
+              gawk \
+              gettext \
+              git \
+              libncurses5-dev \
+              libssl-dev \
+              python3 \
+              rsync \
+              unzip \
+              wget \
+              zlib1g-dev \
+              flex \
+              bison; then
+              echo "✓ Dependencies installed successfully"
+              break
+            else
+              if [ "$attempt" -lt 3 ]; then
+                echo "✗ Dependency installation failed, retrying in 10s..."
+                sleep 10
+              else
+                echo "❌ Dependency installation failed after 3 attempts"
+                exit 1
+              fi
+            fi
+          done
 
-      - name: Download test results
-        uses: actions/download-artifact@v6
-        with:
-          name: test-results
-          path: tests/_out/
-        continue-on-error: true
-
-      - name: Build .ipk package
+      - name: Download and extract OpenWrt SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
         run: |
           set -euxo pipefail
-          echo "=== Cleaning previous build artifacts ==="
-          rm -rf dist/opkg
-          echo "=== Building IPK package ==="
-          ./scripts/build_ipk.sh
-          echo "=== Build outputs ==="
-          ls -laR dist/
-
-      - name: Collect package metadata
-        id: pkg
-        run: |
-          set -euxo pipefail
-          pkg_makefile="package/openwrt-captive-monitor/Makefile"
-          pkg_name=$(awk -F':=' '/^PKG_NAME:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
-          [ -n "$pkg_name" ] || pkg_name="openwrt-captive-monitor"
-          pkg_version=$(awk -F':=' '/^PKG_VERSION:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
-          [ -n "$pkg_version" ] || pkg_version="0.0.0"
-          pkg_release=$(awk -F':=' '/^PKG_RELEASE:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
-          [ -n "$pkg_release" ] || pkg_release="1"
-          pkg_arch=$(awk -F':=' '/^PKG_ARCH:=/{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' "$pkg_makefile")
-          [ -n "$pkg_arch" ] || pkg_arch="all"
-          feed_dir="dist/opkg/$pkg_arch"
-          pkg_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}.ipk"
-          {
-            echo "name=$pkg_name"
-            echo "version=$pkg_version"
-            echo "release=$pkg_release"
-            echo "arch=$pkg_arch"
-            echo "feed_dir=$feed_dir"
-            echo "ipk=$pkg_ipk"
-            echo "artifact_name=${pkg_name}_${pkg_version}-${pkg_release}_${pkg_arch}"
-          } >> "$GITHUB_OUTPUT"
-          echo "=== Verifying package file exists ==="
-          test -f "$pkg_ipk" || {
-            echo "ERROR: IPK package not found at $pkg_ipk!"
-            find dist/ -name "*.ipk" -ls || echo "No IPK files found"
+          SDK_VERSION="${{ env.OPENWRT_VERSION }}"
+          SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          SDK_CHECKSUM="${{ env.SDK_CHECKSUM }}"
+          
+          SDK_URL="https://github.com/nagual2/openwrt-captive-monitor/releases/download/sdk-${SDK_VERSION}/${SDK_FILE}"
+          FALLBACK_URL="https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
+          
+          echo "=== Downloading OpenWrt SDK ==="
+          echo "Primary URL: $SDK_URL"
+          echo "Fallback URL: $FALLBACK_URL"
+          
+          for attempt in {1..3}; do
+            echo "Attempt $attempt/3: Downloading from CDN..."
+            if wget --timeout=120 --tries=1 --retry-connrefused --waitretry=2 --random-wait -q -O "$SDK_FILE" "$SDK_URL" 2>/dev/null; then
+              echo "✓ CDN download successful"
+              break
+            else
+              if [ "$attempt" -lt 3 ]; then
+                wait_time=$((2 ** (attempt - 1)))
+                echo "✗ CDN download failed, retrying in ${wait_time}s..."
+                sleep "$wait_time"
+              else
+                echo "⚠️  CDN failed, falling back to official mirror..."
+                wget --timeout=300 --tries=3 -O "$SDK_FILE" "$FALLBACK_URL"
+              fi
+            fi
+          done
+          
+          echo "=== Verifying SDK ==="
+          SDK_SIZE=$(stat -c%s "$SDK_FILE")
+          echo "SDK size: $SDK_SIZE bytes"
+          
+          if [ "$SDK_SIZE" -lt 100000000 ]; then
+            echo "ERROR: SDK file too small"
             exit 1
-          }
+          fi
+          
+          ACTUAL_SHA=$(sha256sum "$SDK_FILE" | cut -d' ' -f1)
+          if [ "$SDK_CHECKSUM" != "$ACTUAL_SHA" ]; then
+            echo "ERROR: Checksum mismatch!"
+            echo "Expected: ${SDK_CHECKSUM}"
+            echo "Actual:   ${ACTUAL_SHA}"
+            exit 1
+          fi
+          
+          echo "✓ SDK verified, extracting..."
+          tar -xf "$SDK_FILE"
+          rm "$SDK_FILE"
 
-      - name: Validate .ipk package
+      - name: Find SDK directory
+        id: sdk
+        run: |
+          SDK_DIR=$(find . -maxdepth 1 -type d -name "openwrt-sdk-*" | head -n1)
+          if [ -z "$SDK_DIR" ]; then
+            echo "ERROR: SDK directory not found"
+            exit 1
+          fi
+          echo "sdk_dir=$SDK_DIR" >> "$GITHUB_OUTPUT"
+          echo "Found SDK directory: $SDK_DIR"
+
+      - name: Copy package to SDK
         run: |
           set -euxo pipefail
-          ./scripts/validate_ipk.sh "${{ steps.pkg.outputs.ipk }}"
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          
+          echo "=== Copying package to SDK ==="
+          rm -rf "$SDK_DIR/package/openwrt-captive-monitor"
+          mkdir -p "$SDK_DIR/package/openwrt-captive-monitor"
+          cp -r package/openwrt-captive-monitor/* "$SDK_DIR/package/openwrt-captive-monitor/"
+          cp VERSION "$SDK_DIR/package/openwrt-captive-monitor/"
+          mkdir -p "$SDK_DIR/package/openwrt-captive-monitor/files/"
+          cp LICENSE "$SDK_DIR/package/openwrt-captive-monitor/files/"
+          
+          echo "Package copied successfully"
 
-      - name: Upload build artifacts
+      - name: Update and install feeds
+        run: |
+          set -euo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          cd "$SDK_DIR"
+          
+          git config --global http.postBuffer 524288000
+          git config --global core.compression 0
+          
+          update_feeds_with_retry() {
+            local max_attempts=10
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempt $attempt/$max_attempts: Updating feeds..."
+              
+              rm -rf feeds/
+              rm -f feeds.conf.old
+              
+              if ./scripts/feeds update -a; then
+                echo "✓ Feeds updated successfully"
+                return 0
+              fi
+              
+              if [ $attempt -lt $max_attempts ]; then
+                local base_wait=$((2 ** (attempt - 1)))
+                local jitter=$((base_wait / 5))
+                local wait_time=$((base_wait + RANDOM % jitter))
+                echo "✗ Feed update failed, waiting ${wait_time}s before retry..."
+                sleep "$wait_time"
+              fi
+              attempt=$((attempt + 1))
+            done
+            
+            echo "✗ Feed update failed after $max_attempts attempts"
+            return 1
+          }
+          
+          install_feeds_with_retry() {
+            local max_attempts=10
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempt $attempt/$max_attempts: Installing feeds..."
+              if ./scripts/feeds install -a; then
+                echo "✓ Feeds installed successfully"
+                return 0
+              fi
+              
+              if [ $attempt -lt $max_attempts ]; then
+                local base_wait=$((2 ** (attempt - 1)))
+                local jitter=$((base_wait / 5))
+                local wait_time=$((base_wait + RANDOM % jitter))
+                echo "✗ Feed install failed, waiting ${wait_time}s before retry..."
+                sleep "$wait_time"
+              fi
+              attempt=$((attempt + 1))
+            done
+            
+            echo "✗ Feed install failed after $max_attempts attempts"
+            return 1
+          }
+          
+          update_feeds_with_retry || exit 1
+          install_feeds_with_retry || exit 1
+
+      - name: Configure SDK
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          cd "$SDK_DIR"
+          
+          echo "=== Configuring SDK ==="
+          make defconfig
+          
+          echo "✓ SDK configuration complete"
+
+      - name: Build package
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          cd "$SDK_DIR"
+          
+          echo "=== Building package ==="
+          if ! make package/openwrt-captive-monitor/compile V=s 2>&1 | tee build.log; then
+            echo "=== BUILD FAILED ==="
+            tail -100 build.log
+            exit 1
+          fi
+          
+          echo "✓ Package built successfully"
+
+      - name: Locate and prepare artifacts
+        id: artifacts
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          
+          PKG_DIR=$(find "$SDK_DIR/bin" -type d -name "packages" | head -n1)
+          if [ -z "$PKG_DIR" ]; then
+            echo "ERROR: Could not find packages directory"
+            exit 1
+          fi
+          
+          IPK_FILE=$(find "$PKG_DIR" -name "openwrt-captive-monitor_*.ipk" | head -n1)
+          if [ -z "$IPK_FILE" ]; then
+            echo "ERROR: Could not find built .ipk file"
+            exit 1
+          fi
+          
+          echo "Found IPK: $IPK_FILE"
+          echo "ipk_file=$IPK_FILE" >> "$GITHUB_OUTPUT"
+          echo "ipk_name=$(basename "$IPK_FILE")" >> "$GITHUB_OUTPUT"
+          
+          mkdir -p artifacts
+          cp "$IPK_FILE" artifacts/
+          find "$PKG_DIR" -name "Packages*" -exec cp {} artifacts/ \; 2>/dev/null || true
+          cp "$SDK_DIR/build.log" artifacts/ 2>/dev/null || true
+          
+          echo "Artifacts prepared:"
+          ls -la artifacts/
+
+      - name: Validate package
+        run: |
+          set -euxo pipefail
+          echo "=== Validating package ==="
+          ./scripts/validate_ipk.sh "${{ steps.artifacts.outputs.ipk_file }}"
+          echo "✓ Package validation successful"
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: ${{ steps.pkg.outputs.artifact_name }}
-          path: |
-            ${{ steps.pkg.outputs.ipk }}
-            ${{ steps.pkg.outputs.feed_dir }}/Packages
-            ${{ steps.pkg.outputs.feed_dir }}/Packages.gz
+          name: openwrt-captive-monitor-sdk-build
+          path: artifacts/
           retention-days: 30
           if-no-files-found: error
+
+      - name: Attach artifacts to release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/${{ steps.artifacts.outputs.ipk_name }}
+            artifacts/Packages
+            artifacts/Packages.gz
+            artifacts/build.log
+          fail_on_unmatched_files: false
+
+      - name: Display package information
+        run: |
+          set -euxo pipefail
+          IPK_FILE="${{ steps.artifacts.outputs.ipk_file }}"
+          
+          echo "=== Package Information ==="
+          echo "File: ${{ steps.artifacts.outputs.ipk_name }}"
+          echo "Size: $(stat -c%s "$IPK_FILE") bytes"
+          
+          TEMP_DIR=$(mktemp -d)
+          cd "$TEMP_DIR"
+          ar x "$IPK_FILE"
+          tar -xzf control.tar.gz
+          
+          echo ""
+          echo "=== Package Control Information ==="
+          cat control
+          
+          rm -rf "$TEMP_DIR"

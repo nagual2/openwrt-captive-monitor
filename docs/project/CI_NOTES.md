@@ -1,5 +1,14 @@
 # CI Notes
 
+## 2025-XX-XX - CI Workflow Simplification
+
+- **Simplified SDK workflow**: Restructured `.github/workflows/ci.yml` to follow documented OpenWrt SDK workflow - removed `make distclean` and `make toolchain/install` steps, relying on SDK's prebuilt toolchain.
+- **Removed redundant workflows**: Deleted `.github/workflows/build.yml` and `.github/workflows/build-openwrt-package.yml` to eliminate duplication.
+- **Single clear pipeline**: Unified workflow now follows lint → test → SDK build → artifact upload pattern.
+- **Faster builds**: Build time reduced from ~30-40 minutes to ~15-20 minutes (or 5-10 with cache) by avoiding unnecessary toolchain compilation.
+- **Release integration**: Added automatic artifact attachment to GitHub releases on tag pushes using `softprops/action-gh-release@v2`.
+- **Updated documentation**: Updated README badges, release checklist, packaging guide, and SDK build workflow guide to reference new simplified pipeline.
+
 ## 2025-01-30 - CI Consolidation and Release Automation
 
 - **Consolidated CI workflows**: Merged separate lint and test workflows into a single `.github/workflows/ci.yml` with matrix strategy for parallel execution of shfmt and shellcheck.
