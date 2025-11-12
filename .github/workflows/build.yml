@@ -371,20 +371,48 @@ jobs:
         run: |
           set -euxo pipefail
           SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
-          
+
           echo "=== Cleaning SDK environment ==="
           cd "$SDK_DIR"
-          
+
           # Clean previous build artifacts
           make distclean || true
-          
+
           # Use defconfig in CI for consistent configuration
           make defconfig < /dev/null || {
             echo "defconfig failed, trying fallback configuration..."
             make defconfig
           }
-          
+
           echo "SDK environment cleaned successfully"
+
+      - name: Build toolchain
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+
+          echo "=== Building and installing OpenWrt toolchain ==="
+          cd "$SDK_DIR"
+
+          echo "This ensures staging_dir is properly initialized with all toolchain files including ld-musl"
+
+          # Build toolchain with verbose output to diagnose issues
+          if ! make toolchain/install V=s 2>&1 | tee toolchain_build.log; then
+            echo "=== TOOLCHAIN BUILD FAILED ==="
+            echo "Last 50 lines of toolchain build log:"
+            tail -50 toolchain_build.log
+            exit 1
+          fi
+
+          echo "=== Toolchain build completed successfully ==="
+
+          # Verify staging_dir structure
+          if [ -d staging_dir ]; then
+            echo "Toolchain staging_dir contents (ld-musl and libc files):"
+            find staging_dir -name "ld-musl*" -o -name "libc.so*" | head -20
+          else
+            echo "Warning: staging_dir not found after toolchain build"
+          fi
 
       - name: Copy package to SDK
         run: |
