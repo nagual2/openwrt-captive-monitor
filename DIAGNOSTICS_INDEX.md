@@ -38,6 +38,7 @@
 | [DIAGNOSTIC_SUMMARY.md](DIAGNOSTIC_SUMMARY.md) | Executive summary with findings and action items | Team leads, decision makers | 5 min |
 | [DIAGNOSTIC_REPORT.md](DIAGNOSTIC_REPORT.md) | Complete technical analysis with root causes | Engineers, technical leads | 15 min |
 | [GITHUB_ACTIONS_DIAGNOSTICS.md](GITHUB_ACTIONS_DIAGNOSTICS.md) | Overview and guide for diagnostic tools | Developers, DevOps | 10 min |
+| [docs/WORKFLOW_DIAGNOSTICS.md](docs/WORKFLOW_DIAGNOSTICS.md) | Complete guide to workflow diagnostics tools | Developers, DevOps | 10 min |
 | [DIAGNOSTICS_INDEX.md](DIAGNOSTICS_INDEX.md) | This file - index of all diagnostics | Everyone | 2 min |
 
 ### Diagnostic Scripts (Use These)
@@ -46,6 +47,7 @@
 |------|---------|-------|
 | [diagnose-actions.sh](diagnose-actions.sh) | One-time diagnostic to analyze failures | `./diagnose-actions.sh` |
 | [scripts/diagnose-github-actions.sh](scripts/diagnose-github-actions.sh) | Reusable diagnostic tool with customization | `./scripts/diagnose-github-actions.sh [REPO] [DAYS] [LIMIT]` |
+| [scripts/parse-latest-failed-workflows.sh](scripts/parse-latest-failed-workflows.sh) | Parse two latest failures with detailed log analysis | `./scripts/parse-latest-failed-workflows.sh [REPO]` |
 
 ### Data Files (Reference These)
 
@@ -126,13 +128,16 @@ All files are in the repository root or in subdirectories:
 ├── GITHUB_ACTIONS_DIAGNOSTICS.md      ← Tool guide
 ├── DIAGNOSTICS_INDEX.md               ← This file
 ├── diagnose-actions.sh                ← Run diagnostics once
+├── docs/
+│   └── WORKFLOW_DIAGNOSTICS.md        ← Diagnostics tool guide
 ├── .github/
 │   └── workflows/
 │       ├── build.yml                  ← Failing (lines 353-424)
 │       ├── build-openwrt-package.yml  ← Failing (lines 122-191)
 │       └── ci.yml                     ← Partially affected
 └── scripts/
-    └── diagnose-github-actions.sh     ← Reusable diagnostic
+    ├── diagnose-github-actions.sh     ← Reusable diagnostic
+    └── parse-latest-failed-workflows.sh  ← Parse latest 2 failures
 ```
 
 ## Technical Details Summary
