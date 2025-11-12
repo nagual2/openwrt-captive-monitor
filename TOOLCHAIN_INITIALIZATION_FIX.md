@@ -1,5 +1,7 @@
 # OpenWrt Toolchain Initialization Fix - ld-musl Missing Error
 
+> **Historical Note**: The current CI pipeline uses the documented OpenWrt SDK workflow and relies on the prebuilt toolchain (no `make toolchain/install`). The information below is preserved for reference when diagnosing legacy builds that encountered missing `ld-musl-*.so` files.
+
 ## Problem Statement
 
 When building the `openwrt-captive-monitor` package with the OpenWrt SDK, a build error occurs:
