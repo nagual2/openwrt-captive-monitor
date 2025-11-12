@@ -220,19 +220,30 @@ jobs:
             flex \
             bison
 
-      - name: Download OpenWrt SDK
+      - name: Download OpenWrt SDK from GitHub CDN
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         run: |
           set -euxo pipefail
-          SDK_URL="https://downloads.openwrt.org/releases/${{ env.OPENWRT_VERSION }}/targets/x86/64/openwrt-sdk-${{ env.OPENWRT_VERSION }}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
-          SDK_FILE="openwrt-sdk-${{ env.OPENWRT_VERSION }}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          SDK_VERSION="${{ env.OPENWRT_VERSION }}"
+          SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
           SDK_CHECKSUM="${{ env.SDK_CHECKSUM }}"
           
-          echo "=== Downloading OpenWrt SDK ==="
-          echo "URL: $SDK_URL"
+          # Use GitHub Release CDN (fast mirror)
+          SDK_URL="https://github.com/nagual2/openwrt-captive-monitor/releases/download/sdk-${SDK_VERSION}/${SDK_FILE}"
+          
+          # Fallback to official mirror if CDN fails
+          FALLBACK_URL="https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
+          
+          echo "=== Downloading OpenWrt SDK from GitHub CDN ==="
+          echo "Primary URL: $SDK_URL"
+          echo "Fallback URL: $FALLBACK_URL"
           echo "Expected checksum: $SDK_CHECKSUM"
           
-          wget --timeout=300 --tries=3 -O "$SDK_FILE" "$SDK_URL"
+          echo "📥 Downloading SDK from GitHub CDN (fast)..."
+          if ! wget --timeout=300 --tries=3 -O "$SDK_FILE" "$SDK_URL"; then
+            echo "⚠️  CDN failed, falling back to official mirror..."
+            wget --timeout=300 --tries=3 -O "$SDK_FILE" "$FALLBACK_URL"
+          fi
           
           echo "=== Verifying SDK download ==="
           if [ ! -f "$SDK_FILE" ]; then
@@ -249,12 +260,13 @@ jobs:
           fi
           
           echo "=== Verifying SDK checksum ==="
-          echo "${SDK_CHECKSUM}  ${SDK_FILE}" | sha256sum -c - || {
+          ACTUAL_SHA=$(sha256sum "$SDK_FILE" | cut -d' ' -f1)
+          if [ "$SDK_CHECKSUM" != "$ACTUAL_SHA" ]; then
             echo "ERROR: SDK checksum verification failed!"
             echo "Expected: ${SDK_CHECKSUM}"
-            echo "Actual:   $(sha256sum "$SDK_FILE" | cut -d' ' -f1)"
+            echo "Actual:   ${ACTUAL_SHA}"
             exit 1
-          }
+          fi
           
           echo "✓ SDK checksum verification passed"
 
