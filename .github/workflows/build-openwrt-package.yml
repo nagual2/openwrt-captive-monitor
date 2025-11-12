@@ -29,35 +29,45 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Set SDK URL and paths
+      - name: Download and extract OpenWrt SDK from GitHub CDN
         run: |
           set -euo pipefail
-          {
-            echo "SDK_URL=https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
-            echo "SDK_DIR=openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64"
-            echo "PACKAGE_NAME=openwrt-captive-monitor"
-          } >> "$GITHUB_ENV"
-
-      - name: Download and extract OpenWrt SDK
-        run: |
-          set -euo pipefail
-          echo "Downloading OpenWrt SDK ${{ env.OPENWRT_VERSION }} for x86/64..."
-          echo "Expected checksum: ${{ env.SDK_CHECKSUM }}"
+          SDK_VERSION="${{ env.OPENWRT_VERSION }}"
+          SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          SDK_DIR="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64"
+          PACKAGE_NAME="openwrt-captive-monitor"
           
-          wget -O openwrt-sdk.tar.xz "${{ env.SDK_URL }}"
+          # Export for subsequent steps
+          echo "SDK_DIR=$SDK_DIR" >> "$GITHUB_ENV"
+          echo "PACKAGE_NAME=$PACKAGE_NAME" >> "$GITHUB_ENV"
           
-          echo "Verifying SDK checksum..."
-          echo "${{ env.SDK_CHECKSUM }}  openwrt-sdk.tar.xz" | sha256sum -c - || {
-            echo "ERROR: SDK checksum verification failed!"
-            echo "Expected: ${{ env.SDK_CHECKSUM }}"
-            echo "Actual:   $(sha256sum openwrt-sdk.tar.xz | cut -d' ' -f1)"
+          # Use GitHub Release CDN (fast mirror)
+          SDK_URL="https://github.com/nagual2/openwrt-captive-monitor/releases/download/sdk-${SDK_VERSION}/${SDK_FILE}"
+          
+          # Fallback to official mirror if CDN fails
+          FALLBACK_URL="https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
+          
+          echo "📥 Downloading SDK from GitHub CDN (fast)..."
+          if ! wget -q "$SDK_URL" -O openwrt-sdk.tar.xz; then
+            echo "⚠️  CDN failed, falling back to official mirror..."
+            wget -q "$FALLBACK_URL" -O openwrt-sdk.tar.xz
+          fi
+          
+          # Verify checksum
+          EXPECTED_SHA="${{ env.SDK_CHECKSUM }}"
+          ACTUAL_SHA=$(sha256sum openwrt-sdk.tar.xz | awk '{print $1}')
+          
+          if [ "$EXPECTED_SHA" != "$ACTUAL_SHA" ]; then
+            echo "❌ Checksum mismatch!"
+            echo "Expected: $EXPECTED_SHA"
+            echo "Got: $ACTUAL_SHA"
             exit 1
-          }
+          fi
           
-          echo "Extracting SDK..."
+          echo "✓ SDK verified"
           tar -xf openwrt-sdk.tar.xz
           rm openwrt-sdk.tar.xz
-          echo "SDK extracted to: ${{ env.SDK_DIR }}"
+          echo "SDK extracted to: $SDK_DIR"
 
       - name: Install build dependencies
         run: |
