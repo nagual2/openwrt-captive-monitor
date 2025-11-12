@@ -268,10 +268,10 @@ jobs:
           set -euo pipefail
           SDK_DIR="${{ env.SDK_DIR }}"
           cd "$SDK_DIR"
-          
+
           echo "Configuring SDK with defconfig..."
           make defconfig
-          
+
           echo "SDK configuration completed"
 
       - name: Clean SDK environment
@@ -279,19 +279,46 @@ jobs:
           set -euo pipefail
           SDK_DIR="${{ env.SDK_DIR }}"
           cd "$SDK_DIR"
-          
+
           echo "Cleaning SDK environment..."
-          
+
           # Clean previous build artifacts
           make distclean || true
-          
+
           # Use defconfig in CI for consistent configuration
           make defconfig < /dev/null || {
             echo "defconfig failed, trying fallback configuration..."
             make defconfig
           }
-          
+
           echo "SDK environment cleaned successfully"
+
+      - name: Build toolchain
+        run: |
+          set -euo pipefail
+          SDK_DIR="${{ env.SDK_DIR }}"
+          cd "$SDK_DIR"
+
+          echo "Building and installing OpenWrt toolchain..."
+          echo "This ensures staging_dir is properly initialized with all toolchain files including ld-musl"
+
+          # Build toolchain with verbose output to diagnose issues
+          if ! make toolchain/install V=s 2>&1 | tee toolchain_build.log; then
+            echo "=== TOOLCHAIN BUILD FAILED ==="
+            echo "Last 50 lines of toolchain build log:"
+            tail -50 toolchain_build.log
+            exit 1
+          fi
+
+          echo "=== Toolchain build completed successfully ==="
+
+          # Verify staging_dir structure
+          if [ -d staging_dir ]; then
+            echo "Toolchain staging_dir contents:"
+            find staging_dir -name "ld-musl*" -o -name "libc.so*" | head -20
+          else
+            echo "Warning: staging_dir not found after toolchain build"
+          fi
 
       - name: Compile package
         run: |
