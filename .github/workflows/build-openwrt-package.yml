@@ -78,11 +78,68 @@ jobs:
           SDK_DIR="${{ env.SDK_DIR }}"
           cd "$SDK_DIR"
           
-          echo "Updating feeds..."
-          ./scripts/feeds update -a
+          # Configure Git for large transfers
+          git config --global http.postBuffer 524288000
+          git config --global core.compression 0
           
-          echo "Installing feeds..."
-          ./scripts/feeds install -a
+          # Function to update feeds with exponential backoff
+          update_feeds_with_retry() {
+            local max_attempts=5
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempt $attempt/$max_attempts: Updating feeds..."
+              if ./scripts/feeds update -a; then
+                echo "✓ Feeds updated successfully"
+                return 0
+              fi
+              
+              if [ $attempt -lt $max_attempts ]; then
+                local wait_time=$((2 ** (attempt - 1)))
+                echo "✗ Feed update failed, waiting ${wait_time}s before retry..."
+                sleep "$wait_time"
+              fi
+              attempt=$((attempt + 1))
+            done
+            
+            echo "✗ Feed update failed after $max_attempts attempts"
+            return 1
+          }
+          
+          # Function to install feeds with exponential backoff
+          install_feeds_with_retry() {
+            local max_attempts=5
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempt $attempt/$max_attempts: Installing feeds..."
+              if ./scripts/feeds install -a; then
+                echo "✓ Feeds installed successfully"
+                return 0
+              fi
+              
+              if [ $attempt -lt $max_attempts ]; then
+                local wait_time=$((2 ** (attempt - 1)))
+                echo "✗ Feed install failed, waiting ${wait_time}s before retry..."
+                sleep "$wait_time"
+              fi
+              attempt=$((attempt + 1))
+            done
+            
+            echo "✗ Feed install failed after $max_attempts attempts"
+            return 1
+          }
+          
+          # Clear feed cache to prevent stale data issues
+          echo "Clearing feed cache..."
+          rm -rf feeds/
+          rm -f feeds.conf.old
+          
+          # Update feeds with retry logic
+          update_feeds_with_retry || exit 1
+          
+          # Install feeds with retry logic
+          install_feeds_with_retry || exit 1
           
           echo "Feeds updated and installed successfully"
 
