@@ -302,35 +302,76 @@ jobs:
 
       - name: Update feeds
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
           
           echo "=== Updating OpenWrt feeds ==="
           cd "$SDK_DIR"
           
+          # Configure Git for large transfers
+          git config --global http.postBuffer 524288000
+          git config --global core.compression 0
+          
+          # Function to update feeds with exponential backoff
+          update_feeds_with_retry() {
+            local max_attempts=5
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempt $attempt/$max_attempts: Updating feeds..."
+              if ./scripts/feeds update -a; then
+                echo "✓ Feeds updated successfully"
+                return 0
+              fi
+              
+              if [ $attempt -lt $max_attempts ]; then
+                local wait_time=$((2 ** (attempt - 1)))
+                echo "✗ Feed update failed, waiting ${wait_time}s before retry..."
+                sleep "$wait_time"
+              fi
+              attempt=$((attempt + 1))
+            done
+            
+            echo "✗ Feed update failed after $max_attempts attempts"
+            return 1
+          }
+          
+          # Function to install feeds with exponential backoff
+          install_feeds_with_retry() {
+            local max_attempts=5
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempt $attempt/$max_attempts: Installing feeds..."
+              if ./scripts/feeds install -a; then
+                echo "✓ Feeds installed successfully"
+                return 0
+              fi
+              
+              if [ $attempt -lt $max_attempts ]; then
+                local wait_time=$((2 ** (attempt - 1)))
+                echo "✗ Feed install failed, waiting ${wait_time}s before retry..."
+                sleep "$wait_time"
+              fi
+              attempt=$((attempt + 1))
+            done
+            
+            echo "✗ Feed install failed after $max_attempts attempts"
+            return 1
+          }
+          
+          # Clear feed cache to prevent stale data issues
+          echo "Clearing feed cache..."
+          rm -rf feeds/
+          rm -f feeds.conf.old
+          
           # Update feeds with retry logic
-          set +e
-          n=0
-          until [ "$n" -ge 3 ]
-          do
-            ./scripts/feeds update -a && break
-            n=$((n+1))
-            if [ "$n" -lt 3 ]; then
-              echo "Feed update failed, retrying in 10 seconds... (attempt $n/3)"
-              sleep 10
-            fi
-          done
-          set -e
+          update_feeds_with_retry || exit 1
           
-          if [ "$n" -ge 3 ]; then
-            echo "Failed to update feeds after 3 retries. Aborting."
-            exit 1
-          fi
+          # Install feeds with retry logic
+          install_feeds_with_retry || exit 1
           
-          # Install feeds
-          ./scripts/feeds install -a
-          
-          echo "Feeds updated successfully"
+          echo "=== Feeds updated successfully ==="
 
       - name: Build package with SDK
         run: |
