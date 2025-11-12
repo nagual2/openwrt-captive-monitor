@@ -24,7 +24,11 @@ help:
 
 test:
 	@echo "Running test suite..."
-	@busybox ash tests/run.sh
+	@if command -v busybox >/dev/null 2>&1; then \
+		busybox ash tests/run.sh; \
+	else \
+		sh tests/run.sh; \
+	fi
 
 lint: lint-shell lint-markdown
 
