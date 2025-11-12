@@ -214,10 +214,14 @@ jobs:
               if [ $attempt -lt $max_attempts ]; then
                 # Exponential backoff with jitter (1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s)
                 local base_wait=$((2 ** (attempt - 1)))
-                # Add jitter: 20% random variation
+                # Add jitter: 20% random variation (minimum 1 to avoid division by zero)
                 local jitter=$((base_wait / 5))
-                local wait_time=$((base_wait + RANDOM % jitter))
-                echo "✗ Feed update failed, waiting ${wait_time}s before retry (base: ${base_wait}s, jitter: +$((RANDOM % jitter))s)..."
+                if [ "$jitter" -lt 1 ]; then
+                  jitter=1
+                fi
+                local random_jitter=$((RANDOM % jitter))
+                local wait_time=$((base_wait + random_jitter))
+                echo "✗ Feed update failed, waiting ${wait_time}s before retry (base: ${base_wait}s, jitter: +${random_jitter}s)..."
                 sleep "$wait_time"
               fi
               attempt=$((attempt + 1))
@@ -242,10 +246,14 @@ jobs:
               if [ $attempt -lt $max_attempts ]; then
                 # Exponential backoff with jitter (1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s)
                 local base_wait=$((2 ** (attempt - 1)))
-                # Add jitter: 20% random variation
+                # Add jitter: 20% random variation (minimum 1 to avoid division by zero)
                 local jitter=$((base_wait / 5))
-                local wait_time=$((base_wait + RANDOM % jitter))
-                echo "✗ Feed install failed, waiting ${wait_time}s before retry (base: ${base_wait}s, jitter: +$((RANDOM % jitter))s)..."
+                if [ "$jitter" -lt 1 ]; then
+                  jitter=1
+                fi
+                local random_jitter=$((RANDOM % jitter))
+                local wait_time=$((base_wait + random_jitter))
+                echo "✗ Feed install failed, waiting ${wait_time}s before retry (base: ${base_wait}s, jitter: +${random_jitter}s)..."
                 sleep "$wait_time"
               fi
               attempt=$((attempt + 1))
