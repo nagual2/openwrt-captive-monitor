@@ -1,0 +1,119 @@
+name: Upload SDK to GitHub Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      sdk_version:
+        description: 'OpenWrt SDK version'
+        required: true
+        default: '23.05.3'
+      force_update:
+        description: 'Force update existing release'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  upload-sdk:
+    name: Upload SDK to GitHub Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            wget \
+            gh
+
+      - name: Authenticate with GitHub CLI
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Download and upload SDK to GitHub Release
+        run: |
+          set -e
+          REPO="${{ github.repository }}"
+          SDK_VERSION="${{ github.event.inputs.sdk_version }}"
+          SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          SDK_URL="https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
+          FORCE_UPDATE="${{ github.event.inputs.force_update }}"
+
+          echo "📥 Downloading SDK from official mirror..."
+          wget -q "$SDK_URL" -O "$SDK_FILE"
+
+          # Calculate checksum for integrity
+          SHA256=$(sha256sum "$SDK_FILE" | awk '{print $1}')
+          echo "✓ SDK downloaded: $SHA256"
+
+          # Delete existing release if force update is enabled
+          if [ "$FORCE_UPDATE" = "true" ]; then
+            echo "🗑️  Deleting existing release sdk-${SDK_VERSION}..."
+            gh release delete "sdk-${SDK_VERSION}" --repo "$REPO" --yes || echo "No existing release to delete"
+          fi
+
+          # Create GitHub Release
+          echo "📤 Uploading to GitHub Release..."
+          RELEASE_ARGS=(
+            "sdk-${SDK_VERSION}"
+            "$SDK_FILE"
+            --title "OpenWrt SDK ${SDK_VERSION} Mirror"
+            --notes "SDK mirror for fast CI/CD builds. Checksum: $SHA256"
+            --repo "$REPO"
+          )
+          
+          if gh release create "${RELEASE_ARGS[@]}"; then
+            echo "✅ Release created successfully"
+          else
+            echo "ℹ️  Release already exists, updating files..."
+          fi
+
+          # Update/create checksum file
+          echo "$SHA256  $SDK_FILE" > sdk-checksum.txt
+          gh release upload "sdk-${SDK_VERSION}" sdk-checksum.txt \
+            --repo "$REPO" \
+            --clobber
+
+          # Get the download URL
+          DOWNLOAD_URL="https://github.com/$REPO/releases/download/sdk-${SDK_VERSION}/$SDK_FILE"
+          echo "✅ SDK uploaded to: $DOWNLOAD_URL"
+          
+          # Set output for use in other workflows
+          {
+            echo "download_url=$DOWNLOAD_URL"
+            echo "sdk_checksum=$SHA256"
+            echo "sdk_file=$SDK_FILE"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Verify upload
+        run: |
+          set -e
+          REPO="${{ github.repository }}"
+          SDK_VERSION="${{ github.event.inputs.sdk_version }}"
+          SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          
+          echo "🔍 Verifying uploaded SDK..."
+          DOWNLOAD_URL="https://github.com/$REPO/releases/download/sdk-${SDK_VERSION}/$SDK_FILE"
+          
+          # Test download
+          if wget -q --spider "$DOWNLOAD_URL"; then
+            echo "✅ SDK is accessible at: $DOWNLOAD_URL"
+          else
+            echo "❌ SDK verification failed - not accessible"
+            exit 1
+          fi
+          
+          # List release assets
+          echo "📋 Release assets:"
+          gh release view "sdk-${SDK_VERSION}" --repo "$REPO" --json assets --jq '.assets[].name'
