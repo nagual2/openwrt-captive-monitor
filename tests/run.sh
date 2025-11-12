@@ -281,7 +281,7 @@ test_build_ipk_package() {
     pkg_release=$(parse_make_var "PKG_RELEASE")
     assert_contains "Package: openwrt-captive-monitor" "$control_contents" "control file missing package name"
     assert_contains "Version: ${pkg_version}-${pkg_release}" "$control_contents" "control file missing version string"
-    assert_contains "Depends: dnsmasq, curl" "$control_contents" "control file missing dependencies"
+    assert_contains "Depends: dnsmasq, curl, iptables" "$control_contents" "control file missing dependencies"
     packages_index="$feed_dir/$arch/Packages"
     packages_body=$(cat "$packages_index" 2> /dev/null || printf '')
     assert_contains "Package: openwrt-captive-monitor" "$packages_body" "Packages index missing package entry"
@@ -320,6 +320,57 @@ EOF
     return 0
 }
 
+test_build_ipk_release_mode() {
+    feed_dir="$OUT_DIR/feed_release"
+    arch="all_release"
+    mkdir -p "$feed_dir"
+    build_log="$OUT_DIR/build_ipk_release.log"
+    if ! PATH="$MOCK_DIR:$BASE_PATH" "$REPO_ROOT/scripts/build_ipk.sh" --feed-root "$feed_dir" --arch "$arch" --release-mode > "$build_log" 2>&1; then
+        cat "$build_log" >&2 2> /dev/null || true
+        fail "build_ipk.sh with --release-mode failed"
+    fi
+    build_output=$(cat "$build_log" 2> /dev/null || printf '')
+    assert_contains "RELEASE MODE: Package Build Summary" "$build_output" "Release mode should print summary header"
+    assert_contains "ARTIFACTS" "$build_output" "Release mode should list artifacts"
+    assert_contains "MD5" "$build_output" "Release mode should include MD5 checksums"
+    assert_contains "SHA256" "$build_output" "Release mode should include SHA256 checksums"
+    metadata_file="$feed_dir/$arch/release-metadata.json"
+    [ -f "$metadata_file" ] || fail "Release mode should create release-metadata.json"
+    metadata=$(cat "$metadata_file" 2> /dev/null || printf '')
+    assert_contains '"name": "openwrt-captive-monitor"' "$metadata" "Metadata should contain package name"
+    assert_contains '"release_mode": true' "$metadata" "Metadata should indicate release mode"
+    return 0
+}
+
+test_build_ipk_custom_arch() {
+    feed_dir="$OUT_DIR/feed_custom_arch"
+    arch="mips_24kc"
+    mkdir -p "$feed_dir"
+    build_log="$OUT_DIR/build_ipk_custom_arch.log"
+    if ! PATH="$MOCK_DIR:$BASE_PATH" "$REPO_ROOT/scripts/build_ipk.sh" --feed-root "$feed_dir" --arch "$arch" > "$build_log" 2>&1; then
+        cat "$build_log" >&2 2> /dev/null || true
+        fail "build_ipk.sh with custom arch failed"
+    fi
+    ipk_file=$(find "$feed_dir/$arch" -maxdepth 1 -type f -name "*_${arch}.ipk" | head -n1)
+    [ -n "$ipk_file" ] || fail "No .ipk with custom arch produced"
+    assert_contains "_${arch}.ipk" "$ipk_file" "Package should use custom architecture in filename"
+    return 0
+}
+
+test_build_ipk_help() {
+    help_log="$OUT_DIR/build_ipk_help.log"
+    if ! PATH="$MOCK_DIR:$BASE_PATH" "$REPO_ROOT/scripts/build_ipk.sh" --help > "$help_log" 2>&1; then
+        cat "$help_log" >&2 2> /dev/null || true
+        fail "build_ipk.sh --help failed"
+    fi
+    help_output=$(cat "$help_log" 2> /dev/null || printf '')
+    assert_contains "Usage:" "$help_output" "Help should show usage"
+    assert_contains "--arch" "$help_output" "Help should document --arch option"
+    assert_contains "--feed-root" "$help_output" "Help should document --feed-root option"
+    assert_contains "--release-mode" "$help_output" "Help should document --release-mode option"
+    return 0
+}
+
 main() {
     run_test test_opts_parsing
     run_test test_mode_switch
@@ -327,6 +378,9 @@ main() {
     run_test test_cleanup
     run_test test_build_ipk_package
     run_test test_build_ipk_detects_archiver_failure
+    run_test test_build_ipk_release_mode
+    run_test test_build_ipk_custom_arch
+    run_test test_build_ipk_help
     printf 'All tests passed (%d/%d)\n' "$PASSED_TESTS" "$TOTAL_TESTS"
 }
 
