@@ -86,6 +86,17 @@ jobs:
           
           echo "Feeds updated and installed successfully"
 
+      - name: Configure SDK
+        run: |
+          set -euo pipefail
+          SDK_DIR="${{ env.SDK_DIR }}"
+          cd "$SDK_DIR"
+          
+          echo "Configuring SDK with defconfig..."
+          make defconfig
+          
+          echo "SDK configuration completed"
+
       - name: Compile package
         run: |
           set -euo pipefail
