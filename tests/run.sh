@@ -262,7 +262,7 @@ test_build_ipk_package() {
     arch="all_test"
     mkdir -p "$feed_dir"
     build_log="$OUT_DIR/build_ipk.log"
-    if ! "$REPO_ROOT/scripts/build_ipk.sh" --feed-root "$feed_dir" --arch "$arch" > "$build_log" 2>&1; then
+    if ! PATH="$MOCK_DIR:$BASE_PATH" "$REPO_ROOT/scripts/build_ipk.sh" --feed-root "$feed_dir" --arch "$arch" > "$build_log" 2>&1; then
         cat "$build_log" >&2 2> /dev/null || true
         fail "build_ipk.sh failed"
     fi
@@ -311,7 +311,7 @@ exit 0
 EOF
     chmod +x "$mock_bin/ar"
     build_log="$OUT_DIR/build_ipk_missing.log"
-    if PATH="$mock_bin:$PATH" "$REPO_ROOT/scripts/build_ipk.sh" --feed-root "$feed_dir" --arch "$arch" > "$build_log" 2>&1; then
+    if PATH="$mock_bin:$MOCK_DIR:$BASE_PATH" "$REPO_ROOT/scripts/build_ipk.sh" --feed-root "$feed_dir" --arch "$arch" > "$build_log" 2>&1; then
         cat "$build_log" >&2 2> /dev/null || true
         fail "build_ipk.sh succeeded even though ar produced no archive"
     fi
