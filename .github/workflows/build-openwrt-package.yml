@@ -16,6 +16,10 @@ defaults:
   run:
     shell: bash
 
+env:
+  OPENWRT_VERSION: "23.05.3"
+  SDK_CHECKSUM: "f90d60c7a00a50a1c80807fb32fd4c12bed1fb65871328f3c2171caf9b711254"
+
 jobs:
   build:
     name: Build OpenWrt package
@@ -37,12 +41,45 @@ jobs:
       - name: Download and extract OpenWrt SDK
         run: |
           set -euo pipefail
-          echo "Downloading OpenWrt SDK 23.05.3 for x86/64..."
+          echo "Downloading OpenWrt SDK ${{ env.OPENWRT_VERSION }} for x86/64..."
+          echo "Expected checksum: ${{ env.SDK_CHECKSUM }}"
+          
           wget -O openwrt-sdk.tar.xz "${{ env.SDK_URL }}"
+          
+          echo "Verifying SDK checksum..."
+          echo "${{ env.SDK_CHECKSUM }}  openwrt-sdk.tar.xz" | sha256sum -c - || {
+            echo "ERROR: SDK checksum verification failed!"
+            echo "Expected: ${{ env.SDK_CHECKSUM }}"
+            echo "Actual:   $(sha256sum openwrt-sdk.tar.xz | cut -d' ' -f1)"
+            exit 1
+          }
+          
           echo "Extracting SDK..."
           tar -xf openwrt-sdk.tar.xz
           rm openwrt-sdk.tar.xz
           echo "SDK extracted to: ${{ env.SDK_DIR }}"
+
+      - name: Install build dependencies
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            libncurses5-dev \
+            zlib1g-dev \
+            gawk \
+            git \
+            gettext \
+            libssl-dev \
+            python3 \
+            unzip \
+            wget \
+            libncursesw5-dev \
+            libgmp-dev \
+            libmpfr-dev \
+            libmpc-dev \
+            flex \
+            bison
 
       - name: Sync package to SDK with clean copy strategy
         run: |
@@ -154,16 +191,51 @@ jobs:
           
           echo "SDK configuration completed"
 
+      - name: Clean SDK environment
+        run: |
+          set -euo pipefail
+          SDK_DIR="${{ env.SDK_DIR }}"
+          cd "$SDK_DIR"
+          
+          echo "Cleaning SDK environment..."
+          
+          # Clean previous build artifacts
+          make distclean || true
+          
+          # Use defconfig in CI for consistent configuration
+          make defconfig < /dev/null || {
+            echo "defconfig failed, trying fallback configuration..."
+            make defconfig
+          }
+          
+          echo "SDK environment cleaned successfully"
+
       - name: Compile package
         run: |
           set -euo pipefail
           SDK_DIR="${{ env.SDK_DIR }}"
           cd "$SDK_DIR"
           
-          echo "Compiling ${{ env.PACKAGE_NAME }} package..."
-          make package/${{ env.PACKAGE_NAME }}/compile V=s
+          echo "Compiling ${{ env.PACKAGE_NAME }} package with verbose output..."
           
-          echo "Package compilation completed"
+          # Build with verbose output and logging
+          if ! make package/${{ env.PACKAGE_NAME }}/compile V=s 2>&1 | tee build.log; then
+            echo "=== BUILD FAILED ==="
+            echo "Build command failed"
+            echo ""
+            echo "=== Last 100 lines of build log ==="
+            tail -100 build.log
+            echo ""
+            echo "=== Available build logs ==="
+            find . -name "*.log" -exec echo "=== {} ===" \; -exec tail -50 {} \;
+            echo ""
+            echo "=== Makefile errors ==="
+            find . -name ".*.cmd" -exec echo "=== {} ===" \; -exec cat {} \; 2>/dev/null || true
+            exit 1
+          fi
+          
+          echo "Package compilation completed successfully"
+          echo "Build log size: $(wc -l < build.log) lines"
 
       - name: Locate built package and prepare artifacts
         run: |
