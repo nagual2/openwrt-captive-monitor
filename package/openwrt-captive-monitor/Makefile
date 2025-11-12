@@ -16,15 +16,18 @@ define Package/openwrt-captive-monitor
   CATEGORY:=Network
   SUBMENU:=Captive Portals
   TITLE:=Captive portal connectivity monitor and auto-redirect helper
-  DEPENDS:=+dnsmasq +curl +iptables +nftables +busybox
+  DEPENDS:=+dnsmasq +curl +iptables
   URL:=https://github.com/nagual2/openwrt-captive-monitor
-  MAINTAINER:=OpenWrt Captive Monitor Team
 endef
 
 define Package/openwrt-captive-monitor/description
  openwrt-captive-monitor detects captive portals, applies DNS/HTTP redirects so
  authenticated clients can sign in, and restores normal routing once internet
  access is available again.
+endef
+
+define Package/openwrt-captive-monitor/conffiles
+/etc/config/captive-monitor
 endef
 
 define Package/openwrt-captive-monitor/install
@@ -36,36 +39,30 @@ define Package/openwrt-captive-monitor/install
 	$(INSTALL_CONF) ./files/etc/config/captive-monitor $(1)/etc/config/captive-monitor
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/etc/uci-defaults/99-captive-monitor $(1)/etc/uci-defaults/99-captive-monitor
-	$(INSTALL_DIR) $(1)/usr/share/licenses/openwrt-captive-monitor
-	$(INSTALL_DATA) ./files/LICENSE $(1)/usr/share/licenses/openwrt-captive-monitor/
+	$(INSTALL_DIR) $(1)/usr/share/licenses/$(PKG_NAME)
+	$(INSTALL_DATA) ./LICENSE $(1)/usr/share/licenses/$(PKG_NAME)/LICENSE
 endef
 
 define Package/openwrt-captive-monitor/postinst
 #!/bin/sh
-if [ -z "$IPKG_INSTROOT" ]; then
-	if [ -x /etc/uci-defaults/99-captive-monitor ]; then
-	    /etc/uci-defaults/99-captive-monitor || true
-	fi
-	/etc/init.d/captive-monitor disable > /dev/null 2>&1 || true
-	/etc/init.d/captive-monitor stop > /dev/null 2>&1 || true
-fi
+[ -n "$$IPKG_INSTROOT" ] && exit 0
+[ -x /etc/uci-defaults/99-captive-monitor ] && /etc/uci-defaults/99-captive-monitor
 exit 0
 endef
 
 define Package/openwrt-captive-monitor/prerm
 #!/bin/sh
-if [ -z "$IPKG_INSTROOT" ]; then
-	/etc/init.d/captive-monitor disable > /dev/null 2>&1 || true
-	/etc/init.d/captive-monitor stop > /dev/null 2>&1 || true
-fi
+[ -n "$$IPKG_INSTROOT" ] && exit 0
+/etc/init.d/captive-monitor stop >/dev/null 2>&1
+/etc/init.d/captive-monitor disable >/dev/null 2>&1
 exit 0
 endef
 
 define Package/openwrt-captive-monitor/postrm
 #!/bin/sh
-if [ -z "$IPKG_INSTROOT" ]; then
-	/etc/init.d/captive-monitor stop > /dev/null 2>&1 || true
-fi
+[ -n "$$IPKG_INSTROOT" ] && exit 0
+rm -f /tmp/dnsmasq.d/captive_intercept.conf
+rm -rf /tmp/captive_httpd
 exit 0
 endef
 
