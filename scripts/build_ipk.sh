@@ -1,5 +1,5 @@
 #!/bin/sh
-# OpenWrt Package Builder Script
+# OpenWrt Package Builder Script using official tooling
 # shellcheck shell=ash
 # shellcheck disable=SC3043 # BusyBox ash and bash-compatible shells provide 'local'
 set -eu
@@ -56,8 +56,11 @@ require_command() {
     fi
 
     case "$tool" in
-        ar)
-            hint="Install binutils (e.g., 'sudo apt-get install -y binutils')."
+        opkg-build)
+            hint="Install opkg-utils (e.g., 'sudo apt-get install -y opkg-utils')."
+            ;;
+        opkg-make-index)
+            hint="Install opkg-utils (e.g., 'sudo apt-get install -y opkg-utils')."
             ;;
         gzip)
             hint="Install gzip (e.g., 'sudo apt-get install -y gzip')."
@@ -70,9 +73,6 @@ require_command() {
             ;;
         tar)
             hint="Install tar (e.g., 'sudo apt-get install -y tar')."
-            ;;
-        opkg-make-index)
-            hint="Install opkg-utils (e.g., via your distribution package manager)."
             ;;
         *)
             hint=""
@@ -93,7 +93,7 @@ ensure_prereqs() {
     done
 }
 
-ensure_prereqs ar tar gzip md5sum sha256sum stat
+ensure_prereqs opkg-build opkg-make-index gzip md5sum sha256sum stat tar
 
 parse_make_var() {
     key="$1"
@@ -265,11 +265,16 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM HUP
 
+# Create package structure for opkg-build
+# opkg-build expects:
+# - CONTROL/ subdirectory with control files
+# - Root contains the data files (not including CONTROL)
+pkg_dir="$build_dir/package"
 data_dir="$build_dir/data"
 control_dir="$build_dir/control"
 mkdir -p "$data_dir" "$control_dir"
 
-# Copy payload files
+# Copy payload files to data directory
 cp -a "$files_dir/." "$data_dir/"
 
 # Ensure key executables are marked correctly when the copy umask interferes
@@ -339,15 +344,18 @@ echo "/etc/config/captive-monitor" > "$control_dir/conffiles"
 chmod 0755 "$control_dir/postinst" "$control_dir/prerm" "$control_dir/postrm"
 chmod 0644 "$control_file" "$control_dir/conffiles"
 
-(cd "$data_dir" && tar --numeric-owner --owner=0 --group=0 -czf "$build_dir/data.tar.gz" .)
-(cd "$control_dir" && tar --numeric-owner --owner=0 --group=0 -czf "$build_dir/control.tar.gz" .)
-
-echo "2.0" > "$build_dir/debian-binary"
-
+# Use opkg-build to create the .ipk
 output_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${arch}.ipk"
 rm -f "$output_ipk"
 
-(cd "$build_dir" && ar r "$output_ipk" debian-binary control.tar.gz data.tar.gz)
+# Prepare the package directory structure for opkg-build
+# opkg-build expects: data_dir/CONTROL and data_dir/ with data files
+pkg_build_dir="$build_dir/pkg_build"
+mkdir -p "$pkg_build_dir"
+cp -a "$data_dir/." "$pkg_build_dir/"
+cp -a "$control_dir" "$pkg_build_dir/CONTROL"
+
+opkg-build -c "$pkg_build_dir/CONTROL" "$pkg_build_dir" "$feed_dir" > /dev/null 2>&1
 
 if [ ! -f "$output_ipk" ]; then
     echo "error: expected package archive $output_ipk to be created" >&2
@@ -365,39 +373,16 @@ packages_file="$feed_dir/Packages"
 packages_file_gz="$packages_file.gz"
 rm -f "$packages_file" "$packages_file_gz"
 
-packages_written=0
-if command -v opkg-make-index > /dev/null 2>&1; then
-    tmp_packages_index="$build_dir/Packages.index"
-    opkg-make-index -a "$arch" "$feed_dir" > "$tmp_packages_index"
-    packages_written=$(awk '/^Package:[[:space:]]/{count++} END {print count+0}' "$tmp_packages_index")
-    if [ "$packages_written" -eq 0 ]; then
-        echo "error: opkg-make-index generated an empty index for $feed_dir" >&2
-        exit 1
-    fi
-    mv "$tmp_packages_index" "$packages_file"
-else
-    : > "$packages_file"
-    for ipk in "$feed_dir"/*.ipk; do
-        [ -f "$ipk" ] || continue
-        tmpdir=$(mktemp -d)
-        ar p "$ipk" control.tar.gz | tar -C "$tmpdir" -xz
-        {
-            cat "$tmpdir/control"
-            echo "Filename: $(basename "$ipk")"
-            echo "Size: $(stat -c%s "$ipk")"
-            echo "MD5sum: $(md5sum "$ipk" | awk '{print $1}')"
-            echo "SHA256sum: $(sha256sum "$ipk" | awk '{print $1}')"
-            echo
-        } >> "$packages_file"
-        rm -rf "$tmpdir"
-        packages_written=$((packages_written + 1))
-    done
+# Use opkg-make-index to generate the package index
+tmp_packages_index="$build_dir/Packages.index"
+opkg-make-index -a "$arch" "$feed_dir" > "$tmp_packages_index"
 
-    if [ "$packages_written" -eq 0 ]; then
-        echo "error: no .ipk packages found under $feed_dir to index" >&2
-        exit 1
-    fi
+packages_written=$(awk '/^Package:[[:space:]]/{count++} END {print count+0}' "$tmp_packages_index")
+if [ "$packages_written" -eq 0 ]; then
+    echo "error: opkg-make-index generated an empty index for $feed_dir" >&2
+    exit 1
 fi
+mv "$tmp_packages_index" "$packages_file"
 
 if [ ! -s "$packages_file" ]; then
     echo "error: failed to populate $packages_file" >&2
@@ -511,8 +496,9 @@ if [ "$release_mode" = "true" ]; then
   },
   "build": {
     "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-    "script_version": "1.0",
-    "release_mode": true
+    "script_version": "2.0",
+    "release_mode": true,
+    "using_opkg_build": true
   }
 }
 EOF
