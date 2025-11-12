@@ -96,22 +96,24 @@ Release mode provides:
 
 ### GitHub Actions Workflow
 
-The project includes automated building via GitHub Actions:
+The project includes automated validation and packaging via GitHub Actions:
 
 ```yaml
-## .github/workflows/openwrt-build.yml
-- Builds packages for multiple architectures
-- Generates opkg feed indexes
-- Uploads artifacts for releases
+## .github/workflows/ci.yml
+- Runs linting and tests
+- Builds the package with the OpenWrt SDK
+- Uploads `.ipk` and feed metadata
+- Attaches release assets on tag pushes
 ```
 
-### Build Matrix
+### Build Output
 
-| Architecture | Target | Platform |
-|--------------|--------|----------|
-| `all` | Universal | All OpenWrt devices |
-| `mips_24kc` | ath79/generic | Atheros AR9xxx |
-| `mipsel_24kc` | ramips/mt7621 | MediaTek MT7621 |
+| Artifact | Description |
+|----------|-------------|
+| `.ipk` | Installable OpenWrt package |
+| `Packages` | Feed index |
+| `Packages.gz` | Compressed feed index |
+| `build.log` | Verbose SDK build log |
 
 ## Release Workflow
 
