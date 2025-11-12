@@ -1,15 +1,16 @@
 # OpenWrt SDK-based CI/CD Workflow
 
-This guide explains the new OpenWrt SDK-based CI/CD workflow implemented for building the openwrt-captive-monitor package.
+This guide explains the simplified OpenWrt SDK-based CI/CD workflow implemented for building the openwrt-captive-monitor package.
 
 ## Overview
 
-The project now uses the official OpenWrt SDK for building IPK packages instead of the previous manual build process. This ensures better compatibility, proper dependency resolution, and alignment with OpenWrt standards.
+The project uses the official OpenWrt SDK for building IPK packages following the documented SDK workflow. This ensures better compatibility, proper dependency resolution, and alignment with OpenWrt standards.
 
 ## Workflow Files
 
-### Main Build Workflow
-- **File**: `.github/workflows/build.yml`
+### Main CI/CD Pipeline
+- **File**: `.github/workflows/ci.yml`
+- **Pipeline**: lint → test → SDK build → artifact upload
 - **Triggers**: 
   - Push to main and feature branches
   - Pull requests to main
@@ -17,9 +18,9 @@ The project now uses the official OpenWrt SDK for building IPK packages instead 
   - Manual workflow dispatch
 
 ### Supporting Workflows
-- **`.github/workflows/ci.yml`**: Linting and testing
 - **`.github/workflows/release-please.yml`**: Automated version management
 - **`.github/workflows/cleanup.yml`**: Artifact and run cleanup
+- **`.github/workflows/upload-sdk-to-release.yml`**: SDK mirror management
 
 ## Build Process
 
