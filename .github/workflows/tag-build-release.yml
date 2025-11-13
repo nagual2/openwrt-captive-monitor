@@ -409,28 +409,30 @@ jobs:
 
           response=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${OIDC_AUDIENCE}")
 
-          token=$(python3 - <<'PY' <<<"$response")
-import json
-import sys
-print(json.load(sys.stdin)["value"])
-PY
+          token=$(cat <<'PY' | sed 's/^[[:space:]]*//' | python3 - <<<"$response"
+          import json
+          import sys
+          print(json.load(sys.stdin)["value"])
+          PY
+          )
           echo "::add-mask::$token"
 
-          OIDC_TOKEN="$token" python3 - <<'PY'
-import base64
-import json
-import os
+          OIDC_TOKEN="$token" (cat <<'PY' | sed 's/^[[:space:]]*//' | python3 -
+          import base64
+          import json
+          import os
 
-segments = os.environ["OIDC_TOKEN"].split('.')
-if len(segments) < 2:
-    raise SystemExit("invalid token structure")
-payload_segment = segments[1]
-padding = '=' * (-len(payload_segment) % 4)
-claims = json.loads(base64.urlsafe_b64decode((payload_segment + padding).encode()))
-print(f"OIDC issuer: {claims.get('iss')}")
-print(f"OIDC subject: {claims.get('sub')}")
-print(f"OIDC audience: {claims.get('aud')}")
-PY
+          segments = os.environ["OIDC_TOKEN"].split('.')
+          if len(segments) < 2:
+              raise SystemExit("invalid token structure")
+          payload_segment = segments[1]
+          padding = '=' * (-len(payload_segment) % 4)
+          claims = json.loads(base64.urlsafe_b64decode((payload_segment + padding).encode()))
+          print(f"OIDC issuer: {claims.get('iss')}")
+          print(f"OIDC subject: {claims.get('sub')}")
+          print(f"OIDC audience: {claims.get('aud')}")
+          PY
+          )
 
           echo "OIDC token obtained; proceeding with keyless signing."
 
@@ -463,65 +465,65 @@ PY
           export BUILD_TIMESTAMP="$build_timestamp"
           export GIT_SHA="$git_sha"
 
-          python3 - <<'PY'
-import json
-import os
+          cat <<'PY' | sed 's/^[[:space:]]*//' | python3 -
+          import json
+          import os
 
-ipk_file = os.environ["IPK_FILE"]
-sha256 = os.environ["IPK_SHA256"]
-workflow = os.environ.get("GITHUB_WORKFLOW", "")
-ref = os.environ.get("GITHUB_REF", "")
-openwrt_version = os.environ.get("OPENWRT_VERSION", "")
-openwrt_arch = os.environ.get("OPENWRT_ARCH", "")
-repository = os.environ.get("GITHUB_REPOSITORY", "")
-run_id = os.environ.get("GITHUB_RUN_ID", "")
-run_attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "")
-build_timestamp = os.environ["BUILD_TIMESTAMP"]
-git_sha = os.environ["GIT_SHA"]
+          ipk_file = os.environ["IPK_FILE"]
+          sha256 = os.environ["IPK_SHA256"]
+          workflow = os.environ.get("GITHUB_WORKFLOW", "")
+          ref = os.environ.get("GITHUB_REF", "")
+          openwrt_version = os.environ.get("OPENWRT_VERSION", "")
+          openwrt_arch = os.environ.get("OPENWRT_ARCH", "")
+          repository = os.environ.get("GITHUB_REPOSITORY", "")
+          run_id = os.environ.get("GITHUB_RUN_ID", "")
+          run_attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "")
+          build_timestamp = os.environ["BUILD_TIMESTAMP"]
+          git_sha = os.environ["GIT_SHA"]
 
-statement = {
-    "_type": "https://in-toto.io/Statement/v1",
-    "predicateType": "https://slsa.dev/provenance/v1",
-    "subject": [
-        {
-            "name": ipk_file,
-            "digest": {"sha256": sha256}
-        }
-    ],
-    "predicate": {
-        "buildDefinition": {
-            "buildType": "https://github.com/nagual2/openwrt-captive-monitor/.github/workflows/tag-build-release.yml",
-            "externalParameters": {
-                "workflow": workflow,
-                "ref": ref
-            },
-            "internalParameters": {
-                "openwrtVersion": openwrt_version,
-                "openwrtArch": openwrt_arch
-            },
-            "resolvedDependencies": [
-                {
-                    "uri": f"git+https://github.com/{repository}@{git_sha}",
-                    "digest": {"sha1": git_sha}
-                }
-            ]
-        },
-        "runDetails": {
-            "builder": {
-                "id": f"https://github.com/{repository}/actions/runs/{run_id}"
-            },
-            "metadata": {
-                "invocationId": f"{run_id}-{run_attempt}",
-                "buildFinishedOn": build_timestamp
-            }
-        }
-    }
-}
+          statement = {
+              "_type": "https://in-toto.io/Statement/v1",
+              "predicateType": "https://slsa.dev/provenance/v1",
+              "subject": [
+                  {
+                      "name": ipk_file,
+                      "digest": {"sha256": sha256}
+                  }
+              ],
+              "predicate": {
+                  "buildDefinition": {
+                      "buildType": "https://github.com/nagual2/openwrt-captive-monitor/.github/workflows/tag-build-release.yml",
+                      "externalParameters": {
+                          "workflow": workflow,
+                          "ref": ref
+                      },
+                      "internalParameters": {
+                          "openwrtVersion": openwrt_version,
+                          "openwrtArch": openwrt_arch
+                      },
+                      "resolvedDependencies": [
+                          {
+                              "uri": f"git+https://github.com/{repository}@{git_sha}",
+                              "digest": {"sha1": git_sha}
+                          }
+                      ]
+                  },
+                  "runDetails": {
+                      "builder": {
+                          "id": f"https://github.com/{repository}/actions/runs/{run_id}"
+                      },
+                      "metadata": {
+                          "invocationId": f"{run_id}-{run_attempt}",
+                          "buildFinishedOn": build_timestamp
+                      }
+                  }
+              }
+          }
 
-with open(f"{ipk_file}.provenance.json", "w", encoding="utf-8") as handle:
-    json.dump(statement, handle, indent=2)
-    handle.write("\n")
-PY
+          with open(f"{ipk_file}.provenance.json", "w", encoding="utf-8") as handle:
+              json.dump(statement, handle, indent=2)
+              handle.write("\n")
+          PY
 
           provenance_file="${ipk_file}.provenance.json"
           echo "Generated provenance manifest: $provenance_file"
