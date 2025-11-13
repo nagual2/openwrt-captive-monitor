@@ -32,6 +32,7 @@ Welcome to the comprehensive documentation for **openwrt-captive-monitor**, a li
 - [Project Management](project/management.md) - Semantic versioning, release cadence, and project boards
 - [Contributing](../CONTRIBUTING.md) - Development guidelines and pull request process
 - [Security](../.github/SECURITY.md) - Security policy and vulnerability reporting
+- [Security Scanning](SECURITY_SCANNING.md) - Automated security scanning infrastructure
 - [Support](../.github/SUPPORT.md) - Get help and community resources
 
 ### 📋 Development
@@ -96,6 +97,7 @@ For the most up-to-date information, always refer to the [main repository](https
 - [Управление проектом](project/management.md) - Семантическое версионирование, период выпуска и доски проектов
 - [Вклад](../CONTRIBUTING.md) - Рекомендации по разработке и процесс pull request
 - [Безопасность](../.github/SECURITY.md) - Политика безопасности и отчет об уязвимостях
+- [Сканирование безопасности](SECURITY_SCANNING.md) - Инфраструктура автоматизированного сканирования безопасности
 - [Поддержка](../.github/SUPPORT.md) - Получение помощи и ресурсы сообщества
 
 ### 📋 Разработка
