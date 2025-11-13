@@ -269,7 +269,6 @@ trap cleanup EXIT INT TERM HUP
 # opkg-build expects:
 # - CONTROL/ subdirectory with control files
 # - Root contains the data files (not including CONTROL)
-pkg_dir="$build_dir/package"
 data_dir="$build_dir/data"
 control_dir="$build_dir/control"
 mkdir -p "$data_dir" "$control_dir"
