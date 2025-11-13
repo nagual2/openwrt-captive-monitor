@@ -1,0 +1,12 @@
+[bandit]
+exclude_dirs = .git,.github,tests,_out,__pycache__,node_modules
+skips = B101,B601
+
+[bandit.assert_used]
+skips = '*/*'
+
+[bandit.exec_used]
+skip_shell_check = True
+
+[bandit.hardcoded_tmp_directory]
+tmp_dirs = /tmp,/var/tmp,/usr/tmp
