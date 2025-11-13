@@ -1,5 +1,14 @@
 # GitHub Actions Failures Diagnostic Report
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 **Generated:** 2025-11-12  
 **Repository:** nagual2/openwrt-captive-monitor  
 **Branch:** diagnose-gh-actions-failures

@@ -1,5 +1,14 @@
 # Security Audit Report: OpenWrt Captive Monitor
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 **Audit Date**: 2025-11-07  
 **Repository**: openwrt-captive-monitor  
 **Branch**: security-audit-openwrt-captive-monitor-secrets-review-e01  

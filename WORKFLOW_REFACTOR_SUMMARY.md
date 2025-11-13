@@ -1,5 +1,14 @@
 # OpenWrt Package Build Workflow Refactoring Summary
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Overview
 The `.github/workflows/build-openwrt-package.yml` workflow has been refactored to meet streamlined requirements, removing legacy components and implementing a clean, efficient build process.
 

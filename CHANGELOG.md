@@ -1,5 +1,14 @@
 # Changelog
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## [1.0.3](https://github.com/nagual2/openwrt-captive-monitor/compare/v1.0.1...v1.0.3)
 
 ### Changed

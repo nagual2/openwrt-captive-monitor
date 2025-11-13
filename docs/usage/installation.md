@@ -1,5 +1,14 @@
 # Installation Guide
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This guide covers the different ways to install **openwrt-captive-monitor** on your OpenWrt router.
 
 ## 📦 Installation Options

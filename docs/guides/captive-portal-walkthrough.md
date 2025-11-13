@@ -1,5 +1,14 @@
 # Captive Portal Walkthrough
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 A complete end-to-end example of how **openwrt-captive-monitor** detects and handles captive portal scenarios.
 
 ## 🎯 Scenario Overview

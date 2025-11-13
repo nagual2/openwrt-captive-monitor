@@ -1,5 +1,14 @@
 # OpenWrt VM Test Harness Guide
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Overview
 
 The OpenWrt VM Test Harness provides automated end-to-end testing of the openwrt-captive-monitor package in a virtualized environment. This guide explains how to use the VM harness for development, testing, and continuous integration.

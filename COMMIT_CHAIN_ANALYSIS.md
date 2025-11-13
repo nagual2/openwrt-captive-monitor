@@ -1,5 +1,14 @@
 # Detailed Commit Chain Analysis: README.md Modification History
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This document provides a comprehensive analysis of all commits that modified README.md, showing all files changed in each commit and their relationships.
 
 ---

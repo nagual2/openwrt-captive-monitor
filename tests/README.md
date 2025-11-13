@@ -1,5 +1,13 @@
 # Test Suite for OpenWrt Captive Monitor
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
 This directory contains the test suite for the OpenWrt Captive Monitor project.
 
 ## Overview
@@ -207,5 +215,82 @@ The test suite avoids bash-specific features to maintain OpenWrt compatibility.
 ## References
 
 - [OpenWrt Testing Guide](https://openwrt.org/docs/guide-developer/testing)
+- [BusyBox Ash](https://www.busybox.net/downloads/BusyBox.html)
+- [POSIX Shell Scripting](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html)
+
+---
+
+# Русский
+
+---
+
+## 🌐 Язык
+
+[English](#test-suite-for-openwrt-captive-monitor) | **Русский**
+
+---
+
+# Набор тестов для OpenWrt Captive Monitor
+
+Этот каталог содержит набор тестов для проекта OpenWrt Captive Monitor.
+
+## Обзор
+
+Набор тестов проверяет:
+
+- Основные функции скрипта монитора портала (разбор командной строки, переключение режимов, перенаправление DNS/HTTP, очистка)
+- Сборку пакета с помощью `build_ipk.sh` (стандартный и режим выпуска, пользовательские архитектуры)
+- Обработка ошибок и граничные случаи
+
+## Запуск тестов
+
+### Быстрый старт
+
+```bash
+# Из корня репозитория
+make test
+
+# Или запустить прямо
+sh tests/run.sh
+```
+
+### С BusyBox
+
+Если BusyBox доступен, тесты будут работать с `busybox ash` для лучшей совместимости с OpenWrt:
+
+```bash
+busybox ash tests/run.sh
+```
+
+## Структура тестов
+
+### Основной запускаемый модуль тестов
+
+- `run.sh` - Основной запускаемый модуль тестов с помощниками утверждений и оркестровкой тестов
+
+### Mock'и
+
+Все mock реализации находятся в `tests/mocks/`:
+
+- **Основные утилиты**: `busybox`, `sleep`, `logger`, `id`, `uci`, `ubus`
+- **Сетевые инструменты**: `curl`, `ping`, `host`, `nslookup`, `ip`, `route`
+- **Файервол**: `iptables`, `ip6tables`, `_iptables_mock.sh`
+- **Сервисы**: `dnsmasq`, `wifi`, `ifup`, `ifdown`
+- **Инструменты сборки**: `opkg-build`, `opkg-make-index`
+- **Помощники**: `_lib.sh` - Общие утилиты mock
+
+## Совместимость shell
+
+Тесты работают с несколькими shells:
+
+- BusyBox ash (OpenWrt по умолчанию)
+- Bash
+- Dash
+
+Набор тестов избегает специфичных для bash функций для сохранения совместимости с OpenWrt.
+
+## Ссылки
+
+- [Руководство тестирования OpenWrt](https://openwrt.org/docs/guide-developer/testing)
 - [BusyBox Ash](https://www.busybox.net/downloads/BusyBox.html)
 - [POSIX Shell Scripting](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html)

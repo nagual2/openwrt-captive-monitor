@@ -1,5 +1,14 @@
 # Security Audit Report
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 **Audit Date**: 2024-11-07  
 **Repository**: openwrt-captive-monitor  
 **Branch**: security-audit-scan-sensitive-info  

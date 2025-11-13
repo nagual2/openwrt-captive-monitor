@@ -1,5 +1,14 @@
 # Project Consistency Audit Report
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 **Date**: 2024-11-08  
 **Branch**: chore-audit-consistency-license-readme-metadata  
 **Status**: ✅ Complete

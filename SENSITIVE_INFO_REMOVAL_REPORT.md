@@ -1,5 +1,14 @@
 # Sensitive Information Removal Report
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 **Date**: 2024-11-07  
 **Repository**: openwrt-captive-monitor  
 **Branch**: security/remove-sensitive-info  

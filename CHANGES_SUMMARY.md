@@ -1,5 +1,14 @@
 # Changes Summary: Fix OpenWrt ld-musl Build Error
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Problem Fixed
 The build was failing with error:
 ```

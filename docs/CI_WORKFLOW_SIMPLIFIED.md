@@ -1,5 +1,14 @@
 # Simplified CI Workflow
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This document explains the simplified CI/CD workflow implemented for openwrt-captive-monitor.
 
 ## Overview

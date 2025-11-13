@@ -1,5 +1,14 @@
 # Issue & PR Templates and Label Management
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This guide explains the modernized issue and PR templates, label taxonomy, and triage processes for the `openwrt-captive-monitor` repository.
 
 ## Overview

@@ -1,5 +1,14 @@
 # Contributing to openwrt-captive-monitor
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 Thanks for taking the time to contribute! This project keeps OpenWrt routers online by recovering from captive portals and flaky uplinks, so changes need to be safe, reviewable, and well documented.
 
 Please read our [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to understand the expectations for community participation.

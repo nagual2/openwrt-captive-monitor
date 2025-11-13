@@ -1,5 +1,14 @@
 # CI Notes
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## 2025-XX-XX - CI Workflow Simplification
 
 - **Simplified SDK workflow**: Restructured `.github/workflows/ci.yml` to follow documented OpenWrt SDK workflow - removed `make distclean` and `make toolchain/install` steps, relying on SDK's prebuilt toolchain.
