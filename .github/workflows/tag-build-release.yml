@@ -13,7 +13,6 @@ on:
 
 permissions:
   contents: write
-  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -32,6 +31,8 @@ jobs:
   build-package:
     name: Build OpenWrt Package
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       ipk_name: ${{ steps.artifacts.outputs.ipk_name }}
       ipk_file: ${{ steps.artifacts.outputs.ipk_file }}
@@ -384,47 +385,216 @@ jobs:
           name: openwrt-package-build
           path: artifacts/
 
-      - name: Install signing dependencies
+      - name: Configure optional cloud federation
+        if: secrets.RELEASE_OIDC_ROLE_ARN != ''
+        uses: ./.github/actions/oidc-assume-role
+        with:
+          provider: ${{ secrets.RELEASE_CLOUD_PROVIDER != '' && secrets.RELEASE_CLOUD_PROVIDER || 'aws' }}
+          role-arn: ${{ secrets.RELEASE_OIDC_ROLE_ARN }}
+          audience: ${{ secrets.RELEASE_OIDC_AUDIENCE != '' && secrets.RELEASE_OIDC_AUDIENCE || 'sts.amazonaws.com' }}
+          session-name: ${{ format('openwrt-release-{0}', github.run_id) }}
+          duration-seconds: ${{ vars.RELEASE_OIDC_SESSION_DURATION != '' && vars.RELEASE_OIDC_SESSION_DURATION || '3600' }}
+          aws-region: ${{ secrets.RELEASE_AWS_REGION }}
+
+      - name: Gather GitHub OIDC token claims
+        env:
+          OIDC_AUDIENCE: sigstore
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cosign \
-            openssl
 
-      - name: Sign artifacts with OIDC
-        env:
-          COSIGN_EXPERIMENTAL: 1
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+            echo "OIDC metadata not available. Ensure id-token permissions are granted."
+            exit 1
+          fi
+
+          response=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${OIDC_AUDIENCE}")
+
+          token=$(python3 - <<'PY' <<<"$response")
+import json
+import sys
+print(json.load(sys.stdin)["value"])
+PY
+          echo "::add-mask::$token"
+
+          OIDC_TOKEN="$token" python3 - <<'PY'
+import base64
+import json
+import os
+
+segments = os.environ["OIDC_TOKEN"].split('.')
+if len(segments) < 2:
+    raise SystemExit("invalid token structure")
+payload_segment = segments[1]
+padding = '=' * (-len(payload_segment) % 4)
+claims = json.loads(base64.urlsafe_b64decode((payload_segment + padding).encode()))
+print(f"OIDC issuer: {claims.get('iss')}")
+print(f"OIDC subject: {claims.get('sub')}")
+print(f"OIDC audience: {claims.get('aud')}")
+PY
+
+          echo "OIDC token obtained; proceeding with keyless signing."
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.2.0
+        with:
+          cosign-release: v2.4.0
+
+      - name: Show cosign version
+        run: cosign version
+
+      - name: Generate provenance manifest
+        id: provenance
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           cd artifacts/
-          
-          echo "=== Signing artifacts ==="
-          for file in ./*.ipk ./*.gz ./*.log; do
-            if [ -f "$file" ]; then
-              echo "Signing: $file"
-              cosign sign-blob --yes "$file" > "$file.sig" || {
-                echo "⚠️  Cosign signing failed (expected in local testing)"
-                echo "Creating dummy signature"
-                echo "dummy-signature" > "$file.sig"
-              }
-            fi
-          done
-          
-          echo "✓ Signing complete"
-          ls -la
+
+          ipk_file=$(ls *.ipk 2>/dev/null | head -n1 || true)
+          if [ -z "$ipk_file" ]; then
+            echo "Unable to locate built IPK artifact."
+            exit 1
+          fi
+
+          sha256=$(sha256sum "$ipk_file" | awk '{print $1}')
+          build_timestamp=$(date --utc +%FT%TZ)
+          git_sha=$(git rev-parse HEAD)
+
+          export IPK_FILE="$ipk_file"
+          export IPK_SHA256="$sha256"
+          export BUILD_TIMESTAMP="$build_timestamp"
+          export GIT_SHA="$git_sha"
+
+          python3 - <<'PY'
+import json
+import os
+
+ipk_file = os.environ["IPK_FILE"]
+sha256 = os.environ["IPK_SHA256"]
+workflow = os.environ.get("GITHUB_WORKFLOW", "")
+ref = os.environ.get("GITHUB_REF", "")
+openwrt_version = os.environ.get("OPENWRT_VERSION", "")
+openwrt_arch = os.environ.get("OPENWRT_ARCH", "")
+repository = os.environ.get("GITHUB_REPOSITORY", "")
+run_id = os.environ.get("GITHUB_RUN_ID", "")
+run_attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "")
+build_timestamp = os.environ["BUILD_TIMESTAMP"]
+git_sha = os.environ["GIT_SHA"]
+
+statement = {
+    "_type": "https://in-toto.io/Statement/v1",
+    "predicateType": "https://slsa.dev/provenance/v1",
+    "subject": [
+        {
+            "name": ipk_file,
+            "digest": {"sha256": sha256}
+        }
+    ],
+    "predicate": {
+        "buildDefinition": {
+            "buildType": "https://github.com/nagual2/openwrt-captive-monitor/.github/workflows/tag-build-release.yml",
+            "externalParameters": {
+                "workflow": workflow,
+                "ref": ref
+            },
+            "internalParameters": {
+                "openwrtVersion": openwrt_version,
+                "openwrtArch": openwrt_arch
+            },
+            "resolvedDependencies": [
+                {
+                    "uri": f"git+https://github.com/{repository}@{git_sha}",
+                    "digest": {"sha1": git_sha}
+                }
+            ]
+        },
+        "runDetails": {
+            "builder": {
+                "id": f"https://github.com/{repository}/actions/runs/{run_id}"
+            },
+            "metadata": {
+                "invocationId": f"{run_id}-{run_attempt}",
+                "buildFinishedOn": build_timestamp
+            }
+        }
+    }
+}
+
+with open(f"{ipk_file}.provenance.json", "w", encoding="utf-8") as handle:
+    json.dump(statement, handle, indent=2)
+    handle.write("\n")
+PY
+
+          provenance_file="${ipk_file}.provenance.json"
+          echo "Generated provenance manifest: $provenance_file"
+          echo "provenance_file=artifacts/$provenance_file" >> "$GITHUB_OUTPUT"
 
       - name: Create checksums
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           cd artifacts/
-          
+
           echo "=== Creating checksums ==="
-          sha256sum ./*.ipk > SHA256SUMS
-          sha256sum ./*.log >> SHA256SUMS || true
-          
+          files=$(find . -maxdepth 1 -type f ! -name 'SHA256SUMS' ! -name '*.sig' ! -name '*.sigstore' ! -name '*.pem' -printf '%P\n' | sort)
+          if [ -z "$files" ]; then
+            echo "No build outputs found to hash."
+            exit 1
+          fi
+
+          printf '%s\n' "$files" | xargs -d '\n' -I{} sha256sum "{}" > SHA256SUMS
           cat SHA256SUMS
-          ls -la
+
+      - name: Sign release artifacts with Cosign
+        env:
+          COSIGN_YES: "true"
+          COSIGN_EXPERIMENTAL: "1"
+          SIGSTORE_ID_TOKEN_AUDIENCE: sigstore
+        run: |
+          set -euo pipefail
+          cd artifacts/
+
+          echo "=== Signing artifacts with Cosign ==="
+          while IFS= read -r -d '' artifact; do
+            filename=$(basename "$artifact")
+            echo "Signing ${filename}"
+            cosign sign-blob \
+              --yes \
+              --bundle "${filename}.sigstore" \
+              --output-certificate "${filename}.pem" \
+              --output-signature "${filename}.sig" \
+              "$filename"
+          done < <(find . -maxdepth 1 -type f ! -name '*.sig' ! -name '*.sigstore' ! -name '*.pem' -print0)
+          echo "✓ Cosign signing complete"
+
+      - name: Verify primary signatures
+        env:
+          IDENTITY_REGEX: "^https://github.com/${{ github.repository }}/.github/workflows/tag-build-release.yml@.*"
+        run: |
+          set -euo pipefail
+          cd artifacts/
+
+          ipk_file=$(ls *.ipk 2>/dev/null | head -n1 || true)
+          if [ -z "$ipk_file" ]; then
+            echo "No IPK artifact found for verification."
+            exit 1
+          fi
+
+          cosign verify-blob \
+            --certificate "${ipk_file}.pem" \
+            --signature "${ipk_file}.sig" \
+            --certificate-identity-regexp "$IDENTITY_REGEX" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "$ipk_file"
+
+          prov_file="${ipk_file}.provenance.json"
+          if [ -f "$prov_file" ]; then
+            cosign verify-blob \
+              --certificate "${prov_file}.pem" \
+              --signature "${prov_file}.sig" \
+              --certificate-identity-regexp "$IDENTITY_REGEX" \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+              "$prov_file"
+          fi
+
+          echo "Verified Cosign signatures for $ipk_file and provenance manifest."
 
       - name: Upload to GitHub Release
         env:
@@ -444,14 +614,15 @@ jobs:
           
           echo "=== Uploading artifacts to release ==="
           cd artifacts/
-          
-          for file in ./*.ipk ./*.gz ./*.log ./*.sig ./*.txt; do
-            if [ -f "$file" ]; then
-              echo "Uploading: $file"
-              gh release upload "$TAG" "$file" --clobber
+
+          while IFS= read -r file; do
+            if [ -z "$file" ]; then
+              continue
             fi
-          done
-          
+            echo "Uploading: $file"
+            gh release upload "$TAG" "$file" --clobber
+          done < <(find . -maxdepth 1 -type f -printf '%P\n' | sort)
+
           echo "✅ Release updated successfully"
           echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/$TAG"
 
