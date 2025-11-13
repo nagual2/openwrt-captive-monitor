@@ -10,20 +10,40 @@ on:
         required: false
         default: 'false'
 
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   cleanup:
     name: Cleanup
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: write
       contents: read
+    env:
+      ARTIFACT_RETENTION_DAYS: 7
+      WORKFLOW_RETENTION_DAYS: 7
+      WORKFLOW_MINIMUM_RUNS: 5
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          check-latest: true
+
+      - name: Show Node.js version
+        run: node --version
 
       - name: Delete all artifacts
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.force == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           gh api --paginate -H "Accept: application/vnd.github+json" \
             /repos/${{ github.repository }}/actions/artifacts \
             --jq '.artifacts[] | .id' | \
@@ -36,19 +56,25 @@ jobs:
         if: ${{ github.event_name == 'schedule' }}
         uses: actions/github-script@v8
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const retentionDays = Number.parseInt(process.env.ARTIFACT_RETENTION_DAYS ?? '7', 10);
+            if (!Number.isFinite(retentionDays) || retentionDays <= 0) {
+              core.setFailed(`Invalid ARTIFACT_RETENTION_DAYS value: ${process.env.ARTIFACT_RETENTION_DAYS}`);
+              return;
+            }
+
             const { data: artifacts } = await github.rest.actions.listArtifactsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               per_page: 100
             });
-            
+
             const now = new Date();
-            const retentionDays = 1;
-            
+
             for (const artifact of artifacts.artifacts) {
               const artifactAge = (now - new Date(artifact.created_at)) / (1000 * 60 * 60 * 24);
-              
+
               if (artifactAge > retentionDays) {
                 try {
                   await github.rest.actions.deleteArtifact({
@@ -56,7 +82,7 @@ jobs:
                     repo: context.repo.repo,
                     artifact_id: artifact.id
                   });
-                  console.log(`Deleted artifact ${artifact.name} (${artifact.id})`);
+                  console.log(`Deleted artifact ${artifact.name} (${artifact.id}) older than ${retentionDays} days.`);
                 } catch (error) {
                   console.warn(`Failed to delete artifact ${artifact.name}: ${error.message}`);
                 }
@@ -65,32 +91,41 @@ jobs:
 
       - name: Cleanup workflow runs
         uses: actions/github-script@v8
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const retainDays = Number.parseInt(process.env.WORKFLOW_RETENTION_DAYS ?? '7', 10);
+            const keepMinimumRuns = Number.parseInt(process.env.WORKFLOW_MINIMUM_RUNS ?? '5', 10);
+
+            if (!Number.isFinite(retainDays) || retainDays <= 0) {
+              core.setFailed(`Invalid WORKFLOW_RETENTION_DAYS value: ${process.env.WORKFLOW_RETENTION_DAYS}`);
+              return;
+            }
+            if (!Number.isFinite(keepMinimumRuns) || keepMinimumRuns < 0) {
+              core.setFailed(`Invalid WORKFLOW_MINIMUM_RUNS value: ${process.env.WORKFLOW_MINIMUM_RUNS}`);
+              return;
+            }
+
             const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               per_page: 100
             });
-            
+
             const now = new Date();
-            const retainDays = 3;
-            const keepMinimumRuns = 5;
-            
+
             // Sort by creation date (oldest first)
-            const sortedRuns = runs.workflow_runs.sort((a, b) => 
+            const sortedRuns = runs.workflow_runs.sort((a, b) =>
               new Date(a.created_at) - new Date(b.created_at)
             );
-            
+
             let deletedCount = 0;
             const totalRuns = sortedRuns.length;
-            
+
             for (const run of sortedRuns) {
               const runAge = (now - new Date(run.created_at)) / (1000 * 60 * 60 * 24);
               const runsLeft = totalRuns - deletedCount;
-              
+
               // Delete if older than retain_days AND we have more than keep_minimum_runs left
               if (runAge > retainDays && runsLeft > keepMinimumRuns) {
                 try {
@@ -106,8 +141,10 @@ jobs:
                 }
               }
             }
-            
+
             console.log(`Deleted ${deletedCount} workflow runs`);
 
       - name: Show disk usage after cleanup
-        run: df -h
+        run: |
+          set -euo pipefail
+          df -h
