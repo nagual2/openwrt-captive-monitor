@@ -21,7 +21,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -34,7 +33,9 @@ defaults:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     
     strategy:
       matrix:
@@ -48,32 +49,25 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Cache apt packages
-        uses: actions/cache@v4
+      - name: Install base dependencies
+        uses: ./.github/actions/setup-system-packages
         with:
-          path: |
-            /var/cache/apt/archives
-            /var/lib/apt/lists
-          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/*.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-
+          packages: binutils tar
 
-      - name: Install required tools
-        run: sudo apt-get update && sudo apt-get install -y binutils tar
+      - name: Install linter dependencies
+        if: matrix.linter == 'shfmt' || matrix.linter == 'shellcheck'
+        uses: ./.github/actions/setup-system-packages
+        with:
+          packages: busybox shfmt shellcheck
 
-      - name: Install dependencies
-        run: |
-          set -euo pipefail
-          export DEBIAN_FRONTEND=noninteractive
-          sudo apt-get update
-          case "${{ matrix.linter }}" in
-            shfmt|shellcheck)
-              sudo apt-get install -y busybox shfmt shellcheck
-              ;;
-            markdownlint|actionlint)
-              echo "Using docker-based linters"
-              ;;
-          esac
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          check-latest: true
+
+      - name: Show Node.js version
+        run: node --version
 
       - name: Run shfmt
         if: matrix.linter == 'shfmt'
@@ -101,32 +95,19 @@ jobs:
 
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: lint
+    permissions:
+      contents: read
     
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Cache apt packages
-        uses: actions/cache@v4
+      - name: Install test dependencies
+        uses: ./.github/actions/setup-system-packages
         with:
-          path: |
-            /var/cache/apt/archives
-            /var/lib/apt/lists
-          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/*.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-
-
-      - name: Install required tools
-        run: sudo apt-get update && sudo apt-get install -y binutils tar
-
-      - name: Install BusyBox and test dependencies
-        run: |
-          set -euo pipefail
-          export DEBIAN_FRONTEND=noninteractive
-          sudo apt-get update
-          sudo apt-get install -y busybox
+          packages: binutils tar busybox
 
       - name: Run test harness with BusyBox ash
         run: |
@@ -134,10 +115,11 @@ jobs:
           busybox ash tests/run.sh
 
       - name: Upload test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-results
           path: tests/_out/
           retention-days: 7
           if-no-files-found: warn
+          compression-level: 6
