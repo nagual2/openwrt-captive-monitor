@@ -14,7 +14,7 @@ on:
         type: boolean
 
 permissions:
-  contents: write
+  contents: read
 
 defaults:
   run:
@@ -23,35 +23,62 @@ defaults:
 jobs:
   upload-sdk:
     name: Upload SDK to GitHub Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Install dependencies
-        run: |
-          set -euxo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            wget \
-            gh
+      - name: Provision CLI dependencies
+        uses: ./.github/actions/setup-system-packages
+        with:
+          packages: wget gh
 
-      - name: Authenticate with GitHub CLI
+      - name: Verify GitHub CLI authentication context
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+          set -euo pipefail
+          gh auth status --hostname github.com || gh auth login --with-token <<<"${GH_TOKEN}"
 
       - name: Download and upload SDK to GitHub Release
         run: |
-          set -e
+          set -euo pipefail
+
+          retry_with_backoff() {
+            local attempt=1
+            local max_attempts=5
+            local wait_time=5
+
+            while true; do
+              if "$@"; then
+                return 0
+              fi
+
+              if (( attempt >= max_attempts )); then
+                echo "Command failed after ${attempt} attempts: $*" >&2
+                return 1
+              fi
+
+              local jitter=$((RANDOM % 5))
+              local sleep_for=$(( wait_time + jitter ))
+              echo "Command failed (attempt ${attempt}/${max_attempts}). Retrying in ${sleep_for}s..." >&2
+              sleep "${sleep_for}"
+              wait_time=$(( wait_time * 2 ))
+              attempt=$(( attempt + 1 ))
+            done
+          }
+
           REPO="${{ github.repository }}"
           SDK_VERSION="${{ github.event.inputs.sdk_version }}"
           SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
           SDK_URL="https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
           FORCE_UPDATE="${{ github.event.inputs.force_update }}"
 
-          echo "📥 Downloading SDK from official mirror..."
-          wget -q "$SDK_URL" -O "$SDK_FILE"
+          echo "📥 Downloading SDK from official mirror with exponential backoff..."
+          retry_with_backoff wget -q "$SDK_URL" -O "$SDK_FILE"
 
           # Calculate checksum for integrity
           SHA256=$(sha256sum "$SDK_FILE" | awk '{print $1}')
@@ -60,7 +87,7 @@ jobs:
           # Delete existing release if force update is enabled
           if [ "$FORCE_UPDATE" = "true" ]; then
             echo "🗑️  Deleting existing release sdk-${SDK_VERSION}..."
-            gh release delete "sdk-${SDK_VERSION}" --repo "$REPO" --yes || echo "No existing release to delete"
+            retry_with_backoff gh release delete "sdk-${SDK_VERSION}" --repo "$REPO" --yes || echo "No existing release to delete"
           fi
 
           # Create GitHub Release
@@ -73,7 +100,7 @@ jobs:
             --repo "$REPO"
           )
           
-          if gh release create "${RELEASE_ARGS[@]}"; then
+          if retry_with_backoff gh release create "${RELEASE_ARGS[@]}"; then
             echo "✅ Release created successfully"
           else
             echo "ℹ️  Release already exists, updating files..."
@@ -81,7 +108,7 @@ jobs:
 
           # Update/create checksum file
           echo "$SHA256  $SDK_FILE" > sdk-checksum.txt
-          gh release upload "sdk-${SDK_VERSION}" sdk-checksum.txt \
+          retry_with_backoff gh release upload "sdk-${SDK_VERSION}" sdk-checksum.txt \
             --repo "$REPO" \
             --clobber
 
@@ -98,7 +125,7 @@ jobs:
 
       - name: Verify upload
         run: |
-          set -e
+          set -euo pipefail
           REPO="${{ github.repository }}"
           SDK_VERSION="${{ github.event.inputs.sdk_version }}"
           SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
@@ -106,8 +133,8 @@ jobs:
           echo "🔍 Verifying uploaded SDK..."
           DOWNLOAD_URL="https://github.com/$REPO/releases/download/sdk-${SDK_VERSION}/$SDK_FILE"
           
-          # Test download
-          if wget -q --spider "$DOWNLOAD_URL"; then
+          # Test download with HEAD request to avoid downloading entire file
+          if wget --timeout=30 --tries=3 -q --spider "$DOWNLOAD_URL"; then
             echo "✅ SDK is accessible at: $DOWNLOAD_URL"
           else
             echo "❌ SDK verification failed - not accessible"
