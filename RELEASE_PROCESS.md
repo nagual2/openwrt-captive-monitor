@@ -65,14 +65,16 @@ The release process is fully automated and consists of three main workflows:
 1. **SDK Cache** - Downloads and caches OpenWrt SDK (reused across builds)
 2. **Package Build** - Compiles the OpenWrt package
 3. **Validation** - Verifies the built IPK package
-4. **Artifact Signing** - Signs artifacts using OIDC and Cosign
-5. **GitHub Release Upload** - Attaches signed artifacts to the release
+4. **OIDC Federation** - Requests a GitHub-issued OIDC token and (optionally) assumes a cloud provider role for external storage
+5. **Sigstore Signing & Provenance** - Produces checksums, provenance manifest, and Cosign signatures/certificates for every artifact
+6. **GitHub Release Upload** - Attaches packages, logs, provenance, checksums, and signatures to the release
 
 **Outputs:**
 - Signed IPK package
 - Build logs
 - Checksums (SHA256SUMS)
-- Signatures (.sig files)
+- Signatures, certificates, and Sigstore bundles (`.sig`, `.pem`, `.sigstore`)
+- Provenance manifest (`.provenance.json`)
 
 ### 3. CI Workflow (Continuous Integration)
 
@@ -115,6 +117,44 @@ The release process is fully automated and consists of three main workflows:
         │   Ready for distribution │
         └──────────────────────────┘
 ```
+
+### Verifying Signed Releases
+
+Downstream consumers can verify every release artifact without relying on long-lived maintainer keys.
+Sigstore certificates embed the repository, workflow, and tag that produced the build.
+
+1. Install [Cosign](https://docs.sigstore.dev/cosign/installation/) locally.
+2. Download the desired assets from the GitHub release, e.g. `openwrt-captive-monitor_1.2.3_all.ipk`, the matching `.sig`/`.pem` files, `SHA256SUMS`, and `openwrt-captive-monitor_1.2.3_all.ipk.provenance.json`.
+3. Verify the detached signature for the package:
+
+   ```bash
+   cosign verify-blob \
+     --certificate openwrt-captive-monitor_1.2.3_all.ipk.pem \
+     --signature openwrt-captive-monitor_1.2.3_all.ipk.sig \
+     --certificate-identity-regexp "https://github.com/nagual2/openwrt-captive-monitor/.github/workflows/tag-build-release.yml@.*" \
+     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+     openwrt-captive-monitor_1.2.3_all.ipk
+   ```
+
+4. Verify the provenance manifest with the same identity constraint:
+
+   ```bash
+   cosign verify-blob \
+     --certificate openwrt-captive-monitor_1.2.3_all.ipk.provenance.json.pem \
+     --signature openwrt-captive-monitor_1.2.3_all.ipk.provenance.json.sig \
+     --certificate-identity-regexp "https://github.com/nagual2/openwrt-captive-monitor/.github/workflows/tag-build-release.yml@.*" \
+     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+     openwrt-captive-monitor_1.2.3_all.ipk.provenance.json
+   ```
+
+5. Cross-check integrity with the published checksums:
+
+   ```bash
+   sha256sum --check SHA256SUMS
+   ```
+
+Successful verification confirms the binary, checksums, and provenance were produced on GitHub Actions
+by the `tag-build-release.yml` workflow for the referenced tag.
 
 ## Manual Release Triggers
 
@@ -220,6 +260,68 @@ Main configuration for Release Please action:
 Tracks the latest version for each package/component:
 - Used as source of truth for version detection
 - Automatically updated by Release Please
+
+## OIDC Federation & Cloud Integrations
+
+The release workflows authenticate with GitHub's OIDC provider to mint short-lived tokens for Cosign
+and (optionally) assume cloud roles for external artifact storage.
+
+### Provider trust policy (AWS example)
+
+1. Create or update an AWS IAM role dedicated to release publishing.
+2. Attach a trust policy that allows GitHub Actions from this repository to assume the role via OIDC.
+3. Restrict the policy to the environments you expect (e.g., only tags) to prevent privilege escalation.
+
+Example trust policy:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+        },
+        "StringLike": {
+          "token.actions.githubusercontent.com:sub": "repo:nagual2/openwrt-captive-monitor:ref:refs/tags/*"
+        }
+      }
+    }
+  ]
+}
+```
+
+Adjust the AWS account ID, `aud` claim, and `sub` pattern to match your release strategy. You can
+further scope access by requiring a GitHub environment (e.g. `environment:production`).
+
+### Repository secrets and variables
+
+| Name | Type | Purpose |
+| --- | --- | --- |
+| `RELEASE_OIDC_ROLE_ARN` | Actions secret | ARN of the OIDC-enabled cloud role to assume (optional). |
+| `RELEASE_OIDC_AUDIENCE` | Actions secret | Overrides the OIDC audience when assuming a role (defaults to `sts.amazonaws.com`). |
+| `RELEASE_AWS_REGION` | Actions secret | Sets `AWS_DEFAULT_REGION` for downstream tooling (optional). |
+| `RELEASE_CLOUD_PROVIDER` | Actions secret | Switches the provider used by `.github/actions/oidc-assume-role` (defaults to `aws`). |
+| `RELEASE_OIDC_SESSION_DURATION` | Actions variable | Overrides the temporary credential lifetime (seconds). |
+
+To enable external publishing, define the secrets above and the `sign-and-publish` job will execute
+`./.github/actions/oidc-assume-role` before signing. When unused, the step is skipped automatically.
+
+### Credential rotation guidance
+
+Because keyless signing relies on ephemeral certificates, there are no signing keys to rotate.
+If you previously stored static cloud credentials, delete them from repository secrets once OIDC
+federation is configured. When you need to rotate access, update the cloud-side trust policy or
+replace the target role ARN—no workflow changes are required.
+
+OIDC step logs include the issuer, subject, and audience that were minted, providing an auditable
+trail each time the workflow runs.
 
 ## Troubleshooting
 
