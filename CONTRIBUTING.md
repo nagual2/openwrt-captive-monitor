@@ -98,25 +98,50 @@ If the project eventually needs LTS maintenance, treat it as an exception: cut a
 
 ## 4. Branch protection & automation
 
-Repository administrators should keep the following settings enabled on `main`:
+The `main` branch is protected by GitHub branch protection rules to ensure code quality and security. **All pull requests must pass all status checks before they can be merged.**
 
-- ✅ Require pull request reviews before merging (minimum 1 approval).
-- ✅ Require status checks to pass before merging and select:
-  - `lint (shfmt)`
-  - `lint (shellcheck)`
-  - `lint (markdownlint)`
-  - `lint (actionlint)`
-  - `test`
-  - `build (generic)` (or other matrix targets as needed)
-  - Any additional packaging or release workflows relevant to the change
-- ✅ Require branches to be up to date before merging.
-- ✅ Require linear history.
-- ✅ Dismiss stale approvals when new commits are pushed.
-- ✅ Restrict who can push directly to `main` (typically only maintainers). Everyone else should go through PRs.
-- ✅ Allow only squash merges (disable merge commits and rebase merges).
-- ✅ Automatically delete branches after a pull request is merged.
+### Required Status Checks
 
-These checks keep the branch healthy and ensure contributors get feedback quickly.
+Before your pull request can be merged to `main`, all of the following status checks must pass:
+
+**Linting & Formatting:**
+- `Lint (shfmt)` - Shell script formatting
+- `Lint (shellcheck)` - Shell script linting
+- `Lint (markdownlint)` - Markdown file validation
+- `Lint (actionlint)` - GitHub Actions workflow validation
+
+**Testing:**
+- `Test` - Unit and integration tests
+
+**Security Scanning:**
+- `CodeQL Analysis (python)` - Python security analysis
+- `CodeQL Analysis (javascript)` - JavaScript security analysis
+- `ShellCheck Security Analysis` - Shell script security analysis
+- `Dependency Review` - Dependency vulnerability checks (PRs only)
+- `Trivy Security Scan` - Infrastructure and configuration scanning
+- `Bandit Python Security Scan` - Python security linting
+
+### Merge Requirements
+
+Repository administrators maintain the following settings on `main`:
+
+- ✅ **Pull request reviews required**: Minimum 1 approval from a code owner
+- ✅ **Status checks required**: ALL checks listed above must pass
+- ✅ **Up-to-date branches required**: Branch must be rebased on the latest `main` before merging
+- ✅ **Linear history**: No merge commits allowed; squash merging is required
+- ✅ **Stale reviews dismissed**: Reviews are automatically dismissed when new commits are pushed
+- ✅ **Conversations required**: All review conversations must be resolved before merging
+- ✅ **Push restrictions**: Only maintainers can push directly to `main`; all others must use pull requests
+- ✅ **Merge strategy**: Only squash merges allowed (merge commits and rebase merges are disabled)
+- ✅ **Branch cleanup**: Branches are automatically deleted after merge
+- ❌ **Force pushes blocked**: No force pushes allowed to `main`
+- ❌ **Branch deletion blocked**: The `main` branch cannot be deleted
+
+For detailed information about how these rules interact with the security scanning pipeline, see [`.github/SECURITY.md`](./.github/SECURITY.md).
+
+### Configuration Location
+
+These branch protection rules are codified in [`.github/settings.yml`](./.github/settings.yml) and enforced by GitHub's branch protection system.
 
 ---
 
@@ -261,25 +286,50 @@ GitFlow вводит долгоживущие ветки `develop` и выпус
 
 ## 4. Защита веток и автоматизация
 
-Администраторы репозитория должны поддерживать следующие настройки включенными на `main`:
+Ветка `main` защищена правилами защиты ветвей GitHub, чтобы обеспечить качество кода и безопасность. **Все pull request'ы должны пройти все проверки статуса перед тем, как они смогут быть объединены.**
 
-- ✅ Требовать отзывы pull request перед слиянием (минимум 1 одобрение).
-- ✅ Требовать прохождения проверок статуса перед слиянием и выбрать:
-  - `lint (shfmt)`
-  - `lint (shellcheck)`
-  - `lint (markdownlint)`
-  - `lint (actionlint)`
-  - `test`
-  - `build (generic)` (или другие цели матрицы по мере необходимости)
-  - Любые дополнительные рабочие процессы упаковки или выпуска, относящиеся к изменению
-- ✅ Требовать, чтобы ветки были актуальны перед слиянием.
-- ✅ Требовать линейную историю.
-- ✅ Отклонять устаревшие одобрения при отправке новых коммитов.
-- ✅ Ограничить, кто может напрямую отправлять в `main` (обычно только мейнтейнеры). Все остальные должны проходить через PR.
-- ✅ Разрешить только squash слияния (отключить коммиты слияния и rebase слияния).
-- ✅ Автоматически удалять ветки после слияния pull request.
+### Требуемые проверки статуса
 
-Эти проверки поддерживают здоровье ветки и гарантируют, что участники получают быструю обратную связь.
+Перед объединением вашего pull request'а в `main` должны пройти все следующие проверки статуса:
+
+**Линтинг и форматирование:**
+- `Lint (shfmt)` - Форматирование shell скриптов
+- `Lint (shellcheck)` - Линтинг shell скриптов
+- `Lint (markdownlint)` - Валидация файлов Markdown
+- `Lint (actionlint)` - Валидация рабочих процессов GitHub Actions
+
+**Тестирование:**
+- `Test` - Модульные и интеграционные тесты
+
+**Сканирование безопасности:**
+- `CodeQL Analysis (python)` - Анализ безопасности Python
+- `CodeQL Analysis (javascript)` - Анализ безопасности JavaScript
+- `ShellCheck Security Analysis` - Анализ безопасности shell скриптов
+- `Dependency Review` - Проверка уязвимостей зависимостей (только PR)
+- `Trivy Security Scan` - Сканирование инфраструктуры и конфигурации
+- `Bandit Python Security Scan` - Линтинг безопасности Python
+
+### Требования к слиянию
+
+Администраторы репозитория поддерживают следующие настройки на `main`:
+
+- ✅ **Требуемые отзывы pull request**: Минимум 1 одобрение от владельца кода
+- ✅ **Требуемые проверки статуса**: ВСЕ перечисленные выше проверки должны пройти
+- ✅ **Требуется актуальность веток**: Ветка должна быть перебазирована на последнюю `main` перед слиянием
+- ✅ **Линейная история**: Нет коммитов слияния; требуется squash слияние
+- ✅ **Отклоняемые устаревшие отзывы**: Отзывы автоматически отклоняются при отправке новых коммитов
+- ✅ **Требуемое разрешение беседы**: Все беседы рецензирования должны быть разрешены перед слиянием
+- ✅ **Ограничения на отправку**: Только мейнтейнеры могут отправлять напрямую в `main`; все остальные должны использовать pull request'ы
+- ✅ **Стратегия слияния**: Допускаются только squash слияния (коммиты слияния и rebase слияния отключены)
+- ✅ **Очистка ветки**: Ветки автоматически удаляются после слияния
+- ❌ **Блокированы force push'и**: На `main` запрещены force push'и
+- ❌ **Блокировано удаление ветки**: Ветку `main` нельзя удалить
+
+Для получения подробной информации о взаимодействии этих правил с конвейером сканирования безопасности см. [`.github/SECURITY.md`](./.github/SECURITY.md).
+
+### Местоположение конфигурации
+
+Эти правила защиты ветвей закодированы в [`.github/settings.yml`](./.github/settings.yml) и применяются системой защиты ветвей GitHub.
 
 ---
 
