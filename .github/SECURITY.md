@@ -9,6 +9,145 @@ Only the latest released version of openwrt-captive-monitor receives security up
 | Latest release | ✅ |
 | Previous versions | ❌ |
 
+## Automated Security Scanning
+
+This repository employs multiple automated security scanning tools to identify vulnerabilities early:
+
+### Active Security Tools
+
+| Tool | Coverage | Runs On | Expected Duration | Status Check Name |
+|------|----------|---------|-------------------|-------------------|
+| **CodeQL** | Python, JavaScript/TypeScript | PRs, main branch, weekly (Mon) | ~15-20 min | `CodeQL Analysis` |
+| **ShellCheck Security** | Shell scripts (Bash, POSIX sh) | PRs, main branch, weekly (Mon) | ~5-10 min | `ShellCheck Security Analysis` |
+| **Dependency Review** | GitHub dependencies | PRs only | ~2-5 min | `Dependency Review` |
+| **Trivy** | Vulnerabilities, secrets, misconfigs | PRs, main branch, weekly (Tue) | ~5-10 min | `Trivy Security Scan` |
+| **Bandit** | Python security issues | PRs, main branch, weekly (Tue) | ~2-5 min | `Bandit Python Security Scan` |
+
+### Branch Protection Requirements
+
+For production workflows, we recommend configuring branch protection rules on `main` to require the following status checks:
+
+**Required Security Checks:**
+
+* `CodeQL Analysis (python)`
+* `CodeQL Analysis (javascript)`
+* `ShellCheck Security Analysis`
+* `Dependency Review` (for PRs)
+* `Trivy Security Scan`
+* `Bandit Python Security Scan`
+
+These checks help prevent vulnerabilities from being merged into the main branch.
+
+### Security Scan Results
+
+All security scan results are automatically uploaded to the [Security tab](../../security/code-scanning) in the GitHub repository. Results are categorized by scanner for easy triaging.
+
+**Viewing Results:**
+
+1. Navigate to the **Security** tab in the repository
+2. Click on **Code scanning** in the left sidebar
+3. Filter by tool, branch, or severity level
+4. Click on individual alerts for details and remediation guidance
+
+### Handling False Positives
+
+If a security alert is a false positive:
+
+1. **Investigate thoroughly**: Ensure the alert is genuinely a false positive and not a real vulnerability
+2. **Document the reason**: Add a comment to the alert explaining why it's a false positive
+3. **Dismiss the alert**: Use GitHub's dismiss feature with an appropriate reason:
+   * "Won't fix" - For accepted risks in non-critical code paths
+   * "False positive" - For scanner errors or misidentifications
+   * "Used in tests" - For test code that intentionally uses insecure patterns
+4. **Suppress at source** (if applicable):
+   * For CodeQL: Add `# codeql[rule-id]` comment above the line
+   * For ShellCheck: Add `# shellcheck disable=SC####` comment
+   * For Bandit: Add `# nosec` comment with issue code
+5. **Document in code**: Include a comment explaining the suppression
+
+**Example Suppression:**
+
+```bash
+# ShellCheck SC2086 disabled: intentional word splitting for argument list
+# shellcheck disable=SC2086
+eval "$command" $args
+```
+
+### Remediation Workflow
+
+When a security alert is raised:
+
+1. **Triage** (within 48 hours):
+   * Review the alert in the Security tab
+   * Assess severity and impact
+   * Assign to appropriate team member
+
+2. **Investigate** (within 1 week for HIGH/CRITICAL):
+   * Reproduce the issue if possible
+   * Determine root cause
+   * Identify affected versions
+
+3. **Remediate**:
+   * **Critical**: Fix immediately, issue patch release
+   * **High**: Fix in next release (within 2 weeks)
+   * **Medium**: Fix in upcoming minor release
+   * **Low**: Fix in next major release or backlog
+
+4. **Verify**:
+   * Ensure fix resolves the alert
+   * Verify no regressions introduced
+   * Update tests to prevent recurrence
+
+5. **Document**:
+   * Update CHANGELOG with security fix note
+   * Create GitHub Security Advisory if warranted
+   * Close the alert with fix reference
+
+### Scanner Configuration
+
+#### CodeQL
+
+* **Languages**: Python, JavaScript
+* **Query Suites**: security-extended, security-and-quality
+* **Exclusions**: Documentation, tests, GitHub workflows
+* **Custom Queries**: None currently configured
+
+#### ShellCheck Security
+
+* **Output Format**: SARIF (for GitHub Security integration)
+* **Target**: All `.sh` files and shell scripts
+* **Severity Filter**: Warnings and errors only
+
+#### Dependency Review
+
+* **Fail Severity**: Moderate and above
+* **License Restrictions**: GPL-3.0, AGPL-3.0 (denied)
+* **Snapshot Warnings**: Retry enabled
+
+#### Trivy
+
+* **Scan Types**: Vulnerabilities, secrets, misconfigurations
+* **Severity**: CRITICAL, HIGH, MEDIUM
+* **Scanners**: vuln, secret, misconfig
+* **Ignore Unfixed**: Yes (reduces noise from unfixable vulnerabilities)
+
+#### Bandit
+
+* **Format**: SARIF
+* **Recursion**: Full repository
+* **Exit Code**: Non-blocking (0)
+
+### Disabling Security Checks
+
+Security checks should **not** be disabled except in exceptional circumstances. If you must bypass a check:
+
+1. Get approval from a maintainer
+2. Document the reason in the PR description
+3. Create a follow-up issue to address the security concern
+4. Use `[security skip: reason]` in commit message (for audit trail)
+
+**Note**: Disabling security checks may prevent merging to protected branches.
+
 ## Reporting a Vulnerability
 
 The openwrt-captive-monitor team takes security vulnerabilities seriously. We appreciate your efforts to responsibly disclose your findings.
