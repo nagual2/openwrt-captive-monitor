@@ -70,8 +70,6 @@ SHA256sum: $(sha256sum "$ipk" | awk '{print $1}')
 
 "
     fi
-
-    rm -rf "$tmpdir"
 done
 
 # Output the Packages index
