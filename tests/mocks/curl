@@ -12,37 +12,37 @@ url=""
 parse_args() {
     while [ "$#" -gt 0 ]; do
         case "$1" in
-            -D)
-                header_file="$2"
-                shift 2
-                ;;
-            -o)
-                body_file="$2"
-                shift 2
-                ;;
-            -w)
-                write_format="$2"
-                shift 2
-                ;;
-            -m | -s | -S | -L | -f)
-                shift
-                ;;
-            --)
-                shift
-                if [ "$#" -gt 0 ] && [ -z "$url" ]; then
-                    url="$1"
-                fi
-                break
-                ;;
-            -*)
-                shift
-                ;;
-            *)
-                if [ -z "$url" ]; then
-                    url="$1"
-                fi
-                shift
-                ;;
+        -D)
+            header_file="$2"
+            shift 2
+            ;;
+        -o)
+            body_file="$2"
+            shift 2
+            ;;
+        -w)
+            write_format="$2"
+            shift 2
+            ;;
+        -m | -s | -S | -L | -f)
+            shift
+            ;;
+        --)
+            shift
+            if [ "$#" -gt 0 ] && [ -z "$url" ]; then
+                url="$1"
+            fi
+            break
+            ;;
+        -*)
+            shift
+            ;;
+        *)
+            if [ -z "$url" ]; then
+                url="$1"
+            fi
+            shift
+            ;;
         esac
     done
 }
@@ -58,22 +58,22 @@ fi
 if [ -n "$header_file" ] && [ -n "$body_file" ]; then
     mode="${MOCK_CURL_CAPTIVE:-fail}"
     case "$mode" in
-        success)
-            portal="${MOCK_CURL_CAPTIVE_URL:-http://captive.test/login}"
-            printf 'HTTP/1.1 302 Found\r\nLocation: %s\r\n\r\n' "$portal" > "$header_file"
-            printf '<html><a href="%s">Portal</a></html>\n' "$portal" > "$body_file"
-            exit 0
-            ;;
-        offline)
-            : > "$header_file"
-            : > "$body_file"
-            exit 1
-            ;;
-        *)
-            : > "$header_file"
-            : > "$body_file"
-            exit 1
-            ;;
+    success)
+        portal="${MOCK_CURL_CAPTIVE_URL:-http://captive.test/login}"
+        printf 'HTTP/1.1 302 Found\r\nLocation: %s\r\n\r\n' "$portal" >"$header_file"
+        printf '<html><a href="%s">Portal</a></html>\n' "$portal" >"$body_file"
+        exit 0
+        ;;
+    offline)
+        : >"$header_file"
+        : >"$body_file"
+        exit 1
+        ;;
+    *)
+        : >"$header_file"
+        : >"$body_file"
+        exit 1
+        ;;
     esac
 fi
 
