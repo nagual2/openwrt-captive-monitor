@@ -220,7 +220,7 @@ The test suite avoids bash-specific features to maintain OpenWrt compatibility.
 
 ---
 
-# Русский
+## Русский
 
 ---
 
@@ -230,7 +230,7 @@ The test suite avoids bash-specific features to maintain OpenWrt compatibility.
 
 ---
 
-# Набор тестов для OpenWrt Captive Monitor
+## Набор тестов для OpenWrt Captive Monitor
 
 Этот каталог содержит набор тестов для проекта OpenWrt Captive Monitor.
 

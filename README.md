@@ -509,7 +509,7 @@ Made with ❤️ for the OpenWrt community
 
 ---
 
-# Русский
+## Русский
 
 ---
 

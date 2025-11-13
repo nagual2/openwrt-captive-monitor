@@ -186,7 +186,7 @@ Thanks again for helping keep captive portal recovery on OpenWrt routers robust 
 
 ---
 
-# Русский
+## Русский
 
 ---
 
@@ -196,7 +196,7 @@ Thanks again for helping keep captive portal recovery on OpenWrt routers robust 
 
 ---
 
-# Вклад в openwrt-captive-monitor
+## Вклад в openwrt-captive-monitor
 
 Благодарим за то, что уделили время для вклада! Этот проект поддерживает маршрутизаторы OpenWrt в сети, восстанавливая соединение после порталов аутентификации и нестабильных подключений, поэтому изменения должны быть безопасными, проверяемыми и хорошо документированными.
 
