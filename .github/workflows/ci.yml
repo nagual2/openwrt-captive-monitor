@@ -65,6 +65,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-apt-
 
+      - name: Install required tools
+        run: sudo apt-get update && sudo apt-get install -y binutils tar
+
       - name: Install dependencies
         run: |
           set -euo pipefail
@@ -122,6 +125,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-apt-
 
+      - name: Install required tools
+        run: sudo apt-get update && sudo apt-get install -y binutils tar
+
       - name: Install BusyBox and test dependencies
         run: |
           set -euo pipefail
@@ -151,6 +157,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+
+      - name: Install required tools
+        run: sudo apt-get update && sudo apt-get install -y binutils tar
 
       - name: Cache OpenWrt SDK
         id: cache-sdk
