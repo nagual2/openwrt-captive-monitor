@@ -8,6 +8,89 @@
 
 ---
 
+## CI Modernization (2025)
+
+**Status:** ✅ Complete  
+**Target:** GitHub Actions 2025 compliance and best practices
+
+### Key Changes
+
+#### Runner Upgrades
+- **Migration:** `ubuntu-latest` → `ubuntu-24.04`
+- **Scope:** All active workflows (ci.yml, cleanup.yml, release-please.yml, upload-sdk-to-release.yml)
+- **Rationale:** Pin to specific LTS version for reproducibility and align with GitHub's 2025 guidance
+
+#### Node.js Standardization
+- **Version:** Node.js 20 LTS
+- **Action:** actions/setup-node@v4 with `check-latest: true`
+- **Coverage:** All workflows using JavaScript-based actions (github-script, release-please)
+- **Verification:** Node version logged in workflow output
+
+#### Permissions Model (Least Privilege)
+- **Default:** `contents: read` at workflow level
+- **Elevated Grants:** Only specific jobs requiring write access
+  - `release-please`: `contents: write`, `pull-requests: write`, `id-token: write`
+  - `update-version`: `contents: write`
+  - `cleanup`: `actions: write`
+  - `upload-sdk`: `contents: write`
+- **Removed:** Unnecessary `actions: read`, `checks: write` grants
+
+#### Shell Hardening
+- **Standard:** `set -euo pipefail` in all bash scripts
+- **Benefits:** 
+  - `-e`: Exit on first error
+  - `-u`: Treat unset variables as errors
+  - `-o pipefail`: Propagate pipeline failures
+- **Scope:** All `run:` blocks across workflows
+
+#### Artifact Management
+- **Action Version:** actions/upload-artifact@v4
+- **Retention:** 7 days (configurable)
+- **Compression:** Level 6 for optimal balance
+- **Cleanup:** Respects configurable retention policies (ARTIFACT_RETENTION_DAYS, WORKFLOW_RETENTION_DAYS)
+
+#### Reusable Actions
+- **Created:** `.github/actions/setup-system-packages`
+- **Purpose:** Standardize apt-get operations with exponential backoff
+- **Features:**
+  - Configurable retry logic (default: 4 attempts)
+  - Exponential backoff with jitter
+  - Eliminates ad-hoc apt caching patterns
+  - Consistent error handling
+
+#### Retry/Backoff Strategy
+- **SDK Downloads:** Exponential backoff with jitter (5 attempts, max ~300s)
+- **System Packages:** Built into reusable action (4 attempts, exponential backoff)
+- **Rationale:** Mitigates transient network issues and external mirror instability
+
+### Execution Matrix
+
+| Workflow | Runner | Node.js | Key Actions | Permissions |
+|----------|--------|---------|-------------|-------------|
+| ci.yml | ubuntu-24.04 | 20 | actions/setup-node@v4, actions/upload-artifact@v4, ./.github/actions/setup-system-packages | contents: read |
+| cleanup.yml | ubuntu-24.04 | 20 (github-script@v8 runtime) | actions/github-script@v8 | actions: write, contents: read |
+| release-please.yml | ubuntu-24.04 | 20 | actions/setup-node@v4, googleapis/release-please-action@v4, actions/upload-artifact@v4 | Per-job (see above) |
+| upload-sdk-to-release.yml | ubuntu-24.04 | - | ./.github/actions/setup-system-packages | contents: write |
+
+### Action Version Updates
+
+- ✅ actions/checkout@v5 (already compliant)
+- ✅ actions/cache@v4 (already compliant, removed where unnecessary)
+- ✅ actions/upload-artifact@v4 (standardized from v5)
+- ✅ actions/github-script@v8 (already compliant)
+- ✅ actions/setup-node@v4 (newly added)
+- ✅ DavidAnson/markdownlint-cli2-action@v20 (verified latest)
+- ✅ reviewdog/action-actionlint@v1 (verified latest)
+- ✅ googleapis/release-please-action@v4 (already compliant)
+
+### Validation
+
+All workflows:
+- ✅ Validate on workflow syntax check
+- ✅ Execute successfully on ubuntu-24.04
+- ✅ Demonstrate minimal required permissions in logs
+- ✅ Node-based steps confirm Node 20 in logs
+- ✅ Artifacts show 7-day retention and compression
 
 ## Overview
 
