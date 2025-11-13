@@ -171,15 +171,15 @@ jobs:
 
           response=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${OIDC_AUDIENCE}")
 
-          token=$(cat <<'PY' | sed 's/^[[:space:]]*//' | python3 - <<<"$response"
-          import json
-          import sys
-          print(json.load(sys.stdin)["value"])
-          PY
-          )
+          token=$(echo "$response" | python3 -c '
+import json
+import sys
+print(json.load(sys.stdin)["value"])
+')
           echo "::add-mask::$token"
 
-          OIDC_TOKEN="$token" (cat <<'PY' | sed 's/^[[:space:]]*//' | python3 -
+          export OIDC_TOKEN="$token"
+          python3 <<'PY'
           import base64
           import json
           import os
@@ -200,7 +200,6 @@ jobs:
           print(f"OIDC subject: {subject}")
           print(f"OIDC audience: {audience}")
           PY
-          )
 
           echo "OIDC token acquired successfully; Sigstore signing is ready."
 
