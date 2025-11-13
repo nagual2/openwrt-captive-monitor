@@ -1,5 +1,14 @@
 # GitHub Release SDK CDN Mirror
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This project uses GitHub Release as a CDN mirror for the OpenWrt SDK to dramatically improve download speed and reliability for CI/CD builds.
 
 ## Overview

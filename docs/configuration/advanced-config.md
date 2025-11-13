@@ -1,5 +1,14 @@
 # Advanced Configuration
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 Advanced configuration options and techniques for power users and specific deployment scenarios.
 
 ## 🔧 Advanced UCI Options

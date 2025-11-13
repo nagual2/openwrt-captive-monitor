@@ -1,5 +1,14 @@
 # README Links Check Report
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Summary
 - **Badges Restored**: ✅ All 4 badges added/updated
 - **Local Files**: ✅ All 10 local files exist

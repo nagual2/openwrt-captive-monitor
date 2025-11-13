@@ -1,5 +1,14 @@
 # Branch & Pull Request Audit — 2025-10-24
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This document captures the state of branches and open pull requests in the `nagual2/openwrt-captive-monitor` repository and proposes the workflow changes requested in the ticket.
 
 ## Snapshot

@@ -1,5 +1,14 @@
 # Analysis Index: Git History and README.md Vulnerability Documentation
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Overview
 
 This index documents a comprehensive analysis of git commit history to identify and analyze a documentation vulnerability in README.md. The analysis was performed on the `analyze-readme-vuln-history` branch.

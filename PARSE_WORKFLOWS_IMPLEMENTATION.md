@@ -1,5 +1,14 @@
 # Parse Latest Failed Workflows - Implementation Summary
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Overview
 
 Successfully implemented a comprehensive workflow failure parser script that analyzes the two most recent failed GitHub Actions workflows to identify root causes and extract detailed error information.

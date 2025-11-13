@@ -1,5 +1,14 @@
 # Oneshot Recovery Mode
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 Complete guide to using **openwrt-captive-monitor** in oneshot mode for manual connectivity recovery and scheduled operations.
 
 ## 🎯 What is Oneshot Mode?

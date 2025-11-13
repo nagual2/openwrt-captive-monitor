@@ -1,5 +1,14 @@
 # Investigation Summary: OpenWrt Package Build Error - Missing ld-musl
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Issue Description
 
 The openwrt-captive-monitor package build process was failing with the error:

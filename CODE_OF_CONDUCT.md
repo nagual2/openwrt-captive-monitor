@@ -1,5 +1,14 @@
 # Contributor Code of Conduct
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Our Pledge
 
 We as members, contributors, and leaders pledge to make participation in our

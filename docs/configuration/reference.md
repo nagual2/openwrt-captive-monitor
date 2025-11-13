@@ -1,5 +1,14 @@
 # Configuration Reference
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 Complete reference for all configuration options available in **openwrt-captive-monitor**, including UCI settings, environment variables, and command-line flags.
 
 ## 📋 Configuration Methods

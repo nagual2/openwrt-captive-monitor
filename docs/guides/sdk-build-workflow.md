@@ -1,5 +1,14 @@
 # OpenWrt SDK-based CI/CD Workflow
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This guide explains the simplified OpenWrt SDK-based CI/CD workflow implemented for building the openwrt-captive-monitor package.
 
 ## Overview

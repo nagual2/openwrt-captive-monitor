@@ -1,5 +1,14 @@
 # Frequently Asked Questions
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 Common questions and answers about **openwrt-captive-monitor**.
 
 ## 🚀 General Questions

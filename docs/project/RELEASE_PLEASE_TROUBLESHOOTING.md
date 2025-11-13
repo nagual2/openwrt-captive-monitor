@@ -1,5 +1,14 @@
 # Release Please Troubleshooting
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Common Issues and Solutions
 
 ### GitHub Actions Permission Error

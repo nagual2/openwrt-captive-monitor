@@ -1,5 +1,14 @@
 # Project Backlog
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 Feature roadmap and development priorities for **openwrt-captive-monitor**.
 
 ## 📊 Priority Levels

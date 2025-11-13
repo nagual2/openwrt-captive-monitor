@@ -1,5 +1,14 @@
 # OpenWrt Package Build Process and File Manifest
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This document provides a comprehensive analysis of the OpenWrt package build process for `openwrt-captive-monitor`, detailing what files are included, excluded, and how the packaging works.
 
 ## Part 1: Build Configuration Analysis

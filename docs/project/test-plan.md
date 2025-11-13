@@ -1,5 +1,14 @@
 # Test Plan
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 Comprehensive testing strategy and procedures for **openwrt-captive-monitor**.
 
 ## 🎯 Testing Objectives
