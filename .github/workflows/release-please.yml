@@ -141,6 +141,12 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     needs: [lint, test]
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+      checks: write
+      id-token: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -163,6 +169,51 @@ jobs:
           VERSION="${TAG#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Release version: $VERSION"
+
+      - name: Validate GitHub OIDC token issuance
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          OIDC_AUDIENCE: sigstore
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+            echo "OIDC token request metadata not available. Ensure id-token permissions are granted."
+            exit 1
+          fi
+
+          response=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${OIDC_AUDIENCE}")
+
+          token=$(python3 - <<'PY' <<<"$response")
+import json
+import sys
+print(json.load(sys.stdin)["value"])
+PY
+          echo "::add-mask::$token"
+
+          OIDC_TOKEN="$token" python3 - <<'PY'
+import base64
+import json
+import os
+import sys
+
+token = os.environ["OIDC_TOKEN"]
+segments = token.split('.')
+if len(segments) < 2:
+    raise SystemExit("invalid token structure")
+payload_segment = segments[1]
+padding = '=' * (-len(payload_segment) % 4)
+payload = payload_segment + padding
+claims = json.loads(base64.urlsafe_b64decode(payload.encode()))
+issuer = claims.get('iss', 'unknown')
+subject = claims.get('sub', 'unknown')
+audience = claims.get('aud', 'unknown')
+print(f"OIDC issuer: {issuer}")
+print(f"OIDC subject: {subject}")
+print(f"OIDC audience: {audience}")
+PY
+
+          echo "OIDC token acquired successfully; Sigstore signing is ready."
 
   update-version:
     name: Update Version Metadata
