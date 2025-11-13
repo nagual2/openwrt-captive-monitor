@@ -126,7 +126,7 @@ jobs:
             
             # Run bandit with SARIF output on specific files
             echo "Running Bandit security scan..."
-            bandit $PYTHON_FILES -f sarif -o bandit-results.sarif --exit-zero || true
+            bandit $PYTHON_FILES -f sarif -o bandit-results.sarif --exit-zero || echo "Bandit scan completed with warnings/errors"
           else
             echo "No Python files found to analyze"
             # Create empty SARIF file
