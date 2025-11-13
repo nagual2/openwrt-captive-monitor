@@ -5,6 +5,12 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      prerelease:
+        description: 'Create prerelease'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
   contents: write
@@ -12,12 +18,133 @@ permissions:
   actions: read
   checks: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  release-please:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        linter:
+          - shfmt
+          - shellcheck
+          - markdownlint
+          - actionlint
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/*.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      - name: Install required tools
+        run: sudo apt-get update && sudo apt-get install -y binutils tar
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          case "${{ matrix.linter }}" in
+            shfmt|shellcheck)
+              sudo apt-get install -y busybox shfmt shellcheck
+              ;;
+            markdownlint|actionlint)
+              echo "Using docker-based linters"
+              ;;
+          esac
+
+      - name: Run shfmt
+        if: matrix.linter == 'shfmt'
+        run: |
+          set -euo pipefail
+          shfmt -d -s -i 4 -ci -sr .
+
+      - name: Run shellcheck
+        if: matrix.linter == 'shellcheck'
+        run: |
+          set -euo pipefail
+          find . -type f -name "*.sh" -exec shellcheck {} +
+          shellcheck openwrt_captive_monitor.sh
+
+      - name: Run markdownlint
+        if: matrix.linter == 'markdownlint'
+        uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          config: '.markdownlint.json'
+          files: '**/*.md'
+
+      - name: Run actionlint
+        if: matrix.linter == 'actionlint'
+        uses: reviewdog/action-actionlint@v1
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/*.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      - name: Install required tools
+        run: sudo apt-get update && sudo apt-get install -y binutils tar
+
+      - name: Install BusyBox and test dependencies
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install -y busybox
+
+      - name: Run test harness with BusyBox ash
+        run: |
+          set -euo pipefail
+          busybox ash tests/run.sh
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: test-results-release
+          path: tests/_out/
+          retention-days: 7
+          if-no-files-found: warn
+
+  release-please:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [lint, test]
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.extract-version.outputs.version }}
       
     steps:
       - name: Release Please
@@ -25,9 +152,20 @@ jobs:
         uses: googleapis/release-please-action@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      - name: Extract version from tag
+        id: extract-version
+        if: steps.release.outputs.release_created == 'true'
+        run: |
+          TAG="${{ steps.release.outputs.tag_name }}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Release version: $VERSION"
+
   update-version:
+    name: Update Version Metadata
     runs-on: ubuntu-latest
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
@@ -42,9 +180,9 @@ jobs:
       - name: Update package version
         run: |
           set -euo pipefail
-          # Extract version from tag
-          TAG="${{ needs.release-please.outputs.tag_name }}"
-          VERSION="${TAG#v}"
+          VERSION="${{ needs.release-please.outputs.version }}"
+          
+          echo "Updating version to $VERSION"
           
           # Update VERSION file
           echo "$VERSION" > VERSION
@@ -54,22 +192,37 @@ jobs:
           
           # Reset release to 1 for new version
           sed -i "s/^PKG_RELEASE:=.*/PKG_RELEASE:=1/" package/openwrt-captive-monitor/Makefile
-          
-          # Commit changes
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add VERSION package/openwrt-captive-monitor/Makefile
-          git commit -m "chore(release): bump version to $VERSION"
-          git push
 
-  trigger-sdk-build:
+      - name: Commit and push version updates
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.release-please.outputs.version }}"
+          
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Check if there are changes
+          if [ -n "$(git status --porcelain)" ]; then
+            git add VERSION package/openwrt-captive-monitor/Makefile
+            git commit -m "chore(release): bump version to $VERSION"
+            git push
+            echo "✓ Version files updated and pushed"
+          else
+            echo "ℹ️  No version changes needed"
+          fi
+
+  publish-release:
+    name: Publish Release Event
     runs-on: ubuntu-latest
     needs: [release-please, update-version]
     if: needs.release-please.outputs.release_created == 'true'
     
     steps:
-      - name: Trigger SDK build
+      - name: Confirm release published
         run: |
-          echo "Release created: ${{ needs.release-please.outputs.tag_name }}"
-          echo "The tag push will automatically trigger the SDK build workflow"
-          echo "Check the Actions tab for build progress"
+          echo "✅ Release published successfully"
+          echo "Tag: ${{ needs.release-please.outputs.tag_name }}"
+          echo "Version: ${{ needs.release-please.outputs.version }}"
+          echo ""
+          echo "The tag-triggered build workflow will now be automatically triggered."
+          echo "Check the Actions tab for the Package Build workflow."
