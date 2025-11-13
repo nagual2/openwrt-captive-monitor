@@ -387,14 +387,19 @@ jobs:
 
       - name: Configure optional cloud federation
         if: secrets.RELEASE_OIDC_ROLE_ARN != ''
+        env:
+          RELEASE_CLOUD_PROVIDER: ${{ secrets.RELEASE_CLOUD_PROVIDER }}
+          RELEASE_OIDC_ROLE_ARN: ${{ secrets.RELEASE_OIDC_ROLE_ARN }}
+          RELEASE_OIDC_AUDIENCE: ${{ secrets.RELEASE_OIDC_AUDIENCE }}
+          RELEASE_AWS_REGION: ${{ secrets.RELEASE_AWS_REGION }}
         uses: ./.github/actions/oidc-assume-role
         with:
-          provider: ${{ secrets.RELEASE_CLOUD_PROVIDER != '' && secrets.RELEASE_CLOUD_PROVIDER || 'aws' }}
-          role-arn: ${{ secrets.RELEASE_OIDC_ROLE_ARN }}
-          audience: ${{ secrets.RELEASE_OIDC_AUDIENCE != '' && secrets.RELEASE_OIDC_AUDIENCE || 'sts.amazonaws.com' }}
+          provider: ${{ env.RELEASE_CLOUD_PROVIDER != '' && env.RELEASE_CLOUD_PROVIDER || 'aws' }}
+          role-arn: ${{ env.RELEASE_OIDC_ROLE_ARN }}
+          audience: ${{ env.RELEASE_OIDC_AUDIENCE != '' && env.RELEASE_OIDC_AUDIENCE || 'sts.amazonaws.com' }}
           session-name: ${{ format('openwrt-release-{0}', github.run_id) }}
           duration-seconds: ${{ vars.RELEASE_OIDC_SESSION_DURATION != '' && vars.RELEASE_OIDC_SESSION_DURATION || '3600' }}
-          aws-region: ${{ secrets.RELEASE_AWS_REGION }}
+          aws-region: ${{ env.RELEASE_AWS_REGION }}
 
       - name: Gather GitHub OIDC token claims
         env:
@@ -409,15 +414,15 @@ jobs:
 
           response=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${OIDC_AUDIENCE}")
 
-          token=$(cat <<'PY' | sed 's/^[[:space:]]*//' | python3 - <<<"$response"
-          import json
-          import sys
-          print(json.load(sys.stdin)["value"])
-          PY
-          )
+          token=$(echo "$response" | python3 -c '
+import json
+import sys
+print(json.load(sys.stdin)["value"])
+')
           echo "::add-mask::$token"
 
-          OIDC_TOKEN="$token" (cat <<'PY' | sed 's/^[[:space:]]*//' | python3 -
+          export OIDC_TOKEN="$token"
+          python3 <<'PY'
           import base64
           import json
           import os
@@ -432,7 +437,6 @@ jobs:
           print(f"OIDC subject: {claims.get('sub')}")
           print(f"OIDC audience: {claims.get('aud')}")
           PY
-          )
 
           echo "OIDC token obtained; proceeding with keyless signing."
 
