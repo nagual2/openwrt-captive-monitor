@@ -1,3 +1,13 @@
+# openwrt-captive-monitor Support
+
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
 # Support
 
 ## Getting Help
@@ -136,7 +146,7 @@ Thank you for using openwrt-captive-monitor! Your feedback and contributions hel
 
 ---
 
-# Поддержка
+# <a id="русский"></a> Поддержка
 
 ## Получение помощи
 
