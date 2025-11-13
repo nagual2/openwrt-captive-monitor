@@ -1,5 +1,14 @@
 # OpenWrt Toolchain Initialization Fix - ld-musl Missing Error
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 > **Historical Note**: The current CI pipeline uses the documented OpenWrt SDK workflow and relies on the prebuilt toolchain (no `make toolchain/install`). The information below is preserved for reference when diagnosing legacy builds that encountered missing `ld-musl-*.so` files.
 
 ## Problem Statement

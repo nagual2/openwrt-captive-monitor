@@ -1,5 +1,14 @@
 # IPK Package Build Process Fix Summary
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Problem Analysis
 
 The original issue reported that downloaded IPK packages from GitHub releases had "distorted names (redirect URL instead of filename)" and `opkg install` failed with "wfopen: No such file or directory" errors.

@@ -1,5 +1,14 @@
 # Release v1.0.3 Summary
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Completed Tasks ✅
 
 ### 1. Version Synchronization

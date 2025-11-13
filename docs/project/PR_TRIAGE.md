@@ -1,5 +1,14 @@
 # PR_TRIAGE — 2025-10-24
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Context
 - Working branch: `triage-3-failing-prs-check-main-close-or-fix-ci-add-pr-triage-md`
 - Base commit on `main`: `88aaec5` ("Merge pull request #21 from nagual2/triage-2-prs-rebase-ci-fixes-openwrt24")

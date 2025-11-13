@@ -1,5 +1,14 @@
 # GitHub Actions Failure Diagnosis - Executive Summary
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Issue Overview
 
 **Current Status:** 50% failure rate in GitHub Actions workflows  

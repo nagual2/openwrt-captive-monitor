@@ -1,5 +1,14 @@
 # README Release Status Restoration Report
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Executive Summary
 ✅ **Successfully restored release status information in README.md**
 

@@ -1,5 +1,14 @@
 # GitHub Actions Failure Diagnostics - Index
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 **Diagnosis Date:** November 12, 2025  
 **Status:** ✅ Complete and Ready for Implementation  
 **Branch:** diagnose-gh-actions-failures

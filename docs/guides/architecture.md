@@ -1,5 +1,14 @@
 # Architecture Overview
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 System design and component architecture of **openwrt-captive-monitor**.
 
 ## 🏗️ High-Level Architecture

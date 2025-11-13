@@ -1,5 +1,14 @@
 # Security Cleanup Summary
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## 🚨 CRITICAL ACTION REQUIRED
 
 ### IMMEDIATE TOKEN REVOCATION NEEDED

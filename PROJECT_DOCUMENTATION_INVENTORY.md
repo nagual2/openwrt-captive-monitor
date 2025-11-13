@@ -1,5 +1,14 @@
 # Project Documentation Inventory
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Artifacts Removed
 
 ### Build/Temporary Artifacts Cleaned

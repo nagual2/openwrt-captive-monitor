@@ -1,5 +1,14 @@
 # README Restoration Report
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Executive Summary
 ✅ **Successfully restored original README badges from before agent changes**
 

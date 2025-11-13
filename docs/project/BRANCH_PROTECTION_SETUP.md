@@ -1,5 +1,14 @@
 # Branch Protection Setup Instructions
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## GitHub Repository Settings Configuration
 
 To complete the trunk protection setup, configure these settings in your GitHub repository:

@@ -1,5 +1,14 @@
 # Branches & Merge Policy
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 _Last updated: 2025-10-24 on branch `protect-trunk-clean-branches-enforce-ci-pr-rules`._
 
 This document captures the authoritative trunk strategy, CI entry points, and branch protection expectations for **openwrt-captive-monitor**. It replaces the merge-order notes that were tied to the now-completed recovery pull requests and is intended to stay evergreen alongside `CONTRIBUTING.md`.

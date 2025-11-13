@@ -1,5 +1,14 @@
 # Security Audit Scan Outputs Summary
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This document provides a summary of the raw scan outputs generated during the security audit.
 
 ## Scan Output Files

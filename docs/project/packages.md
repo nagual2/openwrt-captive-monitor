@@ -1,5 +1,14 @@
 # Package Management
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 Complete guide to building, distributing, and managing **openwrt-captive-monitor** packages.
 
 ## 📦 Package Overview

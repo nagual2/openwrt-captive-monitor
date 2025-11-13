@@ -1,5 +1,14 @@
 # Task Completion Report: GitHub Actions Failure Diagnosis
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 **Task:** Diagnose current GitHub Actions failures  
 **Status:** ✅ COMPLETED  
 **Date:** November 12, 2025  

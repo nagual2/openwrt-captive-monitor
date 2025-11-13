@@ -1,5 +1,14 @@
 # Build System Issues: Root Causes and Target Flow
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Executive Summary
 
 This document provides an authoritative analysis of the systemic build failures encountered in the openwrt-captive-monitor project, explains their root causes, references the official OpenWrt SDK documentation, and describes the target end-to-end build flow that subsequent refactoring work will implement.

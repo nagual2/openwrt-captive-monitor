@@ -1,5 +1,14 @@
 # OpenWrt Package Build Summary
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Quick Answer: What exactly is in the .ipk file and how did it get there?
 
 ### The .ipk Package Contains:
