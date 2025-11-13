@@ -7,10 +7,10 @@ mock_log host "$@"
 host_name=""
 for arg in "$@"; do
     case "$arg" in
-        -*) ;;
-        *)
-            host_name="$arg"
-            ;;
+    -*) ;;
+    *)
+        host_name="$arg"
+        ;;
     esac
 done
 
