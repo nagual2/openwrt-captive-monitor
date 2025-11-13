@@ -1,5 +1,14 @@
 # Release & Feed Publication Checklist
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This checklist documents the flow we used for the `v1.0.1` release (update the
 version string whenever you cut the next release) and can be repeated for
 subsequent versions.

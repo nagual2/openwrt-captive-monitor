@@ -1,5 +1,14 @@
 # Basic Configuration
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This guide covers the essential configuration options for **openwrt-captive-monitor** to get you started quickly.
 
 ## 📋 Core Configuration Options
@@ -319,3 +328,337 @@ uci commit captive-monitor
 ```
 
 For advanced configuration options, see the [Advanced Configuration Guide](advanced-config.md).
+
+---
+
+# Русский
+
+---
+
+## 🌐 Язык
+
+[English](#basic-configuration) | **Русский**
+
+---
+
+# Базовая конфигурация
+
+Это руководство охватывает основные опции конфигурации для **openwrt-captive-monitor**, чтобы начать быстро.
+
+## 📋 Основные опции конфигурации
+
+Основная конфигурация хранится в `/etc/config/captive-monitor`. Вот наиболее важные параметры:
+
+### Включение/Отключение сервиса
+
+```uci
+config captive_monitor 'config'
+    option enabled '1'    # Установите '1' для включения, '0' для отключения
+```
+
+### Режим работы
+
+```uci
+config captive_monitor 'config'
+    option mode 'monitor'    # 'monitor' (по умолчанию) или 'oneshot'
+```
+
+- **monitor**: Непрерывный мониторинг с указанным интервалом
+- **oneshot**: Однократная проверка и выход (полезно для выполнения на основе cron)
+
+### Конфигурация WiFi интерфейса
+
+```uci
+config captive_monitor 'config'
+    option wifi_interface 'phy1-sta0'    # Физический WiFi интерфейс
+    option wifi_logical 'wwan'          # Логическое имя интерфейса OpenWrt
+```
+
+### Параметры мониторинга
+
+```uci
+config captive_monitor 'config'
+    option monitor_interval '60'        # Интервал проверки в секундах
+    option ping_servers '1.1.1.1 8.8.8.8 9.9.9.9'    # Серверы для ping
+```
+
+### Обнаружение портала аутентификации
+
+```uci
+config captive_monitor 'config'
+    option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
+```
+
+### Логирование
+
+```uci
+config captive_monitor 'config'
+    option enable_syslog '1'    # Включить логирование syslog
+```
+
+---
+
+## 🎯 Примеры быстрой конфигурации
+
+### Базовая настройка (Наиболее распространена)
+
+```uci
+config captive_monitor 'config'
+    option enabled '1'
+    option mode 'monitor'
+    option wifi_interface 'phy1-sta0'
+    option wifi_logical 'wwan'
+    option monitor_interval '60'
+    option enable_syslog '1'
+```
+
+### Активный мониторинг (Частые проверки)
+
+```uci
+config captive_monitor 'config'
+    option enabled '1'
+    option mode 'monitor'
+    option monitor_interval '30'        # Проверка каждые 30 секунд
+    option ping_servers '1.1.1.1 8.8.8.8'
+```
+
+### Консервативная настройка (Менее частые проверки)
+
+```uci
+config captive_monitor 'config'
+    option enabled '1'
+    option mode 'monitor'
+    option monitor_interval '300'       # Проверка каждые 5 минут
+    option ping_servers '8.8.8.8'       # Один сервер
+```
+
+### Режим Oneshot (Ручной/На основе Cron)
+
+```uci
+config captive_monitor 'config'
+    option enabled '1'
+    option mode 'oneshot'
+    option wifi_interface 'phy1-sta0'
+    option wifi_logical 'wwan'
+```
+
+---
+
+## ⚙️ Применение изменений конфигурации
+
+### Метод 1: UCI команды
+
+```bash
+## Установить конфигурацию
+uci set captive-monitor.config.enabled='1'
+uci set captive-monitor.config.mode='monitor'
+uci set captive-monitor.config.monitor_interval='60'
+uci commit captive-monitor
+
+## Перезагрузить сервис
+/etc/init.d/captive-monitor restart
+```
+
+### Метод 2: Редактирование конфигурационного файла
+
+```bash
+## Отредактировать конфигурационный файл
+vi /etc/config/captive-monitor
+
+## Применить изменения
+/etc/init.d/captive-monitor restart
+```
+
+### Метод 3: Переменные окружения (Временно)
+
+```bash
+## Переопределить конфигурацию для одного запуска
+export MONITOR_INTERVAL=30
+/usr/sbin/openwrt_captive_monitor --oneshot
+```
+
+---
+
+## 🔍 Обнаружение интерфейса
+
+### Автоматическое обнаружение (По умолчанию)
+
+Сервис автоматически определяет:
+- LAN интерфейс (обычно `br-lan`)
+- IP адрес LAN
+- Поддержку IPv6
+- Бэкэнд файервола (iptables/nftables)
+
+### Ручное указание интерфейса
+
+Если автоматическое обнаружение не удается, вы можете указать интерфейсы вручную:
+
+```uci
+config captive_monitor 'config'
+    option lan_interface 'br-lan'        # LAN bridge интерфейс
+    option lan_ip '192.168.1.1'          # IP адрес LAN
+    option lan_ipv6 'fd00::1'           # IPv6 адрес LAN (опционально)
+    option firewall_backend 'iptables'   # Принудительно указать бэкэнд
+```
+
+---
+
+## 📊 Руководство по интервалам мониторинга
+
+| Интервал | Сценарий использования | Преимущества | Недостатки |
+|----------|----------|------|------|
+| 30 секунд | Окружение высокой доступности | Быстрое обнаружение | Более высокое использование ресурсов |
+| 60 секунд | Стандартное использование в домашних/офисных сетях | Сбалансированное производство | Умеренное использование ресурсов |
+| 300 секунд | Устройства с ограниченными ресурсами | Низкое использование ресурсов | Медленное обнаружение |
+| 900 секунд | Минимальный мониторинг | Очень низкое использование ресурсов | Медленное обнаружение |
+
+---
+
+## 🌐 Примеры конфигурации сети
+
+### Типичный домашний маршрутизатор
+
+```uci
+config captive_monitor 'config'
+    option enabled '1'
+    option mode 'monitor'
+    option wifi_interface 'phy0-sta0'
+    option wifi_logical 'wwan'
+    option monitor_interval '60'
+    option ping_servers '1.1.1.1 8.8.8.8'
+```
+
+### Портативный маршрутизатор (несколько сетей)
+
+```uci
+config captive_monitor 'config'
+    option enabled='1'
+    option mode='monitor'
+    option monitor_interval='45'
+    option ping_servers='1.1.1.1 8.8.8.8 208.67.222.222'
+    option captive_check_urls='http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt http://captive.apple.com/hotspot-detect.html'
+```
+
+### Корпоративная среда
+
+```uci
+config captive_monitor 'config'
+    option enabled='1'
+    option mode='monitor'
+    option wifi_interface='phy1-sta0'
+    option wifi_logical='wan'
+    option monitor_interval='30'
+    option ping_servers='8.8.8.8 1.1.1.1 208.67.222.222'
+    option enable_syslog='1'
+```
+
+---
+
+## ✅ Валидация конфигурации
+
+### Проверить текущую конфигурацию
+
+```bash
+## Показать текущую конфигурацию
+uci show captive-monitor
+
+## Валидировать синтаксис конфигурации
+uci -c /tmp validate captive-monitor
+```
+
+### Тестирование конфигурации
+
+```bash
+## Тест с режимом oneshot
+/usr/sbin/openwrt_captive_monitor --oneshot
+
+## Проверить логи на ошибки
+logread | grep captive-monitor | tail -20
+```
+
+### Проверить статус сервиса
+
+```bash
+## Проверить, работает ли сервис
+/etc/init.d/captive-monitor status
+
+## Проверить последние логи
+logread | grep captive-monitor | tail -10
+```
+
+---
+
+## 🔄 Частые изменения конфигурации
+
+### Изменить частоту мониторинга
+
+```bash
+uci set captive-monitor.config.monitor_interval='120'
+uci commit captive-monitor
+/etc/init.d/captive-monitor restart
+```
+
+### Добавить больше серверов Ping
+
+```bash
+uci add_list captive-monitor.config.ping_servers='208.67.222.222'
+uci add_list captive-monitor.config.ping_servers='9.9.9.9'
+uci commit captive-monitor
+/etc/init.d/captive-monitor restart
+```
+
+### Переключиться на режим Oneshot
+
+```bash
+uci set captive-monitor.config.mode='oneshot'
+uci commit captive-monitor
+/etc/init.d/captive-monitor restart
+```
+
+---
+
+## 🆘 Решение проблем конфигурации
+
+### Конфигурация не применяется
+
+```bash
+## Проверить, валидна ли конфигурация
+uci show captive-monitor
+
+## Принудительная перезагрузка
+uci commit captive-monitor
+/etc/init.d/captive-monitor restart
+
+## Проверить на ошибки синтаксиса
+logread | grep captive-monitor
+```
+
+### Сервис не запускается
+
+```bash
+## Проверить, включен ли сервис
+uci get captive-monitor.config.enabled
+
+## Проверить синтаксис конфигурации
+uci -c /tmp validate captive-monitor
+
+## Ручной тест
+/usr/sbin/openwrt_captive_monitor --help
+```
+
+### Проблемы с обнаружением интерфейса
+
+```bash
+## Проверить доступные интерфейсы
+ip link show
+
+## Проверить статус сети
+ifstatus wan
+ifstatus lan
+
+## Указать вручную, если необходимо
+uci set captive-monitor.config.lan_interface='br-lan'
+uci commit captive-monitor
+```
+
+Для продвинутых опций конфигурации см. [Руководство продвинутой конфигурации](advanced-config.md).

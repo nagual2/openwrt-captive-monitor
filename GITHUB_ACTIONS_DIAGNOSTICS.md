@@ -1,5 +1,14 @@
 # GitHub Actions Failure Diagnostics
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Overview
 
 This directory contains diagnostic tools and reports for analyzing GitHub Actions workflow failures in the openwrt-captive-monitor project.

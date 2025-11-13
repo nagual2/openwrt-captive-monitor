@@ -1,5 +1,14 @@
 # Workflow Diagnostics Tools
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This document describes the tools available for diagnosing GitHub Actions workflow failures.
 
 ## Tools Available

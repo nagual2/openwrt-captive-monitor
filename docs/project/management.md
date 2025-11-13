@@ -1,5 +1,14 @@
 # Project Management
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 Overview of project management practices, versioning strategy, release cadence, and development workflow for **openwrt-captive-monitor**.
 
 ## 🎯 Project Overview

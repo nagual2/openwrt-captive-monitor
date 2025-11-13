@@ -1,5 +1,14 @@
 # Packaging and Distribution Guide
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This guide covers the complete workflow for building, packaging, and distributing the OpenWrt Captive Monitor package.
 
 ## Overview

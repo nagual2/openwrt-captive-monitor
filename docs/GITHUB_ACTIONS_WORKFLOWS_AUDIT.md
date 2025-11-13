@@ -1,5 +1,14 @@
 # Анализ GitHub Actions Workflows
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 **Дата анализа:** 2024  
 **Репозиторий:** openwrt-captive-monitor  
 **Директория workflows:** `.github/workflows/`

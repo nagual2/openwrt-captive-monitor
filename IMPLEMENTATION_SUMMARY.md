@@ -1,5 +1,14 @@
 # GitHub Release SDK CDN Mirror - Implementation Summary
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## ✅ Completed Implementation
 
 ### 1. SDK Upload Mechanisms

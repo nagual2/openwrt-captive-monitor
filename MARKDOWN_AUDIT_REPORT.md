@@ -1,5 +1,14 @@
 # Markdown Audit and Cleanup Report
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 **Date:** 2025-11-04  
 **Branch:** `chore/docs-audit-cleanup-markdown-bump-1.0.1`  
 **Commit:** `758f13c`

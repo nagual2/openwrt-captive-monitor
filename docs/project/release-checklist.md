@@ -1,5 +1,14 @@
 # Release Checklist
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 This checklist documents the release process for **openwrt-captive-monitor** and should be followed for each new version.
 
 ## 📋 Pre-Release Checklist

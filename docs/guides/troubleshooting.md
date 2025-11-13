@@ -1,5 +1,14 @@
 # Troubleshooting Guide
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 Comprehensive troubleshooting guide for **openwrt-captive-monitor** covering common issues, diagnostics, and solutions.
 
 ## 🔍 Quick Diagnosis

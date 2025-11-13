@@ -1,5 +1,14 @@
 # Available OpenWrt Packages
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
+
 ## Repository Files
 ❌ No .ipk files found in repository
 
