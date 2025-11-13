@@ -392,11 +392,37 @@ The project includes a comprehensive VM-based testing system that automates end-
 
 See [Virtualization Guide](docs/guides/virtualization.md) for detailed VM testing documentation.
 
+### Release Process
+
+This project uses **automated semantic versioning** with GitHub Actions. Releases are created automatically when code is merged to `main`, following [Semantic Versioning 2.0.0](https://semver.org/).
+
+**How it works:**
+1. Commit changes using [Conventional Commits](https://www.conventionalcommits.org/) format:
+   - `feat:` → minor version bump (e.g., 1.0.0 → 1.1.0)
+   - `fix:` → patch version bump (e.g., 1.0.0 → 1.0.1)
+   - `feat!:` or `fix!:` → major version bump (e.g., 1.0.0 → 2.0.0)
+
+2. Merge PR to `main` branch (CI checks must pass)
+
+3. Release Please workflow automatically:
+   - Runs lint and test checks
+   - Detects version bump from commits
+   - Creates semantic version tag
+   - Updates VERSION file and package metadata
+   - Generates changelog
+
+4. Build and Release Package workflow automatically:
+   - Builds OpenWrt package from the tag
+   - Signs artifacts using OIDC
+   - Uploads IPK and build logs to GitHub Release
+
+For detailed information, see [RELEASE_PROCESS.md](RELEASE_PROCESS.md).
+
 ### Contributing
 
 1. Fork repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'feat: add amazing feature'`)
+3. Commit changes using conventional commits (`git commit -m 'feat: add amazing feature'`)
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
 
