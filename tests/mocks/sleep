@@ -7,8 +7,8 @@ mock_log sleep "$@"
 state_file=$(mock_state_file sleep)
 if [ "${MOCK_SLEEP_TERMINATE:-}" = "1" ]; then
     if [ ! -f "$state_file" ]; then
-        : > "$state_file"
-        kill -TERM "$PPID" 2> /dev/null || true
+        : >"$state_file"
+        kill -TERM "$PPID" 2>/dev/null || true
     fi
 fi
 
