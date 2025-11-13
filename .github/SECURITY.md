@@ -38,6 +38,38 @@ For production workflows, we recommend configuring branch protection rules on `m
 
 These checks help prevent vulnerabilities from being merged into the main branch.
 
+### Branch Protection Policy
+
+The `main` branch is protected with the following rules to ensure code quality and security:
+
+**Merge Requirements:**
+- ✅ Pull request reviews required (minimum 1 approval)
+- ✅ All status checks must pass (linting, testing, and all security scanners)
+- ✅ Branches must be up to date before merging
+- ✅ Linear history required (no merge commits)
+- ✅ Stale reviews are dismissed when new commits are pushed
+- ✅ All conversations must be resolved before merge
+- ❌ Force pushes prohibited
+- ❌ Branch deletions prohibited
+
+**Status Checks Required:**
+- All CI checks: `Lint (shfmt)`, `Lint (shellcheck)`, `Lint (markdownlint)`, `Lint (actionlint)`, `Test`
+- All security checks: `CodeQL Analysis (python)`, `CodeQL Analysis (javascript)`, `ShellCheck Security Analysis`, `Dependency Review`, `Trivy Security Scan`, `Bandit Python Security Scan`
+
+These protections are configured in [`.github/settings.yml`](settings.yml) and enforced by GitHub branch protection rules.
+
+### Security Features Enabled
+
+The repository has the following GitHub security and analysis features enabled:
+
+- **Dependency Graph**: Automatically tracks repository dependencies
+- **Dependabot Alerts**: Notifies maintainers of known vulnerabilities in dependencies
+- **Dependabot Security Updates**: Automatically opens PRs to patch known security vulnerabilities
+- **Secret Scanning**: Detects accidentally committed secrets (API keys, tokens, etc.)
+- **Secret Scanning Push Protection**: Prevents pushing files containing detected secrets to the repository
+
+These features work in conjunction with the automated scanning pipelines to provide multiple layers of security protection.
+
 ### Security Scan Results
 
 All security scan results are automatically uploaded to the [Security tab](../../security/code-scanning) in the GitHub repository. Results are categorized by scanner for easy triaging.
@@ -139,14 +171,21 @@ When a security alert is raised:
 
 ### Disabling Security Checks
 
-Security checks should **not** be disabled except in exceptional circumstances. If you must bypass a check:
+Security checks should **not** be disabled except in exceptional circumstances. Branch protection rules on `main` require all security checks to pass before merging, so bypassing them requires:
 
-1. Get approval from a maintainer
-2. Document the reason in the PR description
-3. Create a follow-up issue to address the security concern
-4. Use `[security skip: reason]` in commit message (for audit trail)
+1. **Maintainer approval**: Get explicit approval from a repository maintainer
+2. **Branch protection override**: Only repository administrators can override branch protection
+3. **Documentation**: Document the reason in the PR description and commit message
+4. **Follow-up action**: Create a follow-up issue to address the security concern
+5. **Audit trail**: Use `[security skip: reason]` in commit message for traceability
 
-**Note**: Disabling security checks may prevent merging to protected branches.
+**Important**: The `main` branch has branch protection enabled that requires **all status checks to pass before merging**. If a security check fails:
+- The pull request cannot be merged by anyone except repository administrators
+- Even administrators should avoid bypassing security checks
+- Maintainers should instead investigate and fix the security issue
+- If you have a legitimate reason to skip a check, discuss it with maintainers first
+
+These protections ensure that no vulnerable code reaches the main branch and that all changes are properly reviewed.
 
 ## Reporting a Vulnerability
 

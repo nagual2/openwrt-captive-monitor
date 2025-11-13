@@ -4,6 +4,32 @@
 
 This project uses **automated semantic versioning** with GitHub Actions to manage releases. The process is completely automated when code is merged to the `main` branch, following the [Semantic Versioning 2.0.0](https://semver.org/) specification.
 
+## Branch Protection and Security Requirements
+
+Before any code can be merged to `main` and trigger the automated release process, it **must pass all branch protection checks**. This ensures that only high-quality, secure code reaches production releases.
+
+### Merge Prerequisites
+
+To merge a pull request to `main`, you must satisfy these requirements:
+
+1. **Code Review**: Obtain at least one approval from a repository maintainer
+2. **All Status Checks Pass**: Every status check must pass before merging:
+   - **CI/Linting**: `Lint (shfmt)`, `Lint (shellcheck)`, `Lint (markdownlint)`, `Lint (actionlint)`, `Test`
+   - **Security Scans**: `CodeQL Analysis (python)`, `CodeQL Analysis (javascript)`, `ShellCheck Security Analysis`, `Dependency Review`, `Trivy Security Scan`, `Bandit Python Security Scan`
+3. **Branch Up-to-Date**: Your branch must be rebased on the latest `main`
+4. **Conversations Resolved**: All review conversations must be closed
+5. **Squash Merge Only**: Use squash merge strategy (merge commits are not allowed)
+
+### Impact on Release Timing
+
+These requirements ensure that:
+- No vulnerable code reaches the main branch
+- Only fully tested, reviewed code triggers automatic releases
+- Release artifacts are built from verified, secure commits
+- The release chain of custody is maintained from commit through signed artifact
+
+For detailed information about branch protection rules, see [`.github/settings.yml`](./.github/settings.yml).
+
 ## Semantic Versioning
 
 The project uses semantic versioning in the format: `MAJOR.MINOR.PATCH`
