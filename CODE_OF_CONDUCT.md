@@ -142,7 +142,7 @@ at [https://www.contributor-covenant.org/translations][translations].
 
 ---
 
-# Русский
+## Русский
 
 ---
 
@@ -152,7 +152,7 @@ at [https://www.contributor-covenant.org/translations][translations].
 
 ---
 
-# Кодекс поведения участников
+## Кодекс поведения участников
 
 ## Наше обязательство
 
@@ -277,9 +277,3 @@ at [https://www.contributor-covenant.org/translations][translations].
 Для ответов на общие вопросы об этом кодексе поведения см. FAQ на
 [https://www.contributor-covenant.org/faq][faq]. Переводы доступны
 на [https://www.contributor-covenant.org/translations][translations].
-
-[homepage]: https://www.contributor-covenant.org
-[v2.1]: https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
-[mozilla coc]: https://github.com/mozilla/diversity
-[faq]: https://www.contributor-covenant.org/faq
-[translations]: https://www.contributor-covenant.org/translations
