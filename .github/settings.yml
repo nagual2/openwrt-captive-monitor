@@ -84,11 +84,10 @@ branches:
           # CI Workflow - Testing
           - "Test"
           
-          # CodeQL Security Scanning
-          - "CodeQL Analysis (shell)"
+          # Security Scanning Workflow - ShellCheck
           - "ShellCheck Security Analysis"
           
-          # Security Scanning Workflow
+          # Security Scanning Workflow - Vulnerability Scanning
           - "Dependency Review"
           - "Trivy Security Scan"
       

@@ -22,33 +22,7 @@ The project uses a multi-layered security scanning approach to identify vulnerab
 
 ### Primary Scanners
 
-#### 1. CodeQL (GitHub Advanced Security)
-
-**Purpose**: Static analysis for Python code
-
-**Coverage**:
-
-* Security vulnerabilities (SQL injection, XSS, path traversal, etc.)
-* Code quality issues that may lead to security problems
-* Common vulnerability patterns (CWE database)
-
-**Configuration**:
-
-* Query suites: `security-extended`, `security-and-quality`
-* Languages: Python
-* Paths excluded: `**/*.md`, `docs/**`, `tests/**`, `.github/**`, `_out/**`, `__pycache__/**`
-
-**Run frequency**:
-
-* On every pull request to `main`
-* On every push to `main`
-* Weekly on Monday at 00:00 UTC
-
-**Expected duration**: 10-15 minutes
-
-**Workflow file**: `.github/workflows/codeql.yml`
-
-#### 2. ShellCheck Security Analysis
+#### 1. ShellCheck Security Analysis
 
 **Purpose**: Security-focused static analysis for shell scripts
 
@@ -65,13 +39,17 @@ The project uses a multi-layered security scanning approach to identify vulnerab
 * Target: All `.sh` files and shell scripts
 * Severity: Warnings and errors only
 
-**Run frequency**: Same as CodeQL (PRs, main branch, weekly)
+**Run frequency**:
+
+* On every pull request to `main`
+* On every push to `main`
+* Weekly on Tuesday at 00:00 UTC
 
 **Expected duration**: 5-10 minutes
 
-**Workflow file**: `.github/workflows/codeql.yml`
+**Workflow file**: `.github/workflows/security-scanning.yml`
 
-#### 3. Dependency Review
+#### 2. Dependency Review
 
 **Purpose**: Analyze dependency changes in pull requests
 
@@ -93,7 +71,7 @@ The project uses a multi-layered security scanning approach to identify vulnerab
 
 **Workflow file**: `.github/workflows/security-scanning.yml`
 
-#### 4. Trivy
+#### 3. Trivy
 
 **Purpose**: Comprehensive vulnerability and misconfiguration scanner
 
@@ -120,43 +98,7 @@ The project uses a multi-layered security scanning approach to identify vulnerab
 
 **Workflow file**: `.github/workflows/security-scanning.yml`
 
-#### 5. Bandit
-
-**Purpose**: Python-specific security linting
-
-**Coverage**:
-
-* Hardcoded passwords/secrets
-* SQL injection vulnerabilities
-* Insecure deserialization
-* Weak cryptography usage
-
-**Configuration**:
-
-* Format: SARIF
-* Recursion: Full repository scan
-* Exit code: 0 (non-blocking)
-
-**Run frequency**: Same as Trivy
-
-**Expected duration**: 2-5 minutes
-
-**Workflow file**: `.github/workflows/security-scanning.yml`
-
 ## Workflow Triggers
-
-### CodeQL Workflow (`codeql.yml`)
-
-```yaml
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  schedule:
-    - cron: '0 0 * * 1'  # Weekly on Monday
-  workflow_dispatch:       # Manual trigger
-```
 
 ### Security Scanning Workflow (`security-scanning.yml`)
 
@@ -172,30 +114,6 @@ on:
 ```
 
 ## Scanner Details
-
-### CodeQL Configuration
-
-The CodeQL scanner uses the following configuration:
-
-```yaml
-- uses: github/codeql-action/init@v4
-  with:
-    languages: ${{ matrix.language }}  # python
-    config: |
-      paths-ignore:
-        - '**/*.md'
-        - 'docs/**'
-        - 'tests/**'
-        - '.github/**'
-        - '_out/**'
-        - '__pycache__/**'
-    queries: +security-extended,security-and-quality
-```
-
-**Why these query suites?**
-
-* `security-extended`: Additional security checks beyond the default
-* `security-and-quality`: Combines security and code quality checks
 
 ### ShellCheck SARIF Conversion
 
@@ -227,29 +145,19 @@ This allows ShellCheck findings to appear alongside other security alerts in the
 
 Unfixed vulnerabilities in transitive dependencies can create noise. We focus on actionable items while monitoring for fixes upstream.
 
-### Bandit Configuration
-
-```bash
-bandit -r . -f sarif -o bandit-results.sarif --exit-zero
-```
-
-The `--exit-zero` flag ensures the workflow doesn't fail, allowing other checks to complete and results to be uploaded.
-
 ## Integration with CI/CD
 
 ### Status Checks
 
-The following status checks are available for branch protection:
+The following status checks are required for branch protection:
 
-| Check Name | Required for PRs | Blocking |
-|------------|------------------|----------|
-| CodeQL Analysis (python) | Recommended | Optional |
-| ShellCheck Security Analysis | Recommended | Optional |
+| Check Name | Required | Blocking |
+|------------|----------|----------|
+| ShellCheck Security Analysis | **Yes** | **Yes** |
 | Dependency Review | **Yes** | **Yes** |
-| Trivy Security Scan | Recommended | Optional |
-| Bandit Python Security Scan | Recommended | Optional |
+| Trivy Security Scan | **Yes** | **Yes** |
 
-**Note**: Dependency Review should be required as it directly impacts supply chain security.
+**Note**: All security status checks are required to ensure comprehensive vulnerability scanning before merging code to main.
 
 ### Permissions Model
 
@@ -309,7 +217,8 @@ Each alert provides:
 Use GitHub's filtering to focus on specific issues:
 
 ```text
-is:open severity:high tool:CodeQL
+is:open severity:high tool:ShellCheck
+is:open severity:high tool:Trivy
 is:open branch:main
 is:dismissed
 ```
@@ -446,9 +355,7 @@ In GitHub Security tab:
 
 | Tool | Suppression Syntax | Example |
 |------|-------------------|---------|
-| CodeQL | `# codeql[rule-id]` | `# codeql[py/sql-injection]` |
 | ShellCheck | `# shellcheck disable=SC####` | `# shellcheck disable=SC2086` |
-| Bandit | `# nosec B###` | `# nosec B404` |
 | Trivy | `.trivyignore` file | `CVE-2021-12345` |
 
 ### Audit Trail
@@ -474,7 +381,6 @@ Total time for all security scans:
 1. **Use caching**: Workflows cache dependencies and build artifacts
 2. **Run in parallel**: Security jobs run concurrently
 3. **Skip on docs changes**: Consider adding path filters
-4. **Incremental analysis**: CodeQL supports incremental scans
 
 ### Resource Usage
 
@@ -489,16 +395,6 @@ Approximate GitHub Actions minutes consumed:
 ## Troubleshooting
 
 ### Common Issues
-
-#### CodeQL Analysis Fails
-
-**Symptom**: CodeQL job fails with "No code found"
-
-**Solution**:
-
-* Verify language is present in repository
-* Check path exclusions aren't too broad
-* Ensure files have correct extensions
 
 #### ShellCheck SARIF Upload Fails
 
@@ -529,16 +425,6 @@ Approximate GitHub Actions minutes consumed:
 * Increase `timeout-minutes` in workflow
 * Use `ignore-unfixed: true`
 * Filter severity to CRITICAL, HIGH only
-
-#### Bandit No Files Found
-
-**Symptom**: "No Python files found to analyze"
-
-**Solution**:
-
-* This is expected if no Python files exist
-* Empty SARIF file is generated
-* No action required
 
 ### Getting Help
 
