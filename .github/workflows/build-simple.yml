@@ -11,14 +11,19 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build Package
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           
@@ -34,7 +39,7 @@ jobs:
         run: ./scripts/build_ipk.sh
         
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ipk-package
           path: |
