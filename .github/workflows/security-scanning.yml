@@ -74,6 +74,18 @@ jobs:
           scanners: 'vuln,misconfig'
           skip-dirs: 'security_audit,venv,tests,node_modules'
 
+      - name: Verify Trivy SARIF file exists
+        if: always()
+        run: |
+          if [ -f trivy-results.sarif ]; then
+            echo "✓ Trivy SARIF file found"
+            ls -lh trivy-results.sarif
+          else
+            echo "✗ Trivy SARIF file not found"
+            echo "Current directory contents:"
+            ls -la
+          fi
+
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -162,6 +174,22 @@ jobs:
           else
             echo "No shell scripts found to analyze"
             echo '{"$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json", "version": "2.1.0", "runs": []}' > shellcheck-results/shellcheck.sarif
+          fi
+
+      - name: Verify ShellCheck SARIF file exists
+        if: always()
+        run: |
+          if [ -f shellcheck-results/shellcheck.sarif ]; then
+            echo "✓ ShellCheck SARIF file found"
+            ls -lh shellcheck-results/shellcheck.sarif
+          else
+            echo "✗ ShellCheck SARIF file not found"
+            echo "Current directory contents:"
+            ls -la
+            echo "shellcheck-results directory contents (if exists):"
+            if [ -d shellcheck-results ]; then
+              ls -la shellcheck-results/
+            fi
           fi
 
       - name: Upload ShellCheck SARIF to GitHub Security
