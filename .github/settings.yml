@@ -86,7 +86,6 @@ branches:
           
           # CodeQL Security Scanning
           - "CodeQL Analysis (python)"
-          - "CodeQL Analysis (javascript)"
           - "ShellCheck Security Analysis"
           
           # Security Scanning Workflow
