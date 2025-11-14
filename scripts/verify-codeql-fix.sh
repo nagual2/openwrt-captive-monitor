@@ -48,8 +48,8 @@ fi
 
 echo
 echo "3. Checking language configuration..."
-if grep -q "language: \['python'\]" .github/workflows/codeql.yml; then
-    pass "Language matrix correctly set to Python only"
+if grep -q "language: \['shell'\]" .github/workflows/codeql.yml; then
+    pass "Language matrix correctly set to Shell only"
 else
     fail "Language matrix is not correct"
 fi
@@ -65,7 +65,8 @@ fi
 
 echo
 echo "5. Checking required status checks in settings.yml..."
-if grep -q '"CodeQL Analysis (python)"' .github/settings.yml && \
+if ! grep -q '"CodeQL Analysis (python)"' .github/settings.yml && \
+   grep -q '"CodeQL Analysis (shell)"' .github/settings.yml && \
    grep -q '"ShellCheck Security Analysis"' .github/settings.yml && \
    ! grep -q '"CodeQL Analysis (javascript)"' .github/settings.yml; then
     pass "Status checks correctly configured"
@@ -95,10 +96,10 @@ info "Found $PYTHON_COUNT Python file(s)"
 info "Found $SHELL_COUNT Shell script(s)"
 info "Found $JS_COUNT JavaScript/TypeScript file(s)"
 
-if [ "$PYTHON_COUNT" -gt 0 ]; then
-    pass "Python files present (CodeQL analysis applicable)"
+if [ "$PYTHON_COUNT" -eq 0 ]; then
+    pass "No Python files present (correctly not analyzed)"
 else
-    fail "No Python files found"
+    fail "Python files found but should not be analyzed"
 fi
 
 if [ "$SHELL_COUNT" -gt 0 ]; then
@@ -120,8 +121,9 @@ echo "════════════════════════�
 echo
 echo "Summary:"
 echo "  • CodeQL actions updated to v4 (no deprecation warnings)"
-echo "  • Language configuration: Python only"
-echo "  • Shell scripts analyzed by separate ShellCheck job"
+echo "  • Language configuration: Shell only"
+echo "  • Shell scripts analyzed by CodeQL and separate ShellCheck job"
+echo "  • No Python analysis (language not present in project)"
 echo "  • No JavaScript analysis (language not present in project)"
 echo "  • Branch protection settings aligned with workflow outputs"
 echo
