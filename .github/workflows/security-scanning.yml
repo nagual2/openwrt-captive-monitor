@@ -29,8 +29,8 @@ jobs:
     name: Dependency Review
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Only run on pull requests
-    if: github.event_name == 'pull_request'
+    # Run on pull requests and pushes to main
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     
     permissions:
       contents: read
