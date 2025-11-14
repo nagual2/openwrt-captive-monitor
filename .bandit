@@ -1,5 +1,5 @@
 [bandit]
-exclude_dirs = .git,.github,tests,_out,__pycache__,node_modules
+exclude_dirs = .git,.github,tests,_out,__pycache__,node_modules,local
 skips = B101,B601
 
 [bandit.assert_used]

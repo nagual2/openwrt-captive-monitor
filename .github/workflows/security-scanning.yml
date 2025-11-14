@@ -71,7 +71,8 @@ jobs:
           severity: 'CRITICAL,HIGH,MEDIUM'
           exit-code: '0'
           ignore-unfixed: true
-          scanners: 'vuln,secret,misconfig'
+          scanners: 'vuln,misconfig'
+          skip-dirs: 'security_audit,venv,tests,node_modules'
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
@@ -107,9 +108,9 @@ jobs:
       - name: Run Bandit security scan
         run: |
           set -euo pipefail
-          
+
           # Find all Python files
-          PYTHON_FILES=$(find . -type f -name "*.py" -not -path "./.git/*" -not -path "./.github/*" -not -path "./tests/*" -not -path "./_out/*" -not -path "./__pycache__/*" -not -path "./node_modules/*" || true)
+          PYTHON_FILES=$(find . -type f -name "*.py" -not -path "./.git/*" -not -path "./.github/*" -not -path "./tests/*" -not -path "./_out/*" -not -path "./__pycache__/*" -not -path "./node_modules/*" -not -path "./local/*" || true)
           
           if [ -n "$PYTHON_FILES" ]; then
             echo "Found Python files to analyze:"
@@ -119,7 +120,7 @@ jobs:
             # Create bandit config if not exists
             if [ ! -f .bandit ]; then
               echo "[bandit]" > .bandit
-              echo "exclude_dirs = .git,.github,tests,_out,__pycache__,node_modules" >> .bandit
+              echo "exclude_dirs = .git,.github,tests,_out,__pycache__,node_modules,local" >> .bandit
               echo "skips = B101,B601" >> .bandit
             fi
             

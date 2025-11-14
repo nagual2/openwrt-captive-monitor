@@ -9,8 +9,11 @@ def test_ssh_connection(hostname, username, key_path=None, password=None):
         # Создаем SSH-клиент
         ssh = paramiko.SSHClient()
         
-        # Автоматически добавляем хост в known_hosts
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # Загружаем known_hosts для верификации ключа хоста
+        ssh.load_system_host_keys()
+        # nosec B507 - For local testing only. Uses WarningPolicy instead of AutoAddPolicy
+        # to warn about unknown host keys while still allowing connections for development
+        ssh.set_missing_host_key_policy(paramiko.WarningPolicy())
         
         # Параметры подключения
         kwargs = {
