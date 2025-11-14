@@ -1,0 +1,20 @@
+[33m7e8c03d[m[33m ([m[1;34mgrafted[m[33m, [m[1;36mHEAD[m[33m -> [m[1;32mfix-mock-scripts-shell-syntax[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m Merge pull request #186 from nagual2/fix-shfmt-tests-mocks-opkg-format
+[33m7900c71[m[33m ([m[1;31morigin/fix-shfmt-tests-mocks-opkg-format[m[33m)[m style(tests/mocks): align shell formatting with shfmt across opkg-build and opkg-make-index
+[33m9d9c1b7[m Merge pull request #185 from nagual2/fix-markdown-shfmt-ci
+[33m12af272[m[33m ([m[1;31morigin/fix-markdown-shfmt-ci[m[33m)[m fix(docs): fix bilingual markdown structure and remove duplicate link definitions
+[33m9093158[m Merge pull request #184 from nagual2/fix-workflows-syntax-oidc-actionlint-bandit-lock
+[33m24183a7[m fix(ci): resolve critical workflow syntax issues, proper OIDC handling, and CI config cleanup
+[33md4bb3e4[m fix(ci): stabilize GitHub Actions workflows; fix YAML indentation issues and Bandit/actionlint linting (#183)
+[33mefb7ad6[m Merge pull request #182 from nagual2/fix/github-workflows-bandit-codeql-markdownlint
+[33m35a13a2[m Fix failing GitHub workflows: Bandit, CodeQL, and Markdownlint
+[33m22c25c9[m Merge pull request #181 from nagual2/chore/ci-modernize-2025-ubuntu24-node20
+[33m8c18037[m feat(ci): modernize CI pipelines to GitHub Actions 2025 guidance
+[33m8d3a8d5[m Merge pull request #180 from nagual2/chore-harden-repo-security-config
+[33m5563c0c[m feat(security): harden repository with GitHub Settings and updated security docs
+[33m21bf4a9[m Merge pull request #179 from nagual2/enable-oidc-cosign-release-provenance
+[33m2370a40[m feat(release): enable OIDC federation and keyless signing for release artifacts
+[33m5e21ca8[m Merge pull request #178 from nagual2/security-add-codeql-dependency-review-trivy-bandit-docs
+[33m52eb378[m feat(security): introduce automated CodeQL and supplementary security scanning workflows; update docs and policies
+[33m0d4a674[m Merge pull request #177 from nagual2/feat/release-automation-semver-workflow
+[33m4821c0f[m feat(release): automate semantic releases with orchestrated workflow and tag-driven package build
+[33m3ab4dbb[m Merge pull request #176 from nagual2/i18n-translate-packaging-en-ru-bilingual

@@ -9,11 +9,11 @@ set -eu
 mock_log opkg-make-index "$@"
 
 # Validate required tools are available
-command -v ar >/dev/null || (
+command -v ar > /dev/null || (
     echo "ERROR: ar not found" >&2
     exit 1
 )
-command -v tar >/dev/null || (
+command -v tar > /dev/null || (
     echo "ERROR: tar not found" >&2
     exit 1
 )
@@ -29,22 +29,22 @@ pkg_dir=""
 # Parse arguments
 while [ "$#" -gt 0 ]; do
     case "$1" in
-    -a)
-        if [ $# -lt 2 ]; then
-            echo "error: -a requires an argument" >&2
+        -a)
+            if [ $# -lt 2 ]; then
+                echo "error: -a requires an argument" >&2
+                exit 1
+            fi
+            arch="$2"
+            shift 2
+            ;;
+        -*)
+            echo "error: unknown option: $1" >&2
             exit 1
-        fi
-        arch="$2"
-        shift 2
-        ;;
-    -*)
-        echo "error: unknown option: $1" >&2
-        exit 1
-        ;;
-    *)
-        pkg_dir="$1"
-        shift
-        ;;
+            ;;
+        *)
+            pkg_dir="$1"
+            shift
+            ;;
     esac
 done
 
@@ -74,7 +74,7 @@ for ipk in "$pkg_dir"/*.ipk; do
     trap "rm -rf '$tmpdir'" EXIT
 
     # Extract control file from .ipk with explicit error handling
-    ar p "$ipk" control.tar.gz 2>/dev/null | tar -C "$tmpdir" -xz 2>/dev/null
+    ar p "$ipk" control.tar.gz 2> /dev/null | tar -C "$tmpdir" -xz 2> /dev/null
     if [ $? -ne 0 ]; then
         echo "ERROR: Failed to extract control.tar.gz from $ipk" >&2
         exit 1

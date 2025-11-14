@@ -7,12 +7,12 @@ mock_log nslookup "$@"
 host=""
 for arg in "$@"; do
     case "$arg" in
-    -*) ;;
-    *)
-        if [ -z "$host" ]; then
-            host="$arg"
-        fi
-        ;;
+        -*) ;;
+        *)
+            if [ -z "$host" ]; then
+                host="$arg"
+            fi
+            ;;
     esac
 done
 

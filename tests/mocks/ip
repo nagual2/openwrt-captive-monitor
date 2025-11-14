@@ -9,51 +9,51 @@ if [ "$#" -eq 0 ]; then
 fi
 
 case "$1" in
--4)
-    shift
-    if [ "${1:-}" = "addr" ] && [ "${2:-}" = "show" ] && [ "${3:-}" = "dev" ]; then
-        iface="${4:-}"
-        addr="${MOCK_IP_ADDR4:-192.168.1.2}"
-        printf 'inet %s/24\n' "$addr"
-        exit 0
-    fi
-    ;;
--6)
-    shift
-    if [ "${1:-}" = "addr" ] && [ "${2:-}" = "show" ] && [ "${3:-}" = "dev" ]; then
-        addr6="${MOCK_IP_ADDR6:-}"
-        if [ -n "$addr6" ]; then
-            printf 'inet6 %s/64\n' "$addr6"
+    -4)
+        shift
+        if [ "${1:-}" = "addr" ] && [ "${2:-}" = "show" ] && [ "${3:-}" = "dev" ]; then
+            iface="${4:-}"
+            addr="${MOCK_IP_ADDR4:-192.168.1.2}"
+            printf 'inet %s/24\n' "$addr"
+            exit 0
         fi
-        exit 0
-    fi
-    ;;
-route)
-    shift
-    gateway="${MOCK_IP_GATEWAY:-192.168.1.1}"
-    if [ "${1:-}" = "show" ] && [ "${2:-}" = "dev" ]; then
-        iface="${3:-}"
-        printf 'default via %s dev %s\n' "$gateway" "$iface"
-        exit 0
-    fi
-    printf 'default via %s dev %s\n' "$gateway" "${LAN_INTERFACE:-br-lan}"
-    exit 0
-    ;;
-link)
-    shift
-    cmd="${1:-}"
-    case "$cmd" in
-    show)
-        iface="${2:-}"
-        printf '2: %s: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP qlen 1000\n' "$iface"
+        ;;
+    -6)
+        shift
+        if [ "${1:-}" = "addr" ] && [ "${2:-}" = "show" ] && [ "${3:-}" = "dev" ]; then
+            addr6="${MOCK_IP_ADDR6:-}"
+            if [ -n "$addr6" ]; then
+                printf 'inet6 %s/64\n' "$addr6"
+            fi
+            exit 0
+        fi
+        ;;
+    route)
+        shift
+        gateway="${MOCK_IP_GATEWAY:-192.168.1.1}"
+        if [ "${1:-}" = "show" ] && [ "${2:-}" = "dev" ]; then
+            iface="${3:-}"
+            printf 'default via %s dev %s\n' "$gateway" "$iface"
+            exit 0
+        fi
+        printf 'default via %s dev %s\n' "$gateway" "${LAN_INTERFACE:-br-lan}"
         exit 0
         ;;
-    set)
-        exit 0
+    link)
+        shift
+        cmd="${1:-}"
+        case "$cmd" in
+            show)
+                iface="${2:-}"
+                printf '2: %s: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP qlen 1000\n' "$iface"
+                exit 0
+                ;;
+            set)
+                exit 0
+                ;;
+        esac
         ;;
-    esac
-    ;;
-*) ;;
+    *) ;;
 esac
 
 exit 0
