@@ -15,7 +15,7 @@ To merge a pull request to `main`, you must satisfy these requirements:
 1. **Code Review**: Obtain at least one approval from a repository maintainer
 2. **All Status Checks Pass**: Every status check must pass before merging:
    - **CI/Linting**: `Lint (shfmt)`, `Lint (shellcheck)`, `Lint (markdownlint)`, `Lint (actionlint)`, `Test`
-   - **Security Scans**: `CodeQL Analysis (python)`, `CodeQL Analysis (javascript)`, `ShellCheck Security Analysis`, `Dependency Review`, `Trivy Security Scan`, `Bandit Python Security Scan`
+   - **Security Scans**: `CodeQL Analysis (python)`, `ShellCheck Security Analysis`, `Dependency Review`, `Trivy Security Scan`, `Bandit Python Security Scan`
 3. **Branch Up-to-Date**: Your branch must be rebased on the latest `main`
 4. **Conversations Resolved**: All review conversations must be closed
 5. **Squash Merge Only**: Use squash merge strategy (merge commits are not allowed)
