@@ -1,0 +1,185 @@
+name: CodeQL Security Scanning
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # Run weekly on Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  analyze:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['python']
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          config: |
+            paths-ignore:
+              - '**/*.md'
+              - 'docs/**'
+              - 'tests/**'
+              - '.github/**'
+              - '_out/**'
+              - '__pycache__/**'
+          queries: +security-extended,security-and-quality
+
+      - name: Setup Python for CodeQL
+        uses: actions/setup-python@v5
+        if: matrix.language == 'python'
+        with:
+          python-version: '3.11'
+          
+      - name: Create requirements.txt for CodeQL
+        run: |
+          set -euo pipefail
+          if [ -f requirements.txt ]; then
+            echo "requirements.txt already exists"
+          else
+            # Create minimal requirements.txt for CodeQL
+            echo "paramiko>=2.0.0" > requirements.txt || true
+          fi
+        if: matrix.language == 'python'
+        
+      - name: Install Python dependencies
+        run: |
+          set -euo pipefail
+          if [ -f requirements.txt ]; then
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+          fi
+        if: matrix.language == 'python'
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+          upload: true
+
+  shellcheck-security:
+    name: ShellCheck Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    permissions:
+      security-events: write
+      contents: read
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install ShellCheck and jq
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install -y shellcheck jq
+
+      - name: Run ShellCheck and convert to SARIF
+        run: |
+          set -euo pipefail
+          mkdir -p shellcheck-results
+          
+          # Find all shell scripts
+          SHELL_SCRIPTS=$(find . -type f -name "*.sh" -not -path "./.git/*" -not -path "./tests/*" | tr '\n' ' ')
+          
+          # Also check the main script
+          if [ -f openwrt_captive_monitor.sh ]; then
+            SHELL_SCRIPTS="$SHELL_SCRIPTS openwrt_captive_monitor.sh"
+          fi
+          
+          # Run shellcheck and convert to SARIF
+          if [ -n "$SHELL_SCRIPTS" ]; then
+            # shellcheck disable=SC2086
+            shellcheck --format=json $SHELL_SCRIPTS > shellcheck-output.json || true
+            
+            # Convert to SARIF format using a jq script
+            # Note: $schema below is a jq/JSON field, not a shell variable
+            # shellcheck disable=SC2016
+            cat > convert-to-sarif.jq << 'JQSCRIPT'
+          [.[] | select(.level == "error" or .level == "warning")] as $issues |
+          {
+            "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+            "version": "2.1.0",
+            "runs": [{
+              "tool": {
+                "driver": {
+                  "name": "ShellCheck",
+                  "informationUri": "https://www.shellcheck.net/",
+                  "version": "0.9.0",
+                  "rules": []
+                }
+              },
+              "results": $issues | map({
+                "ruleId": ("SC" + (.code | tostring)),
+                "level": (if .level == "error" then "error" else "warning" end),
+                "message": {
+                  "text": .message
+                },
+                "locations": [{
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": .file
+                    },
+                    "region": {
+                      "startLine": .line,
+                      "startColumn": .column
+                    }
+                  }
+                }]
+              })
+            }]
+          }
+          JQSCRIPT
+            
+            jq -f convert-to-sarif.jq shellcheck-output.json > shellcheck-results/shellcheck.sarif
+          else
+            echo "No shell scripts found to analyze"
+            echo '{"$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json", "version": "2.1.0", "runs": []}' > shellcheck-results/shellcheck.sarif
+          fi
+
+      - name: Upload ShellCheck SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: shellcheck-results/shellcheck.sarif
+          category: shellcheck-security

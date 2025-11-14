@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+. "$(dirname "$0")/_lib.sh"
+
+mock_log wifi "$@"
+exit "${MOCK_WIFI_STATUS:-0}"

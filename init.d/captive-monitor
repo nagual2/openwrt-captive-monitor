@@ -1,0 +1,22 @@
+#!/bin/sh
+# shellcheck shell=ash
+set -eu
+
+if (set -o pipefail) 2> /dev/null; then
+    # shellcheck disable=SC3040
+    set -o pipefail
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" 2> /dev/null && pwd 2> /dev/null || printf '')"
+LOCAL_INIT="$SCRIPT_DIR/package/openwrt-captive-monitor/files/etc/init.d/captive-monitor"
+
+if [ -n "$SCRIPT_DIR" ] && [ -x "$LOCAL_INIT" ]; then
+    exec "$LOCAL_INIT" "$@"
+fi
+
+if [ -x /etc/init.d/captive-monitor ]; then
+    exec /etc/init.d/captive-monitor "$@"
+fi
+
+echo "captive-monitor init script not found" >&2
+exit 127

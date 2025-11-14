@@ -1,0 +1,643 @@
+name: Build and Release Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  OPENWRT_VERSION: "23.05.3"
+  OPENWRT_ARCH: "x86_64"
+  SDK_CHECKSUM: "f90d60c7a00a50a1c80807fb32fd4c12bed1fb65871328f3c2171caf9b711254"
+
+jobs:
+  build-package:
+    name: Build OpenWrt Package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      ipk_name: ${{ steps.artifacts.outputs.ipk_name }}
+      ipk_file: ${{ steps.artifacts.outputs.ipk_file }}
+      build_successful: ${{ steps.build.outputs.success }}
+    
+    steps:
+      - name: Determine checkout ref
+        id: ref
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "ref=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.ref }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.ref.outputs.ref }}
+          fetch-depth: 0
+
+      - name: Install required tools
+        run: sudo apt-get update && sudo apt-get install -y binutils tar
+
+      - name: Cache OpenWrt SDK
+        id: cache-sdk
+        uses: actions/cache@v4
+        with:
+          path: openwrt-sdk-*
+          key: ${{ runner.os }}-openwrt-sdk-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_ARCH }}-v3
+          restore-keys: |
+            ${{ runner.os }}-openwrt-sdk-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_ARCH }}-
+
+      - name: Install build dependencies
+        run: |
+          set -euxo pipefail
+          sudo rm -f /etc/apt/sources.list.d/microsoft*.list
+          
+          echo 'Acquire::http::Timeout "30";' | sudo tee -a /etc/apt/apt.conf.d/99timeout
+          echo 'Acquire::https::Timeout "30";' | sudo tee -a /etc/apt/apt.conf.d/99timeout
+          echo 'Acquire::Retries "3";' | sudo tee -a /etc/apt/apt.conf.d/99retry
+          
+          for attempt in {1..3}; do
+            echo "Attempt $attempt/3: Updating package lists..."
+            if sudo apt-get update -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=3; then
+              echo "✓ Package update successful"
+              break
+            else
+              if [ "$attempt" -lt 3 ]; then
+                echo "✗ Package update failed, retrying in 10s..."
+                sleep 10
+              else
+                echo "❌ Package update failed after 3 attempts"
+                exit 1
+              fi
+            fi
+          done
+          
+          for attempt in {1..3}; do
+            echo "Attempt $attempt/3: Installing dependencies..."
+            if sudo apt-get -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=3 \
+              install -y --no-install-recommends \
+              build-essential \
+              ccache \
+              curl \
+              file \
+              gawk \
+              gettext \
+              git \
+              libncurses5-dev \
+              libssl-dev \
+              python3 \
+              rsync \
+              unzip \
+              wget \
+              zlib1g-dev \
+              flex \
+              bison; then
+              echo "✓ Dependencies installed successfully"
+              break
+            else
+              if [ "$attempt" -lt 3 ]; then
+                echo "✗ Dependency installation failed, retrying in 10s..."
+                sleep 10
+              else
+                echo "❌ Dependency installation failed after 3 attempts"
+                exit 1
+              fi
+            fi
+          done
+
+      - name: Download and extract OpenWrt SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          SDK_VERSION="${{ env.OPENWRT_VERSION }}"
+          SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          SDK_CHECKSUM="${{ env.SDK_CHECKSUM }}"
+          
+          SDK_URL="https://github.com/nagual2/openwrt-captive-monitor/releases/download/sdk-${SDK_VERSION}/${SDK_FILE}"
+          FALLBACK_URL="https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
+          
+          echo "=== Downloading OpenWrt SDK ==="
+          echo "Primary URL: $SDK_URL"
+          echo "Fallback URL: $FALLBACK_URL"
+          
+          for attempt in {1..3}; do
+            echo "Attempt $attempt/3: Downloading from CDN..."
+            if wget --timeout=120 --tries=1 --retry-connrefused --waitretry=2 --random-wait -q -O "$SDK_FILE" "$SDK_URL" 2>/dev/null; then
+              echo "✓ CDN download successful"
+              break
+            else
+              if [ "$attempt" -lt 3 ]; then
+                wait_time=$((2 ** (attempt - 1)))
+                echo "✗ CDN download failed, retrying in ${wait_time}s..."
+                sleep "$wait_time"
+              else
+                echo "⚠️  CDN failed, falling back to official mirror..."
+                wget --timeout=300 --tries=3 -O "$SDK_FILE" "$FALLBACK_URL"
+              fi
+            fi
+          done
+          
+          echo "=== Verifying SDK ==="
+          SDK_SIZE=$(stat -c%s "$SDK_FILE")
+          echo "SDK size: $SDK_SIZE bytes"
+          
+          if [ "$SDK_SIZE" -lt 100000000 ]; then
+            echo "ERROR: SDK file too small"
+            exit 1
+          fi
+          
+          ACTUAL_SHA=$(sha256sum "$SDK_FILE" | cut -d' ' -f1)
+          if [ "$SDK_CHECKSUM" != "$ACTUAL_SHA" ]; then
+            echo "ERROR: Checksum mismatch!"
+            echo "Expected: ${SDK_CHECKSUM}"
+            echo "Actual:   ${ACTUAL_SHA}"
+            exit 1
+          fi
+          
+          echo "✓ SDK verified, extracting..."
+          tar -xf "$SDK_FILE"
+          rm "$SDK_FILE"
+
+      - name: Find SDK directory
+        id: sdk
+        run: |
+          SDK_DIR=$(find . -maxdepth 1 -type d -name "openwrt-sdk-*" | head -n1)
+          if [ -z "$SDK_DIR" ]; then
+            echo "ERROR: SDK directory not found"
+            exit 1
+          fi
+          echo "sdk_dir=$SDK_DIR" >> "$GITHUB_OUTPUT"
+          echo "Found SDK directory: $SDK_DIR"
+
+      - name: Copy package to SDK
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          
+          echo "=== Copying package to SDK ==="
+          rm -rf "$SDK_DIR/package/openwrt-captive-monitor"
+          mkdir -p "$SDK_DIR/package/openwrt-captive-monitor"
+          cp -r package/openwrt-captive-monitor/* "$SDK_DIR/package/openwrt-captive-monitor/"
+          cp VERSION "$SDK_DIR/package/openwrt-captive-monitor/"
+          mkdir -p "$SDK_DIR/package/openwrt-captive-monitor/files/"
+          cp LICENSE "$SDK_DIR/package/openwrt-captive-monitor/files/"
+          
+          echo "Package copied successfully"
+
+      - name: Update and install feeds
+        run: |
+          set -euo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          cd "$SDK_DIR"
+          
+          git config --global http.postBuffer 524288000
+          git config --global core.compression 0
+          
+          update_feeds_with_retry() {
+            local max_attempts=10
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempt $attempt/$max_attempts: Updating feeds..."
+              
+              rm -rf feeds/
+              rm -f feeds.conf.old
+              
+              if ./scripts/feeds update -a; then
+                echo "✓ Feeds updated successfully"
+                return 0
+              fi
+              
+              if [ $attempt -lt $max_attempts ]; then
+                local base_wait=$((2 ** (attempt - 1)))
+                local jitter=$((base_wait / 5))
+                local wait_time=$((base_wait + RANDOM % jitter))
+                echo "✗ Feed update failed, waiting ${wait_time}s before retry..."
+                sleep "$wait_time"
+              fi
+              attempt=$((attempt + 1))
+            done
+            
+            echo "✗ Feed update failed after $max_attempts attempts"
+            return 1
+          }
+          
+          install_feeds_with_retry() {
+            local max_attempts=10
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempt $attempt/$max_attempts: Installing feeds..."
+              if ./scripts/feeds install -a; then
+                echo "✓ Feeds installed successfully"
+                return 0
+              fi
+              
+              if [ $attempt -lt $max_attempts ]; then
+                local base_wait=$((2 ** (attempt - 1)))
+                local jitter=$((base_wait / 5))
+                local wait_time=$((base_wait + RANDOM % jitter))
+                echo "✗ Feed install failed, waiting ${wait_time}s before retry..."
+                sleep "$wait_time"
+              fi
+              attempt=$((attempt + 1))
+            done
+            
+            echo "✗ Feed install failed after $max_attempts attempts"
+            return 1
+          }
+          
+          update_feeds_with_retry || exit 1
+          install_feeds_with_retry || exit 1
+
+      - name: Configure SDK
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          cd "$SDK_DIR"
+          
+          echo "=== Configuring SDK ==="
+          make defconfig
+          
+          echo "✓ SDK configuration complete"
+
+      - name: Build package
+        id: build
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          cd "$SDK_DIR"
+          
+          echo "=== Building package ==="
+          if ! make package/openwrt-captive-monitor/compile V=s 2>&1 | tee build.log; then
+            echo "=== BUILD FAILED ==="
+            tail -100 build.log
+            echo "success=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          
+          echo "✓ Package built successfully"
+          echo "success=true" >> "$GITHUB_OUTPUT"
+
+      - name: Locate and prepare artifacts
+        id: artifacts
+        run: |
+          set -euxo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          
+          PKG_DIR=$(find "$SDK_DIR/bin" -type d -name "packages" | head -n1)
+          if [ -z "$PKG_DIR" ]; then
+            echo "ERROR: Could not find packages directory"
+            exit 1
+          fi
+          
+          IPK_FILE=$(find "$PKG_DIR" -name "openwrt-captive-monitor_*.ipk" | head -n1)
+          if [ -z "$IPK_FILE" ]; then
+            echo "ERROR: Could not find built .ipk file"
+            exit 1
+          fi
+          
+          echo "Found IPK: $IPK_FILE"
+          echo "ipk_file=$IPK_FILE" >> "$GITHUB_OUTPUT"
+          echo "ipk_name=$(basename "$IPK_FILE")" >> "$GITHUB_OUTPUT"
+          
+          mkdir -p artifacts
+          cp "$IPK_FILE" artifacts/
+          find "$PKG_DIR" -name "Packages*" -exec cp {} artifacts/ \; 2>/dev/null || true
+          cp "$SDK_DIR/build.log" artifacts/ 2>/dev/null || true
+          
+          echo "Artifacts prepared:"
+          ls -la artifacts/
+
+      - name: Validate package
+        run: |
+          set -euxo pipefail
+          echo "=== Validating package ==="
+          ./scripts/validate_ipk.sh "${{ steps.artifacts.outputs.ipk_file }}"
+          echo "✓ Package validation successful"
+
+      - name: Display package information
+        run: |
+          set -euxo pipefail
+          IPK_FILE="${{ steps.artifacts.outputs.ipk_file }}"
+          
+          echo "=== Package Information ==="
+          echo "File: ${{ steps.artifacts.outputs.ipk_name }}"
+          echo "Size: $(stat -c%s "$IPK_FILE") bytes"
+          
+          TEMP_DIR=$(mktemp -d)
+          cd "$TEMP_DIR"
+          ar x "$IPK_FILE"
+          tar -xzf control.tar.gz
+          
+          echo ""
+          echo "=== Package Control Information ==="
+          cat control
+          
+          rm -rf "$TEMP_DIR"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: openwrt-package-build
+          path: artifacts/
+          retention-days: 30
+          if-no-files-found: error
+
+  sign-and-publish:
+    name: Sign and Publish Release
+    runs-on: ubuntu-latest
+    needs: build-package
+    if: needs.build-package.outputs.build_successful == 'true'
+    
+    permissions:
+      contents: write
+      id-token: write
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: openwrt-package-build
+          path: artifacts/
+
+      - name: Configure optional cloud federation
+        if: secrets.RELEASE_OIDC_ROLE_ARN != ''
+        env:
+          RELEASE_CLOUD_PROVIDER: ${{ secrets.RELEASE_CLOUD_PROVIDER }}
+          RELEASE_OIDC_ROLE_ARN: ${{ secrets.RELEASE_OIDC_ROLE_ARN }}
+          RELEASE_OIDC_AUDIENCE: ${{ secrets.RELEASE_OIDC_AUDIENCE }}
+          RELEASE_AWS_REGION: ${{ secrets.RELEASE_AWS_REGION }}
+        uses: ./.github/actions/oidc-assume-role
+        with:
+          provider: ${{ env.RELEASE_CLOUD_PROVIDER != '' && env.RELEASE_CLOUD_PROVIDER || 'aws' }}
+          role-arn: ${{ env.RELEASE_OIDC_ROLE_ARN }}
+          audience: ${{ env.RELEASE_OIDC_AUDIENCE != '' && env.RELEASE_OIDC_AUDIENCE || 'sts.amazonaws.com' }}
+          session-name: ${{ format('openwrt-release-{0}', github.run_id) }}
+          duration-seconds: ${{ vars.RELEASE_OIDC_SESSION_DURATION != '' && vars.RELEASE_OIDC_SESSION_DURATION || '3600' }}
+          aws-region: ${{ env.RELEASE_AWS_REGION }}
+
+      - name: Gather GitHub OIDC token claims
+        env:
+          OIDC_AUDIENCE: sigstore
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+            echo "OIDC metadata not available. Ensure id-token permissions are granted."
+            exit 1
+          fi
+
+          response=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${OIDC_AUDIENCE}")
+
+          token=$(echo "$response" | python3 -c '
+import json
+import sys
+print(json.load(sys.stdin)["value"])
+')
+          echo "::add-mask::$token"
+
+          export OIDC_TOKEN="$token"
+          python3 <<'PY'
+          import base64
+          import json
+          import os
+
+          segments = os.environ["OIDC_TOKEN"].split('.')
+          if len(segments) < 2:
+              raise SystemExit("invalid token structure")
+          payload_segment = segments[1]
+          padding = '=' * (-len(payload_segment) % 4)
+          claims = json.loads(base64.urlsafe_b64decode((payload_segment + padding).encode()))
+          print(f"OIDC issuer: {claims.get('iss')}")
+          print(f"OIDC subject: {claims.get('sub')}")
+          print(f"OIDC audience: {claims.get('aud')}")
+          PY
+
+          echo "OIDC token obtained; proceeding with keyless signing."
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.2.0
+        with:
+          cosign-release: v2.4.0
+
+      - name: Show cosign version
+        run: cosign version
+
+      - name: Generate provenance manifest
+        id: provenance
+        run: |
+          set -euo pipefail
+          cd artifacts/
+
+          ipk_file=$(ls *.ipk 2>/dev/null | head -n1 || true)
+          if [ -z "$ipk_file" ]; then
+            echo "Unable to locate built IPK artifact."
+            exit 1
+          fi
+
+          sha256=$(sha256sum "$ipk_file" | awk '{print $1}')
+          build_timestamp=$(date --utc +%FT%TZ)
+          git_sha=$(git rev-parse HEAD)
+
+          export IPK_FILE="$ipk_file"
+          export IPK_SHA256="$sha256"
+          export BUILD_TIMESTAMP="$build_timestamp"
+          export GIT_SHA="$git_sha"
+
+          cat <<'PY' | sed 's/^[[:space:]]*//' | python3 -
+          import json
+          import os
+
+          ipk_file = os.environ["IPK_FILE"]
+          sha256 = os.environ["IPK_SHA256"]
+          workflow = os.environ.get("GITHUB_WORKFLOW", "")
+          ref = os.environ.get("GITHUB_REF", "")
+          openwrt_version = os.environ.get("OPENWRT_VERSION", "")
+          openwrt_arch = os.environ.get("OPENWRT_ARCH", "")
+          repository = os.environ.get("GITHUB_REPOSITORY", "")
+          run_id = os.environ.get("GITHUB_RUN_ID", "")
+          run_attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "")
+          build_timestamp = os.environ["BUILD_TIMESTAMP"]
+          git_sha = os.environ["GIT_SHA"]
+
+          statement = {
+              "_type": "https://in-toto.io/Statement/v1",
+              "predicateType": "https://slsa.dev/provenance/v1",
+              "subject": [
+                  {
+                      "name": ipk_file,
+                      "digest": {"sha256": sha256}
+                  }
+              ],
+              "predicate": {
+                  "buildDefinition": {
+                      "buildType": "https://github.com/nagual2/openwrt-captive-monitor/.github/workflows/tag-build-release.yml",
+                      "externalParameters": {
+                          "workflow": workflow,
+                          "ref": ref
+                      },
+                      "internalParameters": {
+                          "openwrtVersion": openwrt_version,
+                          "openwrtArch": openwrt_arch
+                      },
+                      "resolvedDependencies": [
+                          {
+                              "uri": f"git+https://github.com/{repository}@{git_sha}",
+                              "digest": {"sha1": git_sha}
+                          }
+                      ]
+                  },
+                  "runDetails": {
+                      "builder": {
+                          "id": f"https://github.com/{repository}/actions/runs/{run_id}"
+                      },
+                      "metadata": {
+                          "invocationId": f"{run_id}-{run_attempt}",
+                          "buildFinishedOn": build_timestamp
+                      }
+                  }
+              }
+          }
+
+          with open(f"{ipk_file}.provenance.json", "w", encoding="utf-8") as handle:
+              json.dump(statement, handle, indent=2)
+              handle.write("\n")
+          PY
+
+          provenance_file="${ipk_file}.provenance.json"
+          echo "Generated provenance manifest: $provenance_file"
+          echo "provenance_file=artifacts/$provenance_file" >> "$GITHUB_OUTPUT"
+
+      - name: Create checksums
+        run: |
+          set -euo pipefail
+          cd artifacts/
+
+          echo "=== Creating checksums ==="
+          files=$(find . -maxdepth 1 -type f ! -name 'SHA256SUMS' ! -name '*.sig' ! -name '*.sigstore' ! -name '*.pem' -printf '%P\n' | sort)
+          if [ -z "$files" ]; then
+            echo "No build outputs found to hash."
+            exit 1
+          fi
+
+          printf '%s\n' "$files" | xargs -d '\n' -I{} sha256sum "{}" > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Sign release artifacts with Cosign
+        env:
+          COSIGN_YES: "true"
+          COSIGN_EXPERIMENTAL: "1"
+          SIGSTORE_ID_TOKEN_AUDIENCE: sigstore
+        run: |
+          set -euo pipefail
+          cd artifacts/
+
+          echo "=== Signing artifacts with Cosign ==="
+          while IFS= read -r -d '' artifact; do
+            filename=$(basename "$artifact")
+            echo "Signing ${filename}"
+            cosign sign-blob \
+              --yes \
+              --bundle "${filename}.sigstore" \
+              --output-certificate "${filename}.pem" \
+              --output-signature "${filename}.sig" \
+              "$filename"
+          done < <(find . -maxdepth 1 -type f ! -name '*.sig' ! -name '*.sigstore' ! -name '*.pem' -print0)
+          echo "✓ Cosign signing complete"
+
+      - name: Verify primary signatures
+        env:
+          IDENTITY_REGEX: "^https://github.com/${{ github.repository }}/.github/workflows/tag-build-release.yml@.*"
+        run: |
+          set -euo pipefail
+          cd artifacts/
+
+          ipk_file=$(ls *.ipk 2>/dev/null | head -n1 || true)
+          if [ -z "$ipk_file" ]; then
+            echo "No IPK artifact found for verification."
+            exit 1
+          fi
+
+          cosign verify-blob \
+            --certificate "${ipk_file}.pem" \
+            --signature "${ipk_file}.sig" \
+            --certificate-identity-regexp "$IDENTITY_REGEX" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "$ipk_file"
+
+          prov_file="${ipk_file}.provenance.json"
+          if [ -f "$prov_file" ]; then
+            cosign verify-blob \
+              --certificate "${prov_file}.pem" \
+              --signature "${prov_file}.sig" \
+              --certificate-identity-regexp "$IDENTITY_REGEX" \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+              "$prov_file"
+          fi
+
+          echo "Verified Cosign signatures for $ipk_file and provenance manifest."
+
+      - name: Upload to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euxo pipefail
+          
+          TAG="${{ github.ref_name }}"
+          RELEASE_ID=$(gh release view "$TAG" --json id --jq '.id' 2>/dev/null || echo "")
+          
+          if [ -z "$RELEASE_ID" ]; then
+            echo "ℹ️  Creating release for tag $TAG"
+            gh release create "$TAG" \
+              --generate-notes \
+              --latest
+          fi
+          
+          echo "=== Uploading artifacts to release ==="
+          cd artifacts/
+
+          while IFS= read -r file; do
+            if [ -z "$file" ]; then
+              continue
+            fi
+            echo "Uploading: $file"
+            gh release upload "$TAG" "$file" --clobber
+          done < <(find . -maxdepth 1 -type f -printf '%P\n' | sort)
+
+          echo "✅ Release updated successfully"
+          echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/$TAG"
+
+      - name: Verify release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euxo pipefail
+          TAG="${{ github.ref_name }}"
+          
+          echo "=== Release Assets ==="
+          gh release view "$TAG" --json assets --jq '.assets[] | "\(.name) - \(.size) bytes"'
