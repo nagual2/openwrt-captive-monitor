@@ -29,10 +29,12 @@ info() {
 }
 
 echo "1. Checking CodeQL action versions..."
-if grep -q "github/codeql-action/init@v4" .github/workflows/codeql.yml && \
-   grep -q "github/codeql-action/autobuild@v4" .github/workflows/codeql.yml && \
-   grep -q "github/codeql-action/analyze@v4" .github/workflows/codeql.yml && \
-   grep -q "github/codeql-action/upload-sarif@v4" .github/workflows/codeql.yml; then
+if
+    grep -q "github/codeql-action/init@v4" .github/workflows/codeql.yml && \
+    grep -q "github/codeql-action/autobuild@v4" .github/workflows/codeql.yml && \
+    grep -q "github/codeql-action/analyze@v4" .github/workflows/codeql.yml && \
+    grep -q "github/codeql-action/upload-sarif@v4" .github/workflows/codeql.yml
+then
     pass "All CodeQL actions are using v4"
 else
     fail "Some CodeQL actions are not using v4"
@@ -56,8 +58,10 @@ fi
 
 echo
 echo "4. Checking for JavaScript references..."
-if ! grep -iq "javascript" .github/workflows/codeql.yml && \
-   ! grep -q "CodeQL Analysis (javascript)" .github/settings.yml; then
+if
+    ! grep -iq "javascript" .github/workflows/codeql.yml && \
+    ! grep -q "CodeQL Analysis (javascript)" .github/settings.yml
+then
     pass "No JavaScript references found in workflow or settings"
 else
     fail "Found JavaScript references"
@@ -65,10 +69,12 @@ fi
 
 echo
 echo "5. Checking required status checks in settings.yml..."
-if ! grep -q '"CodeQL Analysis (python)"' .github/settings.yml && \
-   grep -q '"CodeQL Analysis (shell)"' .github/settings.yml && \
-   grep -q '"ShellCheck Security Analysis"' .github/settings.yml && \
-   ! grep -q '"CodeQL Analysis (javascript)"' .github/settings.yml; then
+if
+    ! grep -q '"CodeQL Analysis (python)"' .github/settings.yml && \
+    grep -q '"CodeQL Analysis (shell)"' .github/settings.yml && \
+    grep -q '"ShellCheck Security Analysis"' .github/settings.yml && \
+    ! grep -q '"CodeQL Analysis (javascript)"' .github/settings.yml
+then
     pass "Status checks correctly configured"
 else
     fail "Status checks not correctly configured"
@@ -76,7 +82,7 @@ fi
 
 echo
 echo "6. Verifying YAML syntax..."
-if command -v python3 &> /dev/null; then
+if command -v python3 &>/dev/null; then
     if python3 -c "import yaml; yaml.safe_load(open('.github/workflows/codeql.yml'))" 2>/dev/null; then
         pass "YAML syntax is valid"
     else
