@@ -498,13 +498,51 @@ jobs:
 
           response=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${OIDC_AUDIENCE}")
 
-          # Extract token from response
-          token=$(echo "$response" | python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])')
+          # Extract token from response using jq
+          token=$(echo "$response" | jq -r '.value')
+          if [ -z "$token" ]; then
+            echo "Error: Failed to extract token from response"
+            exit 1
+          fi
           echo "::add-mask::$token"
-
-          # Process token using external script
           export OIDC_TOKEN="$token"
-          python3 .github/scripts/process_oidc_token.py
+
+          # Process token using pure shell
+          IFS='.' read -ra token_parts <<< "$token"
+          if [ ${#token_parts[@]} -lt 2 ]; then
+            echo "Error: Invalid token format"
+            exit 1
+          fi
+          
+          # Decode the payload (second part of the JWT)
+          payload_segment=${token_parts[1]}
+          # Add padding if needed
+          padding=$((4 - ${#payload_segment} % 4))
+          if [ $padding -eq 4 ]; then
+            padding=0
+          fi
+          
+          # Decode base64url to base64 and then decode
+          payload_base64=$(echo -n "$payload_segment" | tr '_-' '/+' | tr -d '\n')
+          for ((i=0; i<padding; i++)); do
+            payload_base64="${payload_base64}="
+          done
+          
+          # Decode and extract claims
+          claims=$(echo "$payload_base64" | base64 -d 2>/dev/null || echo "")
+          if [ -z "$claims" ]; then
+            echo "Error: Failed to decode token payload"
+            exit 1
+          fi
+          
+          # Extract and display claims
+          issuer=$(echo "$claims" | jq -r '.iss // "unknown"')
+          subject=$(echo "$claims" | jq -r '.sub // "unknown"')
+          audience=$(echo "$claims" | jq -r '.aud // "unknown"')
+          
+          echo "OIDC issuer: $issuer"
+          echo "OIDC subject: $subject"
+          echo "OIDC audience: $audience"
 
           echo "OIDC token obtained; proceeding with keyless signing."
 
