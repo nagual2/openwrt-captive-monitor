@@ -119,7 +119,7 @@ jobs:
           mkdir -p shellcheck-results
 
           # Find all shell scripts
-          SHELL_SCRIPTS=$(find . -type f -name "*.sh" -not -path "./.git/*" -not -path "./tests/*" | tr '\n' ' ')
+          SHELL_SCRIPTS=$(find . -type f -name "*.sh" -not -path "./.git/*" -not -path "./tests/*" | tr "\n" " ")
 
           # Also check the main script
           if [ -f openwrt_captive_monitor.sh ]; then
