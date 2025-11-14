@@ -180,25 +180,25 @@ print(json.load(sys.stdin)["value"])
 
           export OIDC_TOKEN="$token"
           python3 <<'PY'
-          import base64
-          import json
-          import os
-          import sys
+import base64
+import json
+import os
+import sys
 
-          token = os.environ["OIDC_TOKEN"]
-          segments = token.split('.')
-          if len(segments) < 2:
-              raise SystemExit("invalid token structure")
-          payload_segment = segments[1]
-          padding = '=' * (-len(payload_segment) % 4)
-          payload = payload_segment + padding
-          claims = json.loads(base64.urlsafe_b64decode(payload.encode()))
-          issuer = claims.get('iss', 'unknown')
-          subject = claims.get('sub', 'unknown')
-          audience = claims.get('aud', 'unknown')
-          print(f"OIDC issuer: {issuer}")
-          print(f"OIDC subject: {subject}")
-          print(f"OIDC audience: {audience}")
+token = os.environ["OIDC_TOKEN"]
+segments = token.split('.')
+if len(segments) < 2:
+    raise SystemExit("invalid token structure")
+payload_segment = segments[1]
+padding = '=' * (-len(payload_segment) % 4)
+payload = payload_segment + padding
+claims = json.loads(base64.urlsafe_b64decode(payload.encode()))
+issuer = claims.get('iss', 'unknown')
+subject = claims.get('sub', 'unknown')
+audience = claims.get('aud', 'unknown')
+print(f"OIDC issuer: {issuer}")
+print(f"OIDC subject: {subject}")
+print(f"OIDC audience: {audience}")
           PY
 
           echo "OIDC token acquired successfully; Sigstore signing is ready."
