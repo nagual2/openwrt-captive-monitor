@@ -579,9 +579,9 @@ Planned improvements to security scanning:
 ## Related Documentation
 
 * [SECURITY.md](../.github/SECURITY.md) - Security policy and vulnerability reporting
-* [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution guidelines
+* [CONTRIBUTING.md](contributing/CONTRIBUTING.md) - Contribution guidelines
 * [CI_WORKFLOW_SIMPLIFIED.md](CI_WORKFLOW_SIMPLIFIED.md) - CI/CD workflow overview
-* [RELEASE_PROCESS.md](../RELEASE_PROCESS.md) - Release and deployment process
+* [RELEASE_PROCESS.md](release/RELEASE_PROCESS.md) - Release and deployment process
 
 ---
 

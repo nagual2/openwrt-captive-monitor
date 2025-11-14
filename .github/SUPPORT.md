@@ -47,7 +47,7 @@ The openwrt-captive-monitor project provides several channels for getting suppor
 **Primary documentation**:
 * [README.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/README.md) - Installation, configuration, and basic usage
 * [Extended documentation](docs/) - Advanced troubleshooting and deployment guides
-* [CHANGELOG.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/CHANGELOG.md) - Version history and release notes
+* [CHANGELOG.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/docs/release/CHANGELOG.md) - Version history and release notes
 
 **Configuration reference**:
 * Default configuration in `/etc/config/captive-monitor` after installation
@@ -87,7 +87,7 @@ nslookup google.com
 
 ## 🏗️ Contributing
 
-Found a bug you want to fix or have a feature idea? Check out our [Contributing Guide](https://github.com/nagual2/openwrt-captive-monitor/blob/main/CONTRIBUTING.md) for:
+Found a bug you want to fix or have a feature idea? Check out our [Contributing Guide](https://github.com/nagual2/openwrt-captive-monitor/blob/main/docs/contributing/CONTRIBUTING.md) for:
 
 * Development setup instructions
 * Code style and testing requirements
@@ -185,7 +185,7 @@ Thank you for using openwrt-captive-monitor! Your feedback and contributions hel
 **Основная документация**:
 * [README.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/README.md) - Установка, конфигурация и базовое использование
 * [Расширенная документация](docs/) - Продвинутое устранение неполадок и руководства по развёртыванию
-* [CHANGELOG.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/CHANGELOG.md) - История версий и примечания к выпускам
+* [CHANGELOG.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/docs/release/CHANGELOG.md) - История версий и примечания к выпускам
 
 **Справочник по конфигурации**:
 * Конфигурация по умолчанию в `/etc/config/captive-monitor` после установки
@@ -225,7 +225,7 @@ nslookup google.com
 
 ## 🏗️ Участие в разработке
 
-Нашли ошибку, которую хотите исправить, или есть идея новой функции? Ознакомьтесь с нашим [Руководством по участию](https://github.com/nagual2/openwrt-captive-monitor/blob/main/CONTRIBUTING.md), где описаны:
+Нашли ошибку, которую хотите исправить, или есть идея новой функции? Ознакомьтесь с нашим [Руководством по участию](https://github.com/nagual2/openwrt-captive-monitor/blob/main/docs/contributing/CONTRIBUTING.md), где описаны:
 
 * Инструкции по настройке окружения разработки
 * Требования к стилю кода и тестированию

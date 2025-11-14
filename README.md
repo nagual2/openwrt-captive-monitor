@@ -418,7 +418,7 @@ This project uses **automated semantic versioning** with GitHub Actions. Release
    - Signs artifacts using OIDC
    - Uploads IPK and build logs to GitHub Release
 
-For detailed information, see [RELEASE_PROCESS.md](RELEASE_PROCESS.md).
+For detailed information, see [RELEASE_PROCESS.md](docs/release/RELEASE_PROCESS.md).
 
 ### Contributing
 
@@ -428,7 +428,7 @@ For detailed information, see [RELEASE_PROCESS.md](RELEASE_PROCESS.md).
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+See [CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md) for detailed guidelines.
 
 ## 📚 Documentation
 
@@ -454,8 +454,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ### Contributing
 
-- [Contributing Guide](CONTRIBUTING.md) - Development guidelines and process
-- [Code of Conduct](CODE_OF_CONDUCT.md) - Community guidelines
+- [Contributing Guide](docs/contributing/CONTRIBUTING.md) - Development guidelines and process
+- [Code of Conduct](docs/contributing/CODE_OF_CONDUCT.md) - Community guidelines
 - [Project Management](docs/project/management.md) - Roadmap and release process
 
 ## 📊 Project Status
@@ -902,7 +902,7 @@ shfmt -i 2 -ci -sr -d openwrt_captive_monitor.sh
 4. Отправьте ветку (`git push origin feature/amazing-feature`)
 5. Откройте Pull Request
 
-Подробнее см. [CONTRIBUTING.md](CONTRIBUTING.md).
+Подробнее см. [CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md).
 
 ## 📚 Документация
 
@@ -928,8 +928,8 @@ shfmt -i 2 -ci -sr -d openwrt_captive_monitor.sh
 
 ### Вклад
 
-- [Руководство по вкладу](CONTRIBUTING.md) - Рекомендации по разработке и процесс PR
-- [Кодекс поведения](CODE_OF_CONDUCT.md) - Рекомендации сообщества
+- [Руководство по вкладу](docs/contributing/CONTRIBUTING.md) - Рекомендации по разработке и процесс PR
+- [Кодекс поведения](docs/contributing/CODE_OF_CONDUCT.md) - Рекомендации сообщества
 - [Управление проектом](docs/project/management.md) - Дорожная карта и процесс выпуска
 
 ## 📊 Статус проекта
