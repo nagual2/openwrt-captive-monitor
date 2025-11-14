@@ -65,9 +65,29 @@ jobs:
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{matrix.language}}"
+          upload: false
+
+      - name: List generated SARIF files
+        if: always()
+        run: |
+          echo "Checking for SARIF files..."
+          if [ -d "results" ]; then
+            echo "Contents of ./results:"
+            ls -la results/
+          else
+            echo "./results directory not found"
+          fi
+          if [ -d "../results" ]; then
+            echo "Contents of ../results:"
+            ls -la ../results/
+          else
+            echo "../results directory not found"
+          fi
+          find . -name "*.sarif" -type f 2>/dev/null | head -20
 
       - name: Upload CodeQL results
         uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
+          sarif_file: results
           category: "/language:${{matrix.language}}"

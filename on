@@ -1,0 +1,34 @@
+[1mdiff --git a/.github/workflows/codeql.yml b/.github/workflows/codeql.yml[m
+[1mindex d164b69..806a78b 100644[m
+[1m--- a/.github/workflows/codeql.yml[m
+[1m+++ b/.github/workflows/codeql.yml[m
+[36m@@ -65,9 +65,29 @@[m [mjobs:[m
+         uses: github/codeql-action/analyze@v4[m
+         with:[m
+           category: "/language:${{matrix.language}}"[m
+[32m+[m[32m          upload: false[m
+[32m+[m
+[32m+[m[32m      - name: List generated SARIF files[m
+[32m+[m[32m        if: always()[m
+[32m+[m[32m        run: |[m
+[32m+[m[32m          echo "Checking for SARIF files..."[m
+[32m+[m[32m          if [ -d "results" ]; then[m
+[32m+[m[32m            echo "Contents of ./results:"[m
+[32m+[m[32m            ls -la results/[m
+[32m+[m[32m          else[m
+[32m+[m[32m            echo "./results directory not found"[m
+[32m+[m[32m          fi[m
+[32m+[m[32m          if [ -d "../results" ]; then[m
+[32m+[m[32m            echo "Contents of ../results:"[m
+[32m+[m[32m            ls -la ../results/[m
+[32m+[m[32m          else[m
+[32m+[m[32m            echo "../results directory not found"[m
+[32m+[m[32m          fi[m
+[32m+[m[32m          find . -name "*.sarif" -type f 2>/dev/null | head -20[m
+ [m
+       - name: Upload CodeQL results[m
+         uses: github/codeql-action/upload-sarif@v4[m
+         if: always()[m
+         with:[m
+[32m+[m[32m          sarif_file: results[m
+           category: "/language:${{matrix.language}}"[m
