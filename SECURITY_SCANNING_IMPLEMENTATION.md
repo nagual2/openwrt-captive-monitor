@@ -13,7 +13,7 @@ This document summarizes the implementation of comprehensive security scanning f
 A dedicated CodeQL security scanning workflow with the following features:
 
 * **CodeQL Analysis**:
-  * Languages: Python, JavaScript
+  * Languages: Python
   * Query suites: security-extended, security-and-quality
   * Excludes: Documentation, tests, GitHub workflows
   * Matrix strategy for parallel language analysis
@@ -124,7 +124,6 @@ For branch protection configuration, the following status check names are availa
 ### Recommended
 
 * `CodeQL Analysis (python)`
-* `CodeQL Analysis (javascript)`
 * `ShellCheck Security Analysis`
 * `Trivy Security Scan`
 * `Bandit Python Security Scan`
@@ -133,7 +132,7 @@ For branch protection configuration, the following status check names are availa
 
 | Workflow | Event | Duration | Details |
 |----------|-------|----------|---------|
-| CodeQL | PR/push | ~15-20 min | Parallel analysis (python + javascript) |
+| CodeQL | PR/push | ~10-15 min | Python analysis |
 | CodeQL | PR/push | ~5-10 min | ShellCheck security |
 | Security Scanning | PR | ~2-5 min | Dependency Review only |
 | Security Scanning | push/schedule | ~15-20 min | All scans (Trivy + Bandit) |
@@ -162,7 +161,7 @@ jobs:
 
 All scanners upload results in SARIF format to GitHub's Security tab:
 
-* CodeQL → `/language:python` and `/language:javascript` categories
+* CodeQL → `/language:python` category
 * ShellCheck → `shellcheck-security` category
 * Trivy → `trivy-scan` category
 * Bandit → `bandit-python-security` category

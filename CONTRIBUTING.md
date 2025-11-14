@@ -115,7 +115,6 @@ Before your pull request can be merged to `main`, all of the following status ch
 
 **Security Scanning:**
 - `CodeQL Analysis (python)` - Python security analysis
-- `CodeQL Analysis (javascript)` - JavaScript security analysis
 - `ShellCheck Security Analysis` - Shell script security analysis
 - `Dependency Review` - Dependency vulnerability checks (PRs only)
 - `Trivy Security Scan` - Infrastructure and configuration scanning
@@ -303,7 +302,6 @@ GitFlow вводит долгоживущие ветки `develop` и выпус
 
 **Сканирование безопасности:**
 - `CodeQL Analysis (python)` - Анализ безопасности Python
-- `CodeQL Analysis (javascript)` - Анализ безопасности JavaScript
 - `ShellCheck Security Analysis` - Анализ безопасности shell скриптов
 - `Dependency Review` - Проверка уязвимостей зависимостей (только PR)
 - `Trivy Security Scan` - Сканирование инфраструктуры и конфигурации
