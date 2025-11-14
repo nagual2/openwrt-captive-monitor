@@ -24,7 +24,7 @@ The project uses a multi-layered security scanning approach to identify vulnerab
 
 #### 1. CodeQL (GitHub Advanced Security)
 
-**Purpose**: Static analysis for Python and JavaScript/TypeScript code
+**Purpose**: Static analysis for Python code
 
 **Coverage**:
 
@@ -35,8 +35,8 @@ The project uses a multi-layered security scanning approach to identify vulnerab
 **Configuration**:
 
 * Query suites: `security-extended`, `security-and-quality`
-* Languages: Python, JavaScript
-* Paths excluded: `**/*.md`, `docs/**`, `tests/**`, `.github/**`
+* Languages: Python
+* Paths excluded: `**/*.md`, `docs/**`, `tests/**`, `.github/**`, `_out/**`, `__pycache__/**`
 
 **Run frequency**:
 
@@ -44,7 +44,7 @@ The project uses a multi-layered security scanning approach to identify vulnerab
 * On every push to `main`
 * Weekly on Monday at 00:00 UTC
 
-**Expected duration**: 15-20 minutes
+**Expected duration**: 10-15 minutes
 
 **Workflow file**: `.github/workflows/codeql.yml`
 
@@ -178,15 +178,17 @@ on:
 The CodeQL scanner uses the following configuration:
 
 ```yaml
-- uses: github/codeql-action/init@v3
+- uses: github/codeql-action/init@v4
   with:
-    languages: ${{ matrix.language }}  # python, javascript
+    languages: ${{ matrix.language }}  # python
     config: |
       paths-ignore:
         - '**/*.md'
         - 'docs/**'
         - 'tests/**'
         - '.github/**'
+        - '_out/**'
+        - '__pycache__/**'
     queries: +security-extended,security-and-quality
 ```
 
@@ -242,7 +244,6 @@ The following status checks are available for branch protection:
 | Check Name | Required for PRs | Blocking |
 |------------|------------------|----------|
 | CodeQL Analysis (python) | Recommended | Optional |
-| CodeQL Analysis (javascript) | Recommended | Optional |
 | ShellCheck Security Analysis | Recommended | Optional |
 | Dependency Review | **Yes** | **Yes** |
 | Trivy Security Scan | Recommended | Optional |

@@ -18,7 +18,7 @@
 - Updated Trivy action version from 0.28.0 to 0.29.0
 - Added `security-events: write` permission to workflow
 
-### 2. CodeQL Security Scanning / CodeQL Analysis (javascript)
+### 2. CodeQL Security Scanning / CodeQL Analysis
 **Problem**: CodeQL JavaScript analysis was failing after 41 seconds because there are no JavaScript files in the repository.
 
 **Root Causes**:
@@ -28,6 +28,7 @@
 
 **Fixes Applied**:
 - Removed 'javascript' from the language matrix, keeping only 'python'
+- Removed 'CodeQL Analysis (javascript)' from branch protection requirements
 - Added proper Python setup steps for CodeQL analysis
 - Added creation of requirements.txt for CodeQL dependency tracking
 - Updated paths-ignore to include `_out/**` and `__pycache__/**`
