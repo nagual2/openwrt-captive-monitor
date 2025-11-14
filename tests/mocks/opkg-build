@@ -71,7 +71,7 @@ tmpdir=$(mktemp -d)
 trap "rm -rf '$tmpdir'" EXIT
 
 # Create debian-binary file
-echo "2.0" >"$tmpdir/debian-binary"
+echo "2.0" > "$tmpdir/debian-binary"
 
 # Create control.tar.gz
 (cd "$control_dir" && tar --numeric-owner --owner=0 --group=0 -czf "$tmpdir/control.tar.gz" .)
@@ -80,11 +80,11 @@ echo "2.0" >"$tmpdir/debian-binary"
 if [ -d "$data_dir" ]; then
     (cd "$data_dir" && tar --numeric-owner --owner=0 --group=0 --exclude=CONTROL -czf "$tmpdir/data.tar.gz" .)
 else
-    tar --numeric-owner --owner=0 --group=0 -czf "$tmpdir/data.tar.gz" -C "$tmpdir" --files-from=/dev/null 2>/dev/null || true
+    tar --numeric-owner --owner=0 --group=0 -czf "$tmpdir/data.tar.gz" -C "$tmpdir" --files-from=/dev/null 2> /dev/null || true
 fi
 
 # Create the .ipk using ar
 rm -f "$output_ipk"
-ar r "$output_ipk" "$tmpdir/debian-binary" "$tmpdir/control.tar.gz" "$tmpdir/data.tar.gz" >/dev/null 2>&1
+ar r "$output_ipk" "$tmpdir/debian-binary" "$tmpdir/control.tar.gz" "$tmpdir/data.tar.gz" > /dev/null 2>&1
 
 exit 0

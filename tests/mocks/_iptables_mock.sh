@@ -28,123 +28,123 @@ iptables_mock_handle() {
 
     while [ "$#" -gt 0 ]; do
         case "$1" in
-        -t)
-            if [ "$#" -lt 2 ]; then
-                return 2
-            fi
-            table="$2"
-            shift 2
-            continue
-            ;;
-        -w | --wait)
-            shift
-            if [ "$#" -gt 0 ]; then
+            -t)
+                if [ "$#" -lt 2 ]; then
+                    return 2
+                fi
+                table="$2"
+                shift 2
+                continue
+                ;;
+            -w | --wait)
+                shift
+                if [ "$#" -gt 0 ]; then
+                    case "$1" in
+                        '' | *[!0-9]*) ;;
+                        *)
+                            shift
+                            ;;
+                    esac
+                fi
+                continue
+                ;;
+            -N)
+                shift
+                if [ "$#" -lt 1 ]; then
+                    return 2
+                fi
+                iptables_mock_new_chain "$base_dir" "$table" "$1"
+                return $?
+                ;;
+            -F)
+                shift
+                if [ "$#" -lt 1 ]; then
+                    return 2
+                fi
+                iptables_mock_flush_chain "$base_dir" "$table" "$1"
+                return $?
+                ;;
+            -X)
+                shift
+                if [ "$#" -lt 1 ]; then
+                    return 2
+                fi
+                iptables_mock_delete_chain "$base_dir" "$table" "$1"
+                return $?
+                ;;
+            -L)
+                shift
+                if [ "$#" -lt 1 ]; then
+                    return 2
+                fi
+                iptables_mock_list_chain "$base_dir" "$table" "$1"
+                return $?
+                ;;
+            -A)
+                shift
+                if [ "$#" -lt 1 ]; then
+                    return 2
+                fi
+                chain="$1"
+                shift
+                iptables_mock_append "$base_dir" "$table" "$chain" "$@"
+                return $?
+                ;;
+            -I)
+                shift
+                if [ "$#" -lt 1 ]; then
+                    return 2
+                fi
+                chain="$1"
+                shift
+                index=1
+                if [ "$#" -gt 0 ]; then
+                    case "$1" in
+                        '' | *[!0-9]*) ;;
+                        *)
+                            index="$1"
+                            shift
+                            ;;
+                    esac
+                fi
+                iptables_mock_insert "$base_dir" "$table" "$chain" "$index" "$@"
+                return $?
+                ;;
+            -C)
+                shift
+                if [ "$#" -lt 1 ]; then
+                    return 2
+                fi
+                chain="$1"
+                shift
+                iptables_mock_check "$base_dir" "$table" "$chain" "$@"
+                return $?
+                ;;
+            -D)
+                shift
+                if [ "$#" -lt 1 ]; then
+                    return 2
+                fi
+                chain="$1"
+                shift
+                if [ "$#" -eq 0 ]; then
+                    return 2
+                fi
                 case "$1" in
-                '' | *[!0-9]*) ;;
-                *)
-                    shift
-                    ;;
+                    '' | *[!0-9]*)
+                        iptables_mock_delete_rule "$base_dir" "$table" "$chain" "$@"
+                        ;;
+                    *)
+                        index="$1"
+                        shift
+                        iptables_mock_delete_index "$base_dir" "$table" "$chain" "$index"
+                        ;;
                 esac
-            fi
-            continue
-            ;;
-        -N)
-            shift
-            if [ "$#" -lt 1 ]; then
-                return 2
-            fi
-            iptables_mock_new_chain "$base_dir" "$table" "$1"
-            return $?
-            ;;
-        -F)
-            shift
-            if [ "$#" -lt 1 ]; then
-                return 2
-            fi
-            iptables_mock_flush_chain "$base_dir" "$table" "$1"
-            return $?
-            ;;
-        -X)
-            shift
-            if [ "$#" -lt 1 ]; then
-                return 2
-            fi
-            iptables_mock_delete_chain "$base_dir" "$table" "$1"
-            return $?
-            ;;
-        -L)
-            shift
-            if [ "$#" -lt 1 ]; then
-                return 2
-            fi
-            iptables_mock_list_chain "$base_dir" "$table" "$1"
-            return $?
-            ;;
-        -A)
-            shift
-            if [ "$#" -lt 1 ]; then
-                return 2
-            fi
-            chain="$1"
-            shift
-            iptables_mock_append "$base_dir" "$table" "$chain" "$@"
-            return $?
-            ;;
-        -I)
-            shift
-            if [ "$#" -lt 1 ]; then
-                return 2
-            fi
-            chain="$1"
-            shift
-            index=1
-            if [ "$#" -gt 0 ]; then
-                case "$1" in
-                '' | *[!0-9]*) ;;
-                *)
-                    index="$1"
-                    shift
-                    ;;
-                esac
-            fi
-            iptables_mock_insert "$base_dir" "$table" "$chain" "$index" "$@"
-            return $?
-            ;;
-        -C)
-            shift
-            if [ "$#" -lt 1 ]; then
-                return 2
-            fi
-            chain="$1"
-            shift
-            iptables_mock_check "$base_dir" "$table" "$chain" "$@"
-            return $?
-            ;;
-        -D)
-            shift
-            if [ "$#" -lt 1 ]; then
-                return 2
-            fi
-            chain="$1"
-            shift
-            if [ "$#" -eq 0 ]; then
-                return 2
-            fi
-            case "$1" in
-            '' | *[!0-9]*)
-                iptables_mock_delete_rule "$base_dir" "$table" "$chain" "$@"
+                return $?
                 ;;
             *)
-                index="$1"
                 shift
-                iptables_mock_delete_index "$base_dir" "$table" "$chain" "$index"
                 ;;
-            esac
-            return $?
-            ;;
-        *)
-            shift
-            ;;
         esac
     done
 
@@ -156,20 +156,20 @@ iptables_mock_builtin_chain() {
     builtin_chain="$2"
 
     case "$builtin_table" in
-    nat)
-        case "$builtin_chain" in
-        PREROUTING | INPUT | OUTPUT | POSTROUTING)
-            return 0
+        nat)
+            case "$builtin_chain" in
+                PREROUTING | INPUT | OUTPUT | POSTROUTING)
+                    return 0
+                    ;;
+            esac
             ;;
-        esac
-        ;;
-    filter)
-        case "$builtin_chain" in
-        INPUT | FORWARD | OUTPUT)
-            return 0
+        filter)
+            case "$builtin_chain" in
+                INPUT | FORWARD | OUTPUT)
+                    return 0
+                    ;;
+            esac
             ;;
-        esac
-        ;;
     esac
 
     return 1
@@ -190,7 +190,7 @@ iptables_mock_prepare_chain() {
     prep_dir=${prep_path%/*}
     mkdir -p "$prep_dir"
     if [ ! -f "$prep_path" ]; then
-        : >"$prep_path"
+        : > "$prep_path"
     fi
     printf '%s\n' "$prep_path"
 }
@@ -216,7 +216,7 @@ iptables_mock_new_chain() {
         return 1
     fi
 
-    iptables_mock_prepare_chain "$new_base" "$new_table" "$new_chain" >/dev/null
+    iptables_mock_prepare_chain "$new_base" "$new_table" "$new_chain" > /dev/null
     return 0
 }
 
@@ -230,7 +230,7 @@ iptables_mock_flush_chain() {
     fi
 
     flush_path=$(iptables_mock_prepare_chain "$flush_base" "$flush_table" "$flush_chain")
-    : >"$flush_path"
+    : > "$flush_path"
     return 0
 }
 
@@ -281,7 +281,7 @@ iptables_mock_append() {
 
     app_path=$(iptables_mock_prepare_chain "$app_base" "$app_table" "$app_chain")
     app_rule=$(iptables_mock_normalize_rule "$@")
-    printf '%s\n' "$app_rule" >>"$app_path"
+    printf '%s\n' "$app_rule" >> "$app_path"
     return 0
 }
 
@@ -299,23 +299,23 @@ iptables_mock_insert() {
     ins_path=$(iptables_mock_prepare_chain "$ins_base" "$ins_table" "$ins_chain")
     ins_rule=$(iptables_mock_normalize_rule "$@")
     ins_tmp="${ins_path}.tmp.$$"
-    : >"$ins_tmp"
+    : > "$ins_tmp"
     ins_pos=1
     ins_inserted=0
 
     if [ -f "$ins_path" ]; then
         while IFS= read -r ins_line || [ -n "$ins_line" ]; do
             if [ "$ins_inserted" -eq 0 ] && [ "$ins_pos" -ge "$ins_index" ]; then
-                printf '%s\n' "$ins_rule" >>"$ins_tmp"
+                printf '%s\n' "$ins_rule" >> "$ins_tmp"
                 ins_inserted=1
             fi
-            printf '%s\n' "$ins_line" >>"$ins_tmp"
+            printf '%s\n' "$ins_line" >> "$ins_tmp"
             ins_pos=$((ins_pos + 1))
-        done <"$ins_path"
+        done < "$ins_path"
     fi
 
     if [ "$ins_inserted" -eq 0 ]; then
-        printf '%s\n' "$ins_rule" >>"$ins_tmp"
+        printf '%s\n' "$ins_rule" >> "$ins_tmp"
     fi
 
     mv "$ins_tmp" "$ins_path"
@@ -343,7 +343,7 @@ iptables_mock_check() {
         if [ "$chk_line" = "$chk_rule" ]; then
             return 0
         fi
-    done <"$chk_path"
+    done < "$chk_path"
 
     return 1
 }
@@ -365,7 +365,7 @@ iptables_mock_delete_rule() {
 
     delr_rule=$(iptables_mock_normalize_rule "$@")
     delr_tmp="${delr_path}.tmp.$$"
-    : >"$delr_tmp"
+    : > "$delr_tmp"
     delr_removed=0
 
     while IFS= read -r delr_line || [ -n "$delr_line" ]; do
@@ -373,8 +373,8 @@ iptables_mock_delete_rule() {
             delr_removed=1
             continue
         fi
-        printf '%s\n' "$delr_line" >>"$delr_tmp"
-    done <"$delr_path"
+        printf '%s\n' "$delr_line" >> "$delr_tmp"
+    done < "$delr_path"
 
     if [ "$delr_removed" -eq 0 ]; then
         rm -f "$delr_tmp"
@@ -401,7 +401,7 @@ iptables_mock_delete_index() {
     fi
 
     deli_tmp="${deli_path}.tmp.$$"
-    : >"$deli_tmp"
+    : > "$deli_tmp"
     deli_pos=1
     deli_removed=0
 
@@ -409,10 +409,10 @@ iptables_mock_delete_index() {
         if [ "$deli_removed" -eq 0 ] && [ "$deli_pos" -eq "$deli_index" ]; then
             deli_removed=1
         else
-            printf '%s\n' "$deli_line" >>"$deli_tmp"
+            printf '%s\n' "$deli_line" >> "$deli_tmp"
         fi
         deli_pos=$((deli_pos + 1))
-    done <"$deli_path"
+    done < "$deli_path"
 
     if [ "$deli_removed" -eq 0 ]; then
         rm -f "$deli_tmp"
@@ -438,31 +438,31 @@ iptables_mock_normalize_rule() {
     while [ "$#" -gt 0 ]; do
         norm_token="$1"
         case "$norm_token" in
-        -m)
-            shift
-            if [ "$#" -gt 0 ]; then
-                norm_module="$1"
-                if [ "$norm_module" = "comment" ]; then
+            -m)
+                shift
+                if [ "$#" -gt 0 ]; then
+                    norm_module="$1"
+                    if [ "$norm_module" = "comment" ]; then
+                        shift
+                        continue
+                    fi
+                    iptables_mock_norm_append "-m"
+                    iptables_mock_norm_append "$norm_module"
                     shift
                     continue
                 fi
                 iptables_mock_norm_append "-m"
-                iptables_mock_norm_append "$norm_module"
+                ;;
+            --comment)
                 shift
-                continue
-            fi
-            iptables_mock_norm_append "-m"
-            ;;
-        --comment)
-            shift
-            if [ "$#" -gt 0 ]; then
+                if [ "$#" -gt 0 ]; then
+                    shift
+                fi
+                ;;
+            *)
+                iptables_mock_norm_append "$norm_token"
                 shift
-            fi
-            ;;
-        *)
-            iptables_mock_norm_append "$norm_token"
-            shift
-            ;;
+                ;;
         esac
     done
 

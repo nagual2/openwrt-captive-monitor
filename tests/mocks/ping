@@ -7,10 +7,10 @@ mock_log ping "$@"
 host=""
 for arg in "$@"; do
     case "$arg" in
-    -*) ;;
-    *)
-        host="$arg"
-        ;;
+        -*) ;;
+        *)
+            host="$arg"
+            ;;
     esac
 done
 
@@ -20,11 +20,11 @@ if [ -f "$state_file" ]; then
     count=$(cat "$state_file")
 fi
 count=$((count + 1))
-printf '%s\n' "$count" >"$state_file"
+printf '%s\n' "$count" > "$state_file"
 
 fail_limit=${MOCK_PING_FAIL_COUNT:-0}
 case "$fail_limit" in
-'') fail_limit=0 ;;
+    '') fail_limit=0 ;;
 esac
 if [ "$fail_limit" -ge "$count" ]; then
     exit 1
