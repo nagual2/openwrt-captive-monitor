@@ -33,6 +33,23 @@ package/
 
 ## Local Development Builds
 
+### Prerequisites
+
+To build the .ipk package locally, install the required tools:
+
+```bash
+# On Ubuntu/Debian:
+sudo apt-get install -y opkg-utils gzip coreutils tar
+
+# opkg-utils provides:
+#   - opkg-build: Creates .ipk package files
+#   - opkg-make-index: Generates package indexes
+# Other tools:
+#   - gzip: Compression for package index
+#   - coreutils: Provides md5sum, sha256sum, stat for checksums
+#   - tar: Archive tool for package data
+```
+
 ### Quick Build
 
 ```bash
@@ -369,6 +386,23 @@ package/
 ```
 
 ## Локальные разработческие сборки
+
+### Предварительные требования
+
+Для сборки .ipk пакета локально установите необходимые инструменты:
+
+```bash
+# На Ubuntu/Debian:
+sudo apt-get install -y opkg-utils gzip coreutils tar
+
+# opkg-utils предоставляет:
+#   - opkg-build: Создает файлы пакета .ipk
+#   - opkg-make-index: Генерирует индексы пакетов
+# Другие инструменты:
+#   - gzip: Сжатие для индекса пакета
+#   - coreutils: Предоставляет md5sum, sha256sum, stat для контрольных сумм
+#   - tar: Инструмент архива для данных пакета
+```
 
 ### Быстрая сборка
 

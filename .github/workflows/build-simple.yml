@@ -32,6 +32,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libssl-dev libncurses5-dev unzip
           
+      - name: Install build dependencies for .ipk package
+        run: |
+          # opkg-utils provides opkg-build and opkg-make-index
+          # gzip, coreutils, and tar are needed for package creation
+          sudo apt-get install -y opkg-utils gzip coreutils tar
+          
       - name: Make build script executable
         run: chmod +x ./scripts/build_ipk.sh
         
@@ -43,6 +49,7 @@ jobs:
         with:
           name: ipk-package
           path: |
-            *.ipk
-            build/*.ipk
+            dist/opkg/**/*.ipk
+            dist/opkg/**/Packages*
           retention-days: 5
+          if-no-files-found: error
