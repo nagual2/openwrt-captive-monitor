@@ -56,46 +56,38 @@ jobs:
               - 'tests/**'
               - '.github/**'
               - '_out/**'
-              - '*.txt'
-              - '*.json'
-              - '*.yml'
-              - '*.yaml'
           queries: +security-extended,security-and-quality
-
-      - name: Debug - List shell files before analysis
-        run: |
-          echo "=== Shell files found for analysis ==="
-          find . -name "*.sh" -type f | grep -v ".github" | head -10
-          echo "=== Total shell files ==="
-          find . -name "*.sh" -type f | grep -v ".github" | wc -l
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v4
-
-      - name: Debug - Check CodeQL database
-        if: always()
-        run: |
-          echo "=== CodeQL database status ==="
-          ls -la /home/runner/codeql_databases/ 2>/dev/null || echo "No CodeQL databases found"
-          if [ -d "/home/runner/codeql_databases/shell" ]; then
-            echo "Shell database contents:"
-            ls -la /home/runner/codeql_databases/shell/
-          fi
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{matrix.language}}"
+          upload: false
 
-      - name: Debug - Verify SARIF generation
+      - name: List generated SARIF files
         if: always()
         run: |
-          echo "=== CodeQL Analysis Status ==="
-          echo "JOB_STATUS: ${{ job.status }}"
-          echo "=== Checking for SARIF files ==="
-          find . -name "*.sarif" -type f 2>/dev/null || echo "No SARIF files found in current directory"
-          find .. -name "*.sarif" -type f 2>/dev/null || echo "No SARIF files found in parent directory"
-          echo "=== Current working directory ==="
-          pwd
-          echo "=== Directory contents ==="
-          ls -la | head -20
+          echo "Checking for SARIF files..."
+          if [ -d "results" ]; then
+            echo "Contents of ./results:"
+            ls -la results/
+          else
+            echo "./results directory not found"
+          fi
+          if [ -d "../results" ]; then
+            echo "Contents of ../results:"
+            ls -la ../results/
+          else
+            echo "../results directory not found"
+          fi
+          find . -name "*.sarif" -type f 2>/dev/null | head -20
+
+      - name: Upload CodeQL results
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: results
+          category: "/language:${{matrix.language}}"
