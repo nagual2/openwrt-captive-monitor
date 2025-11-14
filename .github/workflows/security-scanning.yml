@@ -29,8 +29,8 @@ jobs:
     name: Dependency Review
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Run on pull requests and pushes to main
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    # Run only on pull requests
+    if: github.event_name == 'pull_request'
     
     permissions:
       contents: read
@@ -99,6 +99,11 @@ jobs:
             echo "| Scanner | Status |"
             echo "|---------|--------|"
             echo "| Trivy | ${{ needs.trivy-scan.result }} |"
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              echo "| Dependency Review | Ran on PR |"
+            else
+              echo "| Dependency Review | Skipped (PR only) |"
+            fi
             echo ""
             echo "Security findings have been uploaded to the [Security tab](https://github.com/${{ github.repository }}/security/code-scanning)."
           } >> "$GITHUB_STEP_SUMMARY"
