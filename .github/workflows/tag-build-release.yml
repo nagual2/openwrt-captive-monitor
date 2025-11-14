@@ -92,7 +92,7 @@ jobs:
           TAG_VERSION="${{ needs.pre-check.outputs.tag_name }}"
           if [ -n "$TAG_VERSION" ]; then
             # Remove 'v' prefix if present
-            CLEAN_VERSION=$(echo "$TAG_VERSION" | sed 's/^v//')
+            CLEAN_VERSION="${TAG_VERSION#v}"
             echo "Tag version: $TAG_VERSION"
             echo "Clean version: $CLEAN_VERSION"
             
@@ -440,6 +440,12 @@ jobs:
       contents: write
       id-token: write
     
+    env:
+      RELEASE_CLOUD_PROVIDER: ${{ secrets.RELEASE_CLOUD_PROVIDER }}
+      RELEASE_OIDC_ROLE_ARN: ${{ secrets.RELEASE_OIDC_ROLE_ARN }}
+      RELEASE_OIDC_AUDIENCE: ${{ secrets.RELEASE_OIDC_AUDIENCE }}
+      RELEASE_AWS_REGION: ${{ secrets.RELEASE_AWS_REGION }}
+    
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -453,20 +459,15 @@ jobs:
           path: artifacts/
 
       - name: Configure optional cloud federation
-        if: secrets.RELEASE_OIDC_ROLE_ARN != ''
-        env:
-          RELEASE_CLOUD_PROVIDER: ${{ secrets.RELEASE_CLOUD_PROVIDER }}
-          RELEASE_OIDC_ROLE_ARN: ${{ secrets.RELEASE_OIDC_ROLE_ARN }}
-          RELEASE_OIDC_AUDIENCE: ${{ secrets.RELEASE_OIDC_AUDIENCE }}
-          RELEASE_AWS_REGION: ${{ secrets.RELEASE_AWS_REGION }}
+        if: env.RELEASE_OIDC_ROLE_ARN != ''
         uses: ./.github/actions/oidc-assume-role
         with:
-          provider: ${{ env.RELEASE_CLOUD_PROVIDER != '' && env.RELEASE_CLOUD_PROVIDER || 'aws' }}
+          provider: ${{ env.RELEASE_CLOUD_PROVIDER != '' && env.RELEASE_CLOUD_PROVIDER || vars.RELEASE_CLOUD_PROVIDER || 'aws' }}
           role-arn: ${{ env.RELEASE_OIDC_ROLE_ARN }}
-          audience: ${{ env.RELEASE_OIDC_AUDIENCE != '' && env.RELEASE_OIDC_AUDIENCE || 'sts.amazonaws.com' }}
+          audience: ${{ env.RELEASE_OIDC_AUDIENCE != '' && env.RELEASE_OIDC_AUDIENCE || vars.RELEASE_OIDC_AUDIENCE || 'sts.amazonaws.com' }}
           session-name: ${{ format('openwrt-release-{0}', github.run_id) }}
           duration-seconds: ${{ vars.RELEASE_OIDC_SESSION_DURATION != '' && vars.RELEASE_OIDC_SESSION_DURATION || '3600' }}
-          aws-region: ${{ env.RELEASE_AWS_REGION }}
+          aws-region: ${{ env.RELEASE_AWS_REGION != '' && env.RELEASE_AWS_REGION || vars.RELEASE_AWS_REGION }}
 
       - name: Gather GitHub OIDC token claims
         env:
@@ -543,7 +544,7 @@ jobs:
           set -euo pipefail
           cd artifacts/
 
-          ipk_file=$(ls *.ipk 2>/dev/null | head -n1 || true)
+          ipk_file=$(find . -maxdepth 1 -name "*.ipk" -printf '%f\n' | head -n1 || true)
           if [ -z "$ipk_file" ]; then
             echo "Unable to locate built IPK artifact."
             exit 1
@@ -558,64 +559,64 @@ jobs:
           export BUILD_TIMESTAMP="$build_timestamp"
           export GIT_SHA="$git_sha"
 
-          cat <<'PY' | sed 's/^[[:space:]]*//' | python3 -
-          import json
-          import os
+          python3 <<'PY'
+            import json
+            import os
 
-          ipk_file = os.environ["IPK_FILE"]
-          sha256 = os.environ["IPK_SHA256"]
-          workflow = os.environ.get("GITHUB_WORKFLOW", "")
-          ref = os.environ.get("GITHUB_REF", "")
-          openwrt_version = os.environ.get("OPENWRT_VERSION", "")
-          openwrt_arch = os.environ.get("OPENWRT_ARCH", "")
-          repository = os.environ.get("GITHUB_REPOSITORY", "")
-          run_id = os.environ.get("GITHUB_RUN_ID", "")
-          run_attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "")
-          build_timestamp = os.environ["BUILD_TIMESTAMP"]
-          git_sha = os.environ["GIT_SHA"]
+            ipk_file = os.environ["IPK_FILE"]
+            sha256 = os.environ["IPK_SHA256"]
+            workflow = os.environ.get("GITHUB_WORKFLOW", "")
+            ref = os.environ.get("GITHUB_REF", "")
+            openwrt_version = os.environ.get("OPENWRT_VERSION", "")
+            openwrt_arch = os.environ.get("OPENWRT_ARCH", "")
+            repository = os.environ.get("GITHUB_REPOSITORY", "")
+            run_id = os.environ.get("GITHUB_RUN_ID", "")
+            run_attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "")
+            build_timestamp = os.environ["BUILD_TIMESTAMP"]
+            git_sha = os.environ["GIT_SHA"]
 
-          statement = {
-              "_type": "https://in-toto.io/Statement/v1",
-              "predicateType": "https://slsa.dev/provenance/v1",
-              "subject": [
-                  {
-                      "name": ipk_file,
-                      "digest": {"sha256": sha256}
-                  }
-              ],
-              "predicate": {
-                  "buildDefinition": {
-                      "buildType": "https://github.com/nagual2/openwrt-captive-monitor/.github/workflows/tag-build-release.yml",
-                      "externalParameters": {
-                          "workflow": workflow,
-                          "ref": ref
-                      },
-                      "internalParameters": {
-                          "openwrtVersion": openwrt_version,
-                          "openwrtArch": openwrt_arch
-                      },
-                      "resolvedDependencies": [
-                          {
-                              "uri": f"git+https://github.com/{repository}@{git_sha}",
-                              "digest": {"sha1": git_sha}
-                          }
-                      ]
-                  },
-                  "runDetails": {
-                      "builder": {
-                          "id": f"https://github.com/{repository}/actions/runs/{run_id}"
-                      },
-                      "metadata": {
-                          "invocationId": f"{run_id}-{run_attempt}",
-                          "buildFinishedOn": build_timestamp
-                      }
-                  }
-              }
-          }
+            statement = {
+                "_type": "https://in-toto.io/Statement/v1",
+                "predicateType": "https://slsa.dev/provenance/v1",
+                "subject": [
+                    {
+                        "name": ipk_file,
+                        "digest": {"sha256": sha256}
+                    }
+                ],
+                "predicate": {
+                    "buildDefinition": {
+                        "buildType": "https://github.com/nagual2/openwrt-captive-monitor/.github/workflows/tag-build-release.yml",
+                        "externalParameters": {
+                            "workflow": workflow,
+                            "ref": ref
+                        },
+                        "internalParameters": {
+                            "openwrtVersion": openwrt_version,
+                            "openwrtArch": openwrt_arch
+                        },
+                        "resolvedDependencies": [
+                            {
+                                "uri": f"git+https://github.com/{repository}@{git_sha}",
+                                "digest": {"sha1": git_sha}
+                            }
+                        ]
+                    },
+                    "runDetails": {
+                        "builder": {
+                            "id": f"https://github.com/{repository}/actions/runs/{run_id}"
+                        },
+                        "metadata": {
+                            "invocationId": f"{run_id}-{run_attempt}",
+                            "buildFinishedOn": build_timestamp
+                        }
+                    }
+                }
+            }
 
-          with open(f"{ipk_file}.provenance.json", "w", encoding="utf-8") as handle:
-              json.dump(statement, handle, indent=2)
-              handle.write("\n")
+            with open(f"{ipk_file}.provenance.json", "w", encoding="utf-8") as handle:
+                json.dump(statement, handle, indent=2)
+                handle.write("\n")
           PY
 
           provenance_file="${ipk_file}.provenance.json"
@@ -666,7 +667,7 @@ jobs:
           set -euo pipefail
           cd artifacts/
 
-          ipk_file=$(ls *.ipk 2>/dev/null | head -n1 || true)
+          ipk_file=$(find . -maxdepth 1 -name "*.ipk" -printf '%f\n' | head -n1 || true)
           if [ -z "$ipk_file" ]; then
             echo "No IPK artifact found for verification."
             exit 1
