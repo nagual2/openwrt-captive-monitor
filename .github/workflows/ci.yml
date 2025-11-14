@@ -93,7 +93,7 @@ jobs:
         if: matrix.linter == 'actionlint'
         uses: reviewdog/action-actionlint@v1
         with:
-          fail_on_error: true
+          fail_level: error
 
   test:
     name: Test
