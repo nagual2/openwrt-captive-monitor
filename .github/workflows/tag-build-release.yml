@@ -498,25 +498,13 @@ jobs:
 
           response=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${OIDC_AUDIENCE}")
 
-          token=$(echo "$response" | python3 -c 'import json; import sys; print(json.load(sys.stdin)["value"])')
+          # Extract token from response
+          token=$(echo "$response" | python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])')
           echo "::add-mask::$token"
 
+          # Process token using external script
           export OIDC_TOKEN="$token"
-          python3 <<'PY'
-import base64
-import json
-import os
-
-segments = os.environ["OIDC_TOKEN"].split('.')
-if len(segments) < 2:
-    raise SystemExit("invalid token structure")
-payload_segment = segments[1]
-padding = '=' * (-len(payload_segment) % 4)
-claims = json.loads(base64.urlsafe_b64decode((payload_segment + padding).encode()))
-print(f"OIDC issuer: {claims.get('iss')}")
-          print(f"OIDC subject: {claims.get('sub')}")
-          print(f"OIDC audience: {claims.get('aud')}")
-          PY
+          python3 .github/scripts/process_oidc_token.py
 
           echo "OIDC token obtained; proceeding with keyless signing."
 
