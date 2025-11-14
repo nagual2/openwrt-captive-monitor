@@ -1,6 +1,6 @@
 import paramiko
 import os
-import sys
+
 
 def test_ssh_connection(hostname, username, key_path=None, password=None):
     print(f"Попытка подключения к {username}@{hostname}...")
