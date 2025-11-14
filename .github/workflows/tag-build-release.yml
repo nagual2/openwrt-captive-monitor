@@ -507,17 +507,17 @@ print(json.load(sys.stdin)["value"])
 
           export OIDC_TOKEN="$token"
           python3 <<'PY'
-          import base64
-          import json
-          import os
+import base64
+import json
+import os
 
-          segments = os.environ["OIDC_TOKEN"].split('.')
-          if len(segments) < 2:
-              raise SystemExit("invalid token structure")
-          payload_segment = segments[1]
-          padding = '=' * (-len(payload_segment) % 4)
-          claims = json.loads(base64.urlsafe_b64decode((payload_segment + padding).encode()))
-          print(f"OIDC issuer: {claims.get('iss')}")
+segments = os.environ["OIDC_TOKEN"].split('.')
+if len(segments) < 2:
+    raise SystemExit("invalid token structure")
+payload_segment = segments[1]
+padding = '=' * (-len(payload_segment) % 4)
+claims = json.loads(base64.urlsafe_b64decode((payload_segment + padding).encode()))
+print(f"OIDC issuer: {claims.get('iss')}")
           print(f"OIDC subject: {claims.get('sub')}")
           print(f"OIDC audience: {claims.get('aud')}")
           PY
