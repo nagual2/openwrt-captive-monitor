@@ -73,16 +73,19 @@ jobs:
           echo "Checking for SARIF files..."
           if [ -d "results" ]; then
             echo "Contents of ./results:"
-            ls -la results/
+            find results/ -maxdepth 2 -type f -exec ls -la {} \; 2>/dev/null || echo "No files in ./results"
           else
             echo "./results directory not found"
           fi
           if [ -d "../results" ]; then
             echo "Contents of ../results:"
-            ls -la ../results/
+            find ../results/ -maxdepth 2 -type f -exec ls -la {} \; 2>/dev/null || echo "No files in ../results"
           else
             echo "../results directory not found"
           fi
+          echo "SARIF files found:"
+          sarif_count=$(find . -name "*.sarif" -type f 2>/dev/null | grep -vc '^$' || echo "0")
+          echo "Count: $sarif_count"
           find . -name "*.sarif" -type f 2>/dev/null | head -20
 
       - name: Upload CodeQL results
