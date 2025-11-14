@@ -1,4 +1,4 @@
-# Available OpenWrt Packages / Доступные пакеты OpenWrt
+# Available OpenWrt Packages
 
 ---
 
@@ -8,83 +8,81 @@
 
 ---
 
-## Repository Files / Файлы репозитория
-❌ No .ipk files found in repository / В репозитории не найдены .ipk файлы
+## Repository Files
+❌ No .ipk files found in repository
 
 **Explanation**: `.ipk` files are intentionally excluded from version control via `.gitignore` to keep the repository clean. Packages are built on-demand via CI/CD or locally using the build script.
-**Пояснение**: Файлы `.ipk` намеренно исключены из системы контроля версий через `.gitignore` для поддержания чистоты репозитория. Пакеты собираются по запросу через CI/CD или локально с использованием скрипта сборки.
 
-### Local Build Information / Информация о локальной сборке
-- **Current Version / Текущая версия**: 1.0.3-1 (from `package/openwrt-captive-monitor/Makefile`)
-- **Architecture / Архитектура**: all
-- **Build Script / Скрипт сборки**: `./scripts/build_ipk.sh`
-- **Output Location / Выходной каталог**: `dist/opkg/all/openwrt-captive-monitor_1.0.3-1_all.ipk`
-- **Package Size / Размер пакета**: 13,250 bytes (local build / локальная сборка)
-- **Dependencies / Зависимости**: `dnsmasq`, `curl`
+### Local Build Information
+- **Current Version**: 1.0.3-1 (from `package/openwrt-captive-monitor/Makefile`)
+- **Architecture**: all
+- **Build Script**: `./scripts/build_ipk.sh`
+- **Output Location**: `dist/opkg/all/openwrt-captive-monitor_1.0.3-1_all.ipk`
+- **Package Size**: 13,250 bytes (local build)
+- **Dependencies**: `dnsmasq`, `curl`
 
-### How to Build Locally / Как собрать локально
+### How to Build Locally
 ```bash
-## Build the package / Собрать пакет
+## Build the package
 ./scripts/build_ipk.sh
 
-## Output will be in: / Выходные файлы будут в:
+## Output will be in:
 ## dist/opkg/all/openwrt-captive-monitor_1.0.3-1_all.ipk
 ## dist/opkg/all/Packages
 ## dist/opkg/all/Packages.gz
 ```
 
-## GitHub Actions Artifacts / Артефакты GitHub Actions
-✅ Artifacts available / Артефакты доступны
+## GitHub Actions Artifacts
+✅ Artifacts available
 
-### Latest Build Information / Информация о последней сборке
-- **Workflow / Процесс**: "Build OpenWrt packages" / "Сборка пакетов OpenWrt"
-- **Latest Successful Run / Последняя успешная сборка**: #18941818953 (2025-10-30T13:13:37Z)
-- **Branch / Ветка**: main
-- **Status / Статус**: ✅ Success / Успешно
-- **Artifact / Артефакт**: `openwrt-captive-monitor_1.0.1-1_all`
-- **Size / Размер**: 14,496 bytes
-- **Created / Создан**: 2025-10-30T13:14:14Z
-- **Expires / Истекает**: 2026-01-28T13:13:38Z
+### Latest Build Information
+- **Workflow**: "Build OpenWrt packages"
+- **Latest Successful Run**: #18941818953 (2025-10-30T13:13:37Z)
+- **Branch**: main
+- **Status**: ✅ Success
+- **Artifact**: `openwrt-captive-monitor_1.0.1-1_all`
+- **Size**: 14,496 bytes
+- **Created**: 2025-10-30T13:14:14Z
+- **Expires**: 2026-01-28T13:13:38Z
 
-### Download Instructions / Инструкции по загрузке
-1. **Via GitHub Web Interface / Через веб-интерфейс GitHub**:
-   - Перейдите по адресу: https://github.com/nagual2/openwrt-captive-monitor/actions
-   - Нажмите на рабочий процесс "Build OpenWrt packages"
-   - Выберите последнюю успешную сборку (Run #18941818953)
-   - Скачайте артефакт "openwrt-captive-monitor_1.0.1-1_all"
+### Download Instructions
+1. **Via GitHub Web Interface**:
+   - Go to: https://github.com/nagual2/openwrt-captive-monitor/actions
+   - Click on the "Build OpenWrt packages" workflow
+   - Select the latest successful run (Run #18941818953)
+   - Download the "openwrt-captive-monitor_1.0.1-1_all" artifact
 
-2. **Via API / Через API** (требуется аутентификация):
+2. **Via API** (authentication required):
    ```bash
    curl -H "Authorization: token YOUR_TOKEN" \
         -L https://api.github.com/repos/nagual2/openwrt-captive-monitor/actions/artifacts/4417725839/zip \
         -o openwrt-captive-monitor_1.0.1-1_all.zip
    ```
 
-### Recent Build History / История последних сборок
-| Run ID | Дата | Статус | Размер артефакта |
-|--------|------|--------|-----------------|
+### Recent Build History
+| Run ID | Date | Status | Artifact Size |
+|--------|------|--------|---------------|
 | 18941818953 | 2025-10-30 13:13:37Z | ✅ Success | 14,496 bytes |
 | 18941783175 | 2025-10-30 13:12:21Z | ✅ Success | 14,502 bytes |
 | 18925153078 | 2025-10-29 23:38:58Z | ✅ Success | 14,501 bytes |
 
-## GitHub Releases / Релизы GitHub
-❌ No package assets in releases / В релизах нет файлов пакетов
+## GitHub Releases
+❌ No package assets in releases
 
-### Available Releases / Доступные релизы
+### Available Releases
 - **v0.1.0** (2025-10-23T12:26:42Z)
-  - ❌ No package assets attached / Нет прикрепленных файлов пакетов
-  - Release notes / Примечания к выпуску: Initial release / Первый выпуск
+  - ❌ No package assets attached
+  - Release notes: Initial release
 
-### Missing Release Assets / Отсутствующие активы релиза
-- **v0.1.2**: Тег существует, но релиз не создан
-- **v0.1.0**: Релиз существует, но нет файлов пакетов
+### Missing Release Assets
+- **v0.1.2**: Tag exists but no release created
+- **v0.1.0**: Release exists but no package files attached
 
-**Note / Примечание**: The workflow is configured to publish release assets when tags are pushed, but it appears this hasn't been working or the assets weren't properly attached.
-Рабочий процесс настроен на публикацию активов при отправке тегов, но, похоже, это не сработало, или активы не были правильно прикреплены.
+**Note**: The workflow is configured to publish release assets when tags are pushed, but it appears this hasn't been working or the assets weren't properly attached.
 
-## Package Metadata / Метаданные пакета
+## Package Metadata
 
-### Current Version (1.0.3-1) / Текущая версия (1.0.3-1)
+### Current Version (1.0.3-1)
 ```
 Package: openwrt-captive-monitor
 Version: 1.0.3-1
