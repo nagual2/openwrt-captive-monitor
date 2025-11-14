@@ -94,7 +94,7 @@ fi
 
 echo
 echo "7. Checking project language files..."
-PYTHON_COUNT=$(find . -name "*.py" -not -path "./.git/*" -not -path "./venv/*" | wc -l)
+PYTHON_COUNT=$(find . -name "*.py" -not -path "./.git/*" -not -path "./venv/*" -not -path "./.github/*" | wc -l)
 SHELL_COUNT=$(find . -name "*.sh" -not -path "./.git/*" | wc -l)
 JS_COUNT=$(find . \( -name "*.js" -o -name "*.ts" \) -not -path "./.git/*" -not -path "./node_modules/*" 2>/dev/null | wc -l)
 
