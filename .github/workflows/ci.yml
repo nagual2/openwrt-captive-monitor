@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'feature-*'
+      - 'fix/**'
+      - 'fix-*'
+      - 'chore/**'
+      - 'chore-*'
+      - 'docs/**'
+      - 'docs-*'
+      - 'hotfix/**'
+      - 'hotfix-*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    
+    strategy:
+      matrix:
+        linter:
+          - shfmt
+          - shellcheck
+          - markdownlint
+          - actionlint
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install base dependencies
+        uses: ./.github/actions/setup-system-packages
+        with:
+          packages: binutils tar
+
+      - name: Install linter dependencies
+        if: matrix.linter == 'shfmt' || matrix.linter == 'shellcheck'
+        uses: ./.github/actions/setup-system-packages
+        with:
+          packages: busybox shfmt shellcheck
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Show Node.js version
+        run: node --version
+
+      - name: Run shfmt
+        if: matrix.linter == 'shfmt'
+        run: |
+          set -euo pipefail
+          shfmt -d -s -i 4 -ci -sr .
+
+      - name: Run shellcheck
+        if: matrix.linter == 'shellcheck'
+        run: |
+          set -euo pipefail
+          find . -type f -name "*.sh" -exec shellcheck {} +
+          shellcheck openwrt_captive_monitor.sh
+
+      - name: Run markdownlint
+        if: matrix.linter == 'markdownlint'
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          config: '.markdownlint.json'
+          files: '**/*.md'
+
+      - name: Run actionlint
+        if: matrix.linter == 'actionlint'
+        uses: reviewdog/action-actionlint@v1
+        with:
+          fail_on_error: true
+
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    needs: lint
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install test dependencies
+        uses: ./.github/actions/setup-system-packages
+        with:
+          packages: binutils tar busybox
+
+      - name: Run test harness with BusyBox ash
+        run: |
+          set -euo pipefail
+          busybox ash tests/run.sh
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: tests/_out/
+          retention-days: 7
+          if-no-files-found: warn
+          compression-level: 6

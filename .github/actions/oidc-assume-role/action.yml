@@ -1,0 +1,201 @@
+name: Assume role via GitHub OIDC
+
+description: >-
+  Exchanges the GitHub Actions OIDC token for short-lived cloud
+  credentials so workflows can interact with external artifact stores
+  without persisting long-lived secrets.
+
+inputs:
+  provider:
+    description: 'Cloud provider to target. Currently only "aws" is supported.'
+    default: aws
+    required: false
+  role-arn:
+    description: 'Role identifier to assume with the federated GitHub identity.'
+    required: true
+  audience:
+    description: >-
+      Audience claim to request when minting the GitHub OIDC token.
+      Defaults to the AWS STS audience.
+    default: sts.amazonaws.com
+    required: false
+  session-name:
+    description: 'Friendly session name that will appear in provider logs.'
+    default: github-actions
+    required: false
+  duration-seconds:
+    description: 'Requested session duration in seconds for the cloud role.'
+    default: '3600'
+    required: false
+  aws-region:
+    description: >-
+      Optional AWS region to export so downstream steps pick up the
+      intended region without additional configuration.
+    required: false
+
+outputs:
+  aws_access_key_id:
+    description: 'Ephemeral AWS access key identifier (only populated for AWS).'
+    value: ${{ steps.export-aws.outputs.aws_access_key_id }}
+  aws_secret_access_key:
+    description: 'Ephemeral AWS secret access key (only populated for AWS).'
+    value: ${{ steps.export-aws.outputs.aws_secret_access_key }}
+  aws_session_token:
+    description: 'Ephemeral AWS session token (only populated for AWS).'
+    value: ${{ steps.export-aws.outputs.aws_session_token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Validate configuration
+      id: validate
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        provider="${{ inputs.provider }}"
+        role_arn="${{ inputs.role-arn }}"
+
+        if [ -z "$role_arn" ]; then
+          echo "Input role-arn is required when invoking this action."
+          exit 1
+        fi
+
+        case "$provider" in
+          aws)
+            ;;
+          *)
+            echo "Unsupported provider: $provider"
+            echo "The oidc-assume-role action currently supports provider=aws."
+            exit 1
+            ;;
+        esac
+
+        if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+          echo "The GitHub OIDC token request metadata is unavailable."
+          echo "Ensure the calling job sets 'permissions: id-token: write'."
+          exit 1
+        fi
+
+    - name: Mint GitHub OIDC token
+      id: mint-token
+      shell: bash
+      env:
+        AUDIENCE: ${{ inputs.audience }}
+      run: |
+        set -euo pipefail
+
+        response=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${AUDIENCE}")
+
+        token=$(python3 - <<'PY' <<<"$response"
+import json
+import sys
+print(json.load(sys.stdin)["value"])
+PY)
+        echo "::add-mask::$token"
+        echo "token=$token" >>"$GITHUB_OUTPUT"
+
+        OIDC_TOKEN="$token" python3 - <<'PY'
+import base64
+import json
+import os
+import sys
+
+token = os.environ["OIDC_TOKEN"]
+segments = token.split('.')
+if len(segments) < 2:
+    sys.exit("invalid token structure")
+payload_segment = segments[1]
+padding = '=' * (-len(payload_segment) % 4)
+payload = payload_segment + padding
+claims = json.loads(base64.urlsafe_b64decode(payload.encode()))
+sub = claims.get('sub', 'unknown')
+aud = claims.get('aud', 'unknown')
+iss = claims.get('iss', 'unknown')
+print(f"OIDC issuer: {iss}")
+print(f"OIDC subject: {sub}")
+print(f"OIDC audience: {aud}")
+PY
+
+    - name: Ensure AWS CLI is available
+      if: ${{ inputs.provider == 'aws' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        if command -v aws >/dev/null 2>&1; then
+          aws --version
+          exit 0
+        fi
+
+        echo "Installing awscli via pip..."
+        python3 -m pip install --user --upgrade awscli >/tmp/awscli-install.log
+        cat /tmp/awscli-install.log
+        rm /tmp/awscli-install.log
+        echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+
+    - name: Assume AWS role with web identity
+      id: export-aws
+      if: ${{ inputs.provider == 'aws' }}
+      shell: bash
+      env:
+        ROLE_ARN: ${{ inputs.role-arn }}
+        SESSION_NAME: ${{ inputs.session-name }}
+        SESSION_DURATION: ${{ inputs.duration-seconds }}
+        REQUESTED_REGION: ${{ inputs.aws-region }}
+        OIDC_TOKEN: ${{ steps.mint-token.outputs.token }}
+      run: |
+        set -euo pipefail
+
+        if ! command -v aws >/dev/null 2>&1; then
+          echo "AWS CLI is required but was not found on PATH."
+          exit 1
+        fi
+
+        if [ -n "$REQUESTED_REGION" ]; then
+          echo "AWS_DEFAULT_REGION=$REQUESTED_REGION" >>"$GITHUB_ENV"
+          echo "Set AWS region context to $REQUESTED_REGION"
+        fi
+
+        duration="$SESSION_DURATION"
+        if ! [[ "$duration" =~ ^[0-9]+$ ]]; then
+          duration="3600"
+        fi
+
+        assume_output=$(aws sts assume-role-with-web-identity \
+          --role-arn "$ROLE_ARN" \
+          --role-session-name "$SESSION_NAME" \
+          --duration-seconds "$duration" \
+          --web-identity-token "$OIDC_TOKEN" \
+          --output json)
+
+        python3 - <<'PY' <<<"$assume_output"
+import json
+import os
+import sys
+
+data = json.loads(sys.stdin.read())
+creds = data.get('Credentials', {})
+if not creds:
+    sys.exit('No credentials found in assume-role response')
+
+access_key = creds['AccessKeyId']
+secret_key = creds['SecretAccessKey']
+session_token = creds['SessionToken']
+expiration = creds.get('Expiration', 'unknown')
+
+for value in (access_key, secret_key, session_token):
+    print(f"::add-mask::{value}")
+
+with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as env_file:
+    env_file.write(f"AWS_ACCESS_KEY_ID={access_key}\n")
+    env_file.write(f"AWS_SECRET_ACCESS_KEY={secret_key}\n")
+    env_file.write(f"AWS_SESSION_TOKEN={session_token}\n")
+
+with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output_file:
+    output_file.write(f"aws_access_key_id={access_key}\n")
+    output_file.write(f"aws_secret_access_key={secret_key}\n")
+    output_file.write(f"aws_session_token={session_token}\n")
+
+print("Assumed AWS role successfully. Session expires at:", expiration)
+PY

@@ -1,0 +1,90 @@
+#!/bin/sh
+# Mock opkg-build for testing
+# opkg-build -c <control-dir> <data-dir> <output-dir>
+
+set -eu
+
+. "$(dirname "$0")/_lib.sh"
+
+mock_log opkg-build "$@"
+
+if [ "$#" -lt 3 ]; then
+    echo "Usage: opkg-build -c <control-dir> <data-dir> <output-dir>" >&2
+    exit 1
+fi
+
+# Parse arguments
+control_dir=""
+data_dir=""
+output_dir=""
+
+# Handle -c flag
+if [ "$1" = "-c" ] && [ $# -ge 4 ]; then
+    shift
+    control_dir="$1"
+    shift
+    data_dir="$1"
+    shift
+    output_dir="$1"
+    shift
+else
+    # Positional arguments
+    data_dir="$1"
+    shift
+    output_dir="$1"
+    shift
+fi
+
+if [ -z "$control_dir" ] || [ ! -d "$control_dir" ]; then
+    echo "error: control directory not found or not specified" >&2
+    exit 1
+fi
+
+if [ ! -d "$data_dir" ]; then
+    echo "error: data directory not found: $data_dir" >&2
+    exit 1
+fi
+
+mkdir -p "$output_dir"
+
+# Extract package metadata from control file
+if [ ! -f "$control_dir/control" ]; then
+    echo "error: control file not found" >&2
+    exit 1
+fi
+
+# Parse control file for Package, Version, Architecture
+pkg_name=$(grep "^Package:" "$control_dir/control" | head -1 | cut -d: -f2 | sed 's/^ //' | sed 's/ $//')
+pkg_version=$(grep "^Version:" "$control_dir/control" | head -1 | cut -d: -f2 | sed 's/^ //' | sed 's/ $//')
+pkg_arch=$(grep "^Architecture:" "$control_dir/control" | head -1 | cut -d: -f2 | sed 's/^ //' | sed 's/ $//')
+
+if [ -z "$pkg_name" ] || [ -z "$pkg_version" ] || [ -z "$pkg_arch" ]; then
+    echo "error: could not parse package metadata from control file" >&2
+    exit 1
+fi
+
+# Create output .ipk filename
+output_ipk="$output_dir/${pkg_name}_${pkg_version}_${pkg_arch}.ipk"
+
+# Create the .ipk as an ar archive with debian-binary, control.tar.gz, and data.tar.gz
+tmpdir=$(mktemp -d)
+trap "rm -rf '$tmpdir'" EXIT
+
+# Create debian-binary file
+echo "2.0" > "$tmpdir/debian-binary"
+
+# Create control.tar.gz
+(cd "$control_dir" && tar --numeric-owner --owner=0 --group=0 -czf "$tmpdir/control.tar.gz" .)
+
+# Create data.tar.gz - exclude CONTROL directory from data
+if [ -d "$data_dir" ]; then
+    (cd "$data_dir" && tar --numeric-owner --owner=0 --group=0 --exclude=CONTROL -czf "$tmpdir/data.tar.gz" .)
+else
+    tar --numeric-owner --owner=0 --group=0 -czf "$tmpdir/data.tar.gz" -C "$tmpdir" --files-from=/dev/null 2> /dev/null || true
+fi
+
+# Create the .ipk using ar
+rm -f "$output_ipk"
+ar r "$output_ipk" "$tmpdir/debian-binary" "$tmpdir/control.tar.gz" "$tmpdir/data.tar.gz" > /dev/null 2>&1
+
+exit 0

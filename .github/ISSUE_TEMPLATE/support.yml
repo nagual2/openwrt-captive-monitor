@@ -1,0 +1,80 @@
+name: 💬 Support Question
+description: Get help with questions, troubleshooting, and general assistance
+title: "[Support]: "
+labels: ["question"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reaching out for support! Please note that this is primarily for technical questions about openwrt-captive-monitor.
+        
+        For general OpenWrt questions, please use the [OpenWrt forum](https://forum.openwrt.org/) or [community resources](https://openwrt.org/support).
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question category
+      description: What type of support question do you have?
+      options:
+        - Installation and setup
+        - Configuration and tuning
+        - Troubleshooting errors
+        - Feature usage
+        - Compatibility question
+        - Performance issue
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment information
+      description: Help us understand your setup.
+      value: |
+        - Router model / SoC:
+        - OpenWrt version:
+        - Package version:
+        - Runtime mode (`monitor` or `oneshot`):
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Please describe your question or issue in detail.
+      placeholder: What would you like help with?
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-you-tried
+    attributes:
+      label: What you've already tried
+      description: Tell us what troubleshooting steps you've already taken.
+      placeholder: Describe what you've tried so far...
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or output
+      description: If applicable, paste relevant log extracts or command output.
+      render: shell
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Acceptance
+      description: Before submitting, please confirm:
+      options:
+        - label: I have read the documentation in the docs/ directory
+          required: true
+        - label: I have checked the SUPPORT.md file for common solutions
+          required: true
+        - label: I have searched existing issues for similar questions
+          required: true
+        - label: I understand this is a volunteer community project
+          required: true

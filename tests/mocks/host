@@ -1,0 +1,30 @@
+#!/bin/sh
+set -eu
+. "$(dirname "$0")/_lib.sh"
+
+mock_log host "$@"
+
+host_name=""
+for arg in "$@"; do
+    case "$arg" in
+        -*) ;;
+        *)
+            host_name="$arg"
+            ;;
+    esac
+done
+
+if [ -z "$host_name" ]; then
+    host_name="captive.test"
+fi
+
+ip4="${MOCK_HOST_IPV4:-${MOCK_NSLOOKUP_IPV4:-10.10.10.10}}"
+ip6="${MOCK_HOST_IPV6:-${MOCK_NSLOOKUP_IPV6:-}}"
+
+if [ -n "$ip4" ]; then
+    printf '%s has address %s\n' "$host_name" "$ip4"
+fi
+if [ -n "$ip6" ]; then
+    printf '%s has IPv6 address %s\n' "$host_name" "$ip6"
+fi
+exit 0
