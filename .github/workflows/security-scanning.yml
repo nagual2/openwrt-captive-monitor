@@ -27,7 +27,7 @@ defaults:
 jobs:
   dependency-review:
     name: Dependency Review
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Run only on pull requests
     if: github.event_name == 'pull_request'
@@ -50,7 +50,7 @@ jobs:
 
   trivy-scan:
     name: Trivy Security Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     
     permissions:
@@ -62,7 +62,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@0.30.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -83,7 +83,7 @@ jobs:
 
   security-summary:
     name: Security Scan Summary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [trivy-scan]
     if: always()
     
