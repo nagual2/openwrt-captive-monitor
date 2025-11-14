@@ -1,0 +1,100 @@
+#!/bin/sh
+# Mock opkg-make-index for testing
+# opkg-make-index [-a <arch>] <package-dir>
+
+set -eu
+
+. "$(dirname "$0")/_lib.sh"
+
+mock_log opkg-make-index "$@"
+
+# Validate required tools are available
+command -v ar > /dev/null || (
+    echo "ERROR: ar not found" >&2
+    exit 1
+)
+command -v tar > /dev/null || (
+    echo "ERROR: tar not found" >&2
+    exit 1
+)
+
+if [ "$#" -lt 1 ]; then
+    echo "Usage: opkg-make-index [-a <arch>] <package-dir>" >&2
+    exit 1
+fi
+
+arch=""
+pkg_dir=""
+
+# Parse arguments
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -a)
+            if [ $# -lt 2 ]; then
+                echo "error: -a requires an argument" >&2
+                exit 1
+            fi
+            arch="$2"
+            shift 2
+            ;;
+        -*)
+            echo "error: unknown option: $1" >&2
+            exit 1
+            ;;
+        *)
+            pkg_dir="$1"
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$pkg_dir" ]; then
+    echo "error: package directory not specified" >&2
+    exit 1
+fi
+
+if [ ! -d "$pkg_dir" ]; then
+    echo "error: package directory not found: $pkg_dir" >&2
+    exit 1
+fi
+
+# Generate Packages index for all .ipk files in the directory
+output=""
+
+for ipk in "$pkg_dir"/*.ipk; do
+    [ -f "$ipk" ] || continue
+
+    # Validate .ipk file exists before extraction
+    if [ ! -f "$ipk" ]; then
+        echo "ERROR: $ipk does not exist" >&2
+        exit 1
+    fi
+
+    tmpdir=$(mktemp -d)
+    trap "rm -rf '$tmpdir'" EXIT
+
+    # Extract control file from .ipk with explicit error handling
+    ar p "$ipk" control.tar.gz 2> /dev/null | tar -C "$tmpdir" -xz 2> /dev/null
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to extract control.tar.gz from $ipk" >&2
+        exit 1
+    fi
+
+    if [ -f "$tmpdir/control" ]; then
+        # Add control file content to output
+        output="$output$(cat "$tmpdir/control")
+Filename: $(basename "$ipk")
+Size: $(stat -c%s "$ipk")
+MD5sum: $(md5sum "$ipk" | awk '{print $1}')
+SHA256sum: $(sha256sum "$ipk" | awk '{print $1}')
+
+"
+    fi
+done
+
+# Output the Packages index
+if [ -n "$output" ]; then
+    printf '%s' "$output"
+fi
+
+exit 0

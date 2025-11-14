@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security disclosure
+    url: https://github.com/nagual2/openwrt-captive-monitor/security/policy
+    about: Please follow the security policy to report vulnerabilities privately.
+  - name: Questions and support
+    url: https://github.com/nagual2/openwrt-captive-monitor/blob/main/.github/SUPPORT.md
+    about: Check our support guide for help with questions, troubleshooting, and general assistance.

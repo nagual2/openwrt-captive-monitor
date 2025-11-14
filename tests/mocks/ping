@@ -1,0 +1,54 @@
+#!/bin/sh
+set -eu
+. "$(dirname "$0")/_lib.sh"
+
+mock_log ping "$@"
+
+host=""
+for arg in "$@"; do
+    case "$arg" in
+        -*) ;;
+        *)
+            host="$arg"
+            ;;
+    esac
+done
+
+state_file=$(mock_state_file ping)
+count=0
+if [ -f "$state_file" ]; then
+    count=$(cat "$state_file")
+fi
+count=$((count + 1))
+printf '%s\n' "$count" > "$state_file"
+
+fail_limit=${MOCK_PING_FAIL_COUNT:-0}
+case "$fail_limit" in
+    '') fail_limit=0 ;;
+esac
+if [ "$fail_limit" -ge "$count" ]; then
+    exit 1
+fi
+
+if [ -n "${PING_FAIL_HOSTS:-}" ]; then
+    for entry in $PING_FAIL_HOSTS; do
+        if [ "$entry" = "$host" ]; then
+            exit 1
+        fi
+    done
+fi
+
+if [ -n "${PING_SUCCESS_HOSTS:-}" ]; then
+    for entry in $PING_SUCCESS_HOSTS; do
+        if [ "$entry" = "$host" ]; then
+            exit 0
+        fi
+    done
+fi
+
+default_result=${PING_DEFAULT_RESULT:-success}
+if [ "$default_result" = "fail" ]; then
+    exit 1
+fi
+
+exit 0

@@ -1,0 +1,43 @@
+# Template Makefile for new OpenWrt packages in this repository.
+# Copy this file to package/<your-package>/Makefile and adjust the values below.
+
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=example-package
+PKG_VERSION:=0.0.1
+PKG_RELEASE:=1
+PKG_LICENSE:=MIT
+PKG_LICENSE_FILES:=LICENSE
+PKG_MAINTAINER:=Your Name <you@example.org>
+PKG_SOURCE_URL:=https://github.com/your-org/your-package
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_VERSION:=v$(PKG_VERSION)
+PKG_ARCH:=all
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/$(PKG_NAME)
+  SECTION:=net
+  CATEGORY:=Network
+  SUBMENU:=Captive Portals
+  TITLE:=Example package built on the captive monitor tooling
+  DEPENDS:=+busybox
+  URL:=https://github.com/your-org/your-package
+  MAINTAINER:=Your Name <you@example.org>
+endef
+
+define Package/$(PKG_NAME)/description
+ Example short description that will show up in opkg/feeds.
+endef
+
+# Only override if the package needs a custom build step
+define Build/Compile
+    # Nothing to compile; add your commands here if needed
+endef
+
+define Package/$(PKG_NAME)/install
+    $(INSTALL_DIR) $(1)/usr/sbin
+    $(INSTALL_BIN) ./files/usr/sbin/example-package $(1)/usr/sbin/example-package
+endef
+
+$(eval $(call BuildPackage,$(PKG_NAME)))

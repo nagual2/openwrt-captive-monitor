@@ -1,0 +1,3 @@
+# ShellCheck configuration file
+# Disable warnings that are not applicable for OpenWrt environment
+disable=SC2030,SC2031,SC3043,SC2005,SC3037,SC2181,SC2028,SC2086

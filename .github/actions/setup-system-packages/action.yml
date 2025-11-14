@@ -1,0 +1,80 @@
+name: Install system packages
+
+description: >-
+  Installs apt-based system dependencies with exponential backoff retries and
+  hardened shell defaults. Converts multi-line package lists into a
+  space-delimited command.
+
+inputs:
+  packages:
+    description: "Whitespace or newline separated list of packages to install"
+    required: true
+  update:
+    description: "Whether to run apt-get update before installing"
+    required: false
+    default: 'true'
+  retries:
+    description: "Maximum number of attempts before failing"
+    required: false
+    default: '4'
+  sudo:
+    description: "Use sudo for package management commands"
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Install apt packages
+      shell: bash
+      env:
+        PACKAGE_LIST: ${{ inputs.packages }}
+        RUN_UPDATE: ${{ inputs.update }}
+        MAX_RETRIES: ${{ inputs.retries }}
+        USE_SUDO: ${{ inputs.sudo }}
+      run: |
+        set -euo pipefail
+
+        retry_with_backoff() {
+          local attempt=1
+          local sleep_time=5
+          local max_attempts="${MAX_RETRIES}"
+
+          while true; do
+            if "$@"; then
+              return 0
+            fi
+
+            if (( attempt >= max_attempts )); then
+              echo "Command failed after ${attempt} attempts: $*" >&2
+              return 1
+            fi
+
+            local jitter=$((RANDOM % 5))
+            local delay=$(( sleep_time + jitter ))
+            echo "Command failed (attempt ${attempt}/${max_attempts}). Retrying in ${delay}s" >&2
+            sleep "${delay}"
+            sleep_time=$(( sleep_time * 2 ))
+            attempt=$(( attempt + 1 ))
+          done
+        }
+
+        if [[ -z "${PACKAGE_LIST// }" ]]; then
+          echo "No packages requested; skipping install"
+          exit 0
+        fi
+
+        packages="${PACKAGE_LIST//$'\n'/ }"
+        packages="${packages//$'\r'/ }"
+
+        if [[ "${USE_SUDO}" == "true" ]]; then
+          prefix=(sudo)
+        else
+          prefix=()
+        fi
+
+        if [[ "${RUN_UPDATE}" == "true" ]]; then
+          retry_with_backoff "${prefix[@]}" apt-get update -y
+        fi
+
+        retry_with_backoff "${prefix[@]}" apt-get install -y --no-install-recommends ${packages}

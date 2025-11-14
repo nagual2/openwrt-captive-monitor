@@ -1,0 +1,6 @@
+# Default code owners
+# Update this list when new maintainers join the project.
+* @nagual2
+
+# Documentation
+/docs/ @nagual2
