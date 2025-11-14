@@ -45,23 +45,6 @@ jobs:
             echo "tag_name=" >> "$GITHUB_OUTPUT"
           fi
 
-permissions:
-  contents: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
-
-defaults:
-  run:
-    shell: bash
-
-env:
-  OPENWRT_VERSION: "23.05.3"
-  OPENWRT_ARCH: "x86_64"
-  SDK_CHECKSUM: "f90d60c7a00a50a1c80807fb32fd4c12bed1fb65871328f3c2171caf9b711254"
-
-jobs:
   build-package:
     name: Build OpenWrt Package
     runs-on: ubuntu-latest
