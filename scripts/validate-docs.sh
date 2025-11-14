@@ -7,7 +7,7 @@ echo "Validating documentation structure..."
 
 # Check required directories
 check_required_dirs() {
-    for dir in docs docs/usage docs/configuration docs/guides docs/project; do
+    for dir in docs docs/usage docs/configuration docs/guides docs/project docs/contributing docs/release docs/security docs/setup docs/reports; do
         if [ -d "$dir" ]; then
             echo "✓ Directory exists: $dir"
         else
@@ -19,7 +19,7 @@ check_required_dirs() {
 
 # Check required files
 check_required_files() {
-    for file in docs/index.md README.md CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE; do
+    for file in docs/index.md README.md docs/contributing/CONTRIBUTING.md docs/contributing/CODE_OF_CONDUCT.md LICENSE; do
         if [ -f "$file" ]; then
             echo "✓ File exists: $file"
         else

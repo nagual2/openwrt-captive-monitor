@@ -203,7 +203,7 @@ To improve the templates and label system:
 
 - [GitHub Issue Forms documentation](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms)
 - [Conventional Commits specification](https://www.conventionalcommits.org/)
-- [Project contribution guidelines](../../CONTRIBUTING.md)
+- [Project contribution guidelines](../contributing/CONTRIBUTING.md)
 
 ---
 

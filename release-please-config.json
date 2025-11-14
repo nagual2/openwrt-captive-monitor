@@ -13,7 +13,7 @@
     {"type":"build","section":"Build System","hidden":false},
     {"type":"ci","section":"Continuous Integration","hidden":false}
   ],
-  "changelog-path": "CHANGELOG.md",
+  "changelog-path": "docs/release/CHANGELOG.md",
   "version-file": "VERSION",
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true
