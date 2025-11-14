@@ -15,7 +15,7 @@ on:
 jobs:
   pre-check:
     name: Pre-flight Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -47,7 +47,7 @@ jobs:
 
   build-package:
     name: Build OpenWrt Package
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: pre-check
     if: needs.pre-check.outputs.should_proceed == 'true'
     permissions:
@@ -432,7 +432,7 @@ jobs:
 
   sign-and-publish:
     name: Sign and Publish Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [pre-check, build-package]
     if: needs.pre-check.outputs.should_proceed == 'true' && needs.build-package.outputs.build_successful == 'true'
     
@@ -530,9 +530,9 @@ jobs:
           echo "OIDC token obtained; proceeding with keyless signing."
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3.2.0
+        uses: sigstore/cosign-installer@v4
         with:
-          cosign-release: v2.4.0
+          cosign-release: latest
 
       - name: Show cosign version
         run: cosign version

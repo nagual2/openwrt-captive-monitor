@@ -64,6 +64,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          check-latest: true
 
       - name: Show Node.js version
         run: node --version
@@ -83,7 +84,7 @@ jobs:
 
       - name: Run markdownlint
         if: matrix.linter == 'markdownlint'
-        uses: DavidAnson/markdownlint-cli2-action@v19
+        uses: DavidAnson/markdownlint-cli2-action@v20
         with:
           config: '.markdownlint.json'
           files: '**/*.md'
@@ -116,7 +117,7 @@ jobs:
           busybox ash tests/run.sh
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: test-results
