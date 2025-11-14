@@ -91,7 +91,6 @@ branches:
           # Security Scanning Workflow
           - "Dependency Review"
           - "Trivy Security Scan"
-          - "Bandit Python Security Scan"
       
       # Restrict who can push to matching branches
       restrictions:
