@@ -11,6 +11,40 @@ on:
         required: true
         type: string
 
+# Ensure workflow runs only for tags, not branches
+jobs:
+  pre-check:
+    name: Pre-flight Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      should_proceed: ${{ steps.check.outputs.should_proceed }}
+      tag_name: ${{ steps.check.outputs.tag_name }}
+    
+    steps:
+      - name: Check if this is a tag push
+        id: check
+        run: |
+          echo "=== Pre-flight Check ==="
+          echo "Event: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Ref type: ${{ github.ref_type }}"
+          
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual workflow dispatch"
+            echo "should_proceed=true" >> "$GITHUB_OUTPUT"
+            echo "tag_name=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "Tag push detected: ${{ github.ref_name }}"
+            echo "should_proceed=true" >> "$GITHUB_OUTPUT"
+            echo "tag_name=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Not a tag push, skipping"
+            echo "should_proceed=false" >> "$GITHUB_OUTPUT"
+            echo "tag_name=" >> "$GITHUB_OUTPUT"
+          fi
+
 permissions:
   contents: write
 
@@ -31,6 +65,8 @@ jobs:
   build-package:
     name: Build OpenWrt Package
     runs-on: ubuntu-latest
+    needs: pre-check
+    if: needs.pre-check.outputs.should_proceed == 'true'
     permissions:
       contents: read
     outputs:
@@ -39,13 +75,26 @@ jobs:
       build_successful: ${{ steps.build.outputs.success }}
     
     steps:
+      - name: Debug workflow context
+        run: |
+          echo "=== Workflow Debug Information ==="
+          echo "Event name: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Ref name: ${{ github.ref_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Run attempt: ${{ github.run_attempt }}"
       - name: Determine checkout ref
         id: ref
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "ref=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
             echo "ref=${{ github.ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=main" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Check out repository
@@ -53,6 +102,35 @@ jobs:
         with:
           ref: ${{ steps.ref.outputs.ref }}
           fetch-depth: 0
+
+      - name: Verify version consistency
+        run: |
+          echo "=== Version Verification ==="
+          TAG_VERSION="${{ needs.pre-check.outputs.tag_name }}"
+          if [ -n "$TAG_VERSION" ]; then
+            # Remove 'v' prefix if present
+            CLEAN_VERSION=$(echo "$TAG_VERSION" | sed 's/^v//')
+            echo "Tag version: $TAG_VERSION"
+            echo "Clean version: $CLEAN_VERSION"
+            
+            FILE_VERSION=$(cat VERSION)
+            echo "VERSION file: $FILE_VERSION"
+            
+            MAKEFILE_VERSION=$(grep 'PKG_VERSION:=' package/openwrt-captive-monitor/Makefile | cut -d'=' -f2 | tr -d ' ')
+            echo "Makefile version: $MAKEFILE_VERSION"
+            
+            if [ "$CLEAN_VERSION" != "$FILE_VERSION" ] || [ "$CLEAN_VERSION" != "$MAKEFILE_VERSION" ]; then
+              echo "ERROR: Version mismatch detected!"
+              echo "Expected version from tag: $CLEAN_VERSION"
+              echo "VERSION file: $FILE_VERSION"
+              echo "Makefile PKG_VERSION: $MAKEFILE_VERSION"
+              exit 1
+            else
+              echo "✓ All versions are consistent"
+            fi
+          else
+            echo "No tag version provided, skipping version check"
+          fi
 
       - name: Install required tools
         run: sudo apt-get update && sudo apt-get install -y binutils tar
@@ -283,20 +361,26 @@ jobs:
       - name: Build package
         id: build
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
           cd "$SDK_DIR"
           
           echo "=== Building package ==="
-          if ! make package/openwrt-captive-monitor/compile V=s 2>&1 | tee build.log; then
+          if make package/openwrt-captive-monitor/compile V=s 2>&1 | tee build.log; then
+            echo "✓ Package built successfully"
+            echo "success=true" >> "$GITHUB_OUTPUT"
+          else
             echo "=== BUILD FAILED ==="
             tail -100 build.log
             echo "success=false" >> "$GITHUB_OUTPUT"
-            exit 1
+            echo "Build failed but continuing to set outputs"
           fi
-          
-          echo "✓ Package built successfully"
-          echo "success=true" >> "$GITHUB_OUTPUT"
+
+      - name: Check build success
+        if: steps.build.outputs.success == 'false'
+        run: |
+          echo "Build failed, exiting"
+          exit 1
 
       - name: Locate and prepare artifacts
         id: artifacts
@@ -366,8 +450,8 @@ jobs:
   sign-and-publish:
     name: Sign and Publish Release
     runs-on: ubuntu-latest
-    needs: build-package
-    if: needs.build-package.outputs.build_successful == 'true'
+    needs: [pre-check, build-package]
+    if: needs.pre-check.outputs.should_proceed == 'true' && needs.build-package.outputs.build_successful == 'true'
     
     permissions:
       contents: write
@@ -608,7 +692,7 @@ print(json.load(sys.stdin)["value"])
         run: |
           set -euxo pipefail
           
-          TAG="${{ github.ref_name }}"
+          TAG="${{ needs.pre-check.outputs.tag_name }}"
           RELEASE_ID=$(gh release view "$TAG" --json id --jq '.id' 2>/dev/null || echo "")
           
           if [ -z "$RELEASE_ID" ]; then
@@ -637,7 +721,7 @@ print(json.load(sys.stdin)["value"])
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euxo pipefail
-          TAG="${{ github.ref_name }}"
+          TAG="${{ needs.pre-check.outputs.tag_name }}"
           
           echo "=== Release Assets ==="
           gh release view "$TAG" --json assets --jq '.assets[] | "\(.name) - \(.size) bytes"'
