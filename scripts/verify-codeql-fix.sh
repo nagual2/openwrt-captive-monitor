@@ -82,8 +82,8 @@ fi
 
 echo
 echo "6. Verifying YAML syntax..."
-if command -v python3 &>/dev/null; then
-    if python3 -c "import yaml; yaml.safe_load(open('.github/workflows/codeql.yml'))" 2>/dev/null; then
+if command -v python3 &> /dev/null; then
+    if python3 -c "import yaml; yaml.safe_load(open('.github/workflows/codeql.yml'))" 2> /dev/null; then
         pass "YAML syntax is valid"
     else
         info "Could not verify YAML (yaml module not available)"
@@ -96,7 +96,7 @@ echo
 echo "7. Checking project language files..."
 PYTHON_COUNT=$(find . -name "*.py" -not -path "./.git/*" -not -path "./venv/*" -not -path "./.github/*" | wc -l)
 SHELL_COUNT=$(find . -name "*.sh" -not -path "./.git/*" | wc -l)
-JS_COUNT=$(find . \( -name "*.js" -o -name "*.ts" \) -not -path "./.git/*" -not -path "./node_modules/*" 2>/dev/null | wc -l)
+JS_COUNT=$(find . \( -name "*.js" -o -name "*.ts" \) -not -path "./.git/*" -not -path "./node_modules/*" 2> /dev/null | wc -l)
 
 info "Found $PYTHON_COUNT Python file(s)"
 info "Found $SHELL_COUNT Shell script(s)"
