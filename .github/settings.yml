@@ -85,7 +85,7 @@ branches:
           - "Test"
           
           # CodeQL Security Scanning
-          - "CodeQL Analysis (python)"
+          - "CodeQL Analysis (shell)"
           - "ShellCheck Security Analysis"
           
           # Security Scanning Workflow

@@ -39,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ['python']
+        language: ['shell']
     
     steps:
       - name: Check out repository
@@ -56,34 +56,7 @@ jobs:
               - 'tests/**'
               - '.github/**'
               - '_out/**'
-              - '__pycache__/**'
           queries: +security-extended,security-and-quality
-
-      - name: Setup Python for CodeQL
-        uses: actions/setup-python@v5
-        if: matrix.language == 'python'
-        with:
-          python-version: '3.11'
-          
-      - name: Create requirements.txt for CodeQL
-        run: |
-          set -euo pipefail
-          if [ -f requirements.txt ]; then
-            echo "requirements.txt already exists"
-          else
-            # Create minimal requirements.txt for CodeQL
-            echo "paramiko>=2.0.0" > requirements.txt || true
-          fi
-        if: matrix.language == 'python'
-        
-      - name: Install Python dependencies
-        run: |
-          set -euo pipefail
-          if [ -f requirements.txt ]; then
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
-          fi
-        if: matrix.language == 'python'
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v4
