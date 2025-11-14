@@ -391,7 +391,7 @@ sh -x /usr/sbin/openwrt_captive_monitor --oneshot 2>&1 | tee /tmp/debug.log
 
 ### Q: Can I contribute to the project?
 
-**A:** Absolutely! See the [Contributing Guide](../../CONTRIBUTING.md) for guidelines. Common contributions:
+**A:** Absolutely! See the [Contributing Guide](../contributing/CONTRIBUTING.md) for guidelines. Common contributions:
 - Bug reports and fixes
 - Feature suggestions and implementation
 - Documentation improvements

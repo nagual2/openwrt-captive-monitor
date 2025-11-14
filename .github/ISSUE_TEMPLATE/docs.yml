@@ -34,8 +34,8 @@ body:
       description: Where is the affected documentation?
       options:
         - README.md
-        - CONTRIBUTING.md
-        - CHANGELOG.md
+        - docs/contributing/CONTRIBUTING.md
+        - docs/release/CHANGELOG.md
         - docs/ directory (specify below)
         - Inline code comments
         - GitHub templates
