@@ -75,7 +75,7 @@ jobs:
           skip-dirs: 'security_audit,venv,tests,node_modules'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -109,24 +109,37 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Find all Python files
-          PYTHON_FILES=$(find . -type f -name "*.py" -not -path "./.git/*" -not -path "./.github/*" -not -path "./tests/*" -not -path "./_out/*" -not -path "./__pycache__/*" -not -path "./node_modules/*" -not -path "./local/*" || true)
+          # Find all Python files (including local directory)
+          PYTHON_FILES=$(find . -type f -name "*.py" -not -path "./.git/*" -not -path "./.github/*" -not -path "./tests/*" -not -path "./_out/*" -not -path "./__pycache__/*" -not -path "./node_modules/*" || true)
           
           if [ -n "$PYTHON_FILES" ]; then
             echo "Found Python files to analyze:"
             echo "$PYTHON_FILES"
             echo ""
             
-            # Create bandit config if not exists
+            # Create bandit config if not exists (updated to include local dir)
             if [ ! -f .bandit ]; then
               echo "[bandit]" > .bandit
-              echo "exclude_dirs = .git,.github,tests,_out,__pycache__,node_modules,local" >> .bandit
+              echo "exclude_dirs = .git,.github,tests,_out,__pycache__,node_modules" >> .bandit
               echo "skips = B101,B601" >> .bandit
             fi
             
             # Run bandit with SARIF output on specific files
             echo "Running Bandit security scan..."
             bandit $PYTHON_FILES -f sarif -o bandit-results.sarif --exit-zero || echo "Bandit scan completed with warnings/errors"
+            
+            # Verify SARIF file was created and is not empty
+            if [ -f bandit-results.sarif ] && [ -s bandit-results.sarif ]; then
+              echo "SARIF file created successfully:"
+              echo "File size: $(wc -c < bandit-results.sarif) bytes"
+              echo "First 200 characters:"
+              head -c 200 bandit-results.sarif
+              echo ""
+            else
+              echo "Error: SARIF file is empty or missing"
+              echo "Creating minimal SARIF file..."
+              echo '{"$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json", "version": "2.1.0", "runs": []}' > bandit-results.sarif
+            fi
           else
             echo "No Python files found to analyze"
             # Create empty SARIF file
@@ -134,7 +147,7 @@ jobs:
           fi
 
       - name: Upload Bandit results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'bandit-results.sarif'
