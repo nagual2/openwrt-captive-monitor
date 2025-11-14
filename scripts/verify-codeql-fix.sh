@@ -30,10 +30,10 @@ info() {
 
 echo "1. Checking CodeQL action versions..."
 if
-    grep -q "github/codeql-action/init@v4" .github/workflows/codeql.yml && \
-    grep -q "github/codeql-action/autobuild@v4" .github/workflows/codeql.yml && \
-    grep -q "github/codeql-action/analyze@v4" .github/workflows/codeql.yml && \
-    grep -q "github/codeql-action/upload-sarif@v4" .github/workflows/codeql.yml
+    grep -q "github/codeql-action/init@v4" .github/workflows/codeql.yml &&
+        grep -q "github/codeql-action/autobuild@v4" .github/workflows/codeql.yml &&
+        grep -q "github/codeql-action/analyze@v4" .github/workflows/codeql.yml &&
+        grep -q "github/codeql-action/upload-sarif@v4" .github/workflows/codeql.yml
 then
     pass "All CodeQL actions are using v4"
 else
@@ -59,8 +59,8 @@ fi
 echo
 echo "4. Checking for JavaScript references..."
 if
-    ! grep -iq "javascript" .github/workflows/codeql.yml && \
-    ! grep -q "CodeQL Analysis (javascript)" .github/settings.yml
+    ! grep -iq "javascript" .github/workflows/codeql.yml &&
+        ! grep -q "CodeQL Analysis (javascript)" .github/settings.yml
 then
     pass "No JavaScript references found in workflow or settings"
 else
@@ -70,10 +70,10 @@ fi
 echo
 echo "5. Checking required status checks in settings.yml..."
 if
-    ! grep -q '"CodeQL Analysis (python)"' .github/settings.yml && \
-    grep -q '"CodeQL Analysis (shell)"' .github/settings.yml && \
-    grep -q '"ShellCheck Security Analysis"' .github/settings.yml && \
-    ! grep -q '"CodeQL Analysis (javascript)"' .github/settings.yml
+    ! grep -q '"CodeQL Analysis (python)"' .github/settings.yml &&
+        grep -q '"CodeQL Analysis (shell)"' .github/settings.yml &&
+        grep -q '"ShellCheck Security Analysis"' .github/settings.yml &&
+        ! grep -q '"CodeQL Analysis (javascript)"' .github/settings.yml
 then
     pass "Status checks correctly configured"
 else
