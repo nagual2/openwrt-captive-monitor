@@ -15,25 +15,9 @@ set -eu
 REPO="${1:-nagual2/openwrt-captive-monitor}"
 TOKEN="${GITHUB_TOKEN:-}"
 
-# ANSI color codes (POSIX-safe)
-RED='\033[31m'
-GREEN='\033[32m'
-YELLOW='\033[33m'
-BLUE='\033[34m'
-MAGENTA='\033[35m'
-CYAN='\033[36m'
-NC='\033[0m' # No Color
-
-# Disable colors if NO_COLOR is set or stdout is not a TTY
-if [ -n "${NO_COLOR:-}" ] || [ ! -t 1 ]; then
-    RED=''
-    GREEN=''
-    YELLOW=''
-    BLUE=''
-    MAGENTA=''
-    CYAN=''
-    NC=''
-fi
+# Source shared color definitions so output formatting stays consistent
+# shellcheck source=lib/colors.sh
+. "$(dirname "$0")/lib/colors.sh"
 
 # Ensure token is present
 if [ -z "$TOKEN" ]; then

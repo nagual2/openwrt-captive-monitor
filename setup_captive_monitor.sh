@@ -1,18 +1,8 @@
 #!/bin/sh
 
-# Colors for output
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
-YELLOW='\033[1;33m'
-
-# Disable colors if NO_COLOR is set or stdout is not a TTY
-if [ -n "${NO_COLOR:-}" ] || [ ! -t 1 ]; then
-    GREEN=''
-    RED=''
-    YELLOW=''
-    NC=''
-fi
+# Source shared color definitions so output formatting stays consistent
+# shellcheck source=scripts/lib/colors.sh
+. "$(dirname "$0")/scripts/lib/colors.sh"
 
 # Default configuration
 WIFI_INTERFACE="phy1-sta0"
