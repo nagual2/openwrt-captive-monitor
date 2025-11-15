@@ -32,11 +32,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libssl-dev libncurses5-dev unzip
           
-      - name: Install build dependencies for .ipk package
+      - name: Setup opkg-utils and host packaging dependencies
         run: |
-          # opkg-utils provides opkg-build and opkg-make-index
-          # gzip, coreutils, and tar are needed for package creation
-          sudo apt-get install -y opkg-utils gzip coreutils tar
+          # Install host deps and opkg-utils from OpenWrt upstream
+          sh ./scripts/setup-opkg-utils.sh
+
+      - name: Validate opkg-build availability
+        run: opkg-build -h
           
       - name: Compute BUILD_NAME
         run: |
