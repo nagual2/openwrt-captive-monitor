@@ -448,6 +448,7 @@ if [ "$release_mode" = "true" ]; then
     echo "Architecture: $arch"
     echo "Maintainer: $pkg_maintainer"
     echo "License: $pkg_license"
+    echo "Channel: ${build_channel:-}"
     echo ""
     echo "=== ARTIFACTS ==="
     printf '%-40s %12s %64s %64s\n' "FILENAME" "SIZE" "MD5" "SHA256"
@@ -508,7 +509,8 @@ if [ "$release_mode" = "true" ]; then
     "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
     "script_version": "2.0",
     "release_mode": true,
-    "using_opkg_build": true
+    "using_opkg_build": true,
+    "channel": "$build_channel"
   }
 }
 EOF
@@ -524,6 +526,7 @@ else
     # Standard output mode
     printf 'Created package: %s (%s bytes)\n' "$output_ipk" "$ipk_size"
     printf 'Updated feed index under: %s (entries: %s)\n' "$feed_dir" "$packages_written"
+    printf 'Build channel: %s\n' "${build_channel:-}"
     printf 'Feed artifacts:\n'
     printf '  - %s (%s bytes)\n' "$rel_output_ipk" "$ipk_size"
     printf '  - %s (%s bytes)\n' "$rel_packages_file" "$packages_size"
