@@ -137,3 +137,70 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
           compression-level: 6
+
+  build-dev-package:
+    name: Build Dev Package
+    runs-on: ubuntu-24.04
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install build dependencies for .ipk package
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y opkg-utils gzip coreutils tar
+
+      - name: Set dev channel environment
+        run: |
+          set -euo pipefail
+          short_sha=$(echo "${GITHUB_SHA:-$(git rev-parse --short HEAD 2>/dev/null || echo nogit)}" | cut -c1-7)
+          {
+            echo "BUILD_CHANNEL=dev"
+            echo "BUILD_NAME=dev-main"
+            echo "VERSION_SUFFIX=-dev+${short_sha}"
+          } >> "$GITHUB_ENV"
+          echo "Using BUILD_NAME=dev-main VERSION_SUFFIX=-dev+${short_sha}"
+
+      - name: Build package (standalone)
+        run: |
+          chmod +x ./scripts/build_ipk.sh
+          ./scripts/build_ipk.sh
+
+      - name: List and validate produced filenames
+        run: |
+          set -euo pipefail
+          ART_DIR="artifacts/${BUILD_NAME}"
+          echo "Artifacts directory: $ART_DIR"
+          ls -la "$ART_DIR"
+          echo "IPK files:"
+          find "$ART_DIR" -maxdepth 1 -type f -name "*.ipk" -printf '%f\n' || true
+          COUNT=$(find "$ART_DIR" -maxdepth 1 -type f -name "*.ipk" | wc -l | tr -d ' ')
+          if [ "$COUNT" -eq 0 ]; then
+            echo "error: no .ipk files found in $ART_DIR" >&2
+            exit 1
+          fi
+          if ! find "$ART_DIR" -maxdepth 1 -type f -name "*.ipk" -printf '%f\n' | grep -E -- '-dev\+' > /dev/null; then
+            echo "error: expected dev package filename to include '-dev+' suffix" >&2
+            exit 1
+          fi
+
+      - name: Verify package internals
+        run: |
+          set -euo pipefail
+          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -maxdepth 1 -type f -name "openwrt-captive-monitor_*.ipk" | head -n1)
+          ./scripts/verify_package.sh "$IPK_FILE"
+
+      - name: Upload dev artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: openwrt-dev-package
+          path: artifacts/${{ env.BUILD_NAME }}
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 6

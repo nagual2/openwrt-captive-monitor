@@ -65,6 +65,9 @@ jobs:
       OPENWRT_ARCH: "x86_64"
       # SHA256 checksum for the SDK
       SDK_CHECKSUM: "a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890"  # TODO: Replace with actual checksum
+      # Release channel naming for artifacts
+      BUILD_CHANNEL: release
+      BUILD_NAME: release
 
     steps:
       - name: Debug workflow context
@@ -485,6 +488,19 @@ jobs:
 
           echo "Artifacts prepared:"
           ls -la "$ARTIFACT_DIR"
+
+      - name: List and validate produced filenames
+        run: |
+          set -euo pipefail
+          echo "Release artifacts directory: artifacts/${BUILD_NAME}"
+          find "artifacts/${BUILD_NAME}" -maxdepth 1 -type f -name "*.ipk" -printf '%f\n' | sort
+          IPK_NAME="${{ steps.artifacts.outputs.ipk_name }}"
+          echo "IPK filename: $IPK_NAME"
+          if echo "$IPK_NAME" | grep -qiE 'dev'; then
+            echo "ERROR: Release package filename should not contain 'dev'" >&2
+            exit 1
+          fi
+          echo "✓ Release package filename does not contain 'dev'"
 
       - name: Validate package
         run: |
