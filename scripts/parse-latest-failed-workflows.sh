@@ -136,9 +136,9 @@ analyze_run() {
                 find "$TEMP_DIR" -name "*.txt" 2> /dev/null | sort | while read -r logfile; do
                     if grep -qi "error\|failed\|fatal\|exception\|panic\|warning" "$logfile" 2> /dev/null; then
                         ERROR_FOUND=1
-                        printf "\n"
-                        printf "%s📄 %s:%s\n" "$YELLOW" "$(basename "$logfile")" "$NC"
-                        printf "---\n"
+                        printf '\n'
+                        printf '%s📄 %s:%s\n' "$YELLOW" "$(basename "$logfile")" "$NC"
+                        printf '---\n'
 
                         # Show context around errors - top 20 error lines
                         grep -i "error\|failed\|fatal\|exception\|panic" "$logfile" 2> /dev/null | head -20 | while read -r line; do
