@@ -59,11 +59,20 @@ jobs:
       artifact_dir: ${{ steps.artifacts.outputs.artifact_dir }}
       artifact_name: ${{ steps.artifacts.outputs.artifact_name }}
     
+    env:
+      # Using OpenWrt 23.05.2 stable release
+      OPENWRT_VERSION: "23.05.2"
+      OPENWRT_ARCH: "x86_64"
+      # SHA256 checksum for the SDK
+      SDK_CHECKSUM: "a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890"  # TODO: Replace with actual checksum
+
     steps:
       - name: Debug workflow context
         run: |
           echo "=== Workflow Debug Information ==="
           echo "Event name: ${{ github.event_name }}"
+          echo "OpenWrt version: ${{ env.OPENWRT_VERSION }}"
+          echo "Architecture: ${{ env.OPENWRT_ARCH }}"
           echo "Ref: ${{ github.ref }}"
           echo "Ref name: ${{ github.ref_name }}"
           echo "Repository: ${{ github.repository }}"
