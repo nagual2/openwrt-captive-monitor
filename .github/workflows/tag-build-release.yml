@@ -1,9 +1,10 @@
 name: Build and Release Package
 
+# This workflow is triggered only on tag pushes (v*) or manually
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'  # Only trigger on semantic version tags (e.g., v1.0.0)
   workflow_dispatch:
     inputs:
       tag:
@@ -64,7 +65,7 @@ jobs:
       OPENWRT_VERSION: "23.05.2"
       OPENWRT_ARCH: "x86_64"
       # SHA256 checksum for the SDK
-      SDK_CHECKSUM: "a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890"  # TODO: Replace with actual checksum
+      SDK_CHECKSUM: "df9cbce6054e6bd46fcf28e2ddd53c728ceef6cb27d1d7fc54a228f272c945b0"
 
     steps:
       - name: Debug workflow context
