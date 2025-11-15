@@ -22,33 +22,7 @@ The project uses a multi-layered security scanning approach to identify vulnerab
 
 ### Primary Scanners
 
-#### 1. CodeQL (GitHub Advanced Security)
-
-**Purpose**: Static analysis for Python code
-
-**Coverage**:
-
-* Security vulnerabilities (SQL injection, XSS, path traversal, etc.)
-* Code quality issues that may lead to security problems
-* Common vulnerability patterns (CWE database)
-
-**Configuration**:
-
-* Query suites: `security-extended`, `security-and-quality`
-* Languages: Python
-* Paths excluded: `**/*.md`, `docs/**`, `tests/**`, `.github/**`, `_out/**`, `__pycache__/**`
-
-**Run frequency**:
-
-* On every pull request to `main`
-* On every push to `main`
-* Weekly on Monday at 00:00 UTC
-
-**Expected duration**: 10-15 minutes
-
-**Workflow file**: `.github/workflows/codeql.yml`
-
-#### 2. ShellCheck Security Analysis
+#### 1. ShellCheck Security Analysis
 
 **Purpose**: Security-focused static analysis for shell scripts
 
@@ -62,16 +36,21 @@ The project uses a multi-layered security scanning approach to identify vulnerab
 **Configuration**:
 
 * Output format: SARIF (uploaded to GitHub Security)
-* Target: All `.sh` files and shell scripts
+* Target: All `.sh` files excluding `tests/` directory
 * Severity: Warnings and errors only
+* Paths excluded: `.git/*`, `tests/*`
 
-**Run frequency**: Same as CodeQL (PRs, main branch, weekly)
+**Run frequency**:
+
+* On every pull request to `main`
+* On every push to `main`
+* Weekly on Tuesday at 00:00 UTC
 
 **Expected duration**: 5-10 minutes
 
-**Workflow file**: `.github/workflows/codeql.yml`
+**Workflow file**: `.github/workflows/security-scanning.yml`
 
-#### 3. Dependency Review
+#### 2. Dependency Review
 
 **Purpose**: Analyze dependency changes in pull requests
 
@@ -93,7 +72,7 @@ The project uses a multi-layered security scanning approach to identify vulnerab
 
 **Workflow file**: `.github/workflows/security-scanning.yml`
 
-#### 4. Trivy
+#### 3. Trivy
 
 **Purpose**: Comprehensive vulnerability and misconfiguration scanner
 
@@ -120,43 +99,7 @@ The project uses a multi-layered security scanning approach to identify vulnerab
 
 **Workflow file**: `.github/workflows/security-scanning.yml`
 
-#### 5. Bandit
-
-**Purpose**: Python-specific security linting
-
-**Coverage**:
-
-* Hardcoded passwords/secrets
-* SQL injection vulnerabilities
-* Insecure deserialization
-* Weak cryptography usage
-
-**Configuration**:
-
-* Format: SARIF
-* Recursion: Full repository scan
-* Exit code: 0 (non-blocking)
-
-**Run frequency**: Same as Trivy
-
-**Expected duration**: 2-5 minutes
-
-**Workflow file**: `.github/workflows/security-scanning.yml`
-
 ## Workflow Triggers
-
-### CodeQL Workflow (`codeql.yml`)
-
-```yaml
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  schedule:
-    - cron: '0 0 * * 1'  # Weekly on Monday
-  workflow_dispatch:       # Manual trigger
-```
 
 ### Security Scanning Workflow (`security-scanning.yml`)
 
@@ -173,38 +116,35 @@ on:
 
 ## Scanner Details
 
-### CodeQL Configuration
+### ShellCheck Configuration
 
-The CodeQL scanner uses the following configuration:
+The ShellCheck scanner uses the following configuration:
 
 ```yaml
-- uses: github/codeql-action/init@v4
-  with:
-    languages: ${{ matrix.language }}  # python
-    config: |
-      paths-ignore:
-        - '**/*.md'
-        - 'docs/**'
-        - 'tests/**'
-        - '.github/**'
-        - '_out/**'
-        - '__pycache__/**'
-    queries: +security-extended,security-and-quality
+- name: Install ShellCheck and jq
+  run: |
+    sudo apt-get update
+    sudo apt-get install -y shellcheck jq
+
+- name: Run ShellCheck and convert to SARIF
+  run: |
+    # Find all shell scripts (excluding tests)
+    SHELL_SCRIPTS=$(find . -type f -name "*.sh" -not -path "./.git/*" -not -path "./tests/*")
+    
+    # Run shellcheck and convert to SARIF
+    shellcheck --format=json $SHELL_SCRIPTS > shellcheck-output.json || true
+    
+    # Convert JSON to SARIF format using jq
+    jq -f convert-to-sarif.jq shellcheck-output.json > shellcheck-results/shellcheck.sarif
 ```
-
-**Why these query suites?**
-
-* `security-extended`: Additional security checks beyond the default
-* `security-and-quality`: Combines security and code quality checks
 
 ### ShellCheck SARIF Conversion
 
 ShellCheck output is converted to SARIF format for GitHub Security integration:
 
 ```bash
-shellcheck --format=json $SHELL_SCRIPTS | \
-  jq -r '[.[] | select(.level == "error" or .level == "warning")]' | \
-  # ... SARIF conversion logic ...
+# Convert JSON output to SARIF format using jq
+jq -f convert-to-sarif.jq shellcheck-output.json > shellcheck-results/shellcheck.sarif
 ```
 
 This allows ShellCheck findings to appear alongside other security alerts in the GitHub Security tab.
@@ -243,11 +183,9 @@ The following status checks are available for branch protection:
 
 | Check Name | Required for PRs | Blocking |
 |------------|------------------|----------|
-| CodeQL Analysis (python) | Recommended | Optional |
-| ShellCheck Security Analysis | Recommended | Optional |
+| ShellCheck Security Analysis | **Yes** | **Yes** |
 | Dependency Review | **Yes** | **Yes** |
 | Trivy Security Scan | Recommended | Optional |
-| Bandit Python Security Scan | Recommended | Optional |
 
 **Note**: Dependency Review should be required as it directly impacts supply chain security.
 
@@ -265,7 +203,7 @@ jobs:
   analyze:
     permissions:
       security-events: write  # For SARIF upload
-      actions: read           # For CodeQL
+      actions: read           # For GitHub API calls
       contents: read          # For checkout
 ```
 
@@ -288,7 +226,7 @@ This cancels in-progress scans when new commits are pushed to the same branch.
 1. Navigate to the **Security** tab in the GitHub repository
 2. Click **Code scanning** in the left sidebar
 3. View alerts categorized by:
-   * Tool (CodeQL, ShellCheck, Trivy, Bandit)
+   * Tool (ShellCheck, Trivy)
    * Severity (Critical, High, Medium, Low)
    * Status (Open, Dismissed, Fixed)
    * Branch
@@ -309,7 +247,7 @@ Each alert provides:
 Use GitHub's filtering to focus on specific issues:
 
 ```text
-is:open severity:high tool:CodeQL
+is:open severity:high tool:ShellCheck
 is:open branch:main
 is:dismissed
 ```
@@ -446,9 +384,7 @@ In GitHub Security tab:
 
 | Tool | Suppression Syntax | Example |
 |------|-------------------|---------|
-| CodeQL | `# codeql[rule-id]` | `# codeql[py/sql-injection]` |
 | ShellCheck | `# shellcheck disable=SC####` | `# shellcheck disable=SC2086` |
-| Bandit | `# nosec B###` | `# nosec B404` |
 | Trivy | `.trivyignore` file | `CVE-2021-12345` |
 
 ### Audit Trail
@@ -474,7 +410,7 @@ Total time for all security scans:
 1. **Use caching**: Workflows cache dependencies and build artifacts
 2. **Run in parallel**: Security jobs run concurrently
 3. **Skip on docs changes**: Consider adding path filters
-4. **Incremental analysis**: CodeQL supports incremental scans
+4. **Fast analysis**: ShellCheck provides rapid static analysis
 
 ### Resource Usage
 
@@ -490,15 +426,15 @@ Approximate GitHub Actions minutes consumed:
 
 ### Common Issues
 
-#### CodeQL Analysis Fails
+#### ShellCheck Analysis Fails
 
-**Symptom**: CodeQL job fails with "No code found"
+**Symptom**: ShellCheck job fails with "No shell scripts found"
 
 **Solution**:
 
-* Verify language is present in repository
-* Check path exclusions aren't too broad
-* Ensure files have correct extensions
+* Verify shell scripts exist in repository
+* Check path exclusions aren't removing all files
+* Ensure files have correct `.sh` extensions
 
 #### ShellCheck SARIF Upload Fails
 
@@ -545,10 +481,8 @@ Approximate GitHub Actions minutes consumed:
 1. **Check workflow logs**: Detailed output in Actions tab
 2. **GitHub Docs**: [Code scanning documentation](https://docs.github.com/en/code-security/code-scanning)
 3. **Scanner docs**:
-   * [CodeQL](https://codeql.github.com/docs/)
    * [ShellCheck](https://www.shellcheck.net/)
    * [Trivy](https://aquasecurity.github.io/trivy/)
-   * [Bandit](https://bandit.readthedocs.io/)
 4. **Open an issue**: File a bug report with workflow logs
 
 ## Best Practices
@@ -566,7 +500,7 @@ Approximate GitHub Actions minutes consumed:
 
 Planned improvements to security scanning:
 
-* [ ] Add custom CodeQL queries for shell scripts
+* [ ] Add custom ShellCheck checks for OpenWrt-specific patterns
 * [ ] Integrate SAST scanning for OpenWrt Makefile
 * [ ] Add secret scanning with Git history analysis
 * [ ] Implement automated dependency updates (Dependabot)
