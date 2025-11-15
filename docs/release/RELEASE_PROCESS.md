@@ -103,6 +103,9 @@ The release process is fully automated and consists of three main workflows:
 - Checksums (SHA256SUMS)
 - Signatures, certificates, and Sigstore bundles (`.sig`, `.pem`, `.sigstore`)
 - Provenance manifest (`.provenance.json`)
+- Release metadata summary (`release-metadata.json`)
+
+All artifacts are staged under `release-artifacts/<tag>/` within the workflow before signing and publication, providing clear traceability for each release iteration.
 
 ### 3. CI Workflow (Continuous Integration)
 
