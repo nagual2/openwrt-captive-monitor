@@ -20,6 +20,12 @@ Options:
 The script builds an .ipk package directly from the repository sources and
 creates/updates an opkg feed containing Packages and Packages.gz indexes.
 
+Environment variables:
+  BUILD_CHANNEL    Optional channel indicator (e.g., "dev" or "release").
+  VERSION_SUFFIX   Optional suffix appended to the package version for the
+                   archive filename and control metadata, e.g. "-dev+abcdef0".
+                   When empty or unset, no suffix is appended.
+
 Release Mode:
 When --release-mode is enabled, the script:
 - Uses semantic version-based artifact naming
@@ -170,6 +176,10 @@ maintainer_email_override=""
 spdx_id_override=""
 release_mode=false
 
+# Optional channel and version suffix, provided by CI/CD
+build_channel="${BUILD_CHANNEL:-}"
+version_suffix="${VERSION_SUFFIX:-}"
+
 while [ $# -gt 0 ]; do
     case "$1" in
         --arch)
@@ -251,6 +261,9 @@ if [ -n "$spdx_id_override" ]; then
     pkg_license="$spdx_id_override"
 fi
 
+# Build full version (optionally with suffix)
+full_version="${pkg_version}-${pkg_release}${version_suffix}"
+
 feed_dir="$feed_root/$arch"
 mkdir -p "$feed_dir"
 
@@ -288,7 +301,7 @@ installed_size=$(du -sk "$data_dir" | awk '{print $1}')
 control_file="$control_dir/control"
 {
     echo "Package: $pkg_name"
-    echo "Version: ${pkg_version}-${pkg_release}"
+    echo "Version: ${full_version}"
     echo "Architecture: $arch"
     echo "Maintainer: $pkg_maintainer"
     echo "License: $pkg_license"
@@ -338,8 +351,10 @@ echo "/etc/config/captive-monitor" > "$control_dir/conffiles"
 chmod 0755 "$control_dir/postinst" "$control_dir/prerm" "$control_dir/postrm"
 chmod 0644 "$control_file" "$control_dir/conffiles"
 
-# Use opkg-build to create the .ipk
-output_ipk="$feed_dir/${pkg_name}_${pkg_version}-${pkg_release}_${arch}.ipk"
+# Use opkg-build to create the .ipk. The output filename is derived from control metadata
+# (Package, Version, Architecture). We compute the expected path accordingly and
+# include optional VERSION_SUFFIX when provided via environment.
+output_ipk="$feed_dir/${pkg_name}_${full_version}_${arch}.ipk"
 rm -f "$output_ipk"
 
 # Prepare the package directory structure for opkg-build
@@ -353,6 +368,7 @@ opkg-build -c "$pkg_build_dir/CONTROL" "$pkg_build_dir" "$feed_dir" > /dev/null 
 
 if [ ! -f "$output_ipk" ]; then
     echo "error: expected package archive $output_ipk to be created" >&2
+    echo "hint: Ensure VERSION_SUFFIX is safe for filenames (use letters, digits, ., +, -)" >&2
     exit 1
 fi
 
@@ -428,7 +444,7 @@ if [ "$release_mode" = "true" ]; then
     # Release mode output with detailed checksums
     echo "=== RELEASE MODE: Package Build Summary ==="
     echo "Package: $pkg_name"
-    echo "Version: ${pkg_version}-${pkg_release}"
+    echo "Version: ${full_version}"
     echo "Architecture: $arch"
     echo "Maintainer: $pkg_maintainer"
     echo "License: $pkg_license"
@@ -446,7 +462,7 @@ if [ "$release_mode" = "true" ]; then
 {
   "package": {
     "name": "$pkg_name",
-    "version": "${pkg_version}-${pkg_release}",
+    "version": "${full_version}",
     "architecture": "$arch",
     "maintainer": "$pkg_maintainer",
     "license": "$pkg_license",
