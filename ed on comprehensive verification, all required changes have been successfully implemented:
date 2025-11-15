@@ -1,0 +1,58 @@
+[33m1501b9e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mreplace-codeql-with-shellcheck-shell-only[m[33m, [m[1;31morigin/replace-codeql-with-shellcheck-shell-only[m[33m)[m chore(ci): remove CodeQL workflow and adopt ShellCheck for shell-only project
+[33m08467cf[m Merge pull request #210 from nagual2/fix-shfmt-verify-codeql-fix-redirect-spacing
+[33m80cb724[m[33m ([m[1;31morigin/fix-shfmt-verify-codeql-fix-redirect-spacing[m[33m)[m Merge origin/main into fix-shfmt-verify-codeql-fix-redirect-spacing
+[33md43fa3b[m fix(shell): apply shfmt -i 4 to verify-codeql-fix.sh to fix all redirection spacing
+[33m8ce1e70[m Merge pull request #209 from nagual2/diagnose-codeql-sarif-generation
+[33m26a19ee[m Fix CodeQL SARIF generation and add comprehensive diagnostics
+[33mcff8a7c[m Merge pull request #208 from nagual2/fix/gh-actions-sarif-upload-path
+[33m8d01101[m fix(ci): explicitly configure SARIF upload paths and add diagnostics for CodeQL and security-scanning workflows
+[33mfbca16b[m Merge pull request #207 from nagual2/ci-install-build-deps-opkg-utils
+[33meccacf6[m fix(ci): install OpenWrt ipk build dependencies in CI
+[33m8ffb0af[m Merge pull request #206 from nagual2/fix-verify-codeql-fix-formatting
+[33m7efcd6e[m style(scripts): format verify-codeql-fix.sh and fix indentation and redirect spacing
+[33mebe1b95[m Merge pull request #205 from nagual2/ci-codeql-update-v4-shell-only
+[33mb37d4ef[m feat(codeql): migrate to CodeQL v4, shell-only matrix, and explicit SARIF upload
+[33m4088bb7[m Merge pull request #204 from nagual2/refine-security-scanning-update-actions-add-shellcheck
+[33m308c9ce[m refactor(security): consolidate security scanning into three jobs with updated actions and ShellCheck SARIF upload
+[33m66b833f[m Merge pull request #203 from nagual2/chore/modernize-workflows-2025
+[33m80af65b[m chore(workflows): modernize GitHub Actions workflows to 2025 standards
+[33ma25e3ed[m[33m ([m[1;33mtag: [m[1;33mv1.0.11[m[33m)[m feat: add simplified build workflow
+[33m80d55ff[m[33m ([m[1;33mtag: [m[1;33mv1.0.9[m[33m)[m fix: normalize line endings in tag-build-release.yml
+[33m9903fc7[m refactor: replace Python script with pure shell for OIDC token processing
+[33mba35ba1[m refactor: move OIDC token processing to external script
+[33m692cef4[m fix: correct YAML syntax in workflow files
+[33m6933316[m style: fix shell script formatting in verify-codeql-fix.sh
+[33m3f5d89b[m fix: correct YAML syntax in Python code blocks
+[33m5a5600c[m fix: исправлен синтаксис YAML в рабочих процессах
+[33m0c42285[m Merge pull request #202 from nagual2/chore/remove-codeql-python-from-settings-yml
+[33mc154f4e[m ci(codeql): align verification script with Shell-only CodeQL configuration
+[33m5f069cc[m Merge pull request #201 from nagual2/ci-remove-dependency-review-or-pr-only
+[33mf736d0e[m ci(security-scanning): restrict Dependency Review to pull_request events
+[33m06812d7[m Merge pull request #200 from nagual2/ci/remove-python-from-codeql-config
+[33m4c9e1a3[m fix(codeql): remove Python from CodeQL config; analyze Shell only
+[33m6455a84[m Merge pull request #199 from nagual2/chore/remove-bandit-from-security-workflow
+[33me5ec0b0[m chore(security-scanning): remove Bandit Python Security Scan from workflow
+[33mb85334a[m docs: add final status report for v1.0.8 diagnosis completion
+[33m40cd5a0[m docs: complete v1.0.8 build failure diagnosis - all requirements fulfilled
+[33mefc489e[m[33m ([m[1;33mtag: [m[1;33mv1.0.8-retry[m[33m)[m docs: add comprehensive v1.0.8 build failure diagnosis and fix
+[33m4c1d821[m fix(security-scanning): enable Dependency Review on main branch pushes for branch protection compatibility
+[33mdd7fcde[m docs: update BACKLOG.md and PACKAGES.md with bilingual support
+[33m297572c[m Merge pull request #198 from nagual2/docs-restructure-move-md-files
+[33m8740f1c[m feat(docs): restructure repository documentation by relocating Markdown files under docs/ with logical grouping
+[33m06e2765[m docs: add Russian translation to PACKAGES.md
+[33mdf22a61[m refactor: move diagnostic scripts to scripts/ directory and add VSCode settings
+[33mdab9010[m Merge pull request #197 from nagual2/critical-codeql-update-v3-to-v4-fix-langs-shell-python
+[33m3582276[m docs(codeql): document CodeQL upgrade to v4 and language alignment; add verification script and release notes
+[33m23d58d6[m Merge pull request #196 from nagual2/fix/codeql-config-only-python-shell
+[33mc80c505[m fix(ci): remove non-existent JavaScript CodeQL analysis from branch protection
+[33m5ec58f4[m Merge pull request #195 from nagual2/fix-tag-build-release-ipk-v1-0-8
+[33m0c94a5a[m ci(tag-build-release): fix and harden tag-based OpenWrt IPK release workflow for v1.0.8
+[33m9b24f53[m docs: add final completion report for tag build release fix
+[33m4710f86[m docs: add tag build release diagnostic and fix summary documentation
+[33m146aade[m fix: diagnose and resolve tag build release workflow issues
+[33m5f7ba5b[m Merge pull request #192 from nagual2/fix-security-scanning-codeql-v4-bandit-sarif
+[33mcc030aa[m ci(security-scanning): upgrade CodeQL to v4 and fix Bandit SARIF upload
+[33ma2b7fc4[m Merge pull request #191 from nagual2/chore/remove-security-audit-dir-add-gitignore
+[33mc92472a[m chore: remove security_audit directory from tracking
+[33m04ec90e[m docs(security): add security_audit to gitignore and document removal completion
+[33mbb330f4[m fix(security-scanning): exclude local test utilities from Bandit/Trivy scans and harden test SSH code; align CI config with development artifacts (#190)

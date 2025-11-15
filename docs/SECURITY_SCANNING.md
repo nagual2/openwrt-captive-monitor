@@ -431,10 +431,8 @@ Approximate GitHub Actions minutes consumed:
 1. **Check workflow logs**: Detailed output in Actions tab
 2. **GitHub Docs**: [Code scanning documentation](https://docs.github.com/en/code-security/code-scanning)
 3. **Scanner docs**:
-   * [CodeQL](https://codeql.github.com/docs/)
    * [ShellCheck](https://www.shellcheck.net/)
    * [Trivy](https://aquasecurity.github.io/trivy/)
-   * [Bandit](https://bandit.readthedocs.io/)
 4. **Open an issue**: File a bug report with workflow logs
 
 ## Best Practices
