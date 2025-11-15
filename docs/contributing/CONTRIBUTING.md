@@ -114,11 +114,9 @@ Before your pull request can be merged to `main`, all of the following status ch
 - `Test` - Unit and integration tests
 
 **Security Scanning:**
-- `CodeQL Analysis (python)` - Python security analysis
 - `ShellCheck Security Analysis` - Shell script security analysis
 - `Dependency Review` - Dependency vulnerability checks (PRs only)
-- `Trivy Security Scan` - Infrastructure and configuration scanning
-- `Bandit Python Security Scan` - Python security linting
+- `Trivy Security Scan` - Vulnerability and misconfiguration scanning
 
 ### Merge Requirements
 
@@ -301,11 +299,9 @@ GitFlow вводит долгоживущие ветки `develop` и выпус
 - `Test` - Модульные и интеграционные тесты
 
 **Сканирование безопасности:**
-- `CodeQL Analysis (python)` - Анализ безопасности Python
 - `ShellCheck Security Analysis` - Анализ безопасности shell скриптов
 - `Dependency Review` - Проверка уязвимостей зависимостей (только PR)
-- `Trivy Security Scan` - Сканирование инфраструктуры и конфигурации
-- `Bandit Python Security Scan` - Линтинг безопасности Python
+- `Trivy Security Scan` - Сканирование уязвимостей и неправильных конфигураций
 
 ### Требования к слиянию
 

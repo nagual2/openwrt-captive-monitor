@@ -17,11 +17,9 @@ This repository employs multiple automated security scanning tools to identify v
 
 | Tool | Coverage | Runs On | Expected Duration | Status Check Name |
 |------|----------|---------|-------------------|-------------------|
-| **CodeQL** | Python, JavaScript/TypeScript | PRs, main branch, weekly (Mon) | ~15-20 min | `CodeQL Analysis` |
-| **ShellCheck Security** | Shell scripts (Bash, POSIX sh) | PRs, main branch, weekly (Mon) | ~5-10 min | `ShellCheck Security Analysis` |
+| **ShellCheck Security** | Shell scripts (Bash, POSIX sh) | PRs, main branch, weekly (Tue) | ~5-10 min | `ShellCheck Security Analysis` |
 | **Dependency Review** | GitHub dependencies | PRs only | ~2-5 min | `Dependency Review` |
-| **Trivy** | Vulnerabilities, secrets, misconfigs | PRs, main branch, weekly (Tue) | ~5-10 min | `Trivy Security Scan` |
-| **Bandit** | Python security issues | PRs, main branch, weekly (Tue) | ~2-5 min | `Bandit Python Security Scan` |
+| **Trivy** | Vulnerabilities, misconfigs | PRs, main branch, weekly (Tue) | ~5-10 min | `Trivy Security Scan` |
 
 ### Branch Protection Requirements
 
@@ -29,12 +27,9 @@ For production workflows, we recommend configuring branch protection rules on `m
 
 **Required Security Checks:**
 
-* `CodeQL Analysis (python)`
-* `CodeQL Analysis (javascript)`
 * `ShellCheck Security Analysis`
 * `Dependency Review` (for PRs)
 * `Trivy Security Scan`
-* `Bandit Python Security Scan`
 
 These checks help prevent vulnerabilities from being merged into the main branch.
 
@@ -54,7 +49,7 @@ The `main` branch is protected with the following rules to ensure code quality a
 
 **Status Checks Required:**
 - All CI checks: `Lint (shfmt)`, `Lint (shellcheck)`, `Lint (markdownlint)`, `Lint (actionlint)`, `Test`
-- All security checks: `CodeQL Analysis (python)`, `CodeQL Analysis (javascript)`, `ShellCheck Security Analysis`, `Dependency Review`, `Trivy Security Scan`, `Bandit Python Security Scan`
+- All security checks: `ShellCheck Security Analysis`, `Dependency Review`, `Trivy Security Scan`
 
 These protections are configured in [`.github/settings.yml`](settings.yml) and enforced by GitHub branch protection rules.
 
@@ -92,9 +87,7 @@ If a security alert is a false positive:
    * "False positive" - For scanner errors or misidentifications
    * "Used in tests" - For test code that intentionally uses insecure patterns
 4. **Suppress at source** (if applicable):
-   * For CodeQL: Add `# codeql[rule-id]` comment above the line
    * For ShellCheck: Add `# shellcheck disable=SC####` comment
-   * For Bandit: Add `# nosec` comment with issue code
 5. **Document in code**: Include a comment explaining the suppression
 
 **Example Suppression:**
@@ -137,13 +130,6 @@ When a security alert is raised:
 
 ### Scanner Configuration
 
-#### CodeQL
-
-* **Languages**: Python, JavaScript
-* **Query Suites**: security-extended, security-and-quality
-* **Exclusions**: Documentation, tests, GitHub workflows
-* **Custom Queries**: None currently configured
-
 #### ShellCheck Security
 
 * **Output Format**: SARIF (for GitHub Security integration)
@@ -158,16 +144,10 @@ When a security alert is raised:
 
 #### Trivy
 
-* **Scan Types**: Vulnerabilities, secrets, misconfigurations
+* **Scan Types**: Vulnerabilities and misconfigurations
 * **Severity**: CRITICAL, HIGH, MEDIUM
-* **Scanners**: vuln, secret, misconfig
+* **Scanners**: vuln, misconfig
 * **Ignore Unfixed**: Yes (reduces noise from unfixable vulnerabilities)
-
-#### Bandit
-
-* **Format**: SARIF
-* **Recursion**: Full repository
-* **Exit Code**: Non-blocking (0)
 
 ### Disabling Security Checks
 
