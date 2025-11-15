@@ -63,12 +63,12 @@ install_opkg_binaries() {
 }
 
 verify_install() {
-    if ! command -v opkg-build >/dev/null 2>&1; then
+    if ! command -v opkg-build > /dev/null 2>&1; then
         err "opkg-build not found in PATH after installation"
         exit 1
     fi
     # Print help to prove binary is runnable
-    opkg-build -h >/dev/null 2>&1 || true
+    opkg-build -h > /dev/null 2>&1 || true
 }
 
 main() {
