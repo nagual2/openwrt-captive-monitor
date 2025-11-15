@@ -72,13 +72,21 @@ jobs:
       - name: Run shfmt
         if: matrix.linter == 'shfmt'
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           shfmt -d -s -i 4 -ci -sr .
 
       - name: Run shellcheck
         if: matrix.linter == 'shellcheck'
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           find . -type f -name "*.sh" -exec shellcheck {} +
           shellcheck openwrt_captive_monitor.sh
 
@@ -113,7 +121,11 @@ jobs:
 
       - name: Run test harness with BusyBox ash
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           busybox ash tests/run.sh
 
       - name: Upload test results
