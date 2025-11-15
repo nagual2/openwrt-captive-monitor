@@ -38,8 +38,17 @@ jobs:
           # gzip, coreutils, and tar are needed for package creation
           sudo apt-get install -y opkg-utils gzip coreutils tar
           
-      - name: Create artifacts directory
-        run: mkdir -p ./artifacts
+      - name: Compute BUILD_NAME
+        run: |
+          set -euo pipefail
+          if [ -z "${BUILD_NAME:-}" ]; then
+            ts=$(date -u +%Y%m%d-%H%M%S)
+            short_sha=$(echo "${GITHUB_SHA:-$(git rev-parse --short HEAD 2>/dev/null || echo nogit)}" | cut -c1-7)
+            echo "BUILD_NAME=${ts}-${short_sha}" >> "$GITHUB_ENV"
+          else
+            echo "BUILD_NAME=${BUILD_NAME}" >> "$GITHUB_ENV"
+          fi
+          echo "Using BUILD_NAME=$(grep -m1 '^BUILD_NAME=' "$GITHUB_ENV" | cut -d= -f2)"
 
       - name: Make build script executable
         run: chmod +x ./scripts/build_ipk.sh
@@ -47,17 +56,11 @@ jobs:
       - name: Build package
         run: ./scripts/build_ipk.sh
 
-      - name: Copy build artifacts to artifacts directory
-        run: |
-          cp -r dist/opkg/**/*.ipk artifacts/ 2>/dev/null || true
-          cp -r dist/opkg/**/Packages* artifacts/ 2>/dev/null || true
-          ls -la artifacts/
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
         with:
           name: ipk-package
-          path: ./artifacts
+          path: ./artifacts/${{ env.BUILD_NAME }}
           retention-days: 5
           if-no-files-found: error
           compression-level: 6
