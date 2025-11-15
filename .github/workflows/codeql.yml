@@ -65,8 +65,6 @@ jobs:
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{matrix.language}}"
-          upload: false
-          sarif-output: results
 
       - name: List generated SARIF files
         if: always()
@@ -88,10 +86,3 @@ jobs:
           sarif_count=$(find . -name "*.sarif" -type f 2>/dev/null | grep -vc '^$' || echo "0")
           echo "Count: $sarif_count"
           find . -name "*.sarif" -type f 2>/dev/null | head -20
-
-      - name: Upload CodeQL results
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: results
-          category: "/language:${{matrix.language}}"
