@@ -458,8 +458,17 @@ jobs:
           name: openwrt-package-build
           path: artifacts/
 
+      - name: Check OIDC configuration
+        id: check_oidc
+        run: |
+          if [ -n "${{ secrets.RELEASE_OIDC_ROLE_ARN }}" ]; then
+            echo "has_oidc=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_oidc=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Configure optional cloud federation
-        if: env.RELEASE_OIDC_ROLE_ARN != ''
+        if: steps.check_oidc.outputs.has_oidc == 'true'
         uses: ./.github/actions/oidc-assume-role
         with:
           provider: ${{ env.RELEASE_CLOUD_PROVIDER != '' && env.RELEASE_CLOUD_PROVIDER || vars.RELEASE_CLOUD_PROVIDER || 'aws' }}
