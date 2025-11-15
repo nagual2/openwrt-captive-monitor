@@ -4,11 +4,6 @@
 # shellcheck disable=SC3043 # BusyBox ash and bash-compatible shells provide 'local'
 set -eu
 
-if (set -o pipefail) 2> /dev/null; then
-    # shellcheck disable=SC3040
-    set -o pipefail
-fi
-
 usage() {
     cat << 'EOF'
 Usage: scripts/validate_ipk.sh <ipk_file>
