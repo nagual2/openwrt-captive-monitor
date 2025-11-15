@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-    
+
     strategy:
       matrix:
         linter:
@@ -34,7 +34,8 @@ jobs:
           - shellcheck
           - markdownlint
           - actionlint
-    
+          - yamllint
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -58,6 +59,22 @@ jobs:
 
       - name: Show Node.js version
         run: node --version
+
+      - name: Install yamllint
+        if: matrix.linter == 'yamllint'
+        uses: ./.github/actions/setup-system-packages
+        with:
+          packages: yamllint
+
+      - name: Run yamllint
+        if: matrix.linter == 'yamllint'
+        run: |
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
+          yamllint -d "{extends: relaxed, rules: {truthy: disable}}" .github/workflows/ci.yml
 
       - name: Run shfmt
         if: matrix.linter == 'shfmt'
@@ -99,7 +116,7 @@ jobs:
     needs: lint
     permissions:
       contents: read
-    
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -210,8 +227,6 @@ jobs:
           # Mount points for the action
           ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
           FEED_DIR: ${{ github.workspace }}/feed
-        with:
-          # The action no longer accepts inputs, all via env vars
 
       - name: List and validate produced artifacts
         run: |
@@ -250,13 +265,15 @@ jobs:
       - name: Build summary
         run: |
           set -euo pipefail
-          echo "## 📦 Build Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Target:** ${{ matrix.sdk_target }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Architecture:** ${{ matrix.arch }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "**OpenWrt Version:** ${{ matrix.openwrt_version }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Build Channel:** ${{ env.BUILD_CHANNEL }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Short SHA:** ${{ env.SHORT_SHA }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### 📋 Generated Packages" >> "$GITHUB_STEP_SUMMARY"
-          find "artifacts/${BUILD_NAME}" -name "*.ipk" -exec echo "- {}" \; >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## 📦 Build Summary"
+            echo ""
+            echo "**Target:** ${{ matrix.sdk_target }}"
+            echo "**Architecture:** ${{ matrix.arch }}"
+            echo "**OpenWrt Version:** ${{ matrix.openwrt_version }}"
+            echo "**Build Channel:** ${{ env.BUILD_CHANNEL }}"
+            echo "**Short SHA:** ${{ env.SHORT_SHA }}"
+            echo ""
+            echo "### 📋 Generated Packages"
+            find "artifacts/${BUILD_NAME}" -name "*.ipk" -exec echo "- {}" \;
+          } >> "$GITHUB_STEP_SUMMARY"
