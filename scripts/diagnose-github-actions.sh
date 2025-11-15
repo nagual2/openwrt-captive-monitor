@@ -19,21 +19,9 @@ DAYS="${2:-7}"
 LIMIT="${3:-15}"
 TOKEN="${GITHUB_TOKEN:-}"
 
-# ANSI color codes (POSIX-safe)
-RED='\033[31m'
-GREEN='\033[32m'
-YELLOW='\033[33m'
-BLUE='\033[34m'
-NC='\033[0m' # No Color
-
-# Disable colors if NO_COLOR is set or stdout is not a TTY
-if [ -n "${NO_COLOR:-}" ] || [ ! -t 1 ]; then
-    RED=''
-    GREEN=''
-    YELLOW=''
-    BLUE=''
-    NC=''
-fi
+# Source shared color definitions so output formatting stays consistent
+# shellcheck source=lib/colors.sh
+. "$(dirname "$0")/lib/colors.sh"
 
 printf "%s=== GitHub Actions Failure Diagnostics ===%s\n" "$BLUE" "$NC"
 printf "Repository: %s\n" "$REPO"
