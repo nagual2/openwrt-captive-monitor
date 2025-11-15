@@ -66,6 +66,7 @@ jobs:
         with:
           category: "/language:${{matrix.language}}"
           upload: false
+          sarif-output: results
 
       - name: List generated SARIF files
         if: always()
