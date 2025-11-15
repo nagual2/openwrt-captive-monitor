@@ -38,6 +38,7 @@ This section contains various reports, analyses, and documentation generated dur
 - [Security Cleanup Summary](SECURITY_CLEANUP_SUMMARY.md) - Security cleanup documentation
 - [Security Scanning Implementation](SECURITY_SCANNING_IMPLEMENTATION.md) - *Moved to security folder*
 - [Sensitive Info Removal Report](SENSITIVE_INFO_REMOVAL_REPORT.md) - Sensitive information cleanup
+- [Security Contact Email Investigation Report](SECURITY_EMAIL_INVESTIGATION_REPORT.md) - Investigation of the `security@nagual2.com` contact address
 
 ### 🏷️ Release and Tag Reports
 - [Release Summary v1.0.3](RELEASE_SUMMARY_v1.0.3.md) - Release v1.0.3 summary
