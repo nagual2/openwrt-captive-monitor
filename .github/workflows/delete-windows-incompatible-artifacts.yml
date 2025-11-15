@@ -1,0 +1,122 @@
+name: Delete Windows-Incompatible Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (do not actually delete artifacts)'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      confirm_delete:
+        description: 'Type "DELETE" to confirm artifact deletion (required when dry_run=false)'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  actions: write
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  delete-incompatible-artifacts:
+    name: Delete Windows-Incompatible Artifacts
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Validate inputs
+        run: |
+          set -euo pipefail
+          
+          if [ "${{ github.event.inputs.dry_run }}" = "false" ]; then
+            if [ "${{ github.event.inputs.confirm_delete }}" != "DELETE" ]; then
+              echo "❌ ERROR: When dry_run=false, you must type 'DELETE' in the confirm_delete input to proceed"
+              echo "This is a safety measure to prevent accidental artifact deletion"
+              exit 1
+            fi
+            echo "✓ Confirmation received, proceeding with artifact deletion"
+          else
+            echo "✓ Running in dry-run mode, no artifacts will be deleted"
+          fi
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          check-latest: true
+
+      - name: Show Node.js version
+        run: node --version
+
+      - name: Install GitHub CLI
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y gh
+
+      - name: Run artifact cleanup script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          
+          echo "=== Windows-Incompatible Artifact Cleanup ==="
+          echo "Repository: ${{ github.repository }}"
+          echo "Dry Run: ${{ github.event.inputs.dry_run }}"
+          echo ""
+          
+          # Run the cleanup script
+          ./scripts/delete-windows-incompatible-artifacts.sh
+
+      - name: Create summary report
+        if: always()
+        run: |
+          set -euo pipefail
+          
+          {
+            echo "# Windows-Incompatible Artifact Cleanup Report"
+            echo ""
+            echo "**Repository:** ${{ github.repository }}"
+            echo "**Triggered by:** ${{ github.actor }}"
+            echo "**Mode:** ${{ github.event.inputs.dry_run == 'true' && '🔍 Dry Run' || '🗑️  Execution' }}"
+            echo "**Timestamp:** $(date --utc +%FT%TZ)"
+            echo ""
+            echo "## What this workflow does"
+            echo ""
+            echo "This workflow identifies and deletes GitHub artifacts whose names contain Windows-incompatible characters:"
+            echo ""
+            echo "- **Punctuation:** \` : * ? \\" < > | ; , . ! @ # $ % ^ & + = ~ \\` ' \\ \`"
+            echo "- **Brackets:** \` ( ) [ ] { } \`"
+            echo ""
+            echo "These characters are invalid or problematic in Windows filenames and can cause issues when:"
+            echo "- Downloading artifacts on Windows systems"
+            echo "- Automated scripts process artifact names"
+            echo "- Cross-platform compatibility is required"
+            echo ""
+            echo "## Safety Features"
+            echo ""
+            echo "1. **Dry-run mode by default** - No artifacts are deleted unless explicitly confirmed"
+            echo "2. **Manual confirmation required** - Must type 'DELETE' to proceed with actual deletion"
+            echo "3. **Detailed logging** - Shows exactly which artifacts would be/are deleted"
+            echo "4. **Character identification** - Shows problematic characters in each artifact name"
+            echo ""
+            echo "## Usage"
+            echo ""
+            echo "1. **Dry Run (safe):** Run with dry_run=true to see what would be deleted"
+            echo "2. **Execute:** Run with dry_run=false AND confirm_delete='DELETE' to actually delete"
+            echo ""
+            echo "⚠️ **Warning:** Artifact deletion is permanent and cannot be undone!"
+          } >> "$GITHUB_STEP_SUMMARY"
