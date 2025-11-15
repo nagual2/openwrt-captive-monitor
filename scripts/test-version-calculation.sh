@@ -1,8 +1,14 @@
-#!/bin/bash
+#!/bin/sh
+# shellcheck shell=ash
 # Test script for version calculation logic
 # This validates the date-based version scheme vYYYY.M.D.N
 
-set -euo pipefail
+set -eu
+
+if (set -o pipefail) 2> /dev/null; then
+    # shellcheck disable=SC3040
+    set -o pipefail
+fi
 
 echo "=== Testing Date-Based Version Calculation ==="
 echo ""
@@ -115,15 +121,12 @@ matches_pattern() {
 }
 
 # Test valid tags
-valid_tags=(
-    "v2025.1.15.1"
-    "v2025.12.31.999"
-    "v2024.2.5.1"
-    "v2025.1.1.1"
-)
-
 echo "Testing valid tags:"
-for tag in "${valid_tags[@]}"; do
+for tag in \
+    "v2025.1.15.1" \
+    "v2025.12.31.999" \
+    "v2024.2.5.1" \
+    "v2025.1.1.1"; do
     if matches_pattern "$tag"; then
         echo "  ✅ $tag - matches pattern"
     else
@@ -133,17 +136,14 @@ done
 echo ""
 
 # Test invalid tags
-invalid_tags=(
-    "v2025.01.15.1" # Leading zero in month
-    "v2025.1.05.1"  # Leading zero in day
-    "2025.1.15.1"   # Missing 'v' prefix
-    "v2025.1.15"    # Missing sequence
-    "v2025.13.1.1"  # Invalid month
-    "v2025.1.32.1"  # Invalid day
-)
-
 echo "Testing invalid tags (should NOT match):"
-for tag in "${invalid_tags[@]}"; do
+for tag in \
+    "v2025.01.15.1" \
+    "v2025.1.05.1" \
+    "2025.1.15.1" \
+    "v2025.1.15" \
+    "v2025.13.1.1" \
+    "v2025.1.32.1"; do
     if matches_pattern "$tag"; then
         echo "  ❌ $tag - should NOT match but does"
     else
