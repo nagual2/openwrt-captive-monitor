@@ -17,6 +17,7 @@ TOKEN="${GITHUB_TOKEN:-}"
 
 # Source shared color definitions so output formatting stays consistent
 # shellcheck source=lib/colors.sh
+# shellcheck disable=SC1091
 . "$(dirname "$0")/lib/colors.sh"
 
 # Ensure token is present
