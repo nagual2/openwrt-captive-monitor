@@ -58,10 +58,10 @@ require_command() {
 
     case "$tool" in
         opkg-build)
-            hint="Install opkg-utils (e.g., 'sudo apt-get install -y opkg-utils')."
+            hint="Install opkg-utils from OpenWrt upstream (see 'scripts/setup-opkg-utils.sh')."
             ;;
         opkg-make-index)
-            hint="Install opkg-utils (e.g., 'sudo apt-get install -y opkg-utils')."
+            hint="Install opkg-utils from OpenWrt upstream (see 'scripts/setup-opkg-utils.sh')."
             ;;
         gzip)
             hint="Install gzip (e.g., 'sudo apt-get install -y gzip')."

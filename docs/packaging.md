@@ -38,8 +38,21 @@ package/
 To build the .ipk package locally, install the required tools:
 
 ```bash
-# On Ubuntu/Debian:
-sudo apt-get install -y opkg-utils gzip coreutils tar
+# On Ubuntu 24.04+ (Noble) and newer:
+# Install host deps and opkg-utils from OpenWrt upstream
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends gawk tar gzip xz-utils zstd coreutils findutils file make rsync git
+
+git clone --depth=1 https://git.openwrt.org/project/opkg-utils.git tools/opkg-utils
+sudo install -m0755 tools/opkg-utils/opkg-build /usr/local/bin/opkg-build
+sudo install -m0755 tools/opkg-utils/opkg-unbuild /usr/local/bin/opkg-unbuild
+sudo install -m0755 tools/opkg-utils/opkg-make-index /usr/local/bin/opkg-make-index
+
+# Or simply use the helper script in this repo:
+sh ./scripts/setup-opkg-utils.sh
+
+# On older Ubuntu/Debian releases where opkg-utils is still available in apt:
+# sudo apt-get install -y opkg-utils gzip coreutils tar
 
 # opkg-utils provides:
 #   - opkg-build: Creates .ipk package files
@@ -392,8 +405,21 @@ package/
 Для сборки .ipk пакета локально установите необходимые инструменты:
 
 ```bash
-# На Ubuntu/Debian:
-sudo apt-get install -y opkg-utils gzip coreutils tar
+# На Ubuntu 24.04+ (Noble) и новее:
+# Установите зависимости хоста и opkg-utils из исходников OpenWrt
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends gawk tar gzip xz-utils zstd coreutils findutils file make rsync git
+
+git clone --depth=1 https://git.openwrt.org/project/opkg-utils.git tools/opkg-utils
+sudo install -m0755 tools/opkg-utils/opkg-build /usr/local/bin/opkg-build
+sudo install -m0755 tools/opkg-utils/opkg-unbuild /usr/local/bin/opkg-unbuild
+sudo install -m0755 tools/opkg-utils/opkg-make-index /usr/local/bin/opkg-make-index
+
+# Или просто запустите вспомогательный скрипт из этого репозитория:
+sh ./scripts/setup-opkg-utils.sh
+
+# На старых Ubuntu/Debian, где opkg-utils доступен в apt:
+# sudo apt-get install -y opkg-utils gzip coreutils tar
 
 # opkg-utils предоставляет:
 #   - opkg-build: Создает файлы пакета .ipk

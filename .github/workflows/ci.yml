@@ -151,10 +151,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install build dependencies for .ipk package
+      - name: Setup opkg-utils and host packaging dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y opkg-utils gzip coreutils tar
+          # Install host deps and opkg-utils from OpenWrt upstream
+          sh ./scripts/setup-opkg-utils.sh
+
+      - name: Validate opkg-build availability
+        run: opkg-build -h
 
       - name: Set dev channel environment
         run: |
