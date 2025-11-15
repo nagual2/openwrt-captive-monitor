@@ -27,6 +27,8 @@
 #   - Output is not a TTY (e.g., piped or redirected)
 
 # ANSI color codes (POSIX-safe octal escape sequences)
+# These variables are intentionally defined for consumers of this library.
+# shellcheck disable=SC2034  # Variables may appear unused in this file but are used by scripts that source it
 RED='\033[31m'
 GREEN='\033[32m'
 YELLOW='\033[33m'
