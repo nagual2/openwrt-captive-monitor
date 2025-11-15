@@ -131,49 +131,11 @@ jobs:
             # shellcheck disable=SC2086
             shellcheck --format=json $SHELL_SCRIPTS > shellcheck-output.json || true
 
-            # Convert to SARIF format using a jq script
-            # Note: $schema below is a jq/JSON field, not a shell variable
-            # shellcheck disable=SC2016
-            printf '%s\n' \
-              '[.[] | select(.level == "error" or .level == "warning")] as $issues |' \
-              '{' \
-              '  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",' \
-              '  "version": "2.1.0",' \
-              '  "runs": [{' \
-              '    "tool": {' \
-              '      "driver": {' \
-              '        "name": "ShellCheck",' \
-              '        "informationUri": "https://www.shellcheck.net/",' \
-              '        "version": "0.9.0",' \
-              '        "rules": []' \
-              '      }' \
-              '    },' \
-              '    "results": ($issues | map({' \
-              '      "ruleId": ("SC" + (.code | tostring)),' \
-              '      "level": (if .level == "error" then "error" else "warning" end),' \
-              '      "message": {' \
-              '        "text": .message' \
-              '      },' \
-              '      "locations": [{' \
-              '        "physicalLocation": {' \
-              '          "artifactLocation": {' \
-              '            "uri": .file' \
-              '          },' \
-              '          "region": {' \
-              '            "startLine": .line,' \
-              '            "startColumn": .column' \
-              '          }' \
-              '        }' \
-              '      }]' \
-              '    }))' \
-              '  }]' \
-              '}' \
-              > convert-to-sarif.jq
-
-            jq -f convert-to-sarif.jq shellcheck-output.json > shellcheck-results/shellcheck.sarif
+            # Convert to SARIF format using a committed jq script to avoid inline quoting issues
+            jq -f .github/scripts/convert-to-sarif.jq shellcheck-output.json > shellcheck-results/shellcheck.sarif
           else
             echo "No shell scripts found to analyze"
-            echo '{"$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json", "version": "2.1.0", "runs": []}' > shellcheck-results/shellcheck.sarif
+            printf "%s\n" "{\"\$schema\": \"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json\", \"version\": \"2.1.0\", \"runs\": []}" > shellcheck-results/shellcheck.sarif
           fi
 
       - name: Verify ShellCheck SARIF file exists
