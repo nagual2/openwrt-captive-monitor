@@ -41,7 +41,7 @@ Use our private disclosure channel:
 
 The project implements multiple security measures:
 
-- **Automated Security Scanning** - CodeQL, Bandit, ShellCheck, Trivy
+- **Automated Security Scanning** - ShellCheck, Trivy, Dependency Review
 - **Dependency Management** - Automated dependency updates and vulnerability scanning
 - **Secret Scanning** - GitHub secret scanning with push protection
 - **Branch Protection** - Enforced policies for main branch protection
