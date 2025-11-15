@@ -187,6 +187,13 @@ jobs:
             fi
           done
 
+      - name: Install axel downloader
+        run: |
+          set -euxo pipefail
+          echo "Installing axel downloader..."
+          sudo apt-get update
+          sudo apt-get install -y axel
+
       - name: Download and extract OpenWrt SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         run: |
@@ -195,36 +202,84 @@ jobs:
           SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
           SDK_CHECKSUM="${{ env.SDK_CHECKSUM }}"
           
-          SDK_URL="https://github.com/nagual2/openwrt-captive-monitor/releases/download/sdk-${SDK_VERSION}/${SDK_FILE}"
-          FALLBACK_URL="https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
+          # Primary and fallback mirrors
+          MIRRORS=(
+            "https://github.com/nagual2/openwrt-captive-monitor/releases/download/sdk-${SDK_VERSION}/${SDK_FILE}"
+            "https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
+            "https://mirror2.openwrt.org/sources/${SDK_FILE}"
+            "https://mirror.bytemark.co.uk/openwrt/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
+          )
           
           echo "=== Downloading OpenWrt SDK ==="
-          echo "Primary URL: $SDK_URL"
-          echo "Fallback URL: $FALLBACK_URL"
+          echo "Available mirrors:"
+          printf '  • %s\n' "${MIRRORS[@]}"
           
-          for attempt in {1..3}; do
-            echo "Attempt $attempt/3: Downloading from CDN..."
-            if wget --timeout=120 --tries=1 --retry-connrefused --waitretry=2 --random-wait -q -O "$SDK_FILE" "$SDK_URL" 2>/dev/null; then
-              echo "✓ CDN download successful"
-              break
-            else
-              if [ "$attempt" -lt 3 ]; then
-                wait_time=$((2 ** (attempt - 1)))
-                echo "✗ CDN download failed, retrying in ${wait_time}s..."
-                sleep "$wait_time"
-              else
-                echo "⚠️  CDN failed, falling back to official mirror..."
-                wget --timeout=300 --tries=3 -O "$SDK_FILE" "$FALLBACK_URL"
-              fi
+          # Function to download with axel
+          download_with_axel() {
+            local url=$1
+            local attempt=$2
+            local max_attempts=3
+            local wait_time=5
+            
+            echo "🔍 Attempt ${attempt}/${max_attempts}: Trying mirror: $url"
+            
+            # Clean up any partial downloads
+            rm -f "${SDK_FILE}.st" "${SDK_FILE}"
+            
+            # Use axel with 16 connections (adjustable)
+            if ! axel \
+              --num-connections=16 \
+              --output="${SDK_FILE}" \
+              --insecure \
+              --alternate \
+              --timeout=60 \
+              --max-redirect=3 \
+              "$url"; then
+              
+              echo "⚠️  Download failed from $url"
+              return 1
             fi
+            
+            # Verify file size
+            local sdk_size
+            sdk_size=$(stat -c%s "$SDK_FILE" 2>/dev/null || echo 0)
+            
+            if [ "$sdk_size" -lt 100000000 ]; then
+              echo "❌ Invalid file size: ${sdk_size} bytes"
+              rm -f "$SDK_FILE"
+              return 1
+            fi
+            
+            echo "✅ Successfully downloaded ${sdk_size} bytes"
+            return 0
+          }
+          
+          # Try each mirror in sequence
+          for mirror in "${MIRRORS[@]}"; do
+            for attempt in {1..3}; do
+              if download_with_axel "$mirror" "$attempt"; then
+                # Download successful, verify checksum
+                echo "🔍 Verifying checksum..."
+                if echo "${SDK_CHECKSUM}  ${SDK_FILE}" | sha256sum --check --strict; then
+                  echo "✅ Checksum verified"
+                  break 2  # Exit both loops
+                else
+                  echo "❌ Checksum verification failed"
+                  rm -f "$SDK_FILE"
+                fi
+              fi
+              
+              if [ "$attempt" -lt 3 ]; then
+                local wait_time=$((attempt * 5))
+                echo "⏳ Waiting ${wait_time}s before retry..."
+                sleep "$wait_time"
+              fi
+            done
           done
           
-          echo "=== Verifying SDK ==="
-          SDK_SIZE=$(stat -c%s "$SDK_FILE")
-          echo "SDK size: $SDK_SIZE bytes"
-          
-          if [ "$SDK_SIZE" -lt 100000000 ]; then
-            echo "ERROR: SDK file too small"
+          # Final check if download was successful
+          if [ ! -f "$SDK_FILE" ]; then
+            echo "❌ All download attempts failed"
             exit 1
           fi
           
