@@ -58,7 +58,6 @@ jobs:
       build_successful: ${{ steps.build.outputs.success }}
       artifact_dir: ${{ steps.artifacts.outputs.artifact_dir }}
       artifact_name: ${{ steps.artifacts.outputs.artifact_name }}
-      safe_tag: ${{ steps.artifacts.outputs.safe_tag }}
     
     steps:
       - name: Debug workflow context
@@ -368,70 +367,60 @@ jobs:
           echo "Build failed, exiting"
           exit 1
 
-      - name: Create artifacts directory
-        run: mkdir -p ./artifacts
+      - name: Compute BUILD_NAME
+        run: |
+          set -euo pipefail
+          if [ -z "${BUILD_NAME:-}" ]; then
+            ts=$(date -u +%Y%m%d-%H%M%S)
+            short_sha=$(echo "${GITHUB_SHA:-$(git rev-parse --short HEAD 2>/dev/null || echo nogit)}" | cut -c1-7)
+            echo "BUILD_NAME=${ts}-${short_sha}" >> "$GITHUB_ENV"
+          else
+            echo "BUILD_NAME=${BUILD_NAME}" >> "$GITHUB_ENV"
+          fi
+          echo "Using BUILD_NAME=$(grep -m1 '^BUILD_NAME=' "$GITHUB_ENV" | cut -d= -f2)"
 
-      - name: Locate and prepare artifacts
+      - name: Stage build artifacts
+        run: |
+          set -euo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          # Stage artifacts from the SDK bin directory and local dist/opkg
+          sh ./scripts/stage_artifacts.sh "$SDK_DIR/bin"
+
+      - name: Collect staged artifact metadata
         id: artifacts
         run: |
-          set -euxo pipefail
-          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
-
-          PKG_DIR=$(find "$SDK_DIR/bin" -type d -name "packages" | head -n1)
-          if [ -z "$PKG_DIR" ]; then
-            echo "ERROR: Could not find packages directory"
+          set -euo pipefail
+          ARTIFACT_DIR="artifacts/${BUILD_NAME}"
+          if [ ! -d "$ARTIFACT_DIR" ]; then
+            echo "ERROR: Artifact directory not found: $ARTIFACT_DIR"
             exit 1
           fi
 
-          IPK_FILE=$(find "$PKG_DIR" -name "openwrt-captive-monitor_*.ipk" | head -n1)
-          if [ -z "$IPK_FILE" ]; then
-            echo "ERROR: Could not find built .ipk file"
+          file_count=$(find "$ARTIFACT_DIR" -type f | wc -l | tr -d ' ')
+          if [ "$file_count" -eq 0 ]; then
+            echo "ERROR: Artifact directory is empty: $ARTIFACT_DIR"
             exit 1
           fi
 
-          RAW_TAG="${{ needs.pre-check.outputs.tag_name }}"
-          if [ -z "$RAW_TAG" ]; then
-            RAW_TAG="manual-${GITHUB_RUN_ID}"
+          IPK_STAGED=$(find "$ARTIFACT_DIR" -maxdepth 1 -type f -name "openwrt-captive-monitor_*.ipk" | head -n1 || true)
+          if [ -z "$IPK_STAGED" ]; then
+            echo "ERROR: Unable to locate staged .ipk in $ARTIFACT_DIR"
+            echo "Contents:"; ls -la "$ARTIFACT_DIR"
+            exit 1
           fi
 
-          SAFE_TAG="${RAW_TAG//[^A-Za-z0-9._-]/-}"
-          if [ -z "$SAFE_TAG" ]; then
-            SAFE_TAG="manual-${GITHUB_RUN_ID}"
-          fi
+          IPK_NAME=$(basename "$IPK_STAGED")
+          ARTIFACT_NAME="openwrt-package-${BUILD_NAME}"
 
-          ARTIFACT_ROOT="./artifacts/$SAFE_TAG"
-          mkdir -p "$ARTIFACT_ROOT"
-          
-          IPK_BASENAME=$(basename "$IPK_FILE")
-          cp "$IPK_FILE" "$ARTIFACT_ROOT/$IPK_BASENAME"
-          
-          for pkg_index in "$PKG_DIR"/Packages*; do
-            if [ -e "$pkg_index" ]; then
-              cp "$pkg_index" "$ARTIFACT_ROOT/$(basename "$pkg_index")"
-            fi
-          done
-          
-          if [ -f "$SDK_DIR/build.log" ]; then
-            cp "$SDK_DIR/build.log" "$ARTIFACT_ROOT/${SAFE_TAG}-build.log"
-          fi
-          
-          git_sha=$(git rev-parse HEAD)
-          build_timestamp=$(date --utc +%FT%TZ)
-          printf '{\n  "tag": "%s",\n  "safe_tag": "%s",\n  "artifact": "%s",\n  "git_sha": "%s",\n  "generated_at": "%s"\n}\n' \
-            "$RAW_TAG" "$SAFE_TAG" "$IPK_BASENAME" "$git_sha" "$build_timestamp" \
-            > "$ARTIFACT_ROOT/release-metadata.json"
-          
-          echo "Found IPK: $IPK_FILE"
           {
-            echo "ipk_file=$IPK_FILE"
-            echo "ipk_name=$IPK_BASENAME"
-            echo "artifact_dir=$ARTIFACT_ROOT"
-            echo "artifact_name=openwrt-package-build-$SAFE_TAG"
-            echo "safe_tag=$SAFE_TAG"
+            echo "ipk_file=$IPK_STAGED"
+            echo "ipk_name=$IPK_NAME"
+            echo "artifact_dir=$ARTIFACT_DIR"
+            echo "artifact_name=$ARTIFACT_NAME"
           } >> "$GITHUB_OUTPUT"
-          
+
           echo "Artifacts prepared:"
-          ls -la "$ARTIFACT_ROOT"
+          ls -la "$ARTIFACT_DIR"
 
       - name: Validate package
         run: |
