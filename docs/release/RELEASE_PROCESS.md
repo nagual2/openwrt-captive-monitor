@@ -109,13 +109,30 @@ All artifacts are staged under `release-artifacts/<tag>/` within the workflow be
 
 ### 3. CI Workflow (Continuous Integration)
 
-**Triggers:** On push to feature branches, pull requests, or manual trigger
+**Triggers:**
+- On push to main and topic branches (feature/*, fix/*, etc.)
+- On pull requests targeting main
+- Manual trigger via workflow_dispatch
 
 **Steps:**
 1. **Linting** - Validates shell scripts, Markdown, and GitHub Actions workflows
 2. **Testing** - Runs unit tests using BusyBox ash shell
+3. **Dev Package Build (main only)** - After a merge to main, builds a development package with a version suffix and uploads it as a CI artifact
 
-**Note:** This workflow does NOT build the package. Package building only occurs on version tags.
+Channel behavior and naming:
+- Main branch builds set environment flags for the build scripts:
+  - BUILD_CHANNEL=dev
+  - VERSION_SUFFIX=-dev+<short-sha>
+  - BUILD_NAME=dev-main
+- Dev artifacts are staged under artifacts/dev-main/ with filenames like:
+  openwrt-captive-monitor_<VERSION>-dev+<short-sha>_<arch>.ipk
+
+Release packaging remains tag-driven:
+- The Build and Release workflow runs on tags (vX.Y.Z) and sets:
+  - BUILD_CHANNEL=release
+  - BUILD_NAME=release
+- Release artifacts are staged under artifacts/release/ and attached to the GitHub Release, with clean filenames (no "dev" suffix), e.g.:
+  openwrt-captive-monitor_<VERSION>_<arch>.ipk
 
 ## Release Pipeline Sequence
 
