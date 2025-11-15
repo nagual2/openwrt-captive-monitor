@@ -458,7 +458,7 @@ proc exec_cmd {cmd} {
 
 # Wait for boot to complete
 expect {
-    -re "login: $" { 
+    -re "login: $" {
         send "root\r"
         expect -re "Password: $" { send "root\r" }
     }
