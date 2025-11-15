@@ -39,7 +39,7 @@ if [ -z "$build_name" ]; then
     if [ -n "${GITHUB_SHA:-}" ]; then
         short_sha=$(printf '%s' "$GITHUB_SHA" | cut -c1-7)
     else
-        short_sha=$(git rev-parse --short HEAD 2>/dev/null || echo "nogit")
+        short_sha=$(git rev-parse --short HEAD 2> /dev/null || echo "nogit")
     fi
     build_name="${ts}-${short_sha}"
 fi
@@ -80,7 +80,7 @@ if [ -d "$repo_root/dist/opkg" ]; then
         -name "*.json" -o \
         -name "*.log" -o \
         -name "*.txt" \
-    \) -print >> "$list_file"
+        \) -print >> "$list_file"
 fi
 
 # 2) **/bin/packages and **/bin/targets from provided roots or whole repo
@@ -106,7 +106,7 @@ for root in $search_roots; do
             -name "*.json" -o \
             -name "*.log" -o \
             -name "*.txt" \
-        \) -print >> "$list_file" || true
+            \) -print >> "$list_file" || true
 
         # Packages outputs (.ipk, indices) inside bin/packages
         find "$root" -type f -path "*/bin/packages/*" \( \
@@ -118,7 +118,7 @@ for root in $search_roots; do
             -name "*.json" -o \
             -name "*.log" -o \
             -name "*.txt" \
-        \) -print >> "$list_file" || true
+            \) -print >> "$list_file" || true
 
         # Target/image outputs inside bin/targets
         find "$root" -type f -path "*/bin/targets/*" \( \
@@ -130,7 +130,7 @@ for root in $search_roots; do
             -name "*manifest*" -o \
             -name "SHA256SUMS*" -o \
             -name "*sha256sums*" \
-        \) -print >> "$list_file" || true
+            \) -print >> "$list_file" || true
     fi
 done
 
@@ -162,10 +162,10 @@ while IFS= read -r src; do
     base=$(basename "$src_abs")
     # If file with same name exists, prefix with index to avoid clobber
     dest="$artifacts_dir/$base"
-    if [ -e "$dest" ] && ! cmp -s "$src_abs" "$dest" 2>/dev/null; then
+    if [ -e "$dest" ] && ! cmp -s "$src_abs" "$dest" 2> /dev/null; then
         i=1
         while [ -e "$artifacts_dir/${i}-$base" ]; do
-            i=$((i+1))
+            i=$((i + 1))
         done
         dest="$artifacts_dir/${i}-$base"
     fi
