@@ -232,26 +232,22 @@ echo "  scp /tmp/opkg-feed/openwrt-captive-monitor_0.1.2-1_all.ipk root@192.168.
 - **File**: `CODE_OF_CONDUCT.md`
 - **Line**: 63
 - **Type**: Email Address (PII)
-- **Severity**: MEDIUM (Acceptable for this use case)
+- **Severity**: MEDIUM (Previously acceptable, now removed)
 - **Risk Level**: 🟢 LOW
 
 **Details**:
-```markdown
-security@nagual2.com
-```
+Previously referenced `security@nagual2.com` for incident reporting.
 
 **Impact**:
-- Publicly disclosed contact email (intended for community use)
-- This is normal and acceptable for Code of Conduct documents
-- May receive spam but necessary for community management
+- Email was publicly disclosed in Code of Conduct
+- This was not the correct contact address for vulnerability reports
 
 **Recommendation**:
-1. ✅ No action needed - this is intentional
-2. Ensure email has spam filtering
-3. Consider using a contact form as an alternative in the future
+1. ✅ **RESOLVED** - Email address removed and replaced with GitHub Security Advisory link
+2. Community members now directed to proper reporting channels
 
-**Timeline**: No action required  
-**Owner**: N/A
+**Timeline**: Resolved  
+**Owner**: Security Team
 
 ---
 

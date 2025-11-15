@@ -68,9 +68,9 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-[security@nagual2.com](mailto:security@nagual2.com). All complaints will be
-reviewed and investigated promptly and fairly.
+reported to the community leaders responsible for enforcement through the
+[GitHub Security Advisory](https://github.com/nagual2/openwrt-captive-monitor/security/advisories/new).
+All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
 reporter of any incident.
@@ -213,9 +213,9 @@ at [https://www.contributor-covenant.org/translations][translations].
 ## Исполнение
 
 Случаи оскорбительного, домогательского или иным образом недопустимого поведения могут быть
-сообщены лидерам сообщества, ответственным за исполнение, по адресу
-[security@nagual2.com](mailto:security@nagual2.com). Все жалобы будут
-рассмотрены и расследованы оперативно и справедливо.
+сообщены лидерам сообщества, ответственным за исполнение, через
+[GitHub Security Advisory](https://github.com/nagual2/openwrt-captive-monitor/security/advisories/new).
+Все жалобы будут рассмотрены и расследованы оперативно и справедливо.
 
 Все лидеры сообщества обязаны уважать конфиденциальность и безопасность
 сообщителя любого инцидента.
