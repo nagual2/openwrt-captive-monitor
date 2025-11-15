@@ -518,3 +518,10 @@ else
     printf '  - %s (%s bytes)\n' "$rel_packages_file" "$packages_size"
     printf '  - %s (%s bytes)\n' "$rel_packages_file_gz" "$packages_gz_size"
 fi
+
+# Stage artifacts into artifacts/<BUILD_NAME>
+# BUILD_NAME can be provided via environment; otherwise a timestamp-shortSHA fallback is used.
+sh "$repo_root/scripts/stage_artifacts.sh" "$feed_dir" || {
+    echo "error: failed to stage artifacts into artifacts/<BUILD_NAME>" >&2
+    exit 1
+}
