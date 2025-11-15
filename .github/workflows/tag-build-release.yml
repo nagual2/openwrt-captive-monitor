@@ -417,7 +417,7 @@ jobs:
           
           git_sha=$(git rev-parse HEAD)
           build_timestamp=$(date --utc +%FT%TZ)
-          cat <<EOF > "$ARTIFACT_ROOT/release-metadata.json"
+          cat > "$ARTIFACT_ROOT/release-metadata.json" <<EOF
 {
   "tag": "$RAW_TAG",
   "safe_tag": "$SAFE_TAG",
