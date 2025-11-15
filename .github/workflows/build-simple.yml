@@ -37,8 +37,10 @@ jobs:
           # Install host deps and opkg-utils from OpenWrt upstream
           sh ./scripts/setup-opkg-utils.sh
 
-      - name: Validate opkg-build availability
-        run: opkg-build -h
+      - name: Validate opkg-utils availability
+        run: |
+          opkg-build -h
+          opkg-make-index -h
           
       - name: Compute BUILD_NAME
         run: |
