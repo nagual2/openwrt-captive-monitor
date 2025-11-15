@@ -110,29 +110,29 @@ All artifacts are staged under `release-artifacts/<tag>/` within the workflow be
 ### 3. CI Workflow (Continuous Integration)
 
 **Triggers:**
-- On push to main and topic branches (feature/*, fix/*, etc.)
+- On push to main
 - On pull requests targeting main
 - Manual trigger via workflow_dispatch
 
 **Steps:**
 1. **Linting** - Validates shell scripts, Markdown, and GitHub Actions workflows
 2. **Testing** - Runs unit tests using BusyBox ash shell
-3. **Dev Package Build (main only)** - After a merge to main, builds a development package with a version suffix and uploads it as a CI artifact
+3. **Dev Package Build (main only)** - After a merge to main, builds development packages using the OpenWrt SDK (via `openwrt/gh-action-sdk@v6`) and uploads them as CI artifacts
 
 Channel behavior and naming:
-- Main branch builds set environment flags for the build scripts:
+- Main branch builds set environment flags:
   - BUILD_CHANNEL=dev
-  - VERSION_SUFFIX=-dev+<short-sha>
   - BUILD_NAME=dev-main
-- Dev artifacts are staged under artifacts/dev-main/ with filenames like:
-  openwrt-captive-monitor_<VERSION>-dev+<short-sha>_<arch>.ipk
+- Packages are built inside the OpenWrt SDK using `./scripts/feeds update -a && ./scripts/feeds install <pkg>` followed by `make package/<pkg>/compile V=s`.
+- Dev artifacts are staged under `artifacts/dev-main/` from SDK outputs in `bin/packages/<target>/**`.
+- To avoid mutating upstream PKG_VERSION, the "dev" identifier is applied at the artifact level. The uploaded artifact name includes the short SHA (e.g., `openwrt-dev-package-dev+<short-sha>-<target>`), while the `.ipk` filenames remain in the standard `<PKG_VERSION>-<PKG_RELEASE>` format produced by the SDK.
 
 Release packaging remains tag-driven:
 - The Build and Release workflow runs on tags (vX.Y.Z) and sets:
   - BUILD_CHANNEL=release
   - BUILD_NAME=release
-- Release artifacts are staged under artifacts/release/ and attached to the GitHub Release, with clean filenames (no "dev" suffix), e.g.:
-  openwrt-captive-monitor_<VERSION>_<arch>.ipk
+- Release artifacts are staged under `artifacts/release/` and attached to the GitHub Release, with clean filenames (no "dev" suffix), e.g.:
+  `openwrt-captive-monitor_<VERSION>_<arch>.ipk`
 
 ## Release Pipeline Sequence
 
