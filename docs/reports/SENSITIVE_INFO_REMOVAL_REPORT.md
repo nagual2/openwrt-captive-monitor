@@ -76,10 +76,10 @@
    - **Action**: Replaced with generic cross-platform paths
 
 ### 6. [LOW] Contact Email in `CODE_OF_CONDUCT.md:63`
-   - **What**: `security@nagual2.com`
-   - **Removed**: NO ✅
-   - **Rotated**: N/A (Intentional public contact)
-   - **Action**: Left as-is (appropriate for Code of Conduct)
+    - **What**: `security@nagual2.com`
+    - **Removed**: YES ✅
+    - **Rotated**: N/A (Email address was incorrect)
+    - **Action**: Replaced with GitHub Security Advisory link
 
 ### 7. [LOW] Example Emails in Template Files
    - **What**: `you@example.org` in `package/Makefile.template`
