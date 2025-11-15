@@ -15,6 +15,7 @@ DIRECTORY="${1:-.}"
 
 # Source shared color definitions
 # shellcheck source=lib/colors.sh
+# shellcheck disable=SC1091
 . "$(dirname "$0")/lib/colors.sh"
 
 printf "%s=== 🔍 PIPE GUARDS ANALYSIS ===%s\n" "$BLUE" "$NC"
@@ -81,7 +82,7 @@ find "$DIRECTORY" -type f -name "*.sh" | while read -r script; do
         # Look for grep in pipes
         grep -n "grep.*|" "$script" 2> /dev/null | head -2 | while read -r line; do
             if ! echo "$line" | grep -q "|| true\||| exit 0\|2>/dev/null"; then
-                printf "%s⚠️  %s:%s - grep in pipe may fail silently%s\n" "$YELLOW" "$NC" "$script" "$line" "$NC"
+                printf "%s⚠️  %s:%s - grep in pipe may fail silently%s\n" "$YELLOW" "$script" "$line" "$NC"
                 issues_found=1
             fi
         done
@@ -91,7 +92,7 @@ find "$DIRECTORY" -type f -name "*.sh" | while read -r script; do
     if grep -q "find.*|" "$script" 2> /dev/null; then
         grep -n "find.*|" "$script" 2> /dev/null | head -2 | while read -r line; do
             if ! echo "$line" | grep -q "|| true\||| exit 0\|2>/dev/null"; then
-                printf "%s⚠️  %s:%s - find in pipe may fail silently%s\n" "$YELLOW" "$NC" "$script" "$line" "$NC"
+                printf "%s⚠️  %s:%s - find in pipe may fail silently%s\n" "$YELLOW" "$script" "$line" "$NC"
                 issues_found=1
             fi
         done
@@ -101,7 +102,7 @@ find "$DIRECTORY" -type f -name "*.sh" | while read -r script; do
     if grep -q "curl.*|" "$script" 2> /dev/null; then
         grep -n "curl.*|" "$script" 2> /dev/null | head -2 | while read -r line; do
             if ! echo "$line" | grep -q "|| true\||| exit 0\|2>/dev/null\|-f\|-s"; then
-                printf "%s⚠️  %s:%s - curl in pipe may fail silently%s\n" "$YELLOW" "$NC" "$script" "$line" "$NC"
+                printf "%s⚠️  %s:%s - curl in pipe may fail silently%s\n" "$YELLOW" "$script" "$line" "$NC"
                 issues_found=1
             fi
         done

@@ -28,6 +28,7 @@ EXPECT_SCRIPT=""
 
 # Source shared color definitions so output formatting stays consistent
 # shellcheck source=lib/colors.sh
+# shellcheck disable=SC1091
 . "$(dirname "$0")/lib/colors.sh"
 
 # Logging functions

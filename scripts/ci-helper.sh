@@ -26,6 +26,7 @@ fi
 
 # Source shared color definitions
 # shellcheck source=lib/colors.sh
+# shellcheck disable=SC1091
 . "$(dirname "$0")/lib/colors.sh"
 
 ###############################################################################
