@@ -1,12 +1,18 @@
-#!/usr/bin/env bash
+#!/bin/sh
+# shellcheck shell=ash
 # Verification script for package contents
-set -euo pipefail
+set -eu
+
+if (set -o pipefail) 2> /dev/null; then
+    # shellcheck disable=SC3040
+    set -o pipefail
+fi
 
 if [ "${TRACE:-0}" = "1" ]; then
     set -x
 fi
 
-script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+script_dir=$(cd "$(dirname "$0")" && pwd)
 repo_root=$(cd "$script_dir/.." && pwd)
 
 require_command() {
@@ -61,20 +67,13 @@ else
         exit 1
     fi
 
-    mapfile -t ipk_candidates < <(find "$package_dir" -type f -name 'openwrt-captive-monitor_*.ipk')
-    if [ "${#ipk_candidates[@]}" -eq 0 ]; then
+    # Find the most recent package using find and sort (POSIX compatible)
+    package_path=$(find "$package_dir" -type f -name 'openwrt-captive-monitor_*.ipk' -print | sort -r | head -n 1)
+    if [ -z "$package_path" ]; then
         echo "error: no openwrt-captive-monitor package found under $package_dir" >&2
         echo "run ./scripts/build_ipk.sh first" >&2
         exit 1
     fi
-
-    latest_ipk=""
-    for candidate in "${ipk_candidates[@]}"; do
-        if [ -z "$latest_ipk" ] || [ "$candidate" \> "$latest_ipk" ]; then
-            latest_ipk="$candidate"
-        fi
-    done
-    package_path="$latest_ipk"
 fi
 
 if [ ! -f "$package_path" ]; then
