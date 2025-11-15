@@ -4,16 +4,6 @@ on:
   push:
     branches:
       - main
-      - 'feature/**'
-      - 'feature-*'
-      - 'fix/**'
-      - 'fix-*'
-      - 'chore/**'
-      - 'chore-*'
-      - 'docs/**'
-      - 'docs-*'
-      - 'hotfix/**'
-      - 'hotfix-*'
   pull_request:
     branches:
       - main
@@ -145,39 +135,53 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
+    strategy:
+      matrix:
+        openwrt_version: ['23.05.3']
+        sdk_target: ['x86/64']
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Setup opkg-utils and host packaging dependencies
-        run: |
-          # Install host deps and opkg-utils from OpenWrt upstream
-          sh ./scripts/setup-opkg-utils.sh
-
-      - name: Validate opkg-utils availability
-        run: |
-          opkg-build -h
-          opkg-make-index -h
-
       - name: Set dev channel environment
+        id: dev-env
         run: |
           set -euo pipefail
           short_sha=$(echo "${GITHUB_SHA:-$(git rev-parse --short HEAD 2>/dev/null || echo nogit)}" | cut -c1-7)
           {
             echo "BUILD_CHANNEL=dev"
             echo "BUILD_NAME=dev-main"
-            echo "VERSION_SUFFIX=-dev+${short_sha}"
+            echo "SHORT_SHA=${short_sha}"
           } >> "$GITHUB_ENV"
-          echo "Using BUILD_NAME=dev-main VERSION_SUFFIX=-dev+${short_sha}"
+          echo "Using BUILD_NAME=dev-main (artifact suffix: -dev+${short_sha})"
 
-      - name: Build package (standalone)
+      - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
+        uses: openwrt/gh-action-sdk@v6
+        with:
+          # Select SDK release and target via matrix
+          version: ${{ matrix.openwrt_version }}
+          target: ${{ matrix.sdk_target }}
+          # Run commands inside the SDK to build this package
+          commands: |
+            set -e
+            cp feeds.conf.default feeds.conf
+            echo "src-link local $GITHUB_WORKSPACE/package" >> feeds.conf
+            ./scripts/feeds update -a
+            ./scripts/feeds install openwrt-captive-monitor || true
+            make defconfig
+            make package/openwrt-captive-monitor/compile V=s
+
+      - name: Stage build artifacts from SDK
         run: |
-          chmod +x ./scripts/build_ipk.sh
-          ./scripts/build_ipk.sh
+          set -euo pipefail
+          # Collect any *.ipk and feed indices from SDK bin/ directories
+          sh ./scripts/stage_artifacts.sh .
+          echo "Artifacts directory: artifacts/${BUILD_NAME}"
+          ls -la "artifacts/${BUILD_NAME}"
 
-      - name: List and validate produced filenames
+      - name: List and validate produced artifacts
         run: |
           set -euo pipefail
           ART_DIR="artifacts/${BUILD_NAME}"
@@ -190,10 +194,6 @@ jobs:
             echo "error: no .ipk files found in $ART_DIR" >&2
             exit 1
           fi
-          if ! find "$ART_DIR" -maxdepth 1 -type f -name "*.ipk" -printf '%f\n' | grep -E -- '-dev\+' > /dev/null; then
-            echo "error: expected dev package filename to include '-dev+' suffix" >&2
-            exit 1
-          fi
 
       - name: Verify package internals
         run: |
@@ -204,7 +204,7 @@ jobs:
       - name: Upload dev artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: openwrt-dev-package
+          name: openwrt-dev-package-dev+${{ env.SHORT_SHA }}-${{ matrix.sdk_target }}
           path: artifacts/${{ env.BUILD_NAME }}
           retention-days: 7
           if-no-files-found: error
