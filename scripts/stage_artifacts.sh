@@ -147,17 +147,29 @@ fi
 
 echo "Staging $count artifact(s) into $artifacts_dir"
 while IFS= read -r src; do
-    base=$(basename "$src")
+    # Normalize source path to absolute for reliable comparisons
+    case "$src" in
+        /*) src_abs="$src" ;;
+        ./*) src_abs="$repo_root/${src#./}" ;;
+        *) src_abs="$repo_root/$src" ;;
+    esac
+
+    # Skip files that are already inside the destination artifacts directory
+    case "$src_abs" in
+        "$artifacts_dir"/*) continue ;;
+    esac
+
+    base=$(basename "$src_abs")
     # If file with same name exists, prefix with index to avoid clobber
     dest="$artifacts_dir/$base"
-    if [ -e "$dest" ] && ! cmp -s "$src" "$dest" 2>/dev/null; then
+    if [ -e "$dest" ] && ! cmp -s "$src_abs" "$dest" 2>/dev/null; then
         i=1
         while [ -e "$artifacts_dir/${i}-$base" ]; do
             i=$((i+1))
         done
         dest="$artifacts_dir/${i}-$base"
     fi
-    cp -f "$src" "$dest"
+    cp -f "$src_abs" "$dest"
     echo "  + $(basename "$dest")"
 done < "$uniq_list"
 rm -f "$uniq_list"
