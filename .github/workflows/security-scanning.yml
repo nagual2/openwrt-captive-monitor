@@ -134,7 +134,7 @@ jobs:
             # Convert to SARIF format using a jq script
             # Note: $schema below is a jq/JSON field, not a shell variable
             # shellcheck disable=SC2016
-            cat > convert-to-sarif.jq << 'JQSCRIPT'
+            cat > convert-to-sarif.jq << "JQSCRIPT"
           [.[] | select(.level == "error" or .level == "warning")] as $issues |
           {
             "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
