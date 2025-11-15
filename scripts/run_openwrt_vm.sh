@@ -5,11 +5,6 @@
 
 set -eu
 
-if (set -o pipefail) 2> /dev/null; then
-    # shellcheck disable=SC3040
-    set -o pipefail
-fi
-
 # Default configuration
 DEFAULT_OPENWRT_VERSION="24.02"
 DEFAULT_WORKDIR="dist/vm-tests"

@@ -2,11 +2,6 @@
 # shellcheck shell=ash
 set -eu
 
-if (set -o pipefail) 2> /dev/null; then
-    # shellcheck disable=SC3040
-    set -o pipefail
-fi
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" 2> /dev/null && pwd 2> /dev/null || printf '')"
 LOCAL_SCRIPT="$SCRIPT_DIR/package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor"
 
