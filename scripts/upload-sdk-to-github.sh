@@ -2,11 +2,6 @@
 # shellcheck shell=ash
 set -eu
 
-if (set -o pipefail) 2> /dev/null; then
-    # shellcheck disable=SC3040
-    set -o pipefail
-fi
-
 REPO="nagual2/openwrt-captive-monitor"
 SDK_VERSION="23.05.3"
 SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
