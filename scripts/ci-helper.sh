@@ -97,7 +97,7 @@ done
 
 # Set default branch if not specified
 if [ -z "$BRANCH" ]; then
-    BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
+    BRANCH=$(git branch --show-current 2> /dev/null || echo "main")
 fi
 
 # Set token if provided
@@ -151,15 +151,15 @@ cmd_diagnose() {
 
 cmd_fix_pipes() {
     printf "%s=== 🔧 APPLYING PIPE GUARD FIXES ===%s\n" "$BLUE" "$NC"
-    
+
     printf "Checking for scripts that need pipe guard fixes...\n"
-    
+
     # Fix common pipe issues automatically
     find . -name "*.sh" -not -path "./.git/*" -not -path "./node_modules/*" | while read -r script; do
         # Add conditional pipefail pattern if missing
         if ! grep -q "pipefail" "$script" && grep -q "|" "$script"; then
             printf "%s🔧 Adding pipefail to %s%s\n" "$YELLOW" "$script" "$NC"
-            
+
             # Check if script has set -eu already
             if grep -q "set -eu" "$script"; then
                 # Add conditional pipefail after set -eu
@@ -169,31 +169,31 @@ cmd_fix_pipes() {
                 sed -i '/#!/bin/sh/a\\nset -eu\n\nif (set -o pipefail) 2> /dev/null; then\n    # shellcheck disable=SC3040\n    set -o pipefail\nfi' "$script"
             fi
         fi
-        
+
         # Fix find commands without error handling
         if grep -q "find.*|.*head" "$script" && ! grep -q "|| true" "$script"; then
             printf "%s🔧 Adding error handling to find pipes in %s%s\n" "$YELLOW" "$script" "$NC"
             sed -i 's/| head/|| true | head/g' "$script"
         fi
     done
-    
+
     printf "%s✓ Pipe guard fixes applied%s\n" "$GREEN" "$NC"
 }
 
 cmd_all() {
     printf "%s=== 🚀 RUNNING COMPREHENSIVE CI CHECK ===%s\n" "$BLUE" "$NC"
     printf "\n"
-    
+
     # Run all checks in order
     cmd_check
     printf "\n"
-    
+
     cmd_validate
     printf "\n"
-    
+
     cmd_monitor
     printf "\n"
-    
+
     if [ -n "${GITHUB_TOKEN:-}" ]; then
         cmd_diagnose
         printf "\n"
@@ -201,7 +201,7 @@ cmd_all() {
         printf "%s⚠️  Skipping diagnosis (no GITHUB_TOKEN)%s\n" "$YELLOW" "$NC"
         printf "\n"
     fi
-    
+
     printf "%s=== 📋 SUMMARY ===%s\n" "$BLUE" "$NC"
     printf "All CI checks completed. Review the output above for any issues.\n"
     printf "\n"
@@ -236,7 +236,7 @@ case "$COMMAND" in
     "all")
         cmd_all
         ;;
-    "help"|"-h"|"--help")
+    "help" | "-h" | "--help")
         show_help
         ;;
     *)

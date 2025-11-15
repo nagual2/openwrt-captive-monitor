@@ -63,7 +63,7 @@ else
     fi
 
     # Find the most recent package using find and sort (POSIX compatible)
-    package_path=$(find "$package_dir" -type f -name 'openwrt-captive-monitor_*.ipk' -print 2>/dev/null | sort -r | head -n 1 || true)
+    package_path=$(find "$package_dir" -type f -name 'openwrt-captive-monitor_*.ipk' -print 2> /dev/null | sort -r | head -n 1 || true)
     if [ -z "$package_path" ]; then
         echo "error: no openwrt-captive-monitor package found under $package_dir" >&2
         echo "run ./scripts/build_ipk.sh first" >&2
@@ -133,11 +133,11 @@ tar -xzf "$work_dir/control.tar.gz" -C "$control_dir"
 echo ""
 echo "=== File Details ==="
 echo "Data files:"
-find "$data_dir" -type f -exec ls -la {} + 2>/dev/null | sort || echo "No data files found"
+find "$data_dir" -type f -exec ls -la {} + 2> /dev/null | sort || echo "No data files found"
 
 echo ""
 echo "Control files:"
-find "$control_dir" -type f -exec ls -la {} + 2>/dev/null | sort || echo "No control files found"
+find "$control_dir" -type f -exec ls -la {} + 2> /dev/null | sort || echo "No control files found"
 
 control_file=""
 if [ -f "$control_dir/control" ]; then
