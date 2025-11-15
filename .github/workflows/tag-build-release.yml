@@ -368,35 +368,38 @@ jobs:
           echo "Build failed, exiting"
           exit 1
 
+      - name: Create artifacts directory
+        run: mkdir -p ./artifacts
+
       - name: Locate and prepare artifacts
         id: artifacts
         run: |
           set -euxo pipefail
           SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
-          
+
           PKG_DIR=$(find "$SDK_DIR/bin" -type d -name "packages" | head -n1)
           if [ -z "$PKG_DIR" ]; then
             echo "ERROR: Could not find packages directory"
             exit 1
           fi
-          
+
           IPK_FILE=$(find "$PKG_DIR" -name "openwrt-captive-monitor_*.ipk" | head -n1)
           if [ -z "$IPK_FILE" ]; then
             echo "ERROR: Could not find built .ipk file"
             exit 1
           fi
-          
+
           RAW_TAG="${{ needs.pre-check.outputs.tag_name }}"
           if [ -z "$RAW_TAG" ]; then
             RAW_TAG="manual-${GITHUB_RUN_ID}"
           fi
-          
+
           SAFE_TAG=$(echo "$RAW_TAG" | sed 's/[^A-Za-z0-9._-]/-/g')
           if [ -z "$SAFE_TAG" ]; then
             SAFE_TAG="manual-${GITHUB_RUN_ID}"
           fi
-          
-          ARTIFACT_ROOT="release-artifacts/$SAFE_TAG"
+
+          ARTIFACT_ROOT="./artifacts/$SAFE_TAG"
           mkdir -p "$ARTIFACT_ROOT"
           
           IPK_BASENAME=$(basename "$IPK_FILE")

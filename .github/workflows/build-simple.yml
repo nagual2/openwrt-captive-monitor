@@ -38,18 +38,26 @@ jobs:
           # gzip, coreutils, and tar are needed for package creation
           sudo apt-get install -y opkg-utils gzip coreutils tar
           
+      - name: Create artifacts directory
+        run: mkdir -p ./artifacts
+
       - name: Make build script executable
         run: chmod +x ./scripts/build_ipk.sh
-        
+
       - name: Build package
         run: ./scripts/build_ipk.sh
-        
+
+      - name: Copy build artifacts to artifacts directory
+        run: |
+          cp -r dist/opkg/**/*.ipk artifacts/ 2>/dev/null || true
+          cp -r dist/opkg/**/Packages* artifacts/ 2>/dev/null || true
+          ls -la artifacts/
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
         with:
           name: ipk-package
-          path: |
-            dist/opkg/**/*.ipk
-            dist/opkg/**/Packages*
+          path: ./artifacts
           retention-days: 5
           if-no-files-found: error
+          compression-level: 6
