@@ -5,7 +5,8 @@ This section contains documentation related to the release process, versioning, 
 ## 📋 Core Documentation
 
 ### Release Process
-- [Release Process](RELEASE_PROCESS.md) - Complete release and deployment process
+- [**Auto Version Tag (Active)**](AUTO_VERSION_TAG.md) - Date-based automatic versioning (vYYYY.M.D.N)
+- [Release Process (Legacy)](RELEASE_PROCESS.md) - Historical semantic versioning documentation
 - [Changelog](CHANGELOG.md) - Version history and release notes
 
 ## 🚀 Release Overview
