@@ -1,5 +1,7 @@
 # Release Process Documentation
 
+> **2025 Update:** The active release process now uses date-based versioning (`vYYYY.M.D.N`) documented in [`AUTO_VERSION_TAG.md`](./AUTO_VERSION_TAG.md). The sections below describe the legacy Release Please workflow and are retained for historical reference.
+
 ## Overview
 
 This project uses **automated semantic versioning** with GitHub Actions to manage releases. The process is completely automated when code is merged to the `main` branch, following the [Semantic Versioning 2.0.0](https://semver.org/) specification.
