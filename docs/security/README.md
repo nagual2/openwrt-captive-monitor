@@ -27,9 +27,8 @@ This section contains all security-related documentation for the openwrt-captive
 
 **Do NOT report security vulnerabilities in public issues or discussions.**
 
-Use our private disclosure channels:
+Use our private disclosure channel:
 - [GitHub Security Advisory](https://github.com/nagual2/openwrt-captive-monitor/security/advisories/new) (preferred)
-- Email: [security@nagual2.com](mailto:security@nagual2.com)
 
 ## 📋 Security SLA
 
