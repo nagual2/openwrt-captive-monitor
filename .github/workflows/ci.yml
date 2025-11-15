@@ -136,9 +136,37 @@ jobs:
     permissions:
       contents: read
     strategy:
+      fail-fast: false
       matrix:
-        openwrt_version: ['23.05.3']
-        sdk_target: ['x86/64']
+        include:
+          # x86 architecture - good for testing and VMs
+          - openwrt_version: '23.05.3'
+            sdk_target: 'x86/64'
+            arch: 'x86_64'
+          # ath79 - Atheros AR79xx, very common for routers
+          - openwrt_version: '23.05.3'
+            sdk_target: 'ath79/generic'
+            arch: 'mips_24kc'
+          # ramips - MediaTek MT76x8, common in budget routers
+          - openwrt_version: '23.05.3'
+            sdk_target: 'ramips/mt76x8'
+            arch: 'mipsel_24kc'
+          # mvebu - Marvell Armada 370/XP/38x, used in some routers
+          - openwrt_version: '23.05.3'
+            sdk_target: 'mvebu/cortexa9'
+            arch: 'arm_cortex-a9_neon'
+          # ipq40xx - Qualcomm Atheros, used in many WiFi routers
+          - openwrt_version: '23.05.3'
+            sdk_target: 'ipq40xx/generic'
+            arch: 'arm_cortex-a7'
+          # ipq806x - Qualcomm Atheros, higher-end routers
+          - openwrt_version: '23.05.3'
+            sdk_target: 'ipq806x/generic'
+            arch: 'arm_cortex-a15_neon-vfpv4'
+          # filogic - MediaTek MT79xx, newer WiFi 6/6E routers
+          - openwrt_version: '23.05.3'
+            sdk_target: 'filogic/armvirt-64'
+            arch: 'aarch64_cortex-a53'
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -157,29 +185,33 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "Using BUILD_NAME=dev-main (artifact suffix: -dev+${short_sha})"
 
-      - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
-        uses: openwrt/gh-action-sdk@v6
-        with:
-          # Select SDK release and target via matrix
-          version: ${{ matrix.openwrt_version }}
-          target: ${{ matrix.sdk_target }}
-          # Run commands inside the SDK to build this package
-          commands: |
-            set -e
-            cp feeds.conf.default feeds.conf
-            echo "src-link local $GITHUB_WORKSPACE/package" >> feeds.conf
-            ./scripts/feeds update -a
-            ./scripts/feeds install openwrt-captive-monitor || true
-            make defconfig
-            make package/openwrt-captive-monitor/compile V=s
-
-      - name: Stage build artifacts from SDK
+      - name: Prepare package structure for SDK
         run: |
           set -euo pipefail
-          # Collect any *.ipk and feed indices from SDK bin/ directories
-          sh ./scripts/stage_artifacts.sh .
-          echo "Artifacts directory: artifacts/${BUILD_NAME}"
-          ls -la "artifacts/${BUILD_NAME}"
+          # Create the expected package structure for the SDK action
+          mkdir -p feed/package
+          cp -r package/openwrt-captive-monitor feed/package/
+          # Create artifacts directory
+          mkdir -p "artifacts/${BUILD_NAME}"
+          echo "Prepared package structure:"
+          find feed -type f -name "Makefile" | head -5
+
+      - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
+        uses: openwrt/gh-action-sdk@v6
+        env:
+          # Use the new environment variable interface for v6
+          ARCH: ${{ matrix.arch }}
+          CONTAINER: ghcr.io/openwrt/sdk:${{ matrix.openwrt_version }}
+          PACKAGES: openwrt-captive-monitor
+          BUILD_LOG: 1
+          V: s
+          # Feed configuration - use default feeds plus our local feed
+          FEEDNAME: local
+          # Mount points for the action
+          ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
+          FEED_DIR: ${{ github.workspace }}/feed
+        with:
+          # The action no longer accepts inputs, all via env vars
 
       - name: List and validate produced artifacts
         run: |
@@ -188,8 +220,8 @@ jobs:
           echo "Artifacts directory: $ART_DIR"
           ls -la "$ART_DIR"
           echo "IPK files:"
-          find "$ART_DIR" -maxdepth 1 -type f -name "*.ipk" -printf '%f\n' || true
-          COUNT=$(find "$ART_DIR" -maxdepth 1 -type f -name "*.ipk" | wc -l | tr -d ' ')
+          find "$ART_DIR" -name "*.ipk" -printf '%f\n' || true
+          COUNT=$(find "$ART_DIR" -name "*.ipk" | wc -l | tr -d ' ')
           if [ "$COUNT" -eq 0 ]; then
             echo "error: no .ipk files found in $ART_DIR" >&2
             exit 1
@@ -198,14 +230,33 @@ jobs:
       - name: Verify package internals
         run: |
           set -euo pipefail
-          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -maxdepth 1 -type f -name "openwrt-captive-monitor_*.ipk" | head -n1)
+          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" | head -n1)
+          if [ -z "$IPK_FILE" ]; then
+            echo "error: no openwrt-captive-monitor package found" >&2
+            exit 1
+          fi
+          echo "Verifying package: $IPK_FILE"
           ./scripts/verify_package.sh "$IPK_FILE"
 
       - name: Upload dev artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: openwrt-dev-package-dev+${{ env.SHORT_SHA }}-${{ matrix.sdk_target }}
+          name: openwrt-dev-package-dev+${{ env.SHORT_SHA }}-${{ matrix.sdk_target }}-${{ matrix.arch }}
           path: artifacts/${{ env.BUILD_NAME }}
           retention-days: 7
           if-no-files-found: error
           compression-level: 6
+
+      - name: Build summary
+        run: |
+          set -euo pipefail
+          echo "## 📦 Build Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Target:** ${{ matrix.sdk_target }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Architecture:** ${{ matrix.arch }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "**OpenWrt Version:** ${{ matrix.openwrt_version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Build Channel:** ${{ env.BUILD_CHANNEL }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Short SHA:** ${{ env.SHORT_SHA }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### 📋 Generated Packages" >> "$GITHUB_STEP_SUMMARY"
+          find "artifacts/${BUILD_NAME}" -name "*.ipk" -exec echo "- {}" \; >> "$GITHUB_STEP_SUMMARY"
