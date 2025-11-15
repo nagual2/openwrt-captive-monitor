@@ -31,7 +31,7 @@ warn() { printf 'warn: %s\n' "$*" 1>&2; }
 err() { printf 'error: %s\n' "$*" 1>&2; }
 
 have_cmd() {
-    command -v "$1" >/dev/null 2>&1
+    command -v "$1" > /dev/null 2>&1
 }
 
 download_file() {
