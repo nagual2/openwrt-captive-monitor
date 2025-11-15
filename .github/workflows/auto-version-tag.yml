@@ -1,0 +1,183 @@
+name: Auto Version Tag and Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  tag-and-release:
+    name: Create Version Tag and Release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine next version
+        id: version
+        run: |
+          set -euo pipefail
+
+          git fetch --tags --force
+
+          YEAR=$(date -u +%Y)
+          MONTH=$(date -u +%-m)
+          DAY=$(date -u +%-d)
+          DATE_PREFIX="v${YEAR}.${MONTH}.${DAY}"
+
+          LAST_SEQUENCE=$(git tag --list "${DATE_PREFIX}.*" | sed -nE "s/^${DATE_PREFIX}\.([0-9]+)$/\1/p" | sort -n | tail -n1)
+          if [ -z "$LAST_SEQUENCE" ]; then
+            NEXT_SEQUENCE=1
+          else
+            NEXT_SEQUENCE=$((LAST_SEQUENCE + 1))
+          fi
+
+          NEW_TAG="${DATE_PREFIX}.${NEXT_SEQUENCE}"
+
+          PREVIOUS_TAG=$(git tag --list 'v*' --sort=-creatordate | grep -Fvx "$NEW_TAG" | head -n1 || true)
+
+          echo "Calculated new tag: $NEW_TAG"
+          echo "Previous tag: ${PREVIOUS_TAG:-<none>}"
+
+          {
+            echo "version=$NEW_TAG"
+            echo "sequence=$NEXT_SEQUENCE"
+            echo "previous_tag=$PREVIOUS_TAG"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          set -euo pipefail
+
+          NEW_TAG="${{ steps.version.outputs.version }}"
+          PREVIOUS_TAG="${{ steps.version.outputs.previous_tag }}"
+
+          NOTES_FILE="release-notes-${NEW_TAG}.md"
+
+          {
+            echo "## Release $NEW_TAG"
+            echo ""
+            echo "Generated on $(date -u '+%Y-%m-%d %H:%M:%S %Z')"
+            echo ""
+          } > "$NOTES_FILE"
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            RANGE="${PREVIOUS_TAG}..HEAD"
+            echo "Changes since $PREVIOUS_TAG:" >> "$NOTES_FILE"
+          else
+            RANGE="HEAD"
+            echo "Changes since repository inception:" >> "$NOTES_FILE"
+          fi
+
+          echo "" >> "$NOTES_FILE"
+
+          COMMITS=$(git log "$RANGE" --pretty=format:'- %s' --reverse || true)
+          if [ -z "$COMMITS" ]; then
+            echo "- No new commits found." >> "$NOTES_FILE"
+          else
+            printf '%s\n' "$COMMITS" >> "$NOTES_FILE"
+          fi
+
+          echo "" >> "$NOTES_FILE"
+
+          echo "=== Release notes ==="
+          cat "$NOTES_FILE"
+          echo "====================="
+
+          echo "file=$NOTES_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag exists
+        id: tag-check
+        run: |
+          set -euo pipefail
+
+          NEW_TAG="${{ steps.version.outputs.version }}"
+
+          if git rev-parse -q --verify "refs/tags/$NEW_TAG" >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag $NEW_TAG already exists"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Tag $NEW_TAG does not exist yet"
+          fi
+
+      - name: Create and push tag
+        if: steps.tag-check.outputs.exists == 'false'
+        run: |
+          set -euo pipefail
+
+          NEW_TAG="${{ steps.version.outputs.version }}"
+
+          git tag -a "$NEW_TAG" -m "Release $NEW_TAG" "$GITHUB_SHA"
+          git push origin "$NEW_TAG"
+
+      - name: Check release status
+        id: release-check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          NEW_TAG="${{ steps.version.outputs.version }}"
+
+          if gh release view "$NEW_TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release $NEW_TAG already exists"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Release $NEW_TAG does not exist"
+          fi
+
+      - name: Create GitHub release
+        if: steps.release-check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          NEW_TAG="${{ steps.version.outputs.version }}"
+          NOTES_FILE="${{ steps.notes.outputs.file }}"
+
+          gh release create "$NEW_TAG" \
+            --title "$NEW_TAG" \
+            --notes-file "$NOTES_FILE"
+
+      - name: Summarize run
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PREVIOUS_TAG="${{ steps.version.outputs.previous_tag }}"
+          SEQUENCE="${{ steps.version.outputs.sequence }}"
+          TAG_EXISTS="${{ steps.tag-check.outputs.exists }}"
+          RELEASE_EXISTS="${{ steps.release-check.outputs.exists }}"
+
+          {
+            echo "## Auto version summary"
+            echo ""
+            echo "- Version: $VERSION"
+            echo "- Previous tag: ${PREVIOUS_TAG:-N/A}"
+            echo "- Sequence for today: $SEQUENCE"
+            echo "- Tag existed before run: $TAG_EXISTS"
+            echo "- Release existed before run: $RELEASE_EXISTS"
+          } >> "$GITHUB_STEP_SUMMARY"
