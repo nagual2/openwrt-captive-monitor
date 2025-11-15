@@ -118,14 +118,14 @@ analyze_run() {
                 # Find and display error lines
                 ERROR_FOUND=0
                 find "$TEMP_DIR" -name "*.txt" 2> /dev/null | sort | while read -r logfile; do
-                    if grep -qi "error\|failed\|fatal\|exception\|panic\|warning" "$logfile" 2> /dev/null; then
+                    if [ -f "$logfile" ] && grep -qi "error\|failed\|fatal\|exception\|panic\|warning" "$logfile" 2> /dev/null; then
                         ERROR_FOUND=1
                         printf '\n'
                         printf '%s📄 %s:%s\n' "$YELLOW" "$(basename "$logfile")" "$NC"
                         printf '%s\n' '---'
 
                         # Show context around errors - top 20 error lines
-                        grep -i "error\|failed\|fatal\|exception\|panic" "$logfile" 2> /dev/null | head -20 | while read -r line; do
+                        "[ -f "$logfile" ] && grep -i "error\|failed\|fatal\|exception\|panic" "$logfile" 2> /dev/null | head -20 | while read -r line; do
                             if echo "$line" | grep -qi "fatal\|exception\|panic"; then
                                 printf "%s%s%s\n" "$RED" "$line" "$NC"
                             elif echo "$line" | grep -qi "failed"; then
@@ -145,9 +145,11 @@ analyze_run() {
 
                 printf "\n"
                 printf "%s--- LOG FILES SUMMARY ---%s\n" "$CYAN" "$NC"
-                find "$TEMP_DIR" -name "*.txt" 2> /dev/null | sort | while read -r logfile; do
-                    SIZE=$(wc -l < "$logfile")
-                    printf "  %s: %s lines\n" "$(basename "$logfile")" "$SIZE"
+                find "$TEMP_DIR" -name "*.txt" 2>/dev/null | sort | while read -r logfile; do
+                    if [ -f "$logfile" ]; then
+                        SIZE=$(wc -l < "$logfile" 2>/dev/null || echo "0")
+                        printf "  %s: %s lines\n" "$(basename "$logfile")" "$SIZE"
+                    fi
                 done
             else
                 printf "%s⚠️  Could not extract logs%s\n" "$RED" "$NC"
