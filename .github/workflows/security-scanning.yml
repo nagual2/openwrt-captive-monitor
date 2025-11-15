@@ -148,8 +148,8 @@ jobs:
               '        "rules": []' \
               '      }' \
               '    },' \
-              '    "results": $issues | map({' \
-              '      "ruleId": ("SC" + (.code | toString)),' \
+              '    "results": ($issues | map({' \
+              '      "ruleId": ("SC" + (.code | tostring)),' \
               '      "level": (if .level == "error" then "error" else "warning" end),' \
               '      "message": {' \
               '        "text": .message' \
@@ -165,7 +165,7 @@ jobs:
               '          }' \
               '        }' \
               '      }]' \
-              '    })' \
+              '    }))' \
               '  }]' \
               '}]' \
               '}' \
