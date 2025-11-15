@@ -125,7 +125,7 @@ analyze_run() {
                         printf '%s\n' '---'
 
                         # Show context around errors - top 20 error lines
-                        "[ -f "$logfile" ] && grep -i "error\|failed\|fatal\|exception\|panic" "$logfile" 2> /dev/null | head -20 | while read -r line; do
+                        grep -i "error|failed|fatal|exception|panic" "$logfile" 2> /dev/null | head -20 | while read -r line; do
                             if echo "$line" | grep -qi "fatal\|exception\|panic"; then
                                 printf "%s%s%s\n" "$RED" "$line" "$NC"
                             elif echo "$line" | grep -qi "failed"; then
@@ -145,9 +145,9 @@ analyze_run() {
 
                 printf "\n"
                 printf "%s--- LOG FILES SUMMARY ---%s\n" "$CYAN" "$NC"
-                find "$TEMP_DIR" -name "*.txt" 2>/dev/null | sort | while read -r logfile; do
+                find "$TEMP_DIR" -name "*.txt" 2> /dev/null | sort | while read -r logfile; do
                     if [ -f "$logfile" ]; then
-                        SIZE=$(wc -l < "$logfile" 2>/dev/null || echo "0")
+                        SIZE=$(wc -l < "$logfile" 2> /dev/null || echo "0")
                         printf "  %s: %s lines\n" "$(basename "$logfile")" "$SIZE"
                     fi
                 done

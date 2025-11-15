@@ -12,7 +12,7 @@ set -eu
 ###############################################################################
 
 REPO="${1:-nagual2/openwrt-captive-monitor}"
-BRANCH="${2:-$(git branch --show-current 2>/dev/null || echo 'main')}"
+BRANCH="${2:-$(git branch --show-current 2> /dev/null || echo 'main')}"
 TOKEN="${GITHUB_TOKEN:-}"
 
 # Source shared color definitions
@@ -45,41 +45,41 @@ get_pr_info() {
         PR_INFO=$(curl -s $AUTH_HEADER \
             "https://api.github.com/repos/$REPO/pulls?head=$BRANCH&state=open" |
             jq -r '.[0] // empty')
-        
+
         if [ -n "$PR_INFO" ] && [ "$PR_INFO" != "null" ]; then
             PR_NUMBER=$(echo "$PR_INFO" | jq -r '.number')
             PR_STATUS=$(echo "$PR_INFO" | jq -r '.state')
             PR_MERGEABLE=$(echo "$PR_INFO" | jq -r '.mergeable // "unknown"')
-            
+
             printf "%s--- 📋 PULL REQUEST INFO ---%s\n" "$CYAN" "$NC"
             printf "PR Number: %s\n" "$PR_NUMBER"
             printf "Status: %s\n" "$PR_STATUS"
             printf "Mergeable: %s\n" "$PR_MERGEABLE"
             printf "\n"
-            
+
             # Get PR status checks
             printf "%s--- 🔍 STATUS CHECKS ---%s\n" "$CYAN" "$NC"
             curl -s $AUTH_HEADER \
                 "https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/status" |
                 jq -r '.statuses[] |
                     "\(.context): \(.state) (\(.created_at))"' |
-            while read -r status_line; do
-                if echo "$status_line" | grep -q "success"; then
-                    printf "%s✓%s %s\n" "$GREEN" "$NC" "$status_line"
-                elif echo "$status_line" | grep -q "failure\|error"; then
-                    printf "%s✗%s %s\n" "$RED" "$NC" "$status_line"
-                elif echo "$status_line" | grep -q "pending"; then
-                    printf "%s⏳%s %s\n" "$YELLOW" "$NC" "$status_line"
-                else
-                    printf "%s⊘%s %s\n" "$YELLOW" "$NC" "$status_line"
-                fi
-            done
+                while read -r status_line; do
+                    if echo "$status_line" | grep -q "success"; then
+                        printf "%s✓%s %s\n" "$GREEN" "$NC" "$status_line"
+                    elif echo "$status_line" | grep -q "failure\|error"; then
+                        printf "%s✗%s %s\n" "$RED" "$NC" "$status_line"
+                    elif echo "$status_line" | grep -q "pending"; then
+                        printf "%s⏳%s %s\n" "$YELLOW" "$NC" "$status_line"
+                    else
+                        printf "%s⊘%s %s\n" "$YELLOW" "$NC" "$status_line"
+                    fi
+                done
             printf "\n"
-            
+
             return "$PR_NUMBER"
         fi
     fi
-    
+
     return 0
 }
 
@@ -89,31 +89,31 @@ get_pr_info() {
 
 get_workflow_runs() {
     printf "%s--- 📊 LATEST WORKFLOW RUNS ---%s\n" "$CYAN" "$NC"
-    
+
     # Get runs for this branch
     curl -s $AUTH_HEADER \
         "https://api.github.com/repos/$REPO/actions/runs?branch=$BRANCH&per_page=10" |
         jq -r '.workflow_runs[] |
             "\(.id)|\(.name)|\(.status)|\(.conclusion)|\(.created_at)|\(.html_url)"' |
-    while IFS='|' read -r run_id name status conclusion created_at html_url; do
-        if [ -n "$run_id" ] && [ "$run_id" != "null" ]; then
-            case "$conclusion" in
-                "success")
-                    printf "%s✓%s %s | %s | %s\n" "$GREEN" "$NC" "$name" "$status" "$created_at"
-                    ;;
-                "failure")
-                    printf "%s✗%s %s | %s | %s\n" "$RED" "$NC" "$name" "$status" "$created_at"
-                    printf "    🔗 %s\n" "$html_url"
-                    ;;
-                "cancelled")
-                    printf "%s⊘%s %s | %s | %s\n" "$YELLOW" "$NC" "$name" "$status" "$created_at"
-                    ;;
-                *)
-                    printf "%s⏳%s %s | %s | %s\n" "$YELLOW" "$NC" "$name" "$status" "$created_at"
-                    ;;
-            esac
-        fi
-    done
+        while IFS='|' read -r run_id name status conclusion created_at html_url; do
+            if [ -n "$run_id" ] && [ "$run_id" != "null" ]; then
+                case "$conclusion" in
+                    "success")
+                        printf "%s✓%s %s | %s | %s\n" "$GREEN" "$NC" "$name" "$status" "$created_at"
+                        ;;
+                    "failure")
+                        printf "%s✗%s %s | %s | %s\n" "$RED" "$NC" "$name" "$status" "$created_at"
+                        printf "    🔗 %s\n" "$html_url"
+                        ;;
+                    "cancelled")
+                        printf "%s⊘%s %s | %s | %s\n" "$YELLOW" "$NC" "$name" "$status" "$created_at"
+                        ;;
+                    *)
+                        printf "%s⏳%s %s | %s | %s\n" "$YELLOW" "$NC" "$name" "$status" "$created_at"
+                        ;;
+                esac
+            fi
+        done
     printf "\n"
 }
 
@@ -123,28 +123,28 @@ get_workflow_runs() {
 
 analyze_failures() {
     printf "%s--- ❌ FAILED RUN ANALYSIS ---%s\n" "$CYAN" "$NC"
-    
+
     # Get latest failed run
     FAILED_RUN=$(curl -s $AUTH_HEADER \
         "https://api.github.com/repos/$REPO/actions/runs?branch=$BRANCH&status=failure&per_page=1" |
         jq -r '.workflow_runs[0] | .id // empty')
-    
+
     if [ -n "$FAILED_RUN" ] && [ "$FAILED_RUN" != "null" ]; then
         printf "Latest failed run ID: %s\n" "$FAILED_RUN"
-        
+
         # Get run details
         RUN_DETAILS=$(curl -s $AUTH_HEADER \
             "https://api.github.com/repos/$REPO/actions/runs/$FAILED_RUN")
-        
+
         WORKFLOW_NAME=$(echo "$RUN_DETAILS" | jq -r '.name')
         TRIGGER_EVENT=$(echo "$RUN_DETAILS" | jq -r '.event')
         COMMIT_SHA=$(echo "$RUN_DETAILS" | jq -r '.head_sha' | cut -c1-8)
-        
+
         printf "Workflow: %s\n" "$WORKFLOW_NAME"
         printf "Trigger: %s\n" "$TRIGGER_EVENT"
         printf "Commit: %s\n" "$COMMIT_SHA"
         printf "\n"
-        
+
         # Get failed jobs
         printf "Failed jobs:\n"
         curl -s $AUTH_HEADER \
@@ -152,12 +152,12 @@ analyze_failures() {
             jq -r '.jobs[] |
                 select(.conclusion == "failure") |
                 "  \(.name): \(.conclusion) (started: \(.started_at))"' |
-        while read -r job_line; do
-            printf "%s%s%s\n" "$RED" "$job_line" "$NC"
-        done
-        
+            while read -r job_line; do
+                printf "%s%s%s\n" "$RED" "$job_line" "$NC"
+            done
+
         printf "\n"
-        
+
         # Provide specific fix recommendations based on workflow
         case "$WORKFLOW_NAME" in
             "CI")
@@ -183,7 +183,7 @@ analyze_failures() {
                 printf "\n"
                 ;;
         esac
-        
+
         return "$FAILED_RUN"
     else
         printf "%s✓ No failed runs found for branch %s%s\n" "$GREEN" "$BRANCH" "$NC"
@@ -198,25 +198,25 @@ analyze_failures() {
 provide_recommendations() {
     printf "%s=== 🎯 ACTIONABLE RECOMMENDATIONS ===%s\n" "$BLUE" "$NC"
     printf "\n"
-    
+
     printf "1. %sIMMEDIATE ACTIONS:%s\n" "$YELLOW" "$NC"
     printf "   • Run pipe guards check: ./scripts/check-pipe-guards.sh\n"
     printf "   • Validate workflows: ./scripts/validate-workflows.sh\n"
     printf "   • Test locally with BusyBox: busybox ash tests/run.sh\n"
     printf "\n"
-    
+
     printf "2. %sIF CI FAILURES:%s\n" "$YELLOW" "$NC"
     printf "   • Check for 'set -euo pipefail' in workflows (should be conditional)\n"
     printf "   • Verify all scripts use #!/bin/sh shebang\n"
     printf "   • Ensure shellcheck SC3040 is disabled for conditional pipefail\n"
     printf "\n"
-    
+
     printf "3. %sIF SECURITY FAILURES:%s\n" "$YELLOW" "$NC"
     printf "   • Review dependency updates\n"
     printf "   • Check for new vulnerability findings\n"
     printf "   • Validate CodeQL configuration\n"
     printf "\n"
-    
+
     printf "4. %sMONITORING COMMANDS:%s\n" "$YELLOW" "$NC"
     printf "   • Monitor workflows: ./scripts/diagnose-github-actions.sh\n"
     printf "   • Parse failures: ./scripts/parse-latest-failed-workflows.sh\n"

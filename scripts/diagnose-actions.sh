@@ -66,7 +66,7 @@ if [ -n "$LATEST_FAILED" ] && [ "$LATEST_FAILED" != "null" ]; then
         -L -o "$LOGS_FILE" 2>&1
 
     if [ -f "$LOGS_FILE" ] && [ -s "$LOGS_FILE" ]; then
-        SIZE=$(find . -name "$LOGS_FILE" -printf '%s\n' 2>/dev/null | head -1 || echo "0")
+        SIZE=$(find . -name "$LOGS_FILE" -printf '%s\n' 2> /dev/null | head -1 || echo "0")
         echo "✓ Logs downloaded: $(numfmt --to=iec-i --suffix=B "$SIZE" 2> /dev/null || echo "$SIZE bytes")"
 
         # Extract and parse
@@ -79,7 +79,7 @@ if [ -n "$LATEST_FAILED" ] && [ "$LATEST_FAILED" != "null" ]; then
                 echo ""
                 echo "📄 FILE: $logfile"
                 echo "---"
-                "[ -f "$logfile" ] && grep -i "error\|failed\|fatal\|exception\|panic" "$logfile" 2> /dev/null | head -30
+                grep -i "error\|failed\|fatal\|exception\|panic" "$logfile" 2> /dev/null | head -30 || true
             fi
         done
     else

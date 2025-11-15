@@ -661,7 +661,7 @@ transfer_package() {
     local repo_root
     repo_root=$(cd "$(dirname "$0")/.." && pwd)
     local package_file
-    package_file=$(find "$repo_root/dist/opkg" -name "*.ipk" 2>/dev/null | head -1 || true)
+    package_file=$(find "$repo_root/dist/opkg" -name "*.ipk" 2> /dev/null | head -1 || true)
 
     if [ -z "$package_file" ] || [ ! -f "$package_file" ]; then
         log_error "No IPK package found"
@@ -699,7 +699,7 @@ install_package() {
     # Install the package
     log_info "Installing openwrt-captive-monitor..."
     local package_name
-    package_name=$(basename "$(find "$(cd "$(dirname "$0")/.." && pwd)/dist/opkg" -name "*.ipk" 2>/dev/null | head -1 || true)")
+    package_name=$(basename "$(find "$(cd "$(dirname "$0")/.." && pwd)/dist/opkg" -name "*.ipk" 2> /dev/null | head -1 || true)")
 
     if ! eval "$ssh_cmd" 'opkg install /tmp/'\"$package_name\" > "$ARTIFACTS_DIR/package_install.log" 2>&1; then
         log_error "Failed to install package"
@@ -724,8 +724,8 @@ run_smoke_tests() {
 
     # Check for residual iptables/nft chains
     log_info "Checking for residual firewall rules..."
-    if eval "$ssh_cmd" 'iptables -L 2>/dev/null | grep -q captive' 2>/dev/null ||
-        eval "$ssh_cmd" 'nft list ruleset 2>/dev/null | grep -q captive' 2>/dev/null; then
+    if eval "$ssh_cmd" 'iptables -L 2>/dev/null | grep -q captive' 2> /dev/null ||
+        eval "$ssh_cmd" 'nft list ruleset 2>/dev/null | grep -q captive' 2> /dev/null; then
         log_error "Found residual firewall rules after baseline test"
         return 1
     fi
