@@ -56,6 +56,9 @@ jobs:
       ipk_name: ${{ steps.artifacts.outputs.ipk_name }}
       ipk_file: ${{ steps.artifacts.outputs.ipk_file }}
       build_successful: ${{ steps.build.outputs.success }}
+      artifact_dir: ${{ steps.artifacts.outputs.artifact_dir }}
+      artifact_name: ${{ steps.artifacts.outputs.artifact_name }}
+      safe_tag: ${{ steps.artifacts.outputs.safe_tag }}
     
     steps:
       - name: Debug workflow context
@@ -383,17 +386,53 @@ jobs:
             exit 1
           fi
           
+          RAW_TAG="${{ needs.pre-check.outputs.tag_name }}"
+          if [ -z "$RAW_TAG" ]; then
+            RAW_TAG="manual-${GITHUB_RUN_ID}"
+          fi
+          
+          SAFE_TAG=$(echo "$RAW_TAG" | sed 's/[^A-Za-z0-9._-]/-/g')
+          if [ -z "$SAFE_TAG" ]; then
+            SAFE_TAG="manual-${GITHUB_RUN_ID}"
+          fi
+          
+          ARTIFACT_ROOT="release-artifacts/$SAFE_TAG"
+          mkdir -p "$ARTIFACT_ROOT"
+          
+          IPK_BASENAME=$(basename "$IPK_FILE")
+          cp "$IPK_FILE" "$ARTIFACT_ROOT/$IPK_BASENAME"
+          
+          for pkg_index in "$PKG_DIR"/Packages*; do
+            if [ -e "$pkg_index" ]; then
+              cp "$pkg_index" "$ARTIFACT_ROOT/$(basename "$pkg_index")"
+            fi
+          done
+          
+          if [ -f "$SDK_DIR/build.log" ]; then
+            cp "$SDK_DIR/build.log" "$ARTIFACT_ROOT/${SAFE_TAG}-build.log"
+          fi
+          
+          git_sha=$(git rev-parse HEAD)
+          build_timestamp=$(date --utc +%FT%TZ)
+          cat <<EOF > "$ARTIFACT_ROOT/release-metadata.json"
+{
+  "tag": "$RAW_TAG",
+  "safe_tag": "$SAFE_TAG",
+  "artifact": "$IPK_BASENAME",
+  "git_sha": "$git_sha",
+  "generated_at": "$build_timestamp"
+}
+EOF
+          
           echo "Found IPK: $IPK_FILE"
           echo "ipk_file=$IPK_FILE" >> "$GITHUB_OUTPUT"
-          echo "ipk_name=$(basename "$IPK_FILE")" >> "$GITHUB_OUTPUT"
-          
-          mkdir -p artifacts
-          cp "$IPK_FILE" artifacts/
-          find "$PKG_DIR" -name "Packages*" -exec cp {} artifacts/ \; 2>/dev/null || true
-          cp "$SDK_DIR/build.log" artifacts/ 2>/dev/null || true
+          echo "ipk_name=$IPK_BASENAME" >> "$GITHUB_OUTPUT"
+          echo "artifact_dir=$ARTIFACT_ROOT" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=openwrt-package-build-$SAFE_TAG" >> "$GITHUB_OUTPUT"
+          echo "safe_tag=$SAFE_TAG" >> "$GITHUB_OUTPUT"
           
           echo "Artifacts prepared:"
-          ls -la artifacts/
+          ls -la "$ARTIFACT_ROOT"
 
       - name: Validate package
         run: |
@@ -425,10 +464,11 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: openwrt-package-build
-          path: artifacts/
+          name: ${{ steps.artifacts.outputs.artifact_name }}
+          path: ${{ steps.artifacts.outputs.artifact_dir }}
           retention-days: 30
           if-no-files-found: error
+          compression-level: 6
 
   sign-and-publish:
     name: Sign and Publish Release
@@ -445,6 +485,9 @@ jobs:
       RELEASE_OIDC_ROLE_ARN: ${{ secrets.RELEASE_OIDC_ROLE_ARN }}
       RELEASE_OIDC_AUDIENCE: ${{ secrets.RELEASE_OIDC_AUDIENCE }}
       RELEASE_AWS_REGION: ${{ secrets.RELEASE_AWS_REGION }}
+      RELEASE_TAG: ${{ needs.pre-check.outputs.tag_name }}
+      RELEASE_ASSETS_DIR: ${{ needs.build-package.outputs.artifact_dir }}
+      BUILD_ARTIFACT_NAME: ${{ needs.build-package.outputs.artifact_name }}
     
     steps:
       - name: Check out repository
@@ -455,8 +498,23 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v5
         with:
-          name: openwrt-package-build
-          path: artifacts/
+          name: ${{ env.BUILD_ARTIFACT_NAME }}
+          path: .
+
+      - name: Show release artifact contents
+        run: |
+          set -euxo pipefail
+          if [ ! -d "$RELEASE_ASSETS_DIR" ]; then
+            echo "❌ Expected release asset directory $RELEASE_ASSETS_DIR is missing"
+            ls -R .
+            exit 1
+          fi
+
+          echo "=== Release asset directory ==="
+          ls -la "$RELEASE_ASSETS_DIR"
+          echo ""
+          echo "=== Release asset details ==="
+          ls -R "$RELEASE_ASSETS_DIR"
 
       - name: Check OIDC configuration
         id: check_oidc
@@ -551,7 +609,8 @@ jobs:
         id: provenance
         run: |
           set -euo pipefail
-          cd artifacts/
+          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
+          cd "$RELEASE_ASSETS_DIR"
 
           ipk_file=$(find . -maxdepth 1 -name "*.ipk" -printf '%f\n' | head -n1 || true)
           if [ -z "$ipk_file" ]; then
@@ -630,12 +689,13 @@ jobs:
 
           provenance_file="${ipk_file}.provenance.json"
           echo "Generated provenance manifest: $provenance_file"
-          echo "provenance_file=artifacts/$provenance_file" >> "$GITHUB_OUTPUT"
+          echo "provenance_file=$RELEASE_ASSETS_DIR/$provenance_file" >> "$GITHUB_OUTPUT"
 
       - name: Create checksums
         run: |
           set -euo pipefail
-          cd artifacts/
+          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
+          cd "$RELEASE_ASSETS_DIR"
 
           echo "=== Creating checksums ==="
           files=$(find . -maxdepth 1 -type f ! -name 'SHA256SUMS' ! -name '*.sig' ! -name '*.sigstore' ! -name '*.pem' -printf '%P\n' | sort)
@@ -654,7 +714,8 @@ jobs:
           SIGSTORE_ID_TOKEN_AUDIENCE: sigstore
         run: |
           set -euo pipefail
-          cd artifacts/
+          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
+          cd "$RELEASE_ASSETS_DIR"
 
           echo "=== Signing artifacts with Cosign ==="
           while IFS= read -r -d '' artifact; do
@@ -674,7 +735,8 @@ jobs:
           IDENTITY_REGEX: "^https://github.com/${{ github.repository }}/.github/workflows/tag-build-release.yml@.*"
         run: |
           set -euo pipefail
-          cd artifacts/
+          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
+          cd "$RELEASE_ASSETS_DIR"
 
           ipk_file=$(find . -maxdepth 1 -name "*.ipk" -printf '%f\n' | head -n1 || true)
           if [ -z "$ipk_file" ]; then
@@ -704,10 +766,17 @@ jobs:
       - name: Upload to GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euxo pipefail
-          
-          TAG="${{ needs.pre-check.outputs.tag_name }}"
+          : "${RELEASE_TAG:?RELEASE_TAG is required}"
+          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
+
+          TAG="$RELEASE_TAG"
+          if [ ! -d "$RELEASE_ASSETS_DIR" ]; then
+            echo "❌ Release asset directory not found: $RELEASE_ASSETS_DIR"
+            exit 1
+          fi
           RELEASE_ID=$(gh release view "$TAG" --json id --jq '.id' 2>/dev/null || echo "")
           
           if [ -z "$RELEASE_ID" ]; then
@@ -718,7 +787,13 @@ jobs:
           fi
           
           echo "=== Uploading artifacts to release ==="
-          cd artifacts/
+          cd "$RELEASE_ASSETS_DIR"
+
+          files=$(find . -maxdepth 1 -type f -printf '%P\n' | sort)
+          if [ -z "$files" ]; then
+            echo "❌ No files found in $RELEASE_ASSETS_DIR to upload"
+            exit 1
+          fi
 
           while IFS= read -r file; do
             if [ -z "$file" ]; then
@@ -726,7 +801,7 @@ jobs:
             fi
             echo "Uploading: $file"
             gh release upload "$TAG" "$file" --clobber
-          done < <(find . -maxdepth 1 -type f -printf '%P\n' | sort)
+          done <<< "$files"
 
           echo "✅ Release updated successfully"
           echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/$TAG"
@@ -734,9 +809,18 @@ jobs:
       - name: Verify release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euxo pipefail
-          TAG="${{ needs.pre-check.outputs.tag_name }}"
-          
+          : "${RELEASE_TAG:?RELEASE_TAG is required}"
+
           echo "=== Release Assets ==="
-          gh release view "$TAG" --json assets --jq '.assets[] | "\(.name) - \(.size) bytes"'
+          asset_json=$(gh release view "$RELEASE_TAG" --json assets)
+          asset_count=$(echo "$asset_json" | jq '.assets | length')
+
+          if [ "$asset_count" -eq 0 ]; then
+            echo "❌ No assets found on release $RELEASE_TAG"
+            exit 1
+          fi
+
+          echo "$asset_json" | jq -r '.assets[] | "\(.name) - \(.size) bytes"'
