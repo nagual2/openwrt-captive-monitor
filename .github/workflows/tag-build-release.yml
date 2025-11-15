@@ -279,7 +279,7 @@ jobs:
               fi
               
               if [ "$attempt" -lt 3 ]; then
-                local wait_time=$((attempt * 5))
+                wait_time=$((attempt * 5))
                 echo "⏳ Waiting ${wait_time}s before retry..."
                 sleep "$wait_time"
               fi
