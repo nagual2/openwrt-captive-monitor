@@ -84,8 +84,7 @@ branches:
           # CI Workflow - Testing
           - "Test"
           
-          # CodeQL Security Scanning
-          - "CodeQL Analysis (shell)"
+          # Security Scanning - ShellCheck Analysis
           - "ShellCheck Security Analysis"
           
           # Security Scanning Workflow
