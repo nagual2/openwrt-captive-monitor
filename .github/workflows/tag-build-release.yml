@@ -394,7 +394,7 @@ jobs:
             RAW_TAG="manual-${GITHUB_RUN_ID}"
           fi
 
-          SAFE_TAG=$(echo "$RAW_TAG" | sed 's/[^A-Za-z0-9._-]/-/g')
+          SAFE_TAG="${RAW_TAG//[^A-Za-z0-9._-]/-}"
           if [ -z "$SAFE_TAG" ]; then
             SAFE_TAG="manual-${GITHUB_RUN_ID}"
           fi
@@ -417,22 +417,18 @@ jobs:
           
           git_sha=$(git rev-parse HEAD)
           build_timestamp=$(date --utc +%FT%TZ)
-          cat > "$ARTIFACT_ROOT/release-metadata.json" <<EOF
-{
-  "tag": "$RAW_TAG",
-  "safe_tag": "$SAFE_TAG",
-  "artifact": "$IPK_BASENAME",
-  "git_sha": "$git_sha",
-  "generated_at": "$build_timestamp"
-}
-EOF
+          printf '{\n  "tag": "%s",\n  "safe_tag": "%s",\n  "artifact": "%s",\n  "git_sha": "%s",\n  "generated_at": "%s"\n}\n' \
+            "$RAW_TAG" "$SAFE_TAG" "$IPK_BASENAME" "$git_sha" "$build_timestamp" \
+            > "$ARTIFACT_ROOT/release-metadata.json"
           
           echo "Found IPK: $IPK_FILE"
-          echo "ipk_file=$IPK_FILE" >> "$GITHUB_OUTPUT"
-          echo "ipk_name=$IPK_BASENAME" >> "$GITHUB_OUTPUT"
-          echo "artifact_dir=$ARTIFACT_ROOT" >> "$GITHUB_OUTPUT"
-          echo "artifact_name=openwrt-package-build-$SAFE_TAG" >> "$GITHUB_OUTPUT"
-          echo "safe_tag=$SAFE_TAG" >> "$GITHUB_OUTPUT"
+          {
+            echo "ipk_file=$IPK_FILE"
+            echo "ipk_name=$IPK_BASENAME"
+            echo "artifact_dir=$ARTIFACT_ROOT"
+            echo "artifact_name=openwrt-package-build-$SAFE_TAG"
+            echo "safe_tag=$SAFE_TAG"
+          } >> "$GITHUB_OUTPUT"
           
           echo "Artifacts prepared:"
           ls -la "$ARTIFACT_ROOT"
