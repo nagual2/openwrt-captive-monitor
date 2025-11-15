@@ -98,9 +98,8 @@ Found a bug you want to fix or have a feature idea? Check out our [Contributing 
 
 **Do NOT report security vulnerabilities in public issues or discussions.**
 
-Use our private disclosure channels:
+Use our private disclosure channel:
 * [GitHub Security Advisory](https://github.com/nagual2/openwrt-captive-monitor/security/advisories/new) (preferred)
-* Email: [security@nagual2.com](mailto:security@nagual2.com)
 
 See our [Security Policy](https://github.com/nagual2/openwrt-captive-monitor/blob/main/.github/SECURITY.md) for details on responsible disclosure.
 
@@ -135,8 +134,6 @@ For urgent production issues, consider:
 ## 📞 Contact Information
 
 **Project maintainers**: See [CODEOWNERS](https://github.com/nagual2/openwrt-captive-monitor/blob/main/.github/CODEOWNERS)
-
-**Email**: For security issues only, use [security@nagual2.com](mailto:security@nagual2.com)
 
 **Repository**: https://github.com/nagual2/openwrt-captive-monitor
 
@@ -236,9 +233,8 @@ nslookup google.com
 
 **НЕ сообщайте об уязвимостях безопасности в публичных задачах или обсуждениях.**
 
-Используйте наши приватные каналы раскрытия информации:
+Используйте наш приватный канал раскрытия информации:
 * [GitHub Security Advisory](https://github.com/nagual2/openwrt-captive-monitor/security/advisories/new) (предпочтительно)
-* Email: [security@nagual2.com](mailto:security@nagual2.com)
 
 Смотрите нашу [Политику безопасности](https://github.com/nagual2/openwrt-captive-monitor/blob/main/.github/SECURITY.md) для подробностей об ответственном раскрытии информации.
 
@@ -273,8 +269,6 @@ nslookup google.com
 ## 📞 Контактная информация
 
 **Сопровождающие проекта**: См. [CODEOWNERS](https://github.com/nagual2/openwrt-captive-monitor/blob/main/.github/CODEOWNERS)
-
-**Email**: Только для вопросов безопасности используйте [security@nagual2.com](mailto:security@nagual2.com)
 
 **Репозиторий**: https://github.com/nagual2/openwrt-captive-monitor
 

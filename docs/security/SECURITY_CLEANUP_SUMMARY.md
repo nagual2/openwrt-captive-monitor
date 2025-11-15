@@ -154,7 +154,7 @@ Created `.env.example` with documentation for required environment variables.
 If you suspect the exposed token was used maliciously:
 1. Check: https://github.com/nagual2/openwrt-captive-monitor/settings/security-log
 2. Review: https://github.com/settings/security-log
-3. Contact: security@nagual2.com
+3. Report through [GitHub Security Advisory](https://github.com/nagual2/openwrt-captive-monitor/security/advisories/new)
 
 ---
 

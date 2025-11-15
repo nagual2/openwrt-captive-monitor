@@ -197,8 +197,6 @@ If you discover a security vulnerability, please report it privately before disc
 
 **Preferred method**: Use [GitHub's private vulnerability reporting](https://github.com/nagual2/openwrt-captive-monitor/security/advisories/new)
 
-**Alternative**: Email the maintainers directly at [security@nagual2.com](mailto:security@nagual2.com)
-
 ### What to Include in Your Report
 
 Please include as much of the following information as possible to help us better understand and assess your report:
@@ -260,8 +258,6 @@ We thank all researchers who help us keep openwrt-captive-monitor secure. Your r
 ### Каналы Сообщения
 
 **Предпочтительный метод**: Используйте [приватное сообщение об уязвимости GitHub](https://github.com/nagual2/openwrt-captive-monitor/security/advisories/new)
-
-**Альтернатива**: Напишите напрямую мейнтейнерам по адресу [security@nagual2.com](mailto:security@nagual2.com)
 
 ### Что Включить в Ваше Сообщение
 
