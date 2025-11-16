@@ -185,15 +185,29 @@ jobs:
           cp -r package/openwrt-captive-monitor feed/package/
           # Create artifacts directory
           mkdir -p "artifacts/${BUILD_NAME}"
+
+          # Ensure a placeholder feeds.conf.default exists for the SDK action to patch
+          # The openwrt/gh-action-sdk action expects this file under FEED_DIR and will
+          # inject the local src-link feed path at runtime. Upstream feeds are not required
+          # for this package build.
+          if [ ! -f feed/feeds.conf.default ]; then
+            {
+              echo "# Placeholder feeds.conf.default for SDK action"
+              echo "# The action will inject: src-link ${FEEDNAME:-local} <resolved-path>"
+            } > feed/feeds.conf.default
+          fi
+
           echo "Prepared package structure:"
           find feed -type f -name "Makefile" | head -5
 
       - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
         uses: openwrt/gh-action-sdk@v6
         env:
-          # Use the action-managed SDK environment
-          ARCH: ${{ matrix.arch }}
+          # Base container repo and tag for SDK (version + target-subtarget)
+          # The action Dockerfile uses FROM ${CONTAINER}:${ARCH}
           CONTAINER: ghcr.io/openwrt/sdk
+          ARCH: openwrt-${{ matrix.openwrt_version }}-${{ replace(matrix.sdk_target, '/', '-') }}
+          # Package(s) to build inside the SDK
           PACKAGES: openwrt-captive-monitor
           BUILD_LOG: 1
           V: s
