@@ -76,42 +76,61 @@ if ! echo "$CONTAINER_IMAGE" | grep -q "$expected_tag"; then
     error_exit "Container image tag mismatch. Expected suffix: $expected_tag, got: $CONTAINER_IMAGE"
 fi
 
-# Check if Docker/Podman is available
-if ! command -v docker >/dev/null 2>&1; then
-    error_exit "Docker is not available. Cannot validate container image."
-fi
+# Attempt to validate the image availability using Docker if present,
+# otherwise fall back to a registry HEAD request to GHCR.
+info "Checking SDK image availability in registry..."
 
-info "Checking Docker image availability in registry..."
-
-# Attempt to inspect the manifest
-# Using --dry-run flag to avoid pulling the image, just checking if it exists
 max_attempts=3
 attempt=1
-while [ $attempt -le $max_attempts ]; do
-    printf "  Attempt %d/%d: " "$attempt" "$max_attempts"
 
-    if docker manifest inspect "$CONTAINER_IMAGE" >/dev/null 2>&1; then
-        success "Docker image exists in registry"
-        success "SDK image validation passed"
-        exit 0
-    fi
+if command -v docker >/dev/null 2>&1; then
+    # Prefer Docker manifest inspection when available
+    while [ $attempt -le $max_attempts ]; do
+        printf "  Attempt %d/%d: " "$attempt" "$max_attempts"
+        if docker manifest inspect "$CONTAINER_IMAGE" >/dev/null 2>&1; then
+            success "Docker image exists in registry"
+            success "SDK image validation passed"
+            exit 0
+        fi
+        if [ $attempt -lt $max_attempts ]; then
+            printf "Retrying in 5 seconds...\n"
+            sleep 5
+        fi
+        attempt=$((attempt + 1))
+    done
+else
+    # Fallback: Try to query GHCR registry for the manifest without pulling
+    # Extract tag and ensure we hit the correct registry endpoint
+    image_tag=$(printf '%s' "$CONTAINER_IMAGE" | sed 's/^.*://')
+    registry_endpoint="https://ghcr.io/v2/openwrt/sdk/manifests/$image_tag"
 
-    if [ $attempt -lt $max_attempts ]; then
-        printf "Retrying in 5 seconds...\n"
-        sleep 5
-    fi
-    attempt=$((attempt + 1))
-done
+    while [ $attempt -le $max_attempts ]; do
+        printf "  Attempt %d/%d (curl HEAD): " "$attempt" "$max_attempts"
+        # Try different common Accept headers for OCI/Docker manifest
+        if curl -fsSLI \
+            -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+            "$registry_endpoint" >/dev/null 2>&1; then
+            success "Registry responded for $registry_endpoint"
+            success "SDK image validation passed"
+            exit 0
+        fi
+        if [ $attempt -lt $max_attempts ]; then
+            printf "Retrying in 5 seconds...\n"
+            sleep 5
+        fi
+        attempt=$((attempt + 1))
+    done
+fi
 
 # Image not found after retries
-error_exit "Docker image not found in registry: $CONTAINER_IMAGE
+error_exit "SDK image not found or unreachable in registry: $CONTAINER_IMAGE
 
 This usually means:
 1. The OpenWrt version ($OPENWRT_VERSION) doesn't exist
 2. The target/subtarget combination ($SDK_TARGET / $SDK_SLUG) is not supported
-3. Network connectivity issue (even after $max_attempts attempts)
+3. Registry/network connectivity issue (even after $max_attempts attempts)
 
 Please verify:
 - The OpenWrt version is correct
 - The target/subtarget combination is valid
-- Network connectivity is working"
+- Registry/network connectivity is working"
