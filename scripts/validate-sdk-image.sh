@@ -8,7 +8,7 @@
 #   validate-sdk-image.sh <container_image> <sdk_target> <openwrt_version> <sdk_slug>
 #
 # Examples:
-#   validate-sdk-image.sh ghcr.io/openwrt/sdk:openwrt-23.05.3-x86-64 x86/64 23.05.3 x86-64
+#   validate-sdk-image.sh ghcr.io/openwrt/sdk:x86_64-23.05.3 x86/64 23.05.3 x86_64
 #
 
 set -eu
@@ -71,12 +71,12 @@ error_exit "Invalid SDK target format: $SDK_TARGET (expected: target/subtarget, 
 fi
 
 # Validate SDK slug format (should match target with / replaced by -)
-if ! echo "$SDK_SLUG" | grep -qE '^[a-z0-9-]+$'; then
-error_exit "Invalid SDK slug format: $SDK_SLUG (expected: alphanumeric and hyphens)"
+if ! echo "$SDK_SLUG" | grep -qE '^[a-z0-9_-]+$'; then
+error_exit "Invalid SDK slug format: $SDK_SLUG (expected: alphanumeric, hyphens and underscores)"
 fi
 
 # Verify container image tag format
-expected_tag="openwrt-$OPENWRT_VERSION-$SDK_SLUG"
+expected_tag="$SDK_SLUG-$OPENWRT_VERSION"
 if ! echo "$CONTAINER_IMAGE" | grep -q "$expected_tag"; then
 error_exit "Container image tag mismatch. Expected suffix: $expected_tag, got: $CONTAINER_IMAGE"
 fi

@@ -206,21 +206,21 @@ jobs:
           echo "Prepared package structure:"
           find feed -type f -name "Makefile" | head -5
 
-       - name: Validate SDK image and target
-         run: |
-           set -euo pipefail
-           ./scripts/validate-sdk-image.sh \
-             "ghcr.io/openwrt/sdk:openwrt-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}" \
-             "${{ matrix.sdk_target }}" \
-             "${{ matrix.openwrt_version }}" \
-             "${{ matrix.sdk_slug }}"
+      - name: Validate SDK image and target
+        run: |
+          set -euo pipefail
+          ./scripts/validate-sdk-image.sh \
+            "ghcr.io/openwrt/sdk:${{ matrix.arch }}-${{ matrix.openwrt_version }}" \
+            "${{ matrix.sdk_target }}" \
+            "${{ matrix.openwrt_version }}" \
+            "${{ matrix.arch }}"
 
       - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
         uses: openwrt/gh-action-sdk@v6
         env:
           # Use the official SDK container pinned to the OpenWrt version and target
-          # e.g., ghcr.io/openwrt/sdk:openwrt-23.05.3-x86-64
-          CONTAINER: ghcr.io/openwrt/sdk:openwrt-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}
+          # e.g., ghcr.io/openwrt/sdk:x86_64-23.05.3
+          CONTAINER: ghcr.io/openwrt/sdk:${{ matrix.arch }}-${{ matrix.openwrt_version }}
           # Package(s) to build inside the SDK
           PACKAGES: openwrt-captive-monitor
           BUILD_LOG: 1

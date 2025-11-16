@@ -77,6 +77,28 @@ jobs:
           SDK_URL="https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
           FORCE_UPDATE="${{ github.event.inputs.force_update }}"
 
+          echo "🔍 Validating SDK version and URL..."
+          # Validate SDK version format
+          if ! echo "$SDK_VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+            echo "❌ ERROR: Invalid OpenWrt version format: $SDK_VERSION"
+            echo "Expected format: X.Y or X.Y.Z (e.g., 23.05.2)"
+            exit 1
+          fi
+          
+          # Validate SDK URL accessibility
+          if ! curl --head --silent --connect-timeout 10 --max-time 30 "$SDK_URL" | grep -q "HTTP/.* 200"; then
+            echo "❌ ERROR: SDK URL not accessible: $SDK_URL"
+            echo "This usually means:"
+            echo "1. The OpenWrt version ($SDK_VERSION) doesn't exist"
+            echo "2. The target architecture (x86/64) is not supported for this version"
+            echo "3. Network connectivity issues"
+            echo ""
+            echo "Please verify the OpenWrt version and try again."
+            exit 1
+          fi
+          
+          echo "✅ SDK version and URL validation passed"
+
           echo "📥 Downloading SDK from official mirror with exponential backoff..."
           retry_with_backoff wget -q "$SDK_URL" -O "$SDK_FILE"
 
