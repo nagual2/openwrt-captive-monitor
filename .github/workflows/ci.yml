@@ -158,6 +158,7 @@ jobs:
           # Safe default target (extend list as needed)
           - openwrt_version: '23.05.3'
             sdk_target: 'x86/64'
+            sdk_slug: 'x86-64'
             arch: 'x86_64'
     steps:
       - name: Check out repository
@@ -206,7 +207,7 @@ jobs:
           # Base container repo and tag for SDK (version + target-subtarget)
           # The action Dockerfile uses FROM ${CONTAINER}:${ARCH}
           CONTAINER: ghcr.io/openwrt/sdk
-          ARCH: openwrt-${{ matrix.openwrt_version }}-${{ replace(matrix.sdk_target, '/', '-') }}
+          ARCH: openwrt-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}
           # Package(s) to build inside the SDK
           PACKAGES: openwrt-captive-monitor
           BUILD_LOG: 1
@@ -250,7 +251,7 @@ jobs:
       - name: Upload dev artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: openwrt-dev-package-dev+${{ env.SHORT_SHA }}-${{ matrix.sdk_target }}-${{ matrix.arch }}
+          name: ipk-${{ matrix.sdk_slug }}-dev+${{ env.SHORT_SHA }}
           path: artifacts/${{ env.BUILD_NAME }}
           retention-days: 7
           if-no-files-found: error
