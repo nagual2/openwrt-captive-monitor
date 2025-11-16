@@ -117,7 +117,7 @@ All artifacts are staged under `release-artifacts/<tag>/` within the workflow be
 **Steps:**
 1. **Linting** - Validates shell scripts, Markdown, and GitHub Actions workflows
 2. **Testing** - Runs unit tests using BusyBox ash shell
-3. **Dev Package Build (main only)** - After a merge to main, builds development packages using the OpenWrt SDK (via `openwrt/gh-action-sdk@v6`) and uploads them as CI artifacts
+3. **Dev Package Build** - On pull requests and pushes to main, builds development packages using the OpenWrt SDK (via `openwrt/gh-action-sdk@v6`) and uploads them as CI artifacts
 
 Channel behavior and naming:
 - Main branch builds set environment flags:
