@@ -77,7 +77,7 @@ if ! echo "$CONTAINER_IMAGE" | grep -q "$expected_tag"; then
 fi
 
 # Attempt to validate the image availability using Docker if present,
-# otherwise fall back to a registry HEAD request to GHCR.
+# then fall back to a direct GHCR registry check with token handshake.
 info "Checking SDK image availability in registry..."
 
 max_attempts=3
@@ -98,29 +98,90 @@ if command -v docker >/dev/null 2>&1; then
         fi
         attempt=$((attempt + 1))
     done
-else
-    # Fallback: Try to query GHCR registry for the manifest without pulling
-    # Extract tag and ensure we hit the correct registry endpoint
-    image_tag=$(printf '%s' "$CONTAINER_IMAGE" | sed 's/^.*://')
-    registry_endpoint="https://ghcr.io/v2/openwrt/sdk/manifests/$image_tag"
-
-    while [ $attempt -le $max_attempts ]; do
-        printf "  Attempt %d/%d (curl HEAD): " "$attempt" "$max_attempts"
-        # Try different common Accept headers for OCI/Docker manifest
-        if curl -fsSLI \
-            -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
-            "$registry_endpoint" >/dev/null 2>&1; then
-            success "Registry responded for $registry_endpoint"
-            success "SDK image validation passed"
-            exit 0
-        fi
-        if [ $attempt -lt $max_attempts ]; then
-            printf "Retrying in 5 seconds...\n"
-            sleep 5
-        fi
-        attempt=$((attempt + 1))
-    done
 fi
+
+# --- Fallback path: direct GHCR registry manifest check ---
+# Extract tag and ensure we hit the correct registry endpoint
+image_tag=$(printf '%s' "$CONTAINER_IMAGE" | sed 's/^.*://')
+repo_path="openwrt/sdk"
+registry_endpoint="https://ghcr.io/v2/${repo_path}/manifests/${image_tag}"
+
+# Utility: perform a HEAD request and capture status + WWW-Authenticate header
+try_head() {
+    token="$1"
+    hdr_file=$(mktemp)
+    # Use -sS to stay quiet but preserve non-200 codes; -o /dev/null to avoid body
+    # -D to capture headers for parsing
+    if [ -n "$token" ]; then
+        code=$(curl -sS -o /dev/null -D "$hdr_file" -w "%{http_code}" \
+            -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+            -H "Authorization: Bearer $token" \
+            "$registry_endpoint" 2>/dev/null || printf '000')
+    else
+        code=$(curl -sS -o /dev/null -D "$hdr_file" -w "%{http_code}" \
+            -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+            "$registry_endpoint" 2>/dev/null || printf '000')
+    fi
+    www_auth=$(grep -i '^WWW-Authenticate:' "$hdr_file" | head -n1 || true)
+    rm -f "$hdr_file"
+    HTTP_CODE="$code"
+    WWW_AUTH="$www_auth"
+}
+
+parse_www_auth() {
+    # Parse WWW-Authenticate: Bearer realm="...",service="...",scope="..."
+    line="$1"
+    realm=$(printf '%s' "$line" | sed -n 's/.*realm="\([^"]*\)".*/\1/p' | head -n1)
+    service=$(printf '%s' "$line" | sed -n 's/.*service="\([^"]*\)".*/\1/p' | head -n1)
+    scope=$(printf '%s' "$line" | sed -n 's/.*scope="\([^"]*\)".*/\1/p' | head -n1)
+    # Provide sane defaults if scope is missing
+    if [ -z "$scope" ]; then
+        scope="repository:${repo_path}:pull"
+    fi
+}
+
+fetch_token() {
+    realm_url="$1"
+    svc="$2"
+    scp="$3"
+    # Construct token URL; components are safe as-is for GHCR
+    token_json=$(curl -sS "${realm_url}?service=${svc}&scope=${scp}" 2>/dev/null || printf '')
+    token=$(printf '%s' "$token_json" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p' | head -n1)
+    printf '%s' "$token"
+}
+
+attempt=1
+while [ $attempt -le $max_attempts ]; do
+    printf "  Attempt %d/%d (registry HEAD): " "$attempt" "$max_attempts"
+    try_head ""
+    if [ "$HTTP_CODE" = "200" ]; then
+        success "Registry reports image manifest available"
+        success "SDK image validation passed"
+        exit 0
+    fi
+
+    if [ "$HTTP_CODE" = "401" ] && [ -n "$WWW_AUTH" ]; then
+        # Authenticate and retry with bearer token
+        parse_www_auth "$WWW_AUTH"
+        if [ -n "$realm" ] && [ -n "$service" ] && [ -n "$scope" ]; then
+            token=$(fetch_token "$realm" "$service" "$scope")
+            if [ -n "$token" ]; then
+                try_head "$token"
+                if [ "$HTTP_CODE" = "200" ]; then
+                    success "Registry (auth) reports image manifest available"
+                    success "SDK image validation passed"
+                    exit 0
+                fi
+            fi
+        fi
+    fi
+
+    if [ $attempt -lt $max_attempts ]; then
+        printf "Retrying in 5 seconds...\n"
+        sleep 5
+    fi
+    attempt=$((attempt + 1))
+done
 
 # Image not found after retries
 error_exit "SDK image not found or unreachable in registry: $CONTAINER_IMAGE
