@@ -19,18 +19,13 @@ fi
 
 # Source color library for consistent output formatting
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# shellcheck source=lib/colors.sh
+# shellcheck disable=SC1091
 . "$SCRIPT_DIR/lib/colors.sh"
 
 # Function to print error message and exit
 error_exit() {
 printf "%sError:%s %s\n" "$RED" "$NC" "$1" >&2
 exit 1
-}
-
-# Function to print warning message
-warn() {
-printf "%sWarning:%s %s\n" "$YELLOW" "$NC" "$1" >&2
 }
 
 # Function to print info message
