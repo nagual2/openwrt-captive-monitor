@@ -149,41 +149,16 @@ jobs:
     name: Build Dev Package
     runs-on: ubuntu-24.04
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
         include:
-          # x86 architecture - good for testing and VMs
+          # Safe default target (extend list as needed)
           - openwrt_version: '23.05.3'
             sdk_target: 'x86/64'
             arch: 'x86_64'
-          # ath79 - Atheros AR79xx, very common for routers
-          - openwrt_version: '23.05.3'
-            sdk_target: 'ath79/generic'
-            arch: 'mips_24kc'
-          # ramips - MediaTek MT76x8, common in budget routers
-          - openwrt_version: '23.05.3'
-            sdk_target: 'ramips/mt76x8'
-            arch: 'mipsel_24kc'
-          # mvebu - Marvell Armada 370/XP/38x, used in some routers
-          - openwrt_version: '23.05.3'
-            sdk_target: 'mvebu/cortexa9'
-            arch: 'arm_cortex-a9_neon'
-          # ipq40xx - Qualcomm Atheros, used in many WiFi routers
-          - openwrt_version: '23.05.3'
-            sdk_target: 'ipq40xx/generic'
-            arch: 'arm_cortex-a7'
-          # ipq806x - Qualcomm Atheros, higher-end routers
-          - openwrt_version: '23.05.3'
-            sdk_target: 'ipq806x/generic'
-            arch: 'arm_cortex-a15_neon-vfpv4'
-          # filogic - MediaTek MT79xx, newer WiFi 6/6E routers
-          - openwrt_version: '23.05.3'
-            sdk_target: 'filogic/armvirt-64'
-            arch: 'aarch64_cortex-a53'
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -216,9 +191,9 @@ jobs:
       - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
         uses: openwrt/gh-action-sdk@v6
         env:
-          # Use the new environment variable interface for v6
+          # Use the action-managed SDK environment
           ARCH: ${{ matrix.arch }}
-          CONTAINER: ghcr.io/openwrt/sdk:${{ matrix.openwrt_version }}
+          CONTAINER: ghcr.io/openwrt/sdk
           PACKAGES: openwrt-captive-monitor
           BUILD_LOG: 1
           V: s
@@ -241,6 +216,11 @@ jobs:
             echo "error: no .ipk files found in $ART_DIR" >&2
             exit 1
           fi
+
+      - name: Install verification tools
+        uses: ./.github/actions/setup-system-packages
+        with:
+          packages: binutils tar
 
       - name: Verify package internals
         run: |
