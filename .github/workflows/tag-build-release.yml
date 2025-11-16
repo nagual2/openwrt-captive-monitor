@@ -64,7 +64,7 @@ jobs:
       OPENWRT_VERSION: "23.05.2"
       OPENWRT_ARCH: "x86_64"
       # SHA256 checksum for the SDK
-      SDK_CHECKSUM: "a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890"  # TODO: Replace with actual checksum
+      SDK_CHECKSUM: "df9cbce6054e6bd46fcf28e2ddd53c728ceef6cb27d1d7fc54a228f272c945b0"  # OpenWrt 23.05.2 x86/64 SDK
       # Release channel naming for artifacts
       BUILD_CHANNEL: release
       BUILD_NAME: release
@@ -205,6 +205,51 @@ jobs:
           echo "Installing axel downloader..."
           sudo apt-get update
           sudo apt-get install -y axel
+
+      - name: Validate SDK download URLs
+        run: |
+          set -euxo pipefail
+          SDK_VERSION="${{ env.OPENWRT_VERSION }}"
+          SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          
+          # Primary and fallback mirrors
+          MIRRORS=(
+            "https://github.com/nagual2/openwrt-captive-monitor/releases/download/sdk-${SDK_VERSION}/${SDK_FILE}"
+            "https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
+            "https://mirror2.openwrt.org/sources/${SDK_FILE}"
+            "https://mirror.bytemark.co.uk/openwrt/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
+          )
+          
+          echo "=== Validating SDK Download URLs ==="
+          echo "SDK Version: $SDK_VERSION"
+          echo "SDK File: $SDK_FILE"
+          echo ""
+          
+          valid_mirror_found=false
+          
+          for mirror in "${MIRRORS[@]}"; do
+            echo "Checking mirror: $mirror"
+            if curl --head --silent --connect-timeout 10 --max-time 30 "$mirror" | grep -q "HTTP/.* 200"; then
+              echo "✅ Mirror is accessible: $mirror"
+              valid_mirror_found=true
+              break
+            else
+              echo "❌ Mirror not accessible: $mirror"
+            fi
+          done
+          
+          if [ "$valid_mirror_found" = false ]; then
+            echo "❌ ERROR: No accessible SDK mirrors found for version $SDK_VERSION"
+            echo "This usually means:"
+            echo "1. The OpenWrt version ($SDK_VERSION) doesn't exist"
+            echo "2. The target architecture (x86/64) is not supported for this version"
+            echo "3. Network connectivity issues"
+            echo ""
+            echo "Please verify the OpenWrt version and try again."
+            exit 1
+          fi
+          
+          echo "✅ SDK URL validation passed"
 
       - name: Download and extract OpenWrt SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
