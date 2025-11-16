@@ -5,7 +5,7 @@
 set -eu
 
 usage() {
-    cat << 'EOF'
+	cat << 'EOF'
 Usage: scripts/validate_ipk.sh <ipk_file>
 
 Validates an IPK package by:
@@ -20,20 +20,20 @@ EOF
 }
 
 if [ $# -ne 1 ]; then
-    usage
-    exit 1
+	usage
+	exit 1
 fi
 
 ipk_file="$1"
 
 if [ ! -f "$ipk_file" ]; then
-    echo "error: IPK file not found: $ipk_file" >&2
-    exit 1
+	echo "error: IPK file not found: $ipk_file" >&2
+	exit 1
 fi
 
 if [ ! -s "$ipk_file" ]; then
-    echo "error: IPK file is empty: $ipk_file" >&2
-    exit 1
+	echo "error: IPK file is empty: $ipk_file" >&2
+	exit 1
 fi
 
 echo "=== Validating IPK package: $ipk_file ==="
@@ -41,7 +41,7 @@ echo "=== Validating IPK package: $ipk_file ==="
 # Create temporary directory for extraction
 temp_dir=$(mktemp -d)
 cleanup() {
-    rm -rf "$temp_dir"
+	rm -rf "$temp_dir"
 }
 trap cleanup EXIT INT TERM HUP
 
@@ -57,17 +57,17 @@ ar x "$ipk_file_abs"
 echo "Checking package structure..."
 required_files="debian-binary control.tar.gz data.tar.gz"
 for file in $required_files; do
-    if [ ! -f "$file" ]; then
-        echo "error: missing required file: $file" >&2
-        exit 1
-    fi
+	if [ ! -f "$file" ]; then
+		echo "error: missing required file: $file" >&2
+		exit 1
+	fi
 done
 
 # Verify debian-binary format
 echo "Checking debian-binary..."
 if [ "$(cat debian-binary)" != "2.0" ]; then
-    echo "error: invalid debian-binary format" >&2
-    exit 1
+	echo "error: invalid debian-binary format" >&2
+	exit 1
 fi
 
 # Extract and verify control.tar.gz
@@ -76,8 +76,8 @@ mkdir control
 tar -xzf control.tar.gz -C control/
 
 if [ ! -f "control/control" ]; then
-    echo "error: control file not found in control.tar.gz" >&2
-    exit 1
+	echo "error: control file not found in control.tar.gz" >&2
+	exit 1
 fi
 
 echo "Validating control file..."
@@ -87,8 +87,8 @@ pkg_version=$(awk '/^Version:/{print $2}' "$control_file")
 pkg_arch=$(awk '/^Architecture:/{print $2}' "$control_file")
 
 if [ -z "$pkg_name" ] || [ -z "$pkg_version" ] || [ -z "$pkg_arch" ]; then
-    echo "error: missing required fields in control file" >&2
-    exit 1
+	echo "error: missing required fields in control file" >&2
+	exit 1
 fi
 
 echo "  Package: $pkg_name"
@@ -97,28 +97,28 @@ echo "  Architecture: $pkg_arch"
 
 # Verify control file format
 if ! grep -q "^Package:" "$control_file"; then
-    echo "error: missing Package field" >&2
-    exit 1
+	echo "error: missing Package field" >&2
+	exit 1
 fi
 if ! grep -q "^Version:" "$control_file"; then
-    echo "error: missing Version field" >&2
-    exit 1
+	echo "error: missing Version field" >&2
+	exit 1
 fi
 if ! grep -q "^Architecture:" "$control_file"; then
-    echo "error: missing Architecture field" >&2
-    exit 1
+	echo "error: missing Architecture field" >&2
+	exit 1
 fi
 if ! grep -q "^Maintainer:" "$control_file"; then
-    echo "error: missing Maintainer field" >&2
-    exit 1
+	echo "error: missing Maintainer field" >&2
+	exit 1
 fi
 if ! grep -q "^License:" "$control_file"; then
-    echo "error: missing License field" >&2
-    exit 1
+	echo "error: missing License field" >&2
+	exit 1
 fi
 if ! grep -q "^Description:" "$control_file"; then
-    echo "error: missing Description field" >&2
-    exit 1
+	echo "error: missing Description field" >&2
+	exit 1
 fi
 
 # Extract and verify data.tar.gz
@@ -135,35 +135,35 @@ expected_files="
 "
 
 for file in $expected_files; do
-    if [ ! -f "data/$file" ]; then
-        echo "error: missing expected file: $file" >&2
-        exit 1
-    fi
+	if [ ! -f "data/$file" ]; then
+		echo "error: missing expected file: $file" >&2
+		exit 1
+	fi
 done
 
 # Check executable permissions
 if [ ! -x "data/usr/sbin/openwrt_captive_monitor" ]; then
-    echo "warning: openwrt_captive_monitor is not executable"
+	echo "warning: openwrt_captive_monitor is not executable"
 fi
 
 if [ ! -x "data/etc/init.d/captive-monitor" ]; then
-    echo "warning: captive-monitor init script is not executable"
+	echo "warning: captive-monitor init script is not executable"
 fi
 
 if [ ! -x "data/etc/uci-defaults/99-captive-monitor" ]; then
-    echo "warning: uci-defaults script is not executable"
+	echo "warning: uci-defaults script is not executable"
 fi
 
 # Test with opkg if available
 if command -v opkg > /dev/null 2>&1; then
-    echo "Testing with opkg..."
-    if opkg info "$ipk_file" > /dev/null 2>&1; then
-        echo "opkg info check passed"
-    else
-        echo "warning: opkg info check failed"
-    fi
+	echo "Testing with opkg..."
+	if opkg info "$ipk_file" > /dev/null 2>&1; then
+		echo "opkg info check passed"
+	else
+		echo "warning: opkg info check failed"
+	fi
 else
-    echo "opkg not available, skipping opkg validation"
+	echo "opkg not available, skipping opkg validation"
 fi
 
 # Calculate checksums
@@ -180,10 +180,10 @@ expected_filename="${pkg_name}_${pkg_version}_${pkg_arch}.ipk"
 actual_filename=$(basename "$ipk_file")
 
 if [ "$actual_filename" != "$expected_filename" ]; then
-    echo "error: filename mismatch"
-    echo "  expected: $expected_filename"
-    echo "  actual: $actual_filename"
-    exit 1
+	echo "error: filename mismatch"
+	echo "  expected: $expected_filename"
+	echo "  actual: $actual_filename"
+	exit 1
 fi
 
 echo ""
