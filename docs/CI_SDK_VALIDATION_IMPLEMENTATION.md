@@ -1,120 +1,115 @@
-# Реализация валидации SDK образов в CI
+# CI SDK Validation Implementation
 
-## Описание проблемы
+This document describes the implementation of SDK validation in the CI/CD pipelines to fail fast when SDK images or URLs are invalid, reducing wasted CI minutes.
 
-При неправильной конфигурации OpenWrt SDK версии или целевой архитектуры в матрице CI-конфигурации, сборка может потратить значительное время до момента обнаружения ошибки. Задержка происходит потому, что действие `openwrt/gh-action-sdk@v6` сначала пытается загрузить и запустить Docker образ с несуществующим тегом.
+## Overview
 
-## Решение
+The repository now includes comprehensive SDK validation for both Docker-based SDK builds and SDK tarball downloads. This validation ensures that:
 
-Реализована ранняя валидация Docker образа OpenWrt SDK и параметров целевой архитектуры перед запуском собственно сборки в CI. Это позволяет "упасть быстро" (fail-fast) с понятным сообщением об ошибке.
+1. **Docker SDK images** exist in the registry before attempting to use them
+2. **SDK tarball URLs** are accessible before attempting downloads
+3. **Version formats** are correct and follow expected patterns
+4. **Target/architecture combinations** are valid
 
-## Компоненты реализации
+## Implementation Details
 
-### 1. Новый валидационный скрипт: `scripts/validate-sdk-image.sh`
+### 1. Docker SDK Image Validation
 
-**Путь:** `/home/engine/project/scripts/validate-sdk-image.sh`
+**Script**: `scripts/validate-sdk-image.sh`
 
-**Назначение:** Валидация корректности параметров OpenWrt SDK перед запуском сборки.
-
-**Синтаксис:**
+**Usage**:
 ```bash
-validate-sdk-image.sh <container_image> <sdk_target> <openwrt_version> <sdk_slug>
+./scripts/validate-sdk-image.sh <container_image> <sdk_target> <openwrt_version> <sdk_slug>
 ```
 
-**Пример использования:**
+**Example**:
 ```bash
-./scripts/validate-sdk-image.sh \
-  "ghcr.io/openwrt/sdk:openwrt-23.05.3-x86-64" \
-  "x86/64" \
-  "23.05.3" \
-  "x86-64"
+./scripts/validate-sdk-image.sh ghcr.io/openwrt/sdk:x86_64-23.05.3 x86/64 23.05.3 x86_64
 ```
 
-**Функциональность:**
+**Validations performed**:
+- OpenWrt version format (X.Y or X.Y.Z)
+- SDK target format (target/subtarget)
+- SDK slug format (alphanumeric, hyphens, underscores)
+- Container image tag format matching
+- Docker image availability in registry with 3 retry attempts
 
-1. **Валидация формата версии OpenWrt:** Проверяет соответствие формату X.Y или X.Y.Z
-   - Пример валидных версий: `23.05.3`, `22.03.5`
-   - Пример невалидных версий: `invalid`, `23.05`, `v23.05.3`
+**CI Integration**: Used in `.github/workflows/ci.yml` before the SDK build step
 
-2. **Валидация формата целевой архитектуры (SDK target):** Проверяет соответствие формату `target/subtarget`
-   - Пример валидных целей: `x86/64`, `ar71xx/generic`, `ramips/mt7621`
-   - Пример невалидных целей: `x86-64`, `invalid`, `x86`
+### 2. SDK Tarball URL Validation
 
-3. **Валидация формата слага (SDK slug):** Проверяет, что это буквенно-цифровое значение с дефисами
-   - Пример валидных слагов: `x86-64`, `ar71xx-generic`, `ramips-mt7621`
-   - Пример невалидных слагов: `x86/64`, `invalid.slug`
+**Script**: `scripts/validate-sdk-url.sh`
 
-4. **Проверка соответствия тега контейнера:** Убеждается, что формат Docker образа соответствует параметрам
-   - Проверяет, что образ содержит `openwrt-{version}-{slug}`
-   - Пример: для версии `23.05.3` и слага `x86-64` образ должен содержать `openwrt-23.05.3-x86-64`
-
-5. **Проверка доступности Docker образа в реестре:** Использует `docker manifest inspect` для проверки наличия образа
-   - Выполняет до 3 попыток с интервалом 5 секунд
-   - Использует цветной вывод для лучшей читаемости
-
-**Возвращаемые коды:**
-- `0`: Успешная валидация
-- `1`: Ошибка валидации
-
-**Примеры ошибок:**
-```
-Error: Invalid OpenWrt version format: invalid (expected: X.Y or X.Y.Z)
-Error: Invalid SDK target format: invalid (expected: target/subtarget, e.g., x86/64)
-Error: Container image tag mismatch. Expected suffix: openwrt-23.05.3-x86-64, got: ghcr.io/openwrt/sdk:openwrt-22.03.5-x86-64
-Error: Docker image not found in registry: ghcr.io/openwrt/sdk:openwrt-23.05.3-x86-64
+**Usage**:
+```bash
+./scripts/validate-sdk-url.sh <sdk_version> [target] [arch]
 ```
 
-### 2. Изменения в CI-конфигурации: `.github/workflows/ci.yml`
-
-**Новый шаг:** `Validate SDK image and target`
-
-**Расположение:** Между шагами "Prepare package structure for SDK" и "Build with OpenWrt SDK"
-
-**Конфигурация:**
-```yaml
-- name: Validate SDK image and target
-  run: |
-    set -euo pipefail
-    ./scripts/validate-sdk-image.sh \
-      "ghcr.io/openwrt/sdk:openwrt-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}" \
-      "${{ matrix.sdk_target }}" \
-      "${{ matrix.openwrt_version }}" \
-      "${{ matrix.sdk_slug }}"
+**Example**:
+```bash
+./scripts/validate-sdk-url.sh 23.05.2 x86/64 x86-64
 ```
 
-**Преимущества:**
-- Валидация выполняется на ранней стадии, до попытки загрузки Docker образа
-- Четкие и понятные сообщения об ошибках
-- Поддержка повторных попыток для проверки доступности образа
-- Цветной вывод для лучшей видимости в логах CI
+**Validations performed**:
+- OpenWrt version format (X.Y or X.Y.Z)
+- Target format (target/subtarget)
+- Architecture format (alphanumeric and hyphens)
+- URL accessibility across multiple mirrors with timeout
 
-## Примеры ошибок и их значение
+**Mirrors checked**:
+1. GitHub repository mirror (for faster CI access)
+2. Official OpenWrt downloads
+3. Alternative OpenWrt mirrors
 
-### Ошибка: Invalid OpenWrt version format
-```
-Error: Invalid OpenWrt version format: 23.5 (expected: X.Y or X.Y.Z)
-```
-**Значение:** Версия OpenWrt не соответствует ожидаемому формату. Необходимо исправить версию в матрице конфигурации.
+**CI Integration**: Used in `.github/workflows/tag-build-release.yml` and `.github/workflows/upload-sdk-to-release.yml`
 
-### Ошибка: Invalid SDK target format
-```
-Error: Invalid SDK target format: x86-64 (expected: target/subtarget, e.g., x86/64)
-```
-**Значение:** Формат целевой архитектуры неправильный. Должен быть в виде `target/subtarget`, например `x86/64`.
+## Workflow Changes
 
-### Ошибка: Container image tag mismatch
-```
-Error: Container image tag mismatch. Expected suffix: openwrt-23.05.3-x86-64, got: ghcr.io/openwrt/sdk:openwrt-22.03.5-x86-64
-```
-**Значение:** Версия в Docker образе не соответствует указанной версии OpenWrt. Проверьте конфигурацию матрицы.
+### CI Workflow (`.github/workflows/ci.yml`)
 
-### Ошибка: Docker image not found in registry
+**Before**:
+- Used incorrect container tag format: `ghcr.io/openwrt/sdk:openwrt-23.05.3-x86-64`
+- No validation of SDK image availability
+
+**After**:
+- Fixed container tag format: `ghcr.io/openwrt/sdk:x86_64-23.05.3`
+- Added early validation step: "Validate SDK image and target"
+- Fails fast with clear error messages if SDK image doesn't exist
+
+### Tag Build Release Workflow (`.github/workflows/tag-build-release.yml`)
+
+**Before**:
+- No validation of SDK URLs before download
+- Placeholder checksum value
+- Could waste time downloading non-existent SDKs
+
+**After**:
+- Added "Validate SDK download URLs" step before download
+- Updated to real checksum for OpenWrt 23.05.2
+- Validates URL accessibility across multiple mirrors
+
+### Upload SDK Workflow (`.github/workflows/upload-sdk-to-release.yml`)
+
+**Before**:
+- No validation of user-provided SDK version
+- Could attempt to upload non-existent SDK versions
+
+**After**:
+- Added SDK version format validation
+- Added URL accessibility check before download
+- Clear error messages for invalid versions
+
+## Error Handling
+
+All validation scripts provide clear, actionable error messages:
+
+### Docker Image Validation Errors
 ```
-Error: Docker image not found in registry: ghcr.io/openwrt/sdk:openwrt-23.05.3-x86-64
+Error: Docker image not found in registry: ghcr.io/openwrt/sdk:x86_64-99.99.99
 
 This usually means:
-1. The OpenWrt version (23.05.3) doesn't exist
-2. The target/subtarget combination (x86/64 / x86-64) is not supported
+1. The OpenWrt version (99.99.99) doesn't exist
+2. The target/subtarget combination (x86/64 / x86_64) is not supported
 3. Network connectivity issue (even after 3 attempts)
 
 Please verify:
@@ -122,92 +117,55 @@ Please verify:
 - The target/subtarget combination is valid
 - Network connectivity is working
 ```
-**Значение:** Docker образ не найден в реестре. Проверьте:
-- Существует ли версия OpenWrt в реестре
-- Поддерживается ли комбинация целевой архитектуры
-- Доступность сети
 
-## Технические детали
+### SDK URL Validation Errors
+```
+Error: No accessible SDK mirrors found for version 99.99.99
 
-### Использованные технологии
-- **Язык:** POSIX shell (совместим с BusyBox ash)
-- **Библиотеки:** `scripts/lib/colors.sh` для цветного вывода
-- **Инструменты:** `docker manifest inspect` для проверки образов
-- **Регулярные выражения:** grep с поддержкой расширенных выражений
+This usually means:
+1. The OpenWrt version (99.99.99) doesn't exist
+2. The target/architecture combination (x86/64 / x86-64) is not supported
+3. Network connectivity issues
 
-### Соблюдение стандартов
-- Скрипт использует `set -eu` и условный `set -o pipefail` для надежности
-- Следует стилю проекта BusyBox ash совместимости
-- Исходит из центральной библиотеки цветов `scripts/lib/colors.sh`
-- Соответствует GitHub Actions workflow лучшим практикам
-
-## Тестирование
-
-### Тест 1: Валидные параметры
-```bash
-./scripts/validate-sdk-image.sh \
-  "ghcr.io/openwrt/sdk:openwrt-23.05.3-x86-64" \
-  "x86/64" \
-  "23.05.3" \
-  "x86-64"
+Please verify:
+- The OpenWrt version is correct
+- The target/architecture combination is valid
+- Network connectivity is working
 ```
 
-### Тест 2: Невалидная версия
-```bash
-./scripts/validate-sdk-image.sh \
-  "ghcr.io/openwrt/sdk:openwrt-invalid-x86-64" \
-  "x86/64" \
-  "invalid" \
-  "x86-64"
-```
-Ожидаемый результат: `Error: Invalid OpenWrt version format: invalid (expected: X.Y or X.Y.Z)`
+## Benefits
 
-### Тест 3: Невалидная целевая архитектура
-```bash
-./scripts/validate-sdk-image.sh \
-  "ghcr.io/openwrt/sdk:openwrt-23.05.3-x86-64" \
-  "invalid" \
-  "23.05.3" \
-  "x86-64"
-```
-Ожидаемый результат: `Error: Invalid SDK target format: invalid (expected: target/subtarget, e.g., x86/64)`
+1. **Reduced CI Waste**: Fail fast instead of wasting minutes on invalid configurations
+2. **Clear Error Messages**: Developers get immediate feedback on what's wrong
+3. **Improved Reliability**: Validation ensures SDK resources exist before use
+4. **Better Developer Experience**: Clear guidance on how to fix configuration issues
+5. **Network Resilience**: Multiple mirrors and retry attempts handle transient issues
 
-### Тест 4: Несоответствие тега контейнера
-```bash
-./scripts/validate-sdk-image.sh \
-  "ghcr.io/openwrt/sdk:openwrt-22.03.5-x86-64" \
-  "x86/64" \
-  "23.05.3" \
-  "x86-64"
-```
-Ожидаемый результат: `Error: Container image tag mismatch. Expected suffix: openwrt-23.05.3-x86-64, got: ghcr.io/openwrt/sdk:openwrt-22.03.5-x86-64`
+## Testing
 
-## Установка в CI
+The validation scripts have been tested with:
 
-Валидационный шаг автоматически выполняется в CI-конфигурации `.github/workflows/ci.yml` и не требует дополнительной настройки при работе с матрицей конфигурации.
+- **Valid configurations**: Should pass validation
+- **Invalid versions**: Should fail with clear error messages
+- **Invalid formats**: Should fail with format-specific error messages
+- **Network issues**: Should retry appropriate number of times
 
-### Добавление новой конфигурации в матрицу
+## Future Enhancements
 
-При добавлении новой конфигурации в матрицу убедитесь:
-1. `openwrt_version` соответствует формату X.Y или X.Y.Z
-2. `sdk_target` имеет формат target/subtarget
-3. `sdk_slug` соответствует слагу в Docker образе OpenWrt
-4. Теги Docker образов соответствуют версиям
+Potential improvements for the future:
 
-**Пример новой конфигурации:**
-```yaml
-- openwrt_version: '24.01.0'
-  sdk_target: 'ath79/generic'
-  sdk_slug: 'ath79-generic'
-  arch: 'mips_24kc'
-```
+1. **Automatic version discovery**: Could query available versions from OpenWrt APIs
+2. **Architecture validation**: Could validate supported architectures per version
+3. **Performance optimization**: Cache validation results where appropriate
+4. **Integration tests**: Add automated tests for validation scripts
 
-## Заключение
+## Maintenance
 
-Реализация валидации SDK образов позволяет:
-- **Сократить время сборки** при неправильной конфигурации
-- **Улучшить видимость ошибок** через четкие сообщения об ошибках
-- **Предотвратить пустые сборки** благодаря ранней валидации
-- **Улучшить опыт разработчиков** с быстрой обратной связью
+When updating OpenWrt versions or targets:
 
-Это особенно полезно при расширении матрицы конфигурации на новые версии OpenWrt или целевые архитектуры.
+1. Test the new version with validation scripts first
+2. Update any hardcoded checksums if using SDK tarballs
+3. Verify that the new version follows the expected tag format
+4. Update documentation if tag formats change
+
+The validation scripts are designed to be maintainable and provide clear feedback when configurations need to be updated.
