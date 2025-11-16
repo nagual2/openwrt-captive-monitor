@@ -203,9 +203,11 @@ jobs:
       - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
         uses: openwrt/gh-action-sdk@v6
         env:
-          # Use the action-managed SDK environment
-          ARCH: ${{ matrix.arch }}
+          # Base container repo and tag for SDK (version + target-subtarget)
+          # The action Dockerfile uses FROM ${CONTAINER}:${ARCH}
           CONTAINER: ghcr.io/openwrt/sdk
+          ARCH: openwrt-${{ matrix.openwrt_version }}-${{ replace(matrix.sdk_target, '/', '-') }}
+          # Package(s) to build inside the SDK
           PACKAGES: openwrt-captive-monitor
           BUILD_LOG: 1
           V: s
