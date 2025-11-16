@@ -192,10 +192,8 @@ jobs:
         id: sdk-meta
         run: |
           set -euo pipefail
-          target="${{ matrix.sdk_target }}"
-          sanitized="${target//\//-}"
           echo "container_base=ghcr.io/openwrt/sdk" >> "$GITHUB_OUTPUT"
-          echo "arch_tag=openwrt-${{ matrix.openwrt_version }}-${sanitized}" >> "$GITHUB_OUTPUT"
+          echo "arch_tag=${{ matrix.arch }}-${{ matrix.openwrt_version }}" >> "$GITHUB_OUTPUT"
 
       - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
         uses: openwrt/gh-action-sdk@v6
