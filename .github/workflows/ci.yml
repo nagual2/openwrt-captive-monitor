@@ -149,7 +149,6 @@ jobs:
     name: Build Dev Package
     runs-on: ubuntu-24.04
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
     strategy:
@@ -213,12 +212,20 @@ jobs:
           echo "Prepared package structure:"
           find feed -type f -name "Makefile" | head -5
 
+      - name: Compute SDK container image
+        id: sdk-meta
+        run: |
+          set -euo pipefail
+          target="${{ matrix.sdk_target }}"
+          sanitized="${target//\//-}"
+          echo "container=ghcr.io/openwrt/sdk:openwrt-${{ matrix.openwrt_version }}-${sanitized}" >> "$GITHUB_OUTPUT"
+
       - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
         uses: openwrt/gh-action-sdk@v6
         env:
           # Use the new environment variable interface for v6
           ARCH: ${{ matrix.arch }}
-          CONTAINER: ghcr.io/openwrt/sdk:${{ matrix.openwrt_version }}
+          CONTAINER: ${{ steps.sdk-meta.outputs.container }}
           PACKAGES: openwrt-captive-monitor
           BUILD_LOG: 1
           V: s
