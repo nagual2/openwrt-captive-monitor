@@ -227,13 +227,15 @@ jobs:
       - name: Build summary
         run: |
           set -euo pipefail
-          echo "## 📦 Build Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Target:** ${{ matrix.target }}/${{ matrix.subtarget }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Architecture:** ${{ matrix.arch }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "**OpenWrt Version:** ${{ matrix.openwrt_version }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Build Channel:** ${{ env.BUILD_CHANNEL }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Short SHA:** ${{ env.SHORT_SHA }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### 📋 Generated Packages" >> "$GITHUB_STEP_SUMMARY"
-          find "artifacts/${BUILD_NAME}" -name "*.ipk" -exec echo "- {}" \; >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## 📦 Build Summary"
+            echo ""
+            echo "**Target:** ${{ matrix.target }}/${{ matrix.subtarget }}"
+            echo "**Architecture:** ${{ matrix.arch }}"
+            echo "**OpenWrt Version:** ${{ matrix.openwrt_version }}"
+            echo "**Build Channel:** ${{ env.BUILD_CHANNEL }}"
+            echo "**Short SHA:** ${{ env.SHORT_SHA }}"
+            echo ""
+            echo "### 📋 Generated Packages"
+            find "artifacts/${BUILD_NAME}" -name "*.ipk" -exec echo "- {}" \;
+          } >> "$GITHUB_STEP_SUMMARY"
