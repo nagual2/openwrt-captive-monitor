@@ -2,7 +2,7 @@
 # shellcheck shell=ash
 #
 # Validate OpenWrt SDK download URL (tarball)
-# Fails fast if the SDK URL is not accessible
+# Fails fast if SDK URL is not accessible
 #
 # Usage:
 #   validate-sdk-url.sh <sdk_version> [target] [arch]
@@ -13,9 +13,9 @@
 #
 
 set -eu
-if (set -o pipefail) 2> /dev/null; then
-# shellcheck disable=SC3040
-set -o pipefail
+if (set -o pipefail) 2>/dev/null; then
+    # shellcheck disable=SC3040
+    set -o pipefail
 fi
 
 # Source color library for consistent output formatting
@@ -25,18 +25,18 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Function to print error message and exit
 error_exit() {
-printf "%sError:%s %s\n" "$RED" "$NC" "$1" >&2
-exit 1
+    printf "%sError:%s %s\n" "$RED" "$NC" "$1" >&2
+    exit 1
 }
 
 # Function to print info message
 info() {
-printf "%sInfo:%s %s\n" "$BLUE" "$NC" "$1"
+    printf "%sInfo:%s %s\n" "$BLUE" "$NC" "$1"
 }
 
 # Function to print success message
 success() {
-printf "%sSuccess:%s %s\n" "$GREEN" "$NC" "$1"
+    printf "%sSuccess:%s %s\n" "$GREEN" "$NC" "$1"
 }
 
 # Default values
@@ -46,7 +46,7 @@ ARCH="${3:-x86-64}"
 
 # Validate arguments
 if [ $# -lt 1 ]; then
-error_exit "Usage: validate-sdk-url.sh <sdk_version> [target] [arch]"
+    error_exit "Usage: validate-sdk-url.sh <sdk_version> [target] [arch]"
 fi
 
 info "Validating OpenWrt SDK download URL..."
@@ -57,17 +57,17 @@ echo ""
 
 # Validate OpenWrt version format
 if ! echo "$SDK_VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
-error_exit "Invalid OpenWrt version format: $SDK_VERSION (expected: X.Y or X.Y.Z)"
+    error_exit "Invalid OpenWrt version format: $SDK_VERSION (expected: X.Y or X.Y.Z)"
 fi
 
 # Validate target format
 if ! echo "$TARGET" | grep -qE '^[a-z0-9]+/[a-z0-9]+$'; then
-error_exit "Invalid target format: $TARGET (expected: target/subtarget, e.g., x86/64)"
+    error_exit "Invalid target format: $TARGET (expected: target/subtarget, e.g., x86/64)"
 fi
 
 # Validate arch format
 if ! echo "$ARCH" | grep -qE '^[a-z0-9-]+$'; then
-error_exit "Invalid architecture format: $ARCH (expected: alphanumeric and hyphens)"
+    error_exit "Invalid architecture format: $ARCH (expected: alphanumeric and hyphens)"
 fi
 
 # Construct SDK filename and URLs
@@ -79,24 +79,24 @@ valid_mirror_found=false
 
 # Check each mirror in sequence
 for mirror in \
-  "https://github.com/nagual2/openwrt-captive-monitor/releases/download/sdk-${SDK_VERSION}/${SDK_FILE}" \
-  "https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/${TARGET}/${SDK_FILE}" \
-  "https://mirror2.openwrt.org/sources/${SDK_FILE}" \
-  "https://mirror.bytemark.co.uk/openwrt/releases/${SDK_VERSION}/targets/${TARGET}/${SDK_FILE}"; do
-  printf "  Checking: %s\n" "$mirror"
-  
-  # Use curl to check if URL is accessible with timeout
-  if curl --head --silent --connect-timeout 10 --max-time 30 "$mirror" | grep -q "HTTP/.* 200"; then
-    success "URL is accessible: $mirror"
-    valid_mirror_found=true
-    break
-  else
-    printf "%sWarning:%s URL not accessible: %s\n" "$YELLOW" "$NC" "$mirror" >&2
-  fi
+    "https://github.com/nagual2/openwrt-captive-monitor/releases/download/sdk-${SDK_VERSION}/${SDK_FILE}" \
+    "https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/${TARGET}/${SDK_FILE}" \
+    "https://mirror2.openwrt.org/sources/${SDK_FILE}" \
+    "https://mirror.bytemark.co.uk/openwrt/releases/${SDK_VERSION}/targets/${TARGET}/${SDK_FILE}"; do
+    printf "  Checking: %s\n" "$mirror"
+
+    # Use curl to check if URL is accessible with timeout
+    if curl --head --silent --connect-timeout 10 --max-time 30 "$mirror" | grep -q "HTTP/.* 200"; then
+        success "URL is accessible: $mirror"
+        valid_mirror_found=true
+        break
+    else
+        printf "%sWarning:%s URL not accessible: %s\n" "$YELLOW" "$NC" "$mirror" >&2
+    fi
 done
 
 if [ "$valid_mirror_found" = false ]; then
-  error_exit "No accessible SDK mirrors found for version $SDK_VERSION
+    error_exit "No accessible SDK mirrors found for version $SDK_VERSION
 
 This usually means:
 1. The OpenWrt version ($SDK_VERSION) doesn't exist
