@@ -155,12 +155,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # Safe default target (extend list as needed)
+        include: &sdk_targets
+          # Supported OpenWrt SDK targets for CI package builds
           - openwrt_version: '23.05.3'
             sdk_target: 'x86/64'
             sdk_slug: 'x86-64'
             arch: 'x86_64'
+          - openwrt_version: '23.05.3'
+            sdk_target: 'ath79/generic'
+            sdk_slug: 'ath79-generic'
+            arch: 'ath79-generic'
+          - openwrt_version: '23.05.3'
+            sdk_target: 'ramips/mt76x8'
+            sdk_slug: 'ramips-mt76x8'
+            arch: 'ramips-mt76x8'
+          - openwrt_version: '23.05.3'
+            sdk_target: 'mediatek/filogic'
+            sdk_slug: 'mediatek-filogic'
+            arch: 'mediatek-filogic'
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -325,12 +337,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # Safe default target (extend list as needed)
-          - openwrt_version: '23.05.3'
-            sdk_target: 'x86/64'
-            sdk_slug: 'x86-64'
-            arch: 'x86_64'
+        # Reuse the same SDK target coverage for PR validation builds
+        include: *sdk_targets
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
