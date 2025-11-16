@@ -206,6 +206,15 @@ jobs:
           echo "Prepared package structure:"
           find feed -type f -name "Makefile" | head -5
 
+       - name: Validate SDK image and target
+         run: |
+           set -euo pipefail
+           ./scripts/validate-sdk-image.sh \
+             "ghcr.io/openwrt/sdk:openwrt-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}" \
+             "${{ matrix.sdk_target }}" \
+             "${{ matrix.openwrt_version }}" \
+             "${{ matrix.sdk_slug }}"
+
       - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
         uses: openwrt/gh-action-sdk@v6
         env:
