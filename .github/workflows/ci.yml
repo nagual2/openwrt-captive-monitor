@@ -167,6 +167,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set DEV suffix
+        id: dev
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "DEV_SUFFIX=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "DEV_SUFFIX=0" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set dev channel environment
         id: dev-env
         run: |
@@ -228,6 +237,8 @@ jobs:
           V: s
           # Feed configuration - use default feeds plus our local feed
           FEEDNAME: local
+          # Pass CI-provided DEV_SUFFIX into the SDK build to allow Makefiles to append -dev on main
+          DEV_SUFFIX: ${{ steps.dev.outputs.DEV_SUFFIX }}
           # Mount points for the action
           ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
           FEED_DIR: ${{ github.workspace }}/feed
