@@ -273,10 +273,197 @@ jobs:
           echo "Verifying package: $IPK_FILE"
           ./scripts/verify_package.sh "$IPK_FILE"
 
+      - name: Validate IPK version metadata
+        run: |
+          set -euo pipefail
+          echo "=== Validating Version field in .ipk control metadata ==="
+          for IPK_FILE in artifacts/${BUILD_NAME}/*.ipk; do
+            if [ ! -f "$IPK_FILE" ]; then
+              echo "warning: no .ipk files found" >&2
+              continue
+            fi
+            echo ""
+            echo "Validating: $(basename "$IPK_FILE")"
+            # Main branch builds should have -dev suffix
+            ./scripts/validate-ipk-version.sh "$IPK_FILE" "main"
+          done
+          echo ""
+          echo "All packages validated successfully"
+
       - name: Upload dev artifacts
         uses: actions/upload-artifact@v5
         with:
           name: ipk-${{ matrix.sdk_slug }}-dev+${{ env.SHORT_SHA }}
+          path: artifacts/${{ env.BUILD_NAME }}
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 6
+
+      - name: Build summary
+        run: |
+          set -euo pipefail
+          {
+            echo "## 📦 Build Summary"
+            echo ""
+            echo "**Target:** ${{ matrix.sdk_target }}"
+            echo "**Architecture:** ${{ matrix.arch }}"
+            echo "**OpenWrt Version:** ${{ matrix.openwrt_version }}"
+            echo "**Build Channel:** ${{ env.BUILD_CHANNEL }}"
+            echo "**Short SHA:** ${{ env.SHORT_SHA }}"
+            echo ""
+            echo "### 📋 Generated Packages"
+            find "artifacts/${BUILD_NAME}" -name "*.ipk" -exec echo "- {}" \;
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build-pr-package:
+    name: Build PR Package
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
+    needs: test
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Safe default target (extend list as needed)
+          - openwrt_version: '23.05.3'
+            sdk_target: 'x86/64'
+            sdk_slug: 'x86-64'
+            arch: 'x86_64'
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set DEV suffix
+        id: dev
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "DEV_SUFFIX=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "DEV_SUFFIX=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set PR build environment
+        id: pr-env
+        run: |
+          set -euo pipefail
+          # Prefer an 8-character short SHA for artifact naming consistency
+          resolved_sha="${GITHUB_SHA:-}"
+          if [ -z "$resolved_sha" ]; then
+            resolved_sha=$(git rev-parse HEAD 2>/dev/null || echo nogit)
+          fi
+          short_sha=$(echo "$resolved_sha" | cut -c1-8)
+          {
+            echo "BUILD_CHANNEL=pr"
+            echo "BUILD_NAME=pr-build"
+            echo "SHORT_SHA=${short_sha}"
+          } >> "$GITHUB_ENV"
+          echo "Using BUILD_NAME=pr-build (artifact suffix: -pr+${short_sha})"
+
+      - name: Prepare package structure for SDK
+        run: |
+          set -euo pipefail
+          # Create the expected package structure for the SDK action
+          mkdir -p feed/package
+          cp -r package/openwrt-captive-monitor feed/package/
+          # Create artifacts directory
+          mkdir -p "artifacts/${BUILD_NAME}"
+
+          # Ensure a placeholder feeds.conf.default exists for the SDK action to patch
+          # The openwrt/gh-action-sdk action expects this file under FEED_DIR and will
+          # inject the local src-link feed path at runtime. Upstream feeds are not required
+          # for this package build.
+          if [ ! -f feed/feeds.conf.default ]; then
+            {
+              echo "# Placeholder feeds.conf.default for SDK action"
+              echo "# The action will inject: src-link ${FEEDNAME:-local} <resolved-path>"
+            } > feed/feeds.conf.default
+          fi
+
+          echo "Prepared package structure:"
+          find feed -type f -name "Makefile" | head -5
+
+      - name: Validate SDK image and target
+        run: |
+          set -euo pipefail
+          ./scripts/validate-sdk-image.sh \
+            "ghcr.io/openwrt/sdk:${{ matrix.arch }}-${{ matrix.openwrt_version }}" \
+            "${{ matrix.sdk_target }}" \
+            "${{ matrix.openwrt_version }}" \
+            "${{ matrix.arch }}"
+
+      - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
+        uses: openwrt/gh-action-sdk@v6
+        env:
+          # Use the official SDK container pinned to the OpenWrt version and target
+          # e.g., ghcr.io/openwrt/sdk:x86_64-23.05.3
+          CONTAINER: ghcr.io/openwrt/sdk:${{ matrix.arch }}-${{ matrix.openwrt_version }}
+          # Package(s) to build inside the SDK
+          PACKAGES: openwrt-captive-monitor
+          BUILD_LOG: 1
+          V: s
+          # Feed configuration - use default feeds plus our local feed
+          FEEDNAME: local
+          # Pass CI-provided DEV_SUFFIX into the SDK build (0 for PRs - no -dev suffix)
+          DEV_SUFFIX: ${{ steps.dev.outputs.DEV_SUFFIX }}
+          # Mount points for the action
+          ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
+          FEED_DIR: ${{ github.workspace }}/feed
+
+      - name: List and validate produced artifacts
+        run: |
+          set -euo pipefail
+          ART_DIR="artifacts/${BUILD_NAME}"
+          echo "Artifacts directory: $ART_DIR"
+          ls -la "$ART_DIR"
+          echo "IPK files:"
+          find "$ART_DIR" -name "*.ipk" -printf '%f\n' || true
+          COUNT=$(find "$ART_DIR" -name "*.ipk" | wc -l | tr -d ' ')
+          if [ "$COUNT" -eq 0 ]; then
+            echo "error: no .ipk files found in $ART_DIR" >&2
+            exit 1
+          fi
+
+      - name: Install verification tools
+        uses: ./.github/actions/setup-system-packages
+        with:
+          packages: binutils tar
+
+      - name: Verify package internals
+        run: |
+          set -euo pipefail
+          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" | head -n1)
+          if [ -z "$IPK_FILE" ]; then
+            echo "error: no openwrt-captive-monitor package found" >&2
+            exit 1
+          fi
+          echo "Verifying package: $IPK_FILE"
+          ./scripts/verify_package.sh "$IPK_FILE"
+
+      - name: Validate IPK version metadata
+        run: |
+          set -euo pipefail
+          echo "=== Validating Version field in .ipk control metadata ==="
+          for IPK_FILE in artifacts/${BUILD_NAME}/*.ipk; do
+            if [ ! -f "$IPK_FILE" ]; then
+              echo "warning: no .ipk files found" >&2
+              continue
+            fi
+            echo ""
+            echo "Validating: $(basename "$IPK_FILE")"
+            # PR builds should NOT have -dev suffix
+            ./scripts/validate-ipk-version.sh "$IPK_FILE" "pr"
+          done
+          echo ""
+          echo "All packages validated successfully"
+
+      - name: Upload PR artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: ipk-${{ matrix.sdk_slug }}-pr+${{ env.SHORT_SHA }}
           path: artifacts/${{ env.BUILD_NAME }}
           retention-days: 7
           if-no-files-found: error
