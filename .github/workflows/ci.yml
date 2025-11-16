@@ -192,23 +192,35 @@ jobs:
         id: sdk-meta
         run: |
           set -euo pipefail
-          echo "container_base=ghcr.io/openwrt/sdk" >> "$GITHUB_OUTPUT"
-          echo "arch_tag=${{ matrix.arch }}-${{ matrix.openwrt_version }}" >> "$GITHUB_OUTPUT"
+          echo "sdk_image=ghcr.io/openwrt/sdk:${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
 
-      - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
-        uses: openwrt/gh-action-sdk@v6
-        env:
-          # Use the new environment variable interface for v6
-          ARCH: ${{ steps.sdk-meta.outputs.arch_tag }}
-          CONTAINER: ${{ steps.sdk-meta.outputs.container_base }}
-          PACKAGES: openwrt-captive-monitor
-          BUILD_LOG: 1
-          V: s
-          # Feed configuration - use default feeds plus our local feed
-          FEEDNAME: local
-          # Mount points for the action
-          ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
-          FEED_DIR: ${{ github.workspace }}/feed
+      - name: Ensure permissions for SDK container
+        run: |
+          set -euo pipefail
+          sudo chown -R 1000:1000 "${GITHUB_WORKSPACE}/artifacts/${BUILD_NAME}" "${GITHUB_WORKSPACE}/feed"
+
+      - name: Build with OpenWrt SDK container (${{ matrix.sdk_target }})
+        run: |
+          set -euo pipefail
+          SDK_IMAGE="${{ steps.sdk-meta.outputs.sdk_image }}"
+          echo "Using SDK image: $SDK_IMAGE"
+          docker pull "$SDK_IMAGE"
+          docker run --rm -u 1000:1000 \
+            -v "${GITHUB_WORKSPACE}/feed:/feed" \
+            -v "${GITHUB_WORKSPACE}/artifacts/${BUILD_NAME}:/out" \
+            "$SDK_IMAGE" /bin/sh -lc '
+              set -e
+              cd /builder
+              # Prepare feeds with local feed
+              cp feeds.conf.default feeds.conf || true
+              echo "src-link local /feed" >> feeds.conf
+              ./scripts/feeds update -a
+              ./scripts/feeds install -p local -f openwrt-captive-monitor
+              make defconfig
+              make package/openwrt-captive-monitor/compile V=s
+              # Collect ipk outputs
+              find bin/packages -type f -name "*.ipk" -exec cp -v {} /out/ \; || true
+            '
 
       - name: List and validate produced artifacts
         run: |
