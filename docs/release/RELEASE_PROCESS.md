@@ -134,6 +134,72 @@ Release packaging remains tag-driven:
 - Release artifacts are staged under `artifacts/release/` and attached to the GitHub Release, with clean filenames (no "dev" suffix), e.g.:
   `openwrt-captive-monitor_<VERSION>_<arch>.ipk`
 
+## SDK-Based CI Build and Versioning
+
+This project uses the **OpenWrt SDK** (similar to official OpenWrt packages like Luci) to build development and release packages. This section clarifies how versioning and artifacts are handled across different CI build contexts.
+
+### OpenWrt SDK Integration
+
+The CI pipeline leverages the OpenWrt SDK for consistent, reproducible package builds:
+
+- **SDK Container**: Builds use the official OpenWrt SDK Docker image via `openwrt/gh-action-sdk@v6`
+- **Local Feed**: The package is provided as a local feed (FEEDNAME=local) mounted to the SDK environment
+- **Build Command**: Packages are compiled using standard OpenWrt build commands: `./scripts/feeds update -a && ./scripts/feeds install <pkg>` followed by `make package/<pkg>/compile V=s`
+- **Multiple Targets**: CI validates builds across multiple target architectures (x86_64, ath79, ramips, mediatek, ipq40xx, ipq806x, bcm27xx, rockchip)
+
+### Development Build Versioning (Main Branch)
+
+When code is pushed to the `main` branch, the CI workflow performs development builds with the following versioning behavior:
+
+**Version Field (PKG_VERSION):**
+- The package `Makefile` contains the base version (e.g., `1.0.8`)
+- When `DEV_SUFFIX=1` is set by CI, the build appends `-dev` to `PKG_VERSION`
+- Final version string in the `.ipk` control metadata: `1.0.8-dev` or `1.0.8-dev-<date>` format
+
+**Release Field (PKG_RELEASE):**
+- Remains date-based and untouched: formats like `20240101` (YYYYMMDD) or `202401011530` (YYYYMMDDHHMM)
+- No modification by the CI build process
+
+**Artifact Naming:**
+- Uploaded CI artifacts include a dev identifier and short commit SHA: `captive-monitor-<target>-dev+<shortsha>`
+- Individual `.ipk` filenames within the artifact follow standard format: `openwrt-captive-monitor_1.0.8-dev_*.ipk`
+- Artifacts are staged under `artifacts/dev-main/` and available as GitHub Actions artifacts for 7 days
+
+### Pull Request Build Versioning (PR Builds)
+
+Pull request builds validate changes without modifying version metadata:
+
+**Version Field (PKG_VERSION):**
+- No `-dev` suffix is appended (DEV_SUFFIX=0)
+- Version remains as specified in the package `Makefile` (e.g., `1.0.8`)
+
+**Release Field (PKG_RELEASE):**
+- Date-based, consistent with main branch builds
+
+**Artifact Naming:**
+- Uploaded CI artifacts use the pattern: `captive-monitor-<target>-pr+<shortsha>`
+- Artifacts are staged under `artifacts/pr-build/` for validation
+
+### Version Validation
+
+The CI pipeline includes automated validation (`scripts/validate-ipk-version.sh`) that enforces versioning rules:
+
+- **Main branch** (default): Package `.ipk` files must include `-dev` in their Version field
+- **Pull requests**: Package `.ipk` files must NOT include `-dev`
+- **Validation failure** halts the build and reports the mismatch
+
+This prevents accidental release of development versions and ensures correct labeling.
+
+### Release Workflow (Unchanged)
+
+The release process for tagged versions (vX.Y.Z) remains unchanged:
+
+- **Tag builds** trigger the `tag-build-release` workflow
+- **Release artifacts** have clean filenames without `-dev` suffix
+- **PKG_VERSION and PKG_RELEASE** are exactly as specified in the package `Makefile`
+- **Release channel**: Set to `BUILD_CHANNEL=release` and `BUILD_NAME=release`
+- All release artifacts are signed and published to the GitHub Release
+
 ## Release Pipeline Sequence
 
 ```
