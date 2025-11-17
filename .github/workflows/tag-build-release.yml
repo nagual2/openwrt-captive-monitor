@@ -58,6 +58,8 @@ jobs:
       build_successful: ${{ steps.build.outputs.success }}
       artifact_dir: ${{ steps.artifacts.outputs.artifact_dir }}
       artifact_name: ${{ steps.artifacts.outputs.artifact_name }}
+      package_dir: ${{ steps.package.outputs.package_dir }}
+      package_artifact_name: ${{ steps.package.outputs.package_artifact_name }}
     
     env:
       # Using OpenWrt 23.05.2 stable release
@@ -567,6 +569,44 @@ jobs:
           
           rm -rf "$TEMP_DIR"
 
+      - name: Prepare package directory with built IPKs
+        id: package
+        run: |
+          set -euo pipefail
+          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
+          
+          echo "=== Staging IPK files under package/ ==="
+          mkdir -p package
+          copied=0
+          while IFS= read -r -d '' f; do
+            echo "Copying: $f"
+            cp -v "$f" package/
+            copied=$((copied+1))
+          done < <(find "$SDK_DIR/bin" -type f -name '*.ipk' -print0)
+          
+          if [ "$copied" -eq 0 ]; then
+            echo "ERROR: No .ipk files found under $SDK_DIR/bin" >&2
+            find "$SDK_DIR/bin" -maxdepth 3 -type f | sed 's/^/  - /'
+            exit 1
+          fi
+          
+          echo "=== Generating checksums (SHA256SUMS) ==="
+          sha256sum package/*.ipk > package/SHA256SUMS
+          ls -la package
+          {
+            echo "package_dir=package"
+            echo "package_artifact_name=package-${BUILD_NAME}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload package directory as artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ steps.package.outputs.package_artifact_name }}
+          path: package
+          retention-days: 30
+          if-no-files-found: error
+          compression-level: 6
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v5
         with:
@@ -594,6 +634,7 @@ jobs:
       RELEASE_TAG: ${{ needs.pre-check.outputs.tag_name }}
       RELEASE_ASSETS_DIR: ${{ needs.build-package.outputs.artifact_dir }}
       BUILD_ARTIFACT_NAME: ${{ needs.build-package.outputs.artifact_name }}
+      PACKAGE_ARTIFACT_NAME: ${{ needs.build-package.outputs.package_artifact_name }}
     
     steps:
       - name: Check out repository
@@ -895,22 +936,114 @@ jobs:
           echo "=== Uploading artifacts to release ==="
           cd "$RELEASE_ASSETS_DIR"
 
-          files=$(find . -maxdepth 1 -type f -printf '%P\n' | sort)
+          files=$(find . -maxdepth 1 -type f ! -name '*.ipk' ! -name 'SHA256SUMS' -printf '%P\n' | sort)
           if [ -z "$files" ]; then
-            echo "❌ No files found in $RELEASE_ASSETS_DIR to upload"
-            exit 1
+            echo "ℹ️  No non-IPK files found in $RELEASE_ASSETS_DIR to upload (skipping)"
+          else
+            while IFS= read -r file; do
+              if [ -z "$file" ]; then
+                continue
+              fi
+              echo "Uploading: $file"
+              gh release upload "$TAG" "$file" --clobber
+            done <<< "$files"
           fi
-
-          while IFS= read -r file; do
-            if [ -z "$file" ]; then
-              continue
-            fi
-            echo "Uploading: $file"
-            gh release upload "$TAG" "$file" --clobber
-          done <<< "$files"
 
           echo "✅ Release updated successfully"
           echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/$TAG"
+
+      - name: Download package artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.PACKAGE_ARTIFACT_NAME }}
+          path: .
+
+      - name: Show package directory contents
+        run: |
+          set -euxo pipefail
+          if [ ! -d "package" ]; then
+            echo "❌ package/ directory not found after artifact download"
+            ls -la
+            exit 1
+          fi
+          echo "=== package/ contents ==="
+          ls -la package
+
+      - name: Upload package IPKs and checksums to release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          : "${RELEASE_TAG:?RELEASE_TAG is required}"
+          if ls package/*.ipk >/dev/null 2>&1; then
+            echo "Uploading package assets (.ipk and SHA256SUMS) to release $RELEASE_TAG"
+            files=(package/*.ipk)
+            if [ -f package/SHA256SUMS ]; then
+              files+=(package/SHA256SUMS)
+            fi
+            printf '  + %s\n' "${files[@]}"
+            gh release upload "$RELEASE_TAG" "${files[@]}" --clobber
+          else
+            echo "❌ No .ipk files found in package/; nothing to upload"
+            exit 1
+          fi
+
+      - name: Update release notes with download links
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          : "${RELEASE_TAG:?RELEASE_TAG is required}"
+          repo="${GITHUB_REPOSITORY}"
+          tag="${RELEASE_TAG}"
+
+          if [ ! -d package ]; then
+            echo "❌ package/ directory missing; cannot update release notes"
+            exit 1
+          fi
+
+          tmpdir=$(mktemp -d)
+          body_current="$tmpdir/body_current.md"
+          body_clean="$tmpdir/body_clean.md"
+          downloads="$tmpdir/downloads.md"
+          body_updated="$tmpdir/body_updated.md"
+
+          # Fetch current body
+          gh release view "$tag" --json body --jq '.body // ""' > "$body_current"
+
+          # Build downloads section with deterministic ordering
+          {
+            echo "<!-- BEGIN-PACKAGE-DOWNLOADS -->"
+            echo "### Downloads"
+            echo
+            for f in package/*.ipk; do
+              [ -e "$f" ] || continue
+              bn=$(basename "$f")
+              url="https://github.com/${repo}/releases/download/${tag}/${bn}"
+              printf "- %s — %s\n" "$bn" "$url"
+            done | sort
+            if [ -f package/SHA256SUMS ]; then
+              url="https://github.com/${repo}/releases/download/${tag}/SHA256SUMS"
+              echo "- SHA256SUMS — $url"
+            fi
+            echo "<!-- END-PACKAGE-DOWNLOADS -->"
+          } > "$downloads"
+
+          # Remove previous Downloads section if present, then append the fresh one
+          if grep -q "BEGIN-PACKAGE-DOWNLOADS" "$body_current"; then
+            # Remove block between markers
+            sed '/<!-- BEGIN-PACKAGE-DOWNLOADS -->/,/<!-- END-PACKAGE-DOWNLOADS -->/d' "$body_current" > "$body_clean"
+          else
+            cp "$body_current" "$body_clean"
+          fi
+          # Ensure trailing newline
+          printf "\n\n" >> "$body_clean"
+          cat "$downloads" >> "$body_clean"
+
+          # Update the release body
+          gh release edit "$tag" --notes-file "$body_clean"
 
       - name: Verify release
         env:
