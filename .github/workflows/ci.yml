@@ -52,7 +52,7 @@ jobs:
           packages: busybox shfmt shellcheck
 
       - name: Set up Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           check-latest: true
@@ -99,7 +99,7 @@ jobs:
 
       - name: Run markdownlint
         if: matrix.linter == 'markdownlint'
-        uses: DavidAnson/markdownlint-cli2-action@v20
+        uses: DavidAnson/markdownlint-cli2-action@v21
         with:
           config: '.markdownlint.json'
           files: '**/*.md'
@@ -282,7 +282,7 @@ jobs:
             "${{ matrix.sdk_slug }}"
 
       - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
-        uses: openwrt/gh-action-sdk@v6
+        uses: openwrt/gh-action-sdk@v9
         env:
           # Use the official SDK container pinned to the OpenWrt version and target
           # e.g., ghcr.io/openwrt/sdk:x86-64-23.05.3
@@ -560,7 +560,7 @@ jobs:
             "${{ matrix.sdk_slug }}"
 
       - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
-        uses: openwrt/gh-action-sdk@v6
+        uses: openwrt/gh-action-sdk@v9
         env:
           # Use the official SDK container pinned to the OpenWrt version and target
           # e.g., ghcr.io/openwrt/sdk:x86-64-23.05.3
