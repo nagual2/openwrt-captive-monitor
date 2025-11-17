@@ -223,11 +223,15 @@ jobs:
       - name: Set dev channel environment
         id: dev-env
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           # Prefer an 8-character short SHA for artifact naming consistency
           resolved_sha="${GITHUB_SHA:-}"
           if [ -z "$resolved_sha" ]; then
-            resolved_sha=$(git rev-parse HEAD 2>/dev/null || echo nogit)
+            resolved_sha=$(git rev-parse HEAD 2> /dev/null || echo nogit)
           fi
           short_sha=$(echo "$resolved_sha" | cut -c1-8)
           {
@@ -239,7 +243,11 @@ jobs:
 
       - name: Prepare package structure for SDK
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           # Create the expected package structure for the SDK action
           mkdir -p feed/package
           cp -r package/openwrt-captive-monitor feed/package/
@@ -262,7 +270,11 @@ jobs:
 
       - name: Validate SDK image and target
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           ./scripts/validate-sdk-image.sh \
             "ghcr.io/openwrt/sdk:${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}" \
             "${{ matrix.sdk_target }}" \
@@ -292,7 +304,11 @@ jobs:
 
       - name: List and validate produced artifacts
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           ART_DIR="artifacts/${BUILD_NAME}"
           echo "Artifacts directory: $ART_DIR"
 
@@ -306,11 +322,22 @@ jobs:
 
           # Robust IPK discovery with quoted paths and existence checks
           IPK_COUNT=0
-          for ipk_pattern in "$ART_DIR"/*.ipk; do
-            if [ -e "$ipk_pattern" ]; then
-              basename "$ipk_pattern"
+
+          # Top-level .ipk files
+          for ipk in "$ART_DIR"/*.ipk; do
+            [ -e "$ipk" ] || continue
+            basename "$ipk"
+            IPK_COUNT=$((IPK_COUNT + 1))
+          done
+
+          # One-level-deep .ipk files
+          for dir in "$ART_DIR"/*; do
+            [ -e "$dir" ] || continue
+            for f in "$dir"/*.ipk; do
+              [ -e "$f" ] || continue
+              basename "$f"
               IPK_COUNT=$((IPK_COUNT + 1))
-            fi
+            done
           done
 
           if [ "$IPK_COUNT" -eq 0 ]; then
@@ -325,7 +352,11 @@ jobs:
 
       - name: Verify package internals
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           # Robust IPK discovery with quoted paths and existence checks
           IPK_FILE=""
           for ipk_pattern in "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
@@ -344,7 +375,11 @@ jobs:
 
       - name: Validate IPK version metadata
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           echo "=== Validating Version field in .ipk control metadata ==="
           for IPK_FILE in "artifacts/${BUILD_NAME}"/*.ipk; do
             if [ ! -e "$IPK_FILE" ]; then
@@ -370,7 +405,11 @@ jobs:
 
       - name: Build summary
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           {
             echo "## 📦 Build Summary"
             echo ""
@@ -462,11 +501,15 @@ jobs:
       - name: Set PR build environment
         id: pr-env
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           # Prefer an 8-character short SHA for artifact naming consistency
           resolved_sha="${GITHUB_SHA:-}"
           if [ -z "$resolved_sha" ]; then
-            resolved_sha=$(git rev-parse HEAD 2>/dev/null || echo nogit)
+            resolved_sha=$(git rev-parse HEAD 2> /dev/null || echo nogit)
           fi
           short_sha=$(echo "$resolved_sha" | cut -c1-8)
           {
@@ -478,7 +521,11 @@ jobs:
 
       - name: Prepare package structure for SDK
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           # Create the expected package structure for the SDK action
           mkdir -p feed/package
           cp -r package/openwrt-captive-monitor feed/package/
@@ -501,7 +548,11 @@ jobs:
 
       - name: Validate SDK image and target
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           ./scripts/validate-sdk-image.sh \
             "ghcr.io/openwrt/sdk:${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}" \
             "${{ matrix.sdk_target }}" \
@@ -531,7 +582,11 @@ jobs:
 
       - name: List and validate produced artifacts
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           ART_DIR="artifacts/${BUILD_NAME}"
           echo "Artifacts directory: $ART_DIR"
 
@@ -545,11 +600,22 @@ jobs:
 
           # Robust IPK discovery with quoted paths and existence checks
           IPK_COUNT=0
-          for ipk_pattern in "$ART_DIR"/*.ipk; do
-            if [ -e "$ipk_pattern" ]; then
-              basename "$ipk_pattern"
+
+          # Top-level .ipk files
+          for ipk in "$ART_DIR"/*.ipk; do
+            [ -e "$ipk" ] || continue
+            basename "$ipk"
+            IPK_COUNT=$((IPK_COUNT + 1))
+          done
+
+          # One-level-deep .ipk files
+          for dir in "$ART_DIR"/*; do
+            [ -e "$dir" ] || continue
+            for f in "$dir"/*.ipk; do
+              [ -e "$f" ] || continue
+              basename "$f"
               IPK_COUNT=$((IPK_COUNT + 1))
-            fi
+            done
           done
 
           if [ "$IPK_COUNT" -eq 0 ]; then
@@ -564,7 +630,11 @@ jobs:
 
       - name: Verify package internals
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           # Robust IPK discovery with quoted paths and existence checks
           IPK_FILE=""
           for ipk_pattern in "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
@@ -583,7 +653,11 @@ jobs:
 
       - name: Validate IPK version metadata
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           echo "=== Validating Version field in .ipk control metadata ==="
           for IPK_FILE in "artifacts/${BUILD_NAME}"/*.ipk; do
             if [ ! -e "$IPK_FILE" ]; then
@@ -609,7 +683,11 @@ jobs:
 
       - name: Build summary
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           {
             echo "## 📦 Build Summary"
             echo ""
