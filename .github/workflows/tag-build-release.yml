@@ -643,7 +643,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: ${{ env.BUILD_ARTIFACT_NAME }}
           path: .
@@ -953,7 +953,7 @@ jobs:
           echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/$TAG"
 
       - name: Download package artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: ${{ env.PACKAGE_ARTIFACT_NAME }}
           path: .
