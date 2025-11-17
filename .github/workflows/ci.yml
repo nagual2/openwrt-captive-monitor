@@ -228,85 +228,107 @@ jobs:
           echo "Prepared package structure:"
           find feed -type f -name "Makefile" | head -5
 
-      - name: Validate SDK image and target
-        run: |
-          set -euo pipefail
-          ./scripts/validate-sdk-image.sh \
-            "ghcr.io/openwrt/sdk:${{ matrix.arch }}-${{ matrix.openwrt_version }}" \
-            "${{ matrix.sdk_target }}" \
-            "${{ matrix.openwrt_version }}" \
-            "${{ matrix.arch }}"
+       - name: Validate SDK image and target
+         run: |
+           set -euo pipefail
+           ./scripts/validate-sdk-image.sh \
+             "ghcr.io/openwrt/sdk:${{ matrix.arch }}-${{ matrix.openwrt_version }}" \
+             "${{ matrix.sdk_target }}" \
+             "${{ matrix.openwrt_version }}" \
+             "${{ matrix.arch }}"
 
-      - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
-        uses: openwrt/gh-action-sdk@v6
-        env:
-          # Use the official SDK container pinned to the OpenWrt version and target
-          # e.g., ghcr.io/openwrt/sdk:x86_64-23.05.3
-          CONTAINER: ghcr.io/openwrt/sdk:${{ matrix.arch }}-${{ matrix.openwrt_version }}
-          # Package(s) to build inside the SDK
-          PACKAGES: openwrt-captive-monitor
-          BUILD_LOG: 1
-          V: s
-          # Feed configuration - use default feeds plus our local feed
-          FEEDNAME: local
-          # Pass CI-provided DEV_SUFFIX into the SDK build to allow Makefiles to append -dev on main
-          DEV_SUFFIX: ${{ steps.dev.outputs.DEV_SUFFIX }}
-          # Mount points for the action
-          ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
-          FEED_DIR: ${{ github.workspace }}/feed
+       - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
+         uses: openwrt/gh-action-sdk@v6
+         env:
+           # Use the official SDK container pinned to the OpenWrt version and target
+           # e.g., ghcr.io/openwrt/sdk:x86_64-23.05.3
+           CONTAINER: ghcr.io/openwrt/sdk:${{ matrix.arch }}-${{ matrix.openwrt_version }}
+           # Package(s) to build inside the SDK
+           PACKAGES: openwrt-captive-monitor
+           BUILD_LOG: 1
+           V: s
+           # Feed configuration - use default feeds plus our local feed
+           FEEDNAME: local
+           # Pass CI-provided DEV_SUFFIX into the SDK build to allow Makefiles to append -dev on main
+           DEV_SUFFIX: ${{ steps.dev.outputs.DEV_SUFFIX }}
+           # Mount points for the action
+           ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
+           FEED_DIR: ${{ github.workspace }}/feed
 
-      - name: List and validate produced artifacts
-        run: |
-          set -euo pipefail
-          ART_DIR="artifacts/${BUILD_NAME}"
-          echo "Artifacts directory: $ART_DIR"
-          ls -la "$ART_DIR"
-          echo "IPK files:"
-          find "$ART_DIR" -name "*.ipk" -printf '%f\n' || true
-          COUNT=$(find "$ART_DIR" -name "*.ipk" | wc -l | tr -d ' ')
-          if [ "$COUNT" -eq 0 ]; then
-            echo "error: no .ipk files found in $ART_DIR" >&2
-            exit 1
-          fi
+       - name: List and validate produced artifacts
+         run: |
+           set -euo pipefail
+           ART_DIR="artifacts/${BUILD_NAME}"
+           echo "Artifacts directory: $ART_DIR"
+           
+           if [ ! -d "$ART_DIR" ]; then
+             echo "ERROR: Artifact directory not found: $ART_DIR"
+             exit 1
+           fi
+           
+           ls -la "$ART_DIR"
+           echo "IPK files:"
+           
+           # Robust IPK discovery with quoted paths and existence checks
+           IPK_COUNT=0
+           for ipk_pattern in "$ART_DIR"/*.ipk; do
+             if [ -e "$ipk_pattern" ]; then
+               basename "$ipk_pattern"
+               IPK_COUNT=$((IPK_COUNT + 1))
+             fi
+           done
+           
+           if [ "$IPK_COUNT" -eq 0 ]; then
+             echo "error: no .ipk files found in $ART_DIR" >&2
+             exit 1
+           fi
 
-      - name: Install verification tools
-        uses: ./.github/actions/setup-system-packages
-        with:
-          packages: binutils tar
+       - name: Install verification tools
+         uses: ./.github/actions/setup-system-packages
+         with:
+           packages: binutils tar
 
-      - name: Verify package internals
-        run: |
-          set -euo pipefail
-          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" | head -n1)
-          if [ -z "$IPK_FILE" ]; then
-            echo "error: no openwrt-captive-monitor package found" >&2
-            exit 1
-          fi
-          echo "Verifying package: $IPK_FILE"
-          ./scripts/verify_package.sh "$IPK_FILE"
+       - name: Verify package internals
+         run: |
+           set -euo pipefail
+           # Robust IPK discovery with quoted paths and existence checks
+           IPK_FILE=""
+           for ipk_pattern in "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
+             if [ -e "$ipk_pattern" ]; then
+               IPK_FILE="$ipk_pattern"
+               break
+             fi
+           done
+           
+           if [ -z "$IPK_FILE" ]; then
+             echo "error: no openwrt-captive-monitor package found" >&2
+             exit 1
+           fi
+           echo "Verifying package: $IPK_FILE"
+           ./scripts/verify_package.sh "$IPK_FILE"
 
-      - name: Validate IPK version metadata
-        run: |
-          set -euo pipefail
-          echo "=== Validating Version field in .ipk control metadata ==="
-          for IPK_FILE in "artifacts/${BUILD_NAME}"/*.ipk; do
-            if [ ! -e "$IPK_FILE" ]; then
-              echo "warning: no .ipk files found" >&2
-              continue
-            fi
-            echo ""
-            echo "Validating: $(basename "$IPK_FILE")"
-            # Main branch builds should have -dev suffix
-            ./scripts/validate-ipk-version.sh "$IPK_FILE" "main"
-          done
-          echo ""
-          echo "All packages validated successfully"
+       - name: Validate IPK version metadata
+         run: |
+           set -euo pipefail
+           echo "=== Validating Version field in .ipk control metadata ==="
+           for IPK_FILE in "artifacts/${BUILD_NAME}"/*.ipk; do
+             if [ ! -e "$IPK_FILE" ]; then
+               echo "warning: no .ipk files found" >&2
+               continue
+             fi
+             echo ""
+             echo "Validating: $(basename "$IPK_FILE")"
+             # Main branch builds should have -dev suffix
+             ./scripts/validate-ipk-version.sh "$IPK_FILE" "main"
+           done
+           echo ""
+           echo "All packages validated successfully"
 
-      - name: Upload dev artifacts
-        uses: actions/upload-artifact@v5
-        with:
-          name: ipk-${{ matrix.sdk_slug }}-dev+${{ env.SHORT_SHA }}
-          path: artifacts/${{ env.BUILD_NAME }}
+       - name: Upload dev artifacts
+         uses: actions/upload-artifact@v5
+         with:
+           name: ipk-${{ matrix.sdk_slug }}-dev+${{ env.SHORT_SHA }}
+           path: artifacts/${{ env.BUILD_NAME }}
           retention-days: 7
           if-no-files-found: error
           compression-level: 6
@@ -442,11 +464,25 @@ jobs:
           set -euo pipefail
           ART_DIR="artifacts/${BUILD_NAME}"
           echo "Artifacts directory: $ART_DIR"
+
+          if [ ! -d "$ART_DIR" ]; then
+            echo "ERROR: Artifact directory not found: $ART_DIR"
+            exit 1
+          fi
+
           ls -la "$ART_DIR"
           echo "IPK files:"
-          find "$ART_DIR" -name "*.ipk" -printf '%f\n' || true
-          COUNT=$(find "$ART_DIR" -name "*.ipk" | wc -l | tr -d ' ')
-          if [ "$COUNT" -eq 0 ]; then
+
+          # Robust IPK discovery with quoted paths and existence checks
+          IPK_COUNT=0
+          for ipk_pattern in "$ART_DIR"/*.ipk; do
+            if [ -e "$ipk_pattern" ]; then
+              basename "$ipk_pattern"
+              IPK_COUNT=$((IPK_COUNT + 1))
+            fi
+          done
+
+          if [ "$IPK_COUNT" -eq 0 ]; then
             echo "error: no .ipk files found in $ART_DIR" >&2
             exit 1
           fi
@@ -459,7 +495,15 @@ jobs:
       - name: Verify package internals
         run: |
           set -euo pipefail
-          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" | head -n1)
+          # Robust IPK discovery with quoted paths and existence checks
+          IPK_FILE=""
+          for ipk_pattern in "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
+            if [ -e "$ipk_pattern" ]; then
+              IPK_FILE="$ipk_pattern"
+              break
+            fi
+          done
+
           if [ -z "$IPK_FILE" ]; then
             echo "error: no openwrt-captive-monitor package found" >&2
             exit 1
