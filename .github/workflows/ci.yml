@@ -155,7 +155,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: &sdk_targets
+        include:
           # Supported OpenWrt SDK targets for CI package builds
           - openwrt_version: '23.05.3'
             sdk_target: 'x86/64'
@@ -289,8 +289,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "=== Validating Version field in .ipk control metadata ==="
-          for IPK_FILE in artifacts/${BUILD_NAME}/*.ipk; do
-            if [ ! -f "$IPK_FILE" ]; then
+          for IPK_FILE in "artifacts/${BUILD_NAME}"/*.ipk; do
+            if [ ! -e "$IPK_FILE" ]; then
               echo "warning: no .ipk files found" >&2
               continue
             fi
@@ -338,7 +338,23 @@ jobs:
       fail-fast: false
       matrix:
         # Reuse the same SDK target coverage for PR validation builds
-        include: *sdk_targets
+        include:
+          - openwrt_version: '23.05.3'
+            sdk_target: 'x86/64'
+            sdk_slug: 'x86-64'
+            arch: 'x86_64'
+          - openwrt_version: '23.05.3'
+            sdk_target: 'ath79/generic'
+            sdk_slug: 'ath79-generic'
+            arch: 'ath79-generic'
+          - openwrt_version: '23.05.3'
+            sdk_target: 'ramips/mt76x8'
+            sdk_slug: 'ramips-mt76x8'
+            arch: 'ramips-mt76x8'
+          - openwrt_version: '23.05.3'
+            sdk_target: 'mediatek/filogic'
+            sdk_slug: 'mediatek-filogic'
+            arch: 'mediatek-filogic'
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -455,8 +471,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "=== Validating Version field in .ipk control metadata ==="
-          for IPK_FILE in artifacts/${BUILD_NAME}/*.ipk; do
-            if [ ! -f "$IPK_FILE" ]; then
+          for IPK_FILE in "artifacts/${BUILD_NAME}"/*.ipk; do
+            if [ ! -e "$IPK_FILE" ]; then
               echo "warning: no .ipk files found" >&2
               continue
             fi
