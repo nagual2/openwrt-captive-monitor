@@ -181,6 +181,30 @@ jobs:
             arch: 'mediatek-filogic'
             sdk_slug: 'mediatek-filogic'
             sdk_target: 'mediatek/filogic'
+          - openwrt_version: '23.05.3'
+            target: 'ipq40xx'
+            subtarget: 'generic'
+            arch: 'ipq40xx-generic'
+            sdk_slug: 'ipq40xx-generic'
+            sdk_target: 'ipq40xx/generic'
+          - openwrt_version: '23.05.3'
+            target: 'ipq806x'
+            subtarget: 'generic'
+            arch: 'ipq806x-generic'
+            sdk_slug: 'ipq806x-generic'
+            sdk_target: 'ipq806x/generic'
+          - openwrt_version: '23.05.3'
+            target: 'bcm27xx'
+            subtarget: 'bcm2711'
+            arch: 'bcm27xx-bcm2711'
+            sdk_slug: 'bcm27xx-bcm2711'
+            sdk_target: 'bcm27xx/bcm2711'
+          - openwrt_version: '23.05.3'
+            target: 'rockchip'
+            subtarget: 'armv8'
+            arch: 'rockchip-armv8'
+            sdk_slug: 'rockchip-armv8'
+            sdk_target: 'rockchip/armv8'
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -338,7 +362,7 @@ jobs:
       - name: Upload dev artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: ipk-${{ matrix.sdk_slug }}-dev+${{ env.SHORT_SHA }}
+          name: captive-monitor-${{ matrix.sdk_target }}-dev+${{ env.SHORT_SHA }}
           path: artifacts/${{ env.BUILD_NAME }}
           retention-days: 7
           if-no-files-found: error
@@ -396,6 +420,30 @@ jobs:
             arch: 'mediatek-filogic'
             sdk_slug: 'mediatek-filogic'
             sdk_target: 'mediatek/filogic'
+          - openwrt_version: '23.05.3'
+            target: 'ipq40xx'
+            subtarget: 'generic'
+            arch: 'ipq40xx-generic'
+            sdk_slug: 'ipq40xx-generic'
+            sdk_target: 'ipq40xx/generic'
+          - openwrt_version: '23.05.3'
+            target: 'ipq806x'
+            subtarget: 'generic'
+            arch: 'ipq806x-generic'
+            sdk_slug: 'ipq806x-generic'
+            sdk_target: 'ipq806x/generic'
+          - openwrt_version: '23.05.3'
+            target: 'bcm27xx'
+            subtarget: 'bcm2711'
+            arch: 'bcm27xx-bcm2711'
+            sdk_slug: 'bcm27xx-bcm2711'
+            sdk_target: 'bcm27xx/bcm2711'
+          - openwrt_version: '23.05.3'
+            target: 'rockchip'
+            subtarget: 'armv8'
+            arch: 'rockchip-armv8'
+            sdk_slug: 'rockchip-armv8'
+            sdk_target: 'rockchip/armv8'
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -553,7 +601,7 @@ jobs:
       - name: Upload PR artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: ipk-${{ matrix.sdk_slug }}-pr+${{ env.SHORT_SHA }}
+          name: captive-monitor-${{ matrix.sdk_target }}-pr+${{ env.SHORT_SHA }}
           path: artifacts/${{ env.BUILD_NAME }}
           retention-days: 7
           if-no-files-found: error
