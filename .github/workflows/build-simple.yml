@@ -42,17 +42,23 @@ jobs:
           opkg-build -h
           opkg-make-index -h
           
-      - name: Compute BUILD_NAME
+      - name: Compute BUILD_NAME and SHORT_SHA
         run: |
           set -euo pipefail
           if [ -z "${BUILD_NAME:-}" ]; then
             ts=$(date -u +%Y%m%d-%H%M%S)
-            short_sha=$(echo "${GITHUB_SHA:-$(git rev-parse --short HEAD 2>/dev/null || echo nogit)}" | cut -c1-7)
-            echo "BUILD_NAME=${ts}-${short_sha}" >> "$GITHUB_ENV"
+            short_sha=$(echo "${GITHUB_SHA:-$(git rev-parse --short HEAD 2>/dev/null || echo nogit)}" | cut -c1-8)
+            build_name="${ts}-${short_sha}"
+            echo "BUILD_NAME=${build_name}" >> "$GITHUB_ENV"
+            echo "SHORT_SHA=${short_sha}" >> "$GITHUB_ENV"
           else
             echo "BUILD_NAME=${BUILD_NAME}" >> "$GITHUB_ENV"
+            # Extract short SHA from BUILD_NAME if it follows the timestamp-SHA pattern
+            short_sha=$(echo "${BUILD_NAME}" | grep -oE '[0-9a-f]{8}$' || echo "unknown")
+            echo "SHORT_SHA=${short_sha}" >> "$GITHUB_ENV"
           fi
           echo "Using BUILD_NAME=$(grep -m1 '^BUILD_NAME=' "$GITHUB_ENV" | cut -d= -f2)"
+          echo "Using SHORT_SHA=$(grep -m1 '^SHORT_SHA=' "$GITHUB_ENV" | cut -d= -f2)"
 
       - name: Make build script executable
         run: chmod +x ./scripts/build_ipk.sh
@@ -60,10 +66,40 @@ jobs:
       - name: Build package
         run: ./scripts/build_ipk.sh
 
+      - name: Validate and discover artifacts
+        run: |
+          set -euo pipefail
+          ART_DIR="artifacts/${BUILD_NAME}"
+          
+          if [ ! -d "$ART_DIR" ]; then
+            echo "ERROR: Artifact directory not found: $ART_DIR"
+            exit 1
+          fi
+          
+          echo "Checking for .ipk files in $ART_DIR"
+          IPK_COUNT=0
+          
+          # Robust IPK discovery with quoted paths and existence checks
+          for ipk_pattern in "$ART_DIR"/openwrt-captive-monitor_*.ipk; do
+            if [ -e "$ipk_pattern" ]; then
+              echo "Found: $(basename "$ipk_pattern")"
+              IPK_COUNT=$((IPK_COUNT + 1))
+            fi
+          done
+          
+          if [ "$IPK_COUNT" -eq 0 ]; then
+            echo "ERROR: no .ipk files found in $ART_DIR"
+            echo "Directory contents:"
+            ls -la "$ART_DIR"
+            exit 1
+          fi
+          
+          echo "✓ Found $IPK_COUNT .ipk file(s)"
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: ipk-package
+          name: ipk-host-build+${{ env.SHORT_SHA }}
           path: ./artifacts/${{ env.BUILD_NAME }}
           retention-days: 5
           if-no-files-found: error
