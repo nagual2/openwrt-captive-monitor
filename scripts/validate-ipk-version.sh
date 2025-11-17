@@ -26,6 +26,22 @@ script_dir=$(cd "$(dirname "$0")" && pwd)
 # shellcheck source=scripts/lib/colors.sh
 . "$script_dir/lib/colors.sh"
 
+# Temporary directory path (created lazily when needed)
+# Defined early so cleanup can safely reference it even if creation fails
+# or script exits before it's set.
+temp_dir=""
+
+# shellcheck disable=SC2317  # cleanup is invoked via trap
+cleanup() {
+    # Remove temp directory if it was created
+    if [ -n "$temp_dir" ] && [ -d "$temp_dir" ]; then
+        rm -rf "$temp_dir"
+    fi
+}
+
+# Ensure cleanup runs on script exit or interruption
+trap 'cleanup' EXIT INT TERM
+
 print_usage() {
     cat << 'EOF'
 Usage: validate-ipk-version.sh <ipk_file> <branch_type>
@@ -87,10 +103,6 @@ printf "\n"
 
 # Create temporary directory for extraction
 temp_dir=$(mktemp -d)
-cleanup() {
-    rm -rf "$temp_dir"
-}
-trap cleanup EXIT INT TERM HUP
 
 work_dir="$temp_dir/ipk"
 mkdir -p "$work_dir"
