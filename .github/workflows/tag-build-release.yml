@@ -206,50 +206,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y axel
 
+      - name: Validate SDK image and target
+        run: |
+          set -euo pipefail
+          ./scripts/validate-sdk-image.sh \
+            "ghcr.io/openwrt/sdk:${{ env.OPENWRT_ARCH }}-${{ env.OPENWRT_VERSION }}" \
+            "x86/64" \
+            "${{ env.OPENWRT_VERSION }}" \
+            "${{ env.OPENWRT_ARCH }}"
+
       - name: Validate SDK download URLs
         run: |
-          set -euxo pipefail
-          SDK_VERSION="${{ env.OPENWRT_VERSION }}"
-          SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
-          
-          # Primary and fallback mirrors
-          MIRRORS=(
-            "https://github.com/nagual2/openwrt-captive-monitor/releases/download/sdk-${SDK_VERSION}/${SDK_FILE}"
-            "https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
-            "https://mirror2.openwrt.org/sources/${SDK_FILE}"
-            "https://mirror.bytemark.co.uk/openwrt/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
-          )
-          
-          echo "=== Validating SDK Download URLs ==="
-          echo "SDK Version: $SDK_VERSION"
-          echo "SDK File: $SDK_FILE"
-          echo ""
-          
-          valid_mirror_found=false
-          
-          for mirror in "${MIRRORS[@]}"; do
-            echo "Checking mirror: $mirror"
-            if curl --head --silent --connect-timeout 10 --max-time 30 "$mirror" | grep -q "HTTP/.* 200"; then
-              echo "✅ Mirror is accessible: $mirror"
-              valid_mirror_found=true
-              break
-            else
-              echo "❌ Mirror not accessible: $mirror"
-            fi
-          done
-          
-          if [ "$valid_mirror_found" = false ]; then
-            echo "❌ ERROR: No accessible SDK mirrors found for version $SDK_VERSION"
-            echo "This usually means:"
-            echo "1. The OpenWrt version ($SDK_VERSION) doesn't exist"
-            echo "2. The target architecture (x86/64) is not supported for this version"
-            echo "3. Network connectivity issues"
-            echo ""
-            echo "Please verify the OpenWrt version and try again."
-            exit 1
-          fi
-          
-          echo "✅ SDK URL validation passed"
+          set -euo pipefail
+          ./scripts/validate-sdk-url.sh \
+            "${{ env.OPENWRT_VERSION }}" \
+            "x86/64" \
+            "${{ env.OPENWRT_ARCH }}"
 
       - name: Download and extract OpenWrt SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
@@ -514,7 +486,15 @@ jobs:
             exit 1
           fi
 
-          IPK_STAGED=$(find "$ARTIFACT_DIR" -maxdepth 1 -type f -name "openwrt-captive-monitor_*.ipk" | head -n1 || true)
+          # Robust IPK discovery with quoted paths and existence checks
+          IPK_STAGED=""
+          for ipk_pattern in "$ARTIFACT_DIR"/openwrt-captive-monitor_*.ipk; do
+            if [ -e "$ipk_pattern" ]; then
+              IPK_STAGED="$ipk_pattern"
+              break
+            fi
+          done
+          
           if [ -z "$IPK_STAGED" ]; then
             echo "ERROR: Unable to locate staged .ipk in $ARTIFACT_DIR"
             echo "Contents:"; ls -la "$ARTIFACT_DIR"
@@ -522,7 +502,8 @@ jobs:
           fi
 
           IPK_NAME=$(basename "$IPK_STAGED")
-          ARTIFACT_NAME="openwrt-package-${BUILD_NAME}"
+          # Include target info in artifact name for consistency
+          ARTIFACT_NAME="ipk-x86-64-${BUILD_NAME}"
 
           {
             echo "ipk_file=$IPK_STAGED"
@@ -538,7 +519,19 @@ jobs:
         run: |
           set -euo pipefail
           echo "Release artifacts directory: artifacts/${BUILD_NAME}"
-          find "artifacts/${BUILD_NAME}" -maxdepth 1 -type f -name "*.ipk" -printf '%f\n' | sort
+          
+          # Robust file discovery with existence checks
+          if [ -d "artifacts/${BUILD_NAME}" ]; then
+            for ipk_pattern in "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
+              if [ -e "$ipk_pattern" ]; then
+                basename "$ipk_pattern"
+              fi
+            done | sort
+          else
+            echo "ERROR: Artifact directory does not exist"
+            exit 1
+          fi
+          
           IPK_NAME="${{ steps.artifacts.outputs.ipk_name }}"
           echo "IPK filename: $IPK_NAME"
           if echo "$IPK_NAME" | grep -qiE 'dev'; then
