@@ -707,7 +707,7 @@ but produces packages that may differ slightly from CI builds:
   OpenWrt SDK best practices with citations.
 ```
 
-### 5. `/docs/CI_WORKFLOW_SIMPLIFIED.md`
+### 5. `/docs/ci/CI_WORKFLOW_SIMPLIFIED.md`
 
 **Sections:** Simplified Approach, SDK Build
 
@@ -835,7 +835,7 @@ followed.
 **Last Updated:** 2025-01-30  
 **Related Documents:**
 - [SDK Build Workflow Guide](guides/sdk-build-workflow.md)
-- [CI Workflow Simplified](CI_WORKFLOW_SIMPLIFIED.md)
+- [CI Workflow Simplified](ci/CI_WORKFLOW_SIMPLIFIED.md)
 - [Packaging and Distribution Guide](packaging.md)
 - [CI Notes](project/CI_NOTES.md)
 
@@ -1571,7 +1571,7 @@ but produces packages that may differ slightly from CI builds:
   OpenWrt SDK best practices with citations.
 ```
 
-### 5. `/docs/CI_WORKFLOW_SIMPLIFIED.md`
+### 5. `/docs/ci/CI_WORKFLOW_SIMPLIFIED.md`
 
 **Разделы:** Simplified Approach, SDK Build
 
@@ -1697,6 +1697,6 @@ SDK — это предкомпилированное окружение, пре
 **Последнее обновление:** 2025-01-30  
 **Связанные документы:**
 - [Руководство рабочего потока сборки SDK](guides/sdk-build-workflow.md)
-- [Упрощённый рабочий поток CI](CI_WORKFLOW_SIMPLIFIED.md)
+- [Упрощённый рабочий поток CI](ci/CI_WORKFLOW_SIMPLIFIED.md)
 - [Руководство по упаковыванию и распределению](packaging.md)
 - [Примечания CI](project/CI_NOTES.md)

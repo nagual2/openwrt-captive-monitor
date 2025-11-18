@@ -23,7 +23,7 @@ This section contains various reports, analyses, and documentation generated dur
 - [Workflow Diagnostics](WORKFLOW_DIAGNOSTICS.md) - Workflow-specific diagnostics
 
 ### 📋 Implementation Reports
-- [CodeQL Fix Summary](CODEQL_FIX_SUMMARY.md) - CodeQL security fixes summary
+- [CodeQL Fix Summary](../ci/CODEQL_FIX_SUMMARY.md) - CodeQL security fixes summary
 - [IPK Build Fix Summary](IPK_BUILD_FIX_SUMMARY.md) - Package build fixes
 - [Implementation Notes](IMPLEMENTATION_NOTES.md) - *Moved to setup folder*
 - [Implementation Summary](IMPLEMENTATION_SUMMARY.md) - *Moved to setup folder*
