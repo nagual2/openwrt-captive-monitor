@@ -13,7 +13,7 @@ This section contains all security-related documentation for the openwrt-captive
 - [Security Scanning Implementation](SECURITY_SCANNING_IMPLEMENTATION.md) - Implementation of automated security scanning
 
 ### Sensitive Information
-- [Sensitive Info Removal Report](SENSITIVE_INFO_REMOVAL_REPORT.md) - Documentation of sensitive information removal
+- [Sensitive Info Removal Report](../reports/SENSITIVE_INFO_REMOVAL_REPORT.md) - Documentation of sensitive information removal
 
 ## 🛡️ Security Policies and Procedures
 

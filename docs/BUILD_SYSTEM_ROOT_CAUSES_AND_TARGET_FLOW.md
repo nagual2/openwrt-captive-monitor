@@ -626,7 +626,7 @@ make package/openwrt-captive-monitor/compile V=s
 # Output: bin/packages/*/base/openwrt-captive-monitor_*.ipk
 \`\`\`
 
-See [SDK Build Workflow](docs/guides/sdk-build-workflow.md) for detailed instructions.
+See [SDK Build Workflow](guides/sdk-build-workflow.md) for detailed instructions.
 ```
 
 ### 2. `/docs/packaging.md`
@@ -1490,7 +1490,7 @@ make package/openwrt-captive-monitor/compile V=s
 # Output: bin/packages/*/base/openwrt-captive-monitor_*.ipk
 \`\`\`
 
-See [SDK Build Workflow](docs/guides/sdk-build-workflow.md) for detailed instructions.
+See [SDK Build Workflow](guides/sdk-build-workflow.md) for detailed instructions.
 ```
 
 ### 2. `/docs/packaging.md`

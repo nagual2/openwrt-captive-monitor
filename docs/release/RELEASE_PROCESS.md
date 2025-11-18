@@ -30,7 +30,7 @@ These requirements ensure that:
 - Release artifacts are built from verified, secure commits
 - The release chain of custody is maintained from commit through signed artifact
 
-For detailed information about branch protection rules, see [`.github/settings.yml`](./.github/settings.yml).
+For detailed information about branch protection rules, see [`.github/settings.yml`](../../.github/settings.yml).
 
 ## Semantic Versioning
 

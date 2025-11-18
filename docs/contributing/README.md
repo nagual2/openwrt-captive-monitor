@@ -24,17 +24,17 @@ For complete development environment setup, see the main [Contributing Guide](CO
 ## 📝 Contribution Types
 
 ### Bug Reports
-- Use the [Bug Report template](../../../.github/ISSUE_TEMPLATE/bug_report.md)
+- Use the [Bug Report template](../../.github/ISSUE_TEMPLATE/bug.yml)
 - Include detailed reproduction steps
 - Provide system information and logs
 
 ### Feature Requests
-- Use the [Feature Request template](../../../.github/ISSUE_TEMPLATE/feature_request.md)
+- Use the [Feature Request template](../../.github/ISSUE_TEMPLATE/feature.yml)
 - Describe the problem you're solving
 - Explain the proposed solution
 
 ### Documentation
-- Report documentation issues with the [Documentation Issue template](../../../.github/ISSUE_TEMPLATE/docs.yml)
+- Report documentation issues with the [Documentation Issue template](../../.github/ISSUE_TEMPLATE/docs.yml)
 - Submit documentation improvements via pull requests
 
 ### Code Contributions
@@ -89,7 +89,7 @@ For complete development environment setup, see the main [Contributing Guide](CO
 - `help wanted` - Community help needed
 
 ### PR Templates
-- Use the [PR template](../../../.github/pull_request_template.md)
+- Use the [PR template](../../.github/PULL_REQUEST_TEMPLATE.md)
 - Include testing instructions
 - Document breaking changes
 
@@ -103,7 +103,7 @@ For complete development environment setup, see the main [Contributing Guide](CO
 ### Community
 - [GitHub Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions) - General questions
 - [GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues) - Bug reports and feature requests
-- [Support Documentation](../../../.github/SUPPORT.md) - Getting help
+- [Support Documentation](../../.github/SUPPORT.md) - Getting help
 
 ### Development Tools
 - [CI/CD Documentation](../setup/CI_MODERNIZATION_2025.md) - Understanding our CI/CD

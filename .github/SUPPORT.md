@@ -46,7 +46,7 @@ The openwrt-captive-monitor project provides several channels for getting suppor
 
 **Primary documentation**:
 * [README.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/README.md) - Installation, configuration, and basic usage
-* [Extended documentation](docs/) - Advanced troubleshooting and deployment guides
+* [Extended documentation](https://github.com/nagual2/openwrt-captive-monitor/tree/main/docs) - Advanced troubleshooting and deployment guides
 * [CHANGELOG.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/docs/release/CHANGELOG.md) - Version history and release notes
 
 **Configuration reference**:
@@ -181,7 +181,7 @@ Thank you for using openwrt-captive-monitor! Your feedback and contributions hel
 
 **Основная документация**:
 * [README.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/README.md) - Установка, конфигурация и базовое использование
-* [Расширенная документация](docs/) - Продвинутое устранение неполадок и руководства по развёртыванию
+* [Расширенная документация](https://github.com/nagual2/openwrt-captive-monitor/tree/main/docs) - Продвинутое устранение неполадок и руководства по развёртыванию
 * [CHANGELOG.md](https://github.com/nagual2/openwrt-captive-monitor/blob/main/docs/release/CHANGELOG.md) - История версий и примечания к выпускам
 
 **Справочник по конфигурации**:

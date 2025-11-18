@@ -86,7 +86,7 @@ opkg list | grep captive-monitor
 ## 📚 Дополнительная информация
 
 - Подробные инструкции: [../../README.md](../../README.md#build-with-the-openwrt-sdk--buildroot)
-- Release checklist: [../RELEASE_CHECKLIST.md](../RELEASE_CHECKLIST.md)
-- Troubleshooting: [../../docs/openwrt_captive_monitor_README.md](../../docs/openwrt_captive_monitor_README.md)
+- Release checklist: [release-checklist.md](release-checklist.md)
+- Troubleshooting: [../guides/troubleshooting.md](../guides/troubleshooting.md)
 
 **Рекомендация:** Используйте GitHub Actions - это самый надежный и быстрый способ получить готовые пакеты без установки дополнительных инструментов!

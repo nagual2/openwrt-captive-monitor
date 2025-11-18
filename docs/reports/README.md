@@ -25,8 +25,8 @@ This section contains various reports, analyses, and documentation generated dur
 ### 📋 Implementation Reports
 - [CodeQL Fix Summary](../ci/CODEQL_FIX_SUMMARY.md) - CodeQL security fixes summary
 - [IPK Build Fix Summary](IPK_BUILD_FIX_SUMMARY.md) - Package build fixes
-- [Implementation Notes](IMPLEMENTATION_NOTES.md) - *Moved to setup folder*
-- [Implementation Summary](IMPLEMENTATION_SUMMARY.md) - *Moved to setup folder*
+- [Implementation Notes](../setup/IMPLEMENTATION_NOTES.md) - Implementation details
+- [Implementation Summary](../setup/IMPLEMENTATION_SUMMARY.md) - Quick summary
 
 ### 📖 README and Documentation Reports
 - [README Links Report](README_LINKS_REPORT.md) - README link validation report
@@ -35,8 +35,8 @@ This section contains various reports, analyses, and documentation generated dur
 - [README Vulnerability Summary](README_VULNERABILITY_SUMMARY.md) - README security vulnerability summary
 
 ### 🔒 Security Reports
-- [Security Cleanup Summary](SECURITY_CLEANUP_SUMMARY.md) - Security cleanup documentation
-- [Security Scanning Implementation](SECURITY_SCANNING_IMPLEMENTATION.md) - *Moved to security folder*
+- [Security Cleanup Summary](../security/SECURITY_CLEANUP_SUMMARY.md) - Security cleanup documentation
+- [Security Scanning Implementation](../security/SECURITY_SCANNING_IMPLEMENTATION.md) - Scanning details
 - [Sensitive Info Removal Report](SENSITIVE_INFO_REMOVAL_REPORT.md) - Sensitive information cleanup
 - [Security Contact Email Investigation Report](SECURITY_EMAIL_INVESTIGATION_REPORT.md) - Investigation of the `security@nagual2.com` contact address
 
@@ -49,7 +49,7 @@ This section contains various reports, analyses, and documentation generated dur
 ### 🛠️ Task and Workflow Reports
 - [Task Completion Report](TASK_COMPLETION_REPORT.md) - General task completion summary
 - [Ticket Resolution](TICKET_RESOLUTION.md) - Ticket resolution documentation
-- [Toolchain Initialization Fix](TOOLCHAIN_INITIALIZATION_FIX.md) - *Moved to setup folder*
+- [Toolchain Initialization Fix](../setup/TOOLCHAIN_INITIALIZATION_FIX.md) - Toolchain setup details
 - [Workflow Fixes Summary](WORKFLOW_FIXES_SUMMARY.md) - Workflow fixes and improvements
 - [Workflow Refactor Summary](WORKFLOW_REFACTOR_SUMMARY.md) - Workflow refactoring documentation
 

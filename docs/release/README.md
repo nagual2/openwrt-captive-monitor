@@ -108,7 +108,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/):
 
 ### Configuration
 - [Release Please Config](../../release-please-config.json) - Release automation configuration
-- [GitHub Workflows](../../../.github/workflows/) - CI/CD and release workflows
+- [GitHub Workflows](../../.github/workflows/) - CI/CD and release workflows
 
 ## 📚 Related Documentation
 
@@ -129,7 +129,7 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/):
 ## 📞 Support
 
 ### Getting Help
-- [Support Documentation](../../../.github/SUPPORT.md) - Getting help and support
+- [Support Documentation](../../.github/SUPPORT.md) - Getting help and support
 - [GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues) - Bug reports and feature requests
 - [GitHub Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions) - Community support
 

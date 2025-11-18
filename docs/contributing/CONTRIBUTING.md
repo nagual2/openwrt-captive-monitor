@@ -26,7 +26,7 @@ The repository follows a **trunk-based** workflow centred on the `main` branch. 
    - `chore/<short-description>` for tooling, CI, or maintenance work
    - `docs/<short-description>` for documentation-only updates
    - `hotfix/<short-description>` for urgent production fixes that must land ahead of the regular release cadence
-   Refer to [`BRANCHES_AND_MERGE_POLICY.md`](./docs/project/BRANCHES_AND_MERGE_POLICY.md) for the latest merge sequencing, branch protection checklist, and cleanup tasks.
+   Refer to [`BRANCHES_AND_MERGE_POLICY.md`](../project/BRANCHES_AND_MERGE_POLICY.md) for the latest merge sequencing, branch protection checklist, and cleanup tasks.
 3. Prefer incremental pull requests (aim for < ~300 lines of net change). Split large efforts into multiple PRs that can be reviewed independently.
 4. Avoid long-lived release branches. If you need to ship a hotfix, branch from the appropriate tag, cherry-pick the fix, release, and merge the change back into `main` immediately afterwards.
 
@@ -87,7 +87,7 @@ If the project eventually needs LTS maintenance, treat it as an exception: cut a
 
 - Fill out the PR template. It captures the summary, testing evidence, and review checklist all in one place.
 - Link the relevant issue or explain the motivation in the summary so that reviewers have context.
-- Request at least one reviewer (see [`CODEOWNERS`](./.github/CODEOWNERS)) and wait for an approval before merging. Self-approval is reserved for docs-only or CI-only changes with no risk.
+- Request at least one reviewer (see [`CODEOWNERS`](../../.github/CODEOWNERS)) and wait for an approval before merging. Self-approval is reserved for docs-only or CI-only changes with no risk.
 - Ensure the GitHub Actions jobs finish green:
   - `lint (shfmt)`, `lint (shellcheck)`, `lint (markdownlint)`, `lint (actionlint)`
   - `test`
@@ -134,20 +134,20 @@ Repository administrators maintain the following settings on `main`:
 - ❌ **Force pushes blocked**: No force pushes allowed to `main`
 - ❌ **Branch deletion blocked**: The `main` branch cannot be deleted
 
-For detailed information about how these rules interact with the security scanning pipeline, see [`.github/SECURITY.md`](./.github/SECURITY.md).
+For detailed information about how these rules interact with the security scanning pipeline, see [`.github/SECURITY.md`](../../.github/SECURITY.md).
 
 ### Configuration Location
 
-These branch protection rules are codified in [`.github/settings.yml`](./.github/settings.yml) and enforced by GitHub's branch protection system.
+These branch protection rules are codified in [`.github/settings.yml`](../../.github/settings.yml) and enforced by GitHub's branch protection system.
 
 ---
 
 ## 5. Issue triage & support
 
 - Use the GitHub Issue Forms to provide structured bug reports, feature requests, support questions, and documentation issues.
-  The forms guide you through providing the necessary information for effective triage.
-- For detailed guidance on templates and label usage, see [docs/triage/TEMPLATES_AND_LABELS.md](./docs/triage/TEMPLATES_AND_LABELS.md).
-- Security problems should go through the private disclosure channel listed in our [Security Policy](.github/SECURITY.md) or GitHub security advisories.
+   The forms guide you through providing the necessary information for effective triage.
+- For detailed guidance on templates and label usage, see [Triage Templates](../triage/TEMPLATES_AND_LABELS.md).
+- Security problems should go through the private disclosure channel listed in our [Security Policy](../../.github/SECURITY.md) or GitHub security advisories.
 - Tag issues with `good-first-issue` when they have a clear scope and minimal risk so newcomers can help.
 
 ---
@@ -174,7 +174,7 @@ If a regression requires a hotfix, branch from the affected tag, apply the fix, 
 
 ## 7. Getting help
 
-- Support options and guidance are available in our [Support Guide](.github/SUPPORT.md)
+- Support options and guidance are available in our [Support Guide](../../.github/SUPPORT.md)
 - Discussions: open a GitHub Discussion or issue with the `question` label.
 - Real-world testing: share reproducible steps and logs in the PR or issue so maintainers can validate on similar hardware.
 - Documentation updates: if anything in this guide is unclear, submit a PR – meta-contributions are welcome!
@@ -212,7 +212,7 @@ Thanks again for helping keep captive portal recovery on OpenWrt routers robust 
    - `chore/<краткое-описание>` для инструментов, CI или работ по обслуживанию
    - `docs/<краткое-описание>` для обновлений только документации
    - `hotfix/<краткое-описание>` для срочных исправлений в продакшене, которые должны попасть раньше регулярного цикла выпуска
-   Ссылайтесь на [`BRANCHES_AND_MERGE_POLICY.md`](./docs/project/BRANCHES_AND_MERGE_POLICY.md) для получения последней последовательности слияния, контрольного списка защиты веток и задач очистки.
+   Ссылайтесь на [`BRANCHES_AND_MERGE_POLICY.md`](../project/BRANCHES_AND_MERGE_POLICY.md) для получения последней последовательности слияния, контрольного списка защиты веток и задач очистки.
 3. Предпочитайте инкрементальные pull request'ы (цель < ~300 строк чистых изменений). Разделите большие усилия на несколько PR, которые могут быть рассмотрены независимо.
 4. Избегайте долгоживущих веток выпуска. Если вам нужно выпустить hotfix, создайте ветку от соответствующего тега, примените исправление, выпустите и немедленно слейте изменения обратно в `main`.
 
@@ -272,7 +272,7 @@ GitFlow вводит долгоживущие ветки `develop` и выпус
 
 - Заполните шаблон PR. Он захватывает сводку, доказательства тестирования и контрольный список проверки все в одном месте.
 - Ссылайтесь на соответствующий вопрос или объясните мотивацию в сводке, чтобы рецензенты имели контекст.
-- Запросите как минимум одного рецензента (см. [`CODEOWNERS`](./.github/CODEOWNERS)) и дождитесь одобрения перед слиянием. Самоодобрение зарезервировано для изменений только в документации или только в CI без риска.
+- Запросите как минимум одного рецензента (см. [`CODEOWNERS`](../../.github/CODEOWNERS)) и дождитесь одобрения перед слиянием. Самоодобрение зарезервировано для изменений только в документации или только в CI без риска.
 - Убедитесь, что задания GitHub Actions завершаются успешно:
   - `lint (shfmt)`, `lint (shellcheck)`, `lint (markdownlint)`, `lint (actionlint)`
   - `test`
@@ -319,20 +319,20 @@ GitFlow вводит долгоживущие ветки `develop` и выпус
 - ❌ **Блокированы force push'и**: На `main` запрещены force push'и
 - ❌ **Блокировано удаление ветки**: Ветку `main` нельзя удалить
 
-Для получения подробной информации о взаимодействии этих правил с конвейером сканирования безопасности см. [`.github/SECURITY.md`](./.github/SECURITY.md).
+Для получения подробной информации о взаимодействии этих правил с конвейером сканирования безопасности см. [`.github/SECURITY.md`](../../.github/SECURITY.md).
 
 ### Местоположение конфигурации
 
-Эти правила защиты ветвей закодированы в [`.github/settings.yml`](./.github/settings.yml) и применяются системой защиты ветвей GitHub.
+Эти правила защиты ветвей закодированы в [`.github/settings.yml`](../../.github/settings.yml) и применяются системой защиты ветвей GitHub.
 
 ---
 
 ## 5. Тriage проблем и поддержка
 
 - Используйте формы GitHub Issue для предоставления структурированных отчетов об ошибках, запросов функций, вопросов поддержки и проблем с документацией.
-  Формы проводят вас через предоставление необходимой информации для эффективного triage.
-- Для подробного руководства по шаблонам и использованию меток см. [docs/triage/TEMPLATES_AND_LABELS.md](./docs/triage/TEMPLATES_AND_LABELS.md).
-- Проблемы с безопасностью должны проходить через канал частного раскрытия, указанный в нашей [Политике безопасности](.github/SECURITY.md) или советах по безопасности GitHub.
+   Формы проводят вас через предоставление необходимой информации для эффективного triage.
+- Для подробного руководства по шаблонам и использованию меток см. [Шаблоны тriage](../triage/TEMPLATES_AND_LABELS.md).
+- Проблемы с безопасностью должны проходить через канал частного раскрытия, указанный в нашей [Политике безопасности](../../.github/SECURITY.md) или советах по безопасности GitHub.
 - Помечайте проблемы меткой `good-first-issue`, когда они имеют четкую область и минимальный риск, чтобы новички могли помочь.
 
 ---
@@ -360,7 +360,7 @@ GitFlow вводит долгоживущие ветки `develop` и выпус
 
 ## 7. Получение помощи
 
-- Опции поддержки и руководства доступны в нашем [Руководстве по поддержке](.github/SUPPORT.md)
+- Опции поддержки и руководства доступны в нашем [Руководстве по поддержке](../../.github/SUPPORT.md)
 - Обсуждения: откройте GitHub Discussion или вопрос с меткой `question`.
 - Тестирование в реальных условиях: поделитесь воспроизводимыми шагами и логами в PR или вопросе, чтобы мейнтейнеры могли проверить на аналогичном оборудовании.
 - Обновления документации: если что-то в этом руководстве неясно, отправьте PR – метавклады приветствуются!
