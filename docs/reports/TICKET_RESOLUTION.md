@@ -225,5 +225,5 @@ To verify the fix in production:
 
 ---
 
-For detailed technical information, see: [`CODEQL_FIX_SUMMARY.md`](./CODEQL_FIX_SUMMARY.md)  
+For detailed technical information, see: [`CODEQL_FIX_SUMMARY.md`](../ci/CODEQL_FIX_SUMMARY.md)  
 For verification steps, run: [`./verify-codeql-fix.sh`](./verify-codeql-fix.sh)
