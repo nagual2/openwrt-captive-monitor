@@ -193,4 +193,4 @@ Users can:
 
 - [IPK Version Validation](ipk-version-validation.md)
 - [SDK Build Workflow Guide](../guides/sdk-build-workflow.md)
-- [Simplified CI Workflow](../CI_WORKFLOW_SIMPLIFIED.md)
+- [Simplified CI Workflow](CI_WORKFLOW_SIMPLIFIED.md)

@@ -165,9 +165,9 @@ The workflow integrates with the release process:
 
 ## Documentation References
 
-- [SDK Build Workflow Guide](guides/sdk-build-workflow.md)
-- [Release Checklist](RELEASE_CHECKLIST.md)
-- [Packaging Guide](packaging.md)
+- [SDK Build Workflow Guide](../guides/sdk-build-workflow.md)
+- [Release Checklist](../RELEASE_CHECKLIST.md)
+- [Packaging Guide](../packaging.md)
 
 ## Troubleshooting
 
@@ -366,9 +366,9 @@ Cache Key: ${{ runner.os }}-openwrt-sdk-${{ version }}-${{ arch }}-v3
 
 ## Ссылки на документацию
 
-- [Руководство по рабочему процессу сборки SDK](guides/sdk-build-workflow.md)
-- [Контрольный список выпуска](RELEASE_CHECKLIST.md)
-- [Руководство по упаковке](packaging.md)
+- [Руководство по рабочему процессу сборки SDK](../guides/sdk-build-workflow.md)
+- [Контрольный список выпуска](../RELEASE_CHECKLIST.md)
+- [Руководство по упаковке](../packaging.md)
 
 ## Устранение неполадок
 
