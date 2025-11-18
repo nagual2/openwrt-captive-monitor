@@ -724,7 +724,7 @@ but produces packages that may differ slightly from CI builds:
 - Update "Historical Note" at top to reference this document
 - Consider moving to `/docs/archive/` to preserve historical context without cluttering root
 - Add prominent banner: "⚠️ OBSOLETE: This document describes a problem that stemmed from 
-  incorrect SDK usage. See [BUILD_SYSTEM_ROOT_CAUSES_AND_TARGET_FLOW.md](docs/BUILD_SYSTEM_ROOT_CAUSES_AND_TARGET_FLOW.md) 
+  incorrect SDK usage. See [BUILD_SYSTEM_ROOT_CAUSES_AND_TARGET_FLOW.md](BUILD_SYSTEM_ROOT_CAUSES_AND_TARGET_FLOW.md) 
   for the correct approach."
 
 ### 7. `/INVESTIGATION_SUMMARY.md`
@@ -1588,7 +1588,7 @@ but produces packages that may differ slightly from CI builds:
 - Обновите "Historical Note" вверху для ссылки на этот документ
 - Рассмотрите перемещение в `/docs/archive/` для сохранения исторического контекста без загромождения корня
 - Добавьте видный баннер: "⚠️ OBSOLETE: This document describes a problem that stemmed from 
-  incorrect SDK usage. See [BUILD_SYSTEM_ROOT_CAUSES_AND_TARGET_FLOW.md](docs/BUILD_SYSTEM_ROOT_CAUSES_AND_TARGET_FLOW.md) 
+  incorrect SDK usage. See [BUILD_SYSTEM_ROOT_CAUSES_AND_TARGET_FLOW.md](BUILD_SYSTEM_ROOT_CAUSES_AND_TARGET_FLOW.md) 
   for the correct approach."
 
 ### 7. `/INVESTIGATION_SUMMARY.md`

@@ -54,9 +54,9 @@
 
 | File | Purpose | Usage |
 |------|---------|-------|
-| [diagnose-actions.sh](diagnose-actions.sh) | One-time diagnostic to analyze failures | `./diagnose-actions.sh` |
-| [scripts/diagnose-github-actions.sh](scripts/diagnose-github-actions.sh) | Reusable diagnostic tool with customization | `./scripts/diagnose-github-actions.sh [REPO] [DAYS] [LIMIT]` |
-| [scripts/parse-latest-failed-workflows.sh](scripts/parse-latest-failed-workflows.sh) | Parse two latest failures with detailed log analysis | `./scripts/parse-latest-failed-workflows.sh [REPO]` |
+| [diagnose-actions.sh](../../diagnose-actions.sh) | One-time diagnostic to analyze failures | `./diagnose-actions.sh` |
+| [scripts/diagnose-github-actions.sh](../../scripts/diagnose-github-actions.sh) | Reusable diagnostic tool with customization | `./scripts/diagnose-github-actions.sh [REPO] [DAYS] [LIMIT]` |
+| [scripts/parse-latest-failed-workflows.sh](../../scripts/parse-latest-failed-workflows.sh) | Parse two latest failures with detailed log analysis | `./scripts/parse-latest-failed-workflows.sh [REPO]` |
 
 ### Data Files (Reference These)
 

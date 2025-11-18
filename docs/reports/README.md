@@ -12,15 +12,13 @@ This section contains various reports, analyses, and documentation generated dur
 ### 🔬 Audit Reports
 - [Audit Consistency Report](AUDIT_CONSISTENCY_REPORT.md) - Consistency audit results
 - [Markdown Audit Report](MARKDOWN_AUDIT_REPORT.md) - Markdown documentation audit
-- [Security Audit Report](SECURITY_AUDIT_REPORT.md) - Comprehensive security audit
-- [Security Audit Removal Summary](SECURITY_AUDIT_REMOVAL_SUMMARY.md) - Security audit cleanup summary
 
 ### 🩺 Diagnostic Reports
 - [Diagnostics Index](DIAGNOSTICS_INDEX.md) - Index of all diagnostic reports
 - [Diagnostic Report](DIAGNOSTIC_REPORT.md) - General diagnostic findings
 - [Diagnostic Summary](DIAGNOSTIC_SUMMARY.md) - Summary of diagnostic results
 - [GitHub Actions Diagnostics](GITHUB_ACTIONS_DIAGNOSTICS.md) - CI/CD diagnostics
-- [Workflow Diagnostics](WORKFLOW_DIAGNOSTICS.md) - Workflow-specific diagnostics
+- [Workflow Diagnostics](../WORKFLOW_DIAGNOSTICS.md) - Workflow-specific diagnostics
 
 ### 📋 Implementation Reports
 - [CodeQL Fix Summary](../ci/CODEQL_FIX_SUMMARY.md) - CodeQL security fixes summary

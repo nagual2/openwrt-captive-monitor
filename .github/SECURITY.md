@@ -67,7 +67,7 @@ These features work in conjunction with the automated scanning pipelines to prov
 
 ### Security Scan Results
 
-All security scan results are automatically uploaded to the [Security tab](../../security/code-scanning) in the GitHub repository. Results are categorized by scanner for easy triaging.
+All security scan results are automatically uploaded to the [Security tab](https://github.com/nagual2/openwrt-captive-monitor/security/code-scanning) in the GitHub repository. Results are categorized by scanner for easy triaging.
 
 **Viewing Results:**
 
