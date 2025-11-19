@@ -1,3 +1,9 @@
+## 🌐 Language / Язык
+
+**English** | [Русский](#резюме)
+
+---
+
 ## Summary
 <!-- Provide a concise overview that reviewers can skim quickly. -->
 
