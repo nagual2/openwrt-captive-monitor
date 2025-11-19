@@ -11,6 +11,17 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
 # Ensure workflow runs only for tags, not branches
 jobs:
   pre-check:
@@ -546,8 +557,11 @@ jobs:
         run: |
           set -euxo pipefail
           echo "=== Validating package ==="
-          ./scripts/validate_ipk.sh "${{ steps.artifacts.outputs.ipk_file }}"
-          echo "✓ Package validation successful"
+          IPK_FILE="${{ steps.artifacts.outputs.ipk_file }}"
+          ./scripts/validate_ipk.sh "$IPK_FILE"
+          echo "=== Validating IPK Version metadata for release ==="
+          ./scripts/validate-ipk-version.sh "$IPK_FILE" release
+          echo "✓ Package structural and version validation successful"
 
       - name: Display package information
         run: |
