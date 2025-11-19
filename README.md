@@ -163,7 +163,7 @@ ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
 ### Installation Matrix
 
 | Method | Use Case | Complexity | Maintenance |
-|---------|-----------|-------------|-------------|
+| ------- | --------- | ----------- | ----------- |
 | **Prebuilt Package** | Production, quick deployment | ⭐ Easy | Automatic updates |
 | **SDK Build** | Custom builds, development | ⭐⭐ Medium | Manual updates |
 | **Local Build** | Testing, modifications | ⭐⭐⭐ Hard | Manual updates |
@@ -468,14 +468,14 @@ See [CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md) for detailed guidelines
 ### Compatibility
 
 | OpenWrt Version | Status | Notes |
-|-----------------|---------|--------|
+| ---------------- | ------- | ----- |
 | 21.02 (LTS) | ✅ Supported | Uses iptables backend |
 | 22.03 (LTS) | ✅ Supported | Auto-detects backend |
 | 23.05 (Stable) | ✅ Supported | Full nftables support |
 | 24.10 (Development) | ✅ Supported | Latest features |
 
 | Architecture | Status | Package |
-|-------------|---------|----------|
+| ----------- | ------- | ------- |
 | mips_24kc | ✅ Supported | `openwrt-captive-monitor_*_mips_24kc.ipk` |
 | aarch64_cortex-a53 | ✅ Supported | `openwrt-captive-monitor_*_aarch64_cortex-a53.ipk` |
 | x86_64 | ✅ Supported | `openwrt-captive-monitor_*_x86_64.ipk` |
@@ -663,7 +663,7 @@ ssh root@192.168.1.1 "logread | grep captive-monitor | tail -5"
 ### Матрица установки
 
 | Метод | Сценарий использования | Сложность | Обслуживание |
-|---------|-----------|-------------|-------------|
+| ----- | ---------------------- | --------- | ------------ |
 | **Готовый пакет** | Производство, быстрое развертывание | ⭐ Легко | Автоматические обновления |
 | **Сборка через SDK** | Пользовательские сборки, разработка | ⭐⭐ Среднее | Ручные обновления |
 | **Локальная сборка** | Тестирование, модификации | ⭐⭐⭐ Сложно | Ручные обновления |
@@ -942,14 +942,14 @@ shfmt -i 2 -ci -sr -d openwrt_captive_monitor.sh
 ### Совместимость
 
 | Версия OpenWrt | Статус | Примечания |
-|-----------------|---------|--------|
+| -------------- | ------ | --------- |
 | 21.02 (LTS) | ✅ Поддерживается | Использует бэкэнд iptables |
 | 22.03 (LTS) | ✅ Поддерживается | Автоопределение бэкэнда |
 | 23.05 (Stable) | ✅ Поддерживается | Полная поддержка nftables |
 | 24.10 (Development) | ✅ Поддерживается | Последние функции |
 
 | Архитектура | Статус | Пакет |
-|-------------|---------|----------|
+| ----------- | ------ | ----- |
 | mips_24kc | ✅ Поддерживается | `openwrt-captive-monitor_*_mips_24kc.ipk` |
 | aarch64_cortex-a53 | ✅ Поддерживается | `openwrt-captive-monitor_*_aarch64_cortex-a53.ipk` |
 | x86_64 | ✅ Поддерживается | `openwrt-captive-monitor_*_x86_64.ipk` |
