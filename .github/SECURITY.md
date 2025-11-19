@@ -1,5 +1,13 @@
 # Security Policy
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#политика-безопасности)
+
+---
+
 ## Supported Versions
 
 Only the latest released version of openwrt-captive-monitor receives security updates and patches. Users are strongly encouraged to upgrade to the most recent version to ensure they have the latest security fixes.

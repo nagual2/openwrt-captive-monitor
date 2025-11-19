@@ -1,5 +1,13 @@
 # CI SDK Validation Implementation
 
+---
+
+## 🌐 Language / Язык
+
+**English** | [Русский](#русский)
+
+---
+
 This document describes the implementation of SDK validation in the CI/CD pipelines to fail fast when SDK images or URLs are invalid, reducing wasted CI minutes.
 
 ## Overview
