@@ -82,12 +82,17 @@ fi
 # 2) **/bin/packages and **/bin/targets from provided roots or whole repo
 search_roots="."
 if [ "$#" -gt 0 ]; then
-    # Accept additional search roots (e.g., SDK_DIR/bin)
+    # Accept additional search roots (e.g., SDK_DIR or SDK_DIR/bin)
+    search_roots=""
     for p in "$@"; do
         if [ -d "$p" ]; then
             search_roots="$search_roots $p"
         fi
     done
+    # Fallback to repository root if no valid roots were provided
+    if [ -z "$search_roots" ]; then
+        search_roots="."
+    fi
 fi
 
 for root in $search_roots; do
@@ -100,21 +105,49 @@ for root in $search_roots; do
             fi
         done
 
-        # Packages outputs (.ipk, indices) inside bin/packages with robust discovery
-        # shellcheck disable=SC2046
-        for f in "$root"/bin/packages/*.ipk "$root"/bin/packages/Packages "$root"/bin/packages/Packages.gz "$root"/bin/packages/SHA256SUMS* "$root"/bin/packages/*sha256sums* "$root"/bin/packages/*.json "$root"/bin/packages/*.log "$root"/bin/packages/*.txt; do
-            if [ -f "$f" ]; then
-                printf '%s\n' "$f" >> "$list_file"
-            fi
-        done
+        # Discover package outputs under bin/packages (or packages/ when root is .../bin)
+        packages_dir=""
+        targets_dir=""
 
-        # Target/image outputs inside bin/targets with robust discovery
-        # shellcheck disable=SC2046
-        for f in "$root"/bin/targets/*.img "$root"/bin/targets/*.img.gz "$root"/bin/targets/*.bin "$root"/bin/targets/*.tar "$root"/bin/targets/*.tar.gz "$root"/bin/targets/*manifest* "$root"/bin/targets/SHA256SUMS* "$root"/bin/targets/*sha256sums*; do
-            if [ -f "$f" ]; then
-                printf '%s\n' "$f" >> "$list_file"
-            fi
-        done
+        if [ -d "$root/bin/packages" ] || [ -d "$root/bin/targets" ]; then
+            # Root is an SDK directory that contains bin/packages and/or bin/targets
+            [ -d "$root/bin/packages" ] && packages_dir="$root/bin/packages"
+            [ -d "$root/bin/targets" ] && targets_dir="$root/bin/targets"
+        else
+            # Handle the case where root already points at an SDK bin/ directory
+            case "$root" in
+            */bin)
+                [ -d "$root/packages" ] && packages_dir="$root/packages"
+                [ -d "$root/targets" ] && targets_dir="$root/targets"
+                ;;
+            esac
+        fi
+
+        if [ -n "$packages_dir" ] && [ -d "$packages_dir" ]; then
+            find "$packages_dir" -type f \
+                \( -name '*.ipk' \
+                   -o -name 'Packages' \
+                   -o -name 'Packages.gz' \
+                   -o -name 'SHA256SUMS*' \
+                   -o -name '*sha256sums*' \
+                   -o -name '*.json' \
+                   -o -name '*.log' \
+                   -o -name '*.txt' \) \
+                -print >> "$list_file"
+        fi
+
+        if [ -n "$targets_dir" ] && [ -d "$targets_dir" ]; then
+            find "$targets_dir" -type f \
+                \( -name '*.img' \
+                   -o -name '*.img.gz' \
+                   -o -name '*.bin' \
+                   -o -name '*.tar' \
+                   -o -name '*.tar.gz' \
+                   -o -name '*manifest*' \
+                   -o -name 'SHA256SUMS*' \
+                   -o -name '*sha256sums*' \) \
+                -print >> "$list_file"
+        fi
     fi
 done
 
