@@ -50,13 +50,15 @@ Validate .ipk control metadata Version field against branch-specific rules.
 
 Arguments:
   ipk_file     Path to .ipk package file
-  branch_type  Either "main" or "pr"
+  branch_type  One of "main", "pr", or "release"
 
 Branch-specific rules:
-  main: Version must match ^[0-9][0-9\.]*-dev(-[0-9]{8}([0-9]{2})?)?$
-        (must include -dev suffix)
-  pr:   Version must match ^[0-9][0-9\.]*(-[0-9]{8}([0-9]{2})?)?$
-        (must NOT include -dev suffix)
+  main:    Version must match ^[0-9][0-9\.]*-dev(-[0-9]{8}([0-9]{2})?)?$
+           (must include -dev suffix)
+  pr:      Version must match ^[0-9][0-9\.]*(-[0-9]{8}([0-9]{2})?)?$
+           (must NOT include -dev suffix; non-main validation builds)
+  release: Version must match ^[0-9][0-9\.]*(-[0-9]{8}([0-9]{2})?)?$
+           (must NOT include -dev suffix; final tag-based releases)
 
 Exit codes:
   0: Validation passed
@@ -91,8 +93,8 @@ if [ ! -f "$ipk_file" ]; then
     exit 1
 fi
 
-if [ "$branch_type" != "main" ] && [ "$branch_type" != "pr" ]; then
-    printf "%serror:%s branch_type must be 'main' or 'pr', got: %s\n" "$RED" "$NC" "$branch_type" >&2
+if [ "$branch_type" != "main" ] && [ "$branch_type" != "pr" ] && [ "$branch_type" != "release" ]; then
+    printf "%serror:%s branch_type must be 'main', 'pr', or 'release', got: %s\n" "$RED" "$NC" "$branch_type" >&2
     exit 1
 fi
 
