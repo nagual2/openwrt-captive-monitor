@@ -18,7 +18,7 @@ Release builds are performed by the **tag-based build workflow** (`tag-build-rel
 
 - The Git tag name (without the leading `v`) matches the `VERSION` file.
 - The `VERSION` file matches `PKG_VERSION` in the package `Makefile`.
-- `PKG_RELEASE` in the package `Makefile` is `1` for that version.
+- `PKG_RELEASE` in the package `Makefile` is a small numeric integer (`^[0-9]+$`) and does **not** look like a date stamp.
 
 If any of these invariants are violated, the tagged build fails, preventing a broken release from being published.
 
@@ -42,9 +42,9 @@ If any of these invariants are violated, the tagged build fails, preventing a br
 Before you announce or depend on a release, verify:
 
 1. The tag name matches the contents of the `VERSION` file (e.g., tag `v2025.11.20.2` → `VERSION` file contains exactly `2025.11.20.2`).
-2. The package `Makefile` contains:
+2. The package `Makefile` contains values consistent with the tag:
    - `PKG_VERSION:=2025.11.20.2`
-   - `PKG_RELEASE:=1`
+   - `PKG_RELEASE:=1` (or another small integer such as `2`, `3` if packaging-only fixes were made)
 3. The release assets on GitHub contain IPK files whose internal `Version` control field reflects `PKG_VERSION-PKG_RELEASE` (e.g., `2025.11.20.2-1`).
 
 For detailed CI wiring, see:
