@@ -29,12 +29,29 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check for auto-version skip sentinel
+        id: auto-version-skip
+        run: |
+          set -euo pipefail
+
+          COMMIT_MSG=$(git log -1 --pretty=%B || echo "")
+
+          if echo "$COMMIT_MSG" | grep -q '\[skip-auto-version\]'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Detected [skip-auto-version] sentinel in commit message; skipping auto version tagging."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "No [skip-auto-version] sentinel found; proceeding with auto version tagging."
+          fi
+
       - name: Configure Git
+        if: steps.auto-version-skip.outputs.skip != 'true'
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Determine next version
+        if: steps.auto-version-skip.outputs.skip != 'true'
         id: version
         run: |
           set -euo pipefail
@@ -67,7 +84,44 @@ jobs:
             echo "previous_tag=$PREVIOUS_TAG"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Update version metadata and commit changes
+        if: steps.auto-version-skip.outputs.skip != 'true'
+        id: update-metadata
+        run: |
+          set -euo pipefail
+
+          NEW_TAG="${{ steps.version.outputs.version }}"
+          CLEAN_VERSION="${NEW_TAG#v}"
+
+          echo "New tag: $NEW_TAG"
+          echo "Clean version: $CLEAN_VERSION"
+
+          # Update VERSION and PKG_VERSION metadata in the working tree
+          ./scripts/update-version-metadata.sh "$CLEAN_VERSION"
+
+          # Check if there are any changes to commit
+          if git diff --quiet --exit-code VERSION package/openwrt-captive-monitor/Makefile; then
+            echo "No metadata changes detected; skipping commit."
+            echo "updated=false" >> "$GITHUB_OUTPUT"
+            echo "clean_version=$CLEAN_VERSION" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Staging VERSION and package Makefile changes..."
+          git add VERSION package/openwrt-captive-monitor/Makefile
+
+          COMMIT_MESSAGE="chore: bump version to $CLEAN_VERSION [skip-auto-version]"
+          echo "Creating commit: $COMMIT_MESSAGE"
+          git commit -m "$COMMIT_MESSAGE"
+
+          echo "Pushing metadata bump commit to main..."
+          git push origin HEAD:main
+
+          echo "updated=true" >> "$GITHUB_OUTPUT"
+          echo "clean_version=$CLEAN_VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Generate release notes
+        if: steps.auto-version-skip.outputs.skip != 'true'
         id: notes
         run: |
           set -euo pipefail
@@ -110,6 +164,7 @@ jobs:
           echo "file=$NOTES_FILE" >> "$GITHUB_OUTPUT"
 
       - name: Check if tag exists
+        if: steps.auto-version-skip.outputs.skip != 'true'
         id: tag-check
         run: |
           set -euo pipefail
@@ -125,16 +180,17 @@ jobs:
           fi
 
       - name: Create and push tag
-        if: steps.tag-check.outputs.exists == 'false'
+        if: steps.auto-version-skip.outputs.skip != 'true' && steps.tag-check.outputs.exists == 'false'
         run: |
           set -euo pipefail
 
           NEW_TAG="${{ steps.version.outputs.version }}"
 
-          git tag -a "$NEW_TAG" -m "Release $NEW_TAG" "$GITHUB_SHA"
+          git tag -a "$NEW_TAG" -m "Release $NEW_TAG" HEAD
           git push origin "$NEW_TAG"
 
       - name: Check release status
+        if: steps.auto-version-skip.outputs.skip != 'true'
         id: release-check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -152,7 +208,7 @@ jobs:
           fi
 
       - name: Create GitHub release
-        if: steps.release-check.outputs.exists == 'false'
+        if: steps.auto-version-skip.outputs.skip != 'true' && steps.release-check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -166,12 +222,15 @@ jobs:
             --notes-file "$NOTES_FILE"
 
       - name: Summarize run
+        if: steps.auto-version-skip.outputs.skip != 'true'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           PREVIOUS_TAG="${{ steps.version.outputs.previous_tag }}"
           SEQUENCE="${{ steps.version.outputs.sequence }}"
           TAG_EXISTS="${{ steps.tag-check.outputs.exists }}"
           RELEASE_EXISTS="${{ steps.release-check.outputs.exists }}"
+          METADATA_UPDATED="${{ steps.update-metadata.outputs.updated }}"
+          CLEAN_VERSION="${{ steps.update-metadata.outputs.clean_version }}"
 
           {
             echo "## Auto version summary"
@@ -181,4 +240,15 @@ jobs:
             echo "- Sequence for today: $SEQUENCE"
             echo "- Tag existed before run: $TAG_EXISTS"
             echo "- Release existed before run: $RELEASE_EXISTS"
+            echo "- Clean version (VERSION/PKG_VERSION): ${CLEAN_VERSION:-N/A}"
+            echo "- Metadata updated in this run: ${METADATA_UPDATED:-false}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summarize skipped run
+        if: steps.auto-version-skip.outputs.skip == 'true'
+        run: |
+          {
+            echo "## Auto version summary"
+            echo ""
+            echo "- Auto versioning was skipped because the commit message contained [skip-auto-version]."
           } >> "$GITHUB_STEP_SUMMARY"
