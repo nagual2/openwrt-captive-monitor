@@ -37,6 +37,35 @@ If any of these invariants are violated, the tagged build fails, preventing a br
    - Builds and signs the IPK packages.
    - Uploads IPK files and `SHA256SUMS` to the GitHub Release.
 
+### Manual date-based bump before tagging (advanced)
+
+In rare cases maintainers may need to create a date-based tag manually (for example,
+when cutting a hotfix from an older commit or when the auto-version workflow is
+intentionally paused). In those cases, always **bump version metadata first, then
+create the tag** so that:
+
+- `VERSION` == `YYYY.M.D.N`
+- `PKG_VERSION` == `YYYY.M.D.N`
+- The tag is `vYYYY.M.D.N`
+
+To reduce the chance of human error, use the helper script:
+
+```bash
+# Bump VERSION and PKG_VERSION to an explicit date-based value
+./scripts/bump-date-version.sh 2025.11.20.11
+
+# Review and commit the metadata change
+git commit -am "chore: bump version to 2025.11.20.11"
+
+# Create a matching tag and push it
+git tag v2025.11.20.11
+git push origin v2025.11.20.11
+```
+
+The `tag-build-release.yml` workflow will then verify that `v2025.11.20.11`, the
+`VERSION` file, and `PKG_VERSION` in the package `Makefile` all match before
+building release artifacts.
+
 ### Verifying a Release Before Publishing
 
 Before you announce or depend on a release, verify:
