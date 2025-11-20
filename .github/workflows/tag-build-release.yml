@@ -963,48 +963,6 @@ jobs:
 
           echo "Verified Cosign signatures for $ipk_file and provenance manifest."
 
-      - name: Upload to GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euxo pipefail
-          : "${RELEASE_TAG:?RELEASE_TAG is required}"
-          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
-
-          TAG="$RELEASE_TAG"
-          if [ ! -d "$RELEASE_ASSETS_DIR" ]; then
-            echo "❌ Release asset directory not found: $RELEASE_ASSETS_DIR"
-            exit 1
-          fi
-          RELEASE_ID=$(gh release view "$TAG" --json id --jq '.id' 2>/dev/null || echo "")
-          
-          if [ -z "$RELEASE_ID" ]; then
-            echo "ℹ️  Creating release for tag $TAG"
-            gh release create "$TAG" \
-              --generate-notes \
-              --latest
-          fi
-          
-          echo "=== Uploading artifacts to release ==="
-          cd "$RELEASE_ASSETS_DIR"
-
-          files=$(find . -maxdepth 1 -type f ! -name '*.ipk' ! -name 'SHA256SUMS' -printf '%P\n' | sort)
-          if [ -z "$files" ]; then
-            echo "ℹ️  No non-IPK files found in $RELEASE_ASSETS_DIR to upload (skipping)"
-          else
-            while IFS= read -r file; do
-              if [ -z "$file" ]; then
-                continue
-              fi
-              echo "Uploading: $file"
-              gh release upload "$TAG" "$file" --clobber
-            done <<< "$files"
-          fi
-
-          echo "✅ Release updated successfully"
-          echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/$TAG"
-
       - name: Download package artifacts
         uses: actions/download-artifact@v6
         with:
@@ -1022,25 +980,82 @@ jobs:
           echo "=== package/ contents ==="
           ls -la package
 
-      - name: Upload package IPKs and checksums to release assets
+      - name: Create or update GitHub Release with package assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           : "${RELEASE_TAG:?RELEASE_TAG is required}"
-          if ls package/*.ipk >/dev/null 2>&1; then
-            echo "Uploading package assets (.ipk and SHA256SUMS) to release $RELEASE_TAG"
-            files=(package/*.ipk)
-            if [ -f package/SHA256SUMS ]; then
-              files+=(package/SHA256SUMS)
-            fi
-            printf '  + %s\n' "${files[@]}"
-            gh release upload "$RELEASE_TAG" "${files[@]}" --clobber
-          else
-            echo "❌ No .ipk files found in package/; nothing to upload"
+
+          # Require at least one IPK before creating or updating a release
+          if ! ls package/*.ipk >/dev/null 2>&1; then
+            echo "❌ No .ipk files found in package/; refusing to create an empty release"
             exit 1
           fi
+
+          TAG="$RELEASE_TAG"
+
+          # Create the release if it does not already exist
+          RELEASE_ID=$(gh release view "$TAG" --json id --jq '.id' 2>/dev/null || echo "")
+          if [ -z "$RELEASE_ID" ]; then
+            echo "ℹ️  Creating GitHub Release for tag $TAG"
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --generate-notes \
+              --latest
+          else
+            echo "ℹ️  GitHub Release for tag $TAG already exists (id=$RELEASE_ID); uploading assets"
+          fi
+
+          echo "Uploading package assets (.ipk and SHA256SUMS) to release $TAG"
+          files=(package/*.ipk)
+          if [ -f package/SHA256SUMS ]; then
+            files+=(package/SHA256SUMS)
+          fi
+          printf '  + %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --clobber
+
+      - name: Upload non-IPK artifacts to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euxo pipefail
+          : "${RELEASE_TAG:?RELEASE_TAG is required}"
+          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
+
+          TAG="$RELEASE_TAG"
+          if [ ! -d "$RELEASE_ASSETS_DIR" ]; then
+            echo "❌ Release asset directory not found: $RELEASE_ASSETS_DIR"
+            exit 1
+          fi
+
+          # Ensure the release exists before uploading additional artifacts
+          RELEASE_ID=$(gh release view "$TAG" --json id --jq '.id' 2>/dev/null || echo "")
+          if [ -z "$RELEASE_ID" ]; then
+            echo "❌ Expected GitHub Release for tag $TAG to exist before uploading non-IPK artifacts"
+            exit 1
+          fi
+
+          echo "=== Uploading non-IPK artifacts to release ==="
+          cd "$RELEASE_ASSETS_DIR"
+
+          files=$(find . -maxdepth 1 -type f ! -name '*.ipk' ! -name 'SHA256SUMS' -printf '%P\n' | sort)
+          if [ -z "$files" ]; then
+            echo "ℹ️  No non-IPK files found in $RELEASE_ASSETS_DIR to upload (skipping)"
+          else
+            while IFS= read -r file; do
+              if [ -z "$file" ]; then
+                continue
+              fi
+              echo "Uploading: $file"
+              gh release upload "$TAG" "$file" --clobber
+            done <<< "$files"
+          fi
+
+          echo "✅ Release updated successfully"
+          echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/$TAG"
 
       - name: Update release notes with download links
         env:
