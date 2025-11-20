@@ -13,14 +13,15 @@
 
 set -eu
 
+# Enable pipefail where supported (BusyBox ash compatible); safe for POSIX sh when guarded.
+# shellcheck disable=SC3040
 if (set -o pipefail) 2> /dev/null; then
-    # shellcheck disable=SC3040
     set -o pipefail
 fi
 
 # Source colors for consistent output
 script_dir=$(cd "$(dirname "$0")" && pwd)
-# shellcheck source=lib/colors.sh
+# shellcheck source=scripts/lib/colors.sh
 . "$script_dir/lib/colors.sh"
 
 if [ "$#" -lt 1 ]; then
@@ -65,9 +66,11 @@ printf '%s\n' "${BLUE}Generating SHA256SUMS...${NC}"
 cd "$package_dir"
 
 if command -v sha256sum > /dev/null 2>&1; then
-    sha256sum *.ipk > SHA256SUMS
+    # Use ./*glob* form so filenames beginning with '-' are handled safely
+    sha256sum ./*.ipk > SHA256SUMS
 elif command -v shasum > /dev/null 2>&1; then
-    shasum -a 256 *.ipk > SHA256SUMS
+    # Use ./*glob* form so filenames beginning with '-' are handled safely
+    shasum -a 256 ./*.ipk > SHA256SUMS
 else
     printf '%s\n' "${RED}error: neither sha256sum nor shasum found${NC}" >&2
     exit 1
