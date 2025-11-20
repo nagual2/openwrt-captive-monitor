@@ -211,17 +211,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set DEV suffix
-        id: dev
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "DEV_SUFFIX=1" >> "$GITHUB_OUTPUT"
-          else
-            echo "DEV_SUFFIX=0" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Set dev channel environment
-        id: dev-env
+      - name: Set build environment
+        id: build-env
         run: |
           set -eu
           if (set -o pipefail) 2> /dev/null; then
@@ -235,11 +226,10 @@ jobs:
           fi
           short_sha=$(echo "$resolved_sha" | cut -c1-8)
           {
-            echo "BUILD_CHANNEL=dev"
-            echo "BUILD_NAME=dev-main"
+            echo "BUILD_NAME=main"
             echo "SHORT_SHA=${short_sha}"
           } >> "$GITHUB_ENV"
-          echo "Using BUILD_NAME=dev-main (artifact suffix: -dev+${short_sha})"
+          echo "Using BUILD_NAME=main (artifact suffix: +${short_sha})"
 
       - name: Prepare package structure for SDK
         run: |
@@ -293,8 +283,6 @@ jobs:
           V: s
           # Feed configuration - use default feeds plus our local feed
           FEEDNAME: local
-          # Pass CI-provided DEV_SUFFIX into the SDK build to allow Makefiles to append -dev on main
-          DEV_SUFFIX: ${{ steps.dev.outputs.DEV_SUFFIX }}
           # Mount points for the action
           ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
           FEED_DIR: ${{ github.workspace }}/feed
@@ -388,7 +376,7 @@ jobs:
             fi
             echo ""
             echo "Validating: $(basename "$IPK_FILE")"
-            # Main branch builds should have -dev suffix
+            # Validate Version field for main branch builds (no dev/release suffix rules)
             ./scripts/validate-ipk-version.sh "$IPK_FILE" "main"
           done
           echo ""
@@ -403,10 +391,10 @@ jobs:
           fi
           ./scripts/stage-package-artifacts.sh "artifacts/${BUILD_NAME}"
 
-      - name: Upload dev artifacts
+      - name: Upload package artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: captive-monitor-${{ matrix.sdk_target }}-dev+${{ env.SHORT_SHA }}
+          name: captive-monitor-${{ matrix.sdk_target }}+${{ env.SHORT_SHA }}
           path: package
           retention-days: 7
           if-no-files-found: error
@@ -425,7 +413,6 @@ jobs:
             echo "**Target:** ${{ matrix.sdk_target }}"
             echo "**Architecture:** ${{ matrix.arch }}"
             echo "**OpenWrt Version:** ${{ matrix.openwrt_version }}"
-            echo "**Build Channel:** ${{ env.BUILD_CHANNEL }}"
             echo "**Short SHA:** ${{ env.SHORT_SHA }}"
             echo ""
             echo "### 📋 Generated Packages"
@@ -498,17 +485,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set DEV suffix
-        id: dev
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "DEV_SUFFIX=1" >> "$GITHUB_OUTPUT"
-          else
-            echo "DEV_SUFFIX=0" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Set PR build environment
-        id: pr-env
+      - name: Set build environment
+        id: build-env
         run: |
           set -eu
           if (set -o pipefail) 2> /dev/null; then
@@ -522,11 +500,10 @@ jobs:
           fi
           short_sha=$(echo "$resolved_sha" | cut -c1-8)
           {
-            echo "BUILD_CHANNEL=pr"
             echo "BUILD_NAME=pr-build"
             echo "SHORT_SHA=${short_sha}"
           } >> "$GITHUB_ENV"
-          echo "Using BUILD_NAME=pr-build (artifact suffix: -pr+${short_sha})"
+          echo "Using BUILD_NAME=pr-build (artifact suffix: +${short_sha})"
 
       - name: Prepare package structure for SDK
         run: |
@@ -580,8 +557,6 @@ jobs:
           V: s
           # Feed configuration - use default feeds plus our local feed
           FEEDNAME: local
-          # Pass CI-provided DEV_SUFFIX into the SDK build (0 for PRs - no -dev suffix)
-          DEV_SUFFIX: ${{ steps.dev.outputs.DEV_SUFFIX }}
           # Mount points for the action
           ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
           FEED_DIR: ${{ github.workspace }}/feed
@@ -675,7 +650,7 @@ jobs:
             fi
             echo ""
             echo "Validating: $(basename "$IPK_FILE")"
-            # PR builds should NOT have -dev suffix
+            # Validate Version field for PR builds (no dev/release suffix rules)
             ./scripts/validate-ipk-version.sh "$IPK_FILE" "pr"
           done
           echo ""
@@ -712,7 +687,6 @@ jobs:
             echo "**Target:** ${{ matrix.sdk_target }}"
             echo "**Architecture:** ${{ matrix.arch }}"
             echo "**OpenWrt Version:** ${{ matrix.openwrt_version }}"
-            echo "**Build Channel:** ${{ env.BUILD_CHANNEL }}"
             echo "**Short SHA:** ${{ env.SHORT_SHA }}"
             echo ""
             echo "### 📋 Generated Packages"

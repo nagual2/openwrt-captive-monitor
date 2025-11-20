@@ -7,14 +7,6 @@ PKG_VERSION:=2025.11.20.15
 # the date component (PKG_VERSION already carries the YYYY.M.D.N value).
 PKG_RELEASE:=1
 
-# Append -dev to PKG_VERSION only for main branch builds when DEV_SUFFIX=1 is provided via CI.
-# This keeps PKG_RELEASE as a simple integer so the date is only encoded once in PKG_VERSION.
-ifneq ($(strip $(DEV_SUFFIX)),)
-ifeq ($(DEV_SUFFIX),1)
-  PKG_VERSION:=$(PKG_VERSION)-dev
-endif
-endif
-
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=OpenWrt Captive Monitor Team <https://github.com/nagual2/openwrt-captive-monitor>
