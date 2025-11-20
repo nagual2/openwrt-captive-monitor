@@ -141,22 +141,38 @@ jobs:
             CLEAN_VERSION="${TAG_VERSION#v}"
             echo "Tag version: $TAG_VERSION"
             echo "Clean version: $CLEAN_VERSION"
-            
+
             FILE_VERSION=$(cat VERSION)
             echo "VERSION file: $FILE_VERSION"
-            
-            MAKEFILE_VERSION=$(grep 'PKG_VERSION:=' package/openwrt-captive-monitor/Makefile | cut -d'=' -f2 | tr -d ' ')
-            echo "Makefile version: $MAKEFILE_VERSION"
-            
+
+            MAKEFILE_VERSION=$(grep '^PKG_VERSION:=' package/openwrt-captive-monitor/Makefile | cut -d'=' -f2 | tr -d ' ')
+            MAKEFILE_RELEASE=$(grep '^PKG_RELEASE:=' package/openwrt-captive-monitor/Makefile | cut -d'=' -f2 | tr -d ' ')
+            echo "Makefile PKG_VERSION: $MAKEFILE_VERSION"
+            echo "Makefile PKG_RELEASE: $MAKEFILE_RELEASE"
+
             if [ "$CLEAN_VERSION" != "$FILE_VERSION" ] || [ "$CLEAN_VERSION" != "$MAKEFILE_VERSION" ]; then
               echo "ERROR: Version mismatch detected!"
-              echo "Expected version from tag: $CLEAN_VERSION"
-              echo "VERSION file: $FILE_VERSION"
-              echo "Makefile PKG_VERSION: $MAKEFILE_VERSION"
+              echo "  Expected (from tag): $CLEAN_VERSION"
+              echo "  VERSION file:        $FILE_VERSION"
+              echo "  Makefile PKG_VERSION: $MAKEFILE_VERSION"
               exit 1
-            else
-              echo "✓ All versions are consistent"
             fi
+
+            # Enforce numeric PKG_RELEASE and guard against date-stamp values
+            if ! printf '%s\n' "$MAKEFILE_RELEASE" | grep -Eq '^[0-9]+$'; then
+              echo "ERROR: PKG_RELEASE must be a numeric integer (^[0-9]+$)."
+              echo "  Got: '$MAKEFILE_RELEASE'"
+              exit 1
+            fi
+
+            # Fail fast when a date-style stamp sneaks into PKG_RELEASE (e.g., 20251120)
+            if printf '%s\n' "$MAKEFILE_RELEASE" | grep -Eq '^[0-9]{8}([0-9]{2,4})?$'; then
+              echo "ERROR: PKG_RELEASE looks like a date stamp ('$MAKEFILE_RELEASE')."
+              echo "       PKG_RELEASE is now a small integer counter (e.g., 1, 2, 3)."
+              exit 1
+            fi
+
+            echo "✓ VERSION, PKG_VERSION, and PKG_RELEASE are consistent with tag"
           else
             echo "No tag version provided, skipping version check"
           fi
