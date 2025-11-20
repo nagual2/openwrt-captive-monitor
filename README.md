@@ -409,7 +409,6 @@ This project uses a **date-based automatic release workflow** driven by GitHub A
 > - `package/openwrt-captive-monitor/Makefile`:
 >   - `PKG_VERSION:=2025.11.20.2`
 >   - `PKG_RELEASE:=1`
-
 > **Historical tags:** Older semantic-version tags like `v1.0.6` remain available on GitHub for historical reference, but **new releases use only date-based tags**.
 
 **How it works (2025+ workflow):**

@@ -4,7 +4,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=example-package
-PKG_VERSION:=0.0.1
+# Date-based package version; keep this in sync with your release tag (vYYYY.MM.DD.N)
+# and any root VERSION file in your repository.
+# Example: 2025.11.20.2 corresponds to tag v2025.11.20.2.
+PKG_VERSION:=2025.11.20.2
+# PKG_RELEASE must remain a small integer (e.g. 1, 2, 3). Do not embed dates here to avoid
+# double-encoding the date component (PKG_VERSION already contains YYYY.M.D.N).
 PKG_RELEASE:=1
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
