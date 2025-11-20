@@ -395,29 +395,37 @@ See [Virtualization Guide](docs/guides/virtualization.md) for detailed VM testin
 
 ### Release Process
 
-This project uses **automated semantic versioning** with GitHub Actions. Releases are created automatically when code is merged to `main`, following [Semantic Versioning 2.0.0](https://semver.org/).
+This project uses a **date-based automatic release workflow** driven by GitHub Actions. Every push to `main` can produce a new release tag of the form `vYYYY.M.D.N` (for example, `v2025.11.20.2`).
 
-**How it works:**
-1. Commit changes using [Conventional Commits](https://www.conventionalcommits.org/) format:
-   - `feat:` → minor version bump (e.g., 1.0.0 → 1.1.0)
-   - `fix:` → patch version bump (e.g., 1.0.0 → 1.0.1)
-   - `feat!:` or `fix!:` → major version bump (e.g., 1.0.0 → 2.0.0)
+**Canonical invariants for a tagged release:**
+- **Tag:** `vYYYY.M.D.N` (e.g., `v2025.11.20.2`)
+- **VERSION file:** `YYYY.M.D.N` (no leading `v`)
+- **PKG_VERSION** in `package/openwrt-captive-monitor/Makefile`: `YYYY.M.D.N`
+- **PKG_RELEASE:** always `1` for official tagged releases
 
-2. Merge PR to `main` branch (CI checks must pass)
+> **Example:**
+> - Tag: `v2025.11.20.2`
+> - `VERSION` file: `2025.11.20.2`
+> - `package/openwrt-captive-monitor/Makefile`:
+>   - `PKG_VERSION:=2025.11.20.2`
+>   - `PKG_RELEASE:=1`
 
-3. Release Please workflow automatically:
-   - Runs lint and test checks
-   - Detects version bump from commits
-   - Creates semantic version tag
-   - Updates VERSION file and package metadata
-   - Generates changelog
+> **Historical tags:** Older semantic-version tags like `v1.0.6` remain available on GitHub for historical reference, but **new releases use only date-based tags**.
 
-4. Build and Release Package workflow automatically:
-   - Builds OpenWrt package from the tag
-   - Signs artifacts using OIDC
-   - Uploads IPK and build logs to GitHub Release
+**How it works (2025+ workflow):**
+1. Push or merge a PR to `main` (all CI checks must pass).
+2. The **Auto Version Tag and Release** workflow:
+   - Calculates the next date-based tag (`vYYYY.M.D.N`).
+   - Updates version metadata via a helper script (see `docs/AUTO_VERSION_MIGRATION.md`).
+   - Creates the annotated tag and a GitHub Release with notes.
+3. The **tagged build** workflow (`tag-build-release.yml`) runs for that tag:
+   - Verifies that **tag**, `VERSION`, and `PKG_VERSION` all match.
+   - Enforces `PKG_RELEASE:=1` for the release.
+   - Builds, signs, and publishes IPK artifacts.
 
-For detailed information, see [RELEASE_PROCESS.md](docs/release/RELEASE_PROCESS.md).
+For a step-by-step description of this process and how to validate a release before cutting it, see:
+- [Auto Version Tag Guide](docs/release/AUTO_VERSION_TAG.md)
+- [Release Process (historical, semantic versioning)](docs/release/RELEASE_PROCESS.md)
 
 ### Contributing
 
