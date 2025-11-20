@@ -1,11 +1,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openwrt-captive-monitor
+# Date-based package version aligned with the latest vYYYY.MM.DD.N git tag and root VERSION file.
 PKG_VERSION:=2025.11.20.5
+# PKG_RELEASE must remain a small integer; do not encode dates here to avoid double-encoding
+# the date component (PKG_VERSION already carries the YYYY.M.D.N value).
 PKG_RELEASE:=1
 
-# Append -dev to PKG_VERSION only for main branch builds when DEV_SUFFIX=1 is provided via CI
-# This preserves existing PKG_RELEASE semantics (date-based or fixed) and avoids touching other fields
+# Append -dev to PKG_VERSION only for main branch builds when DEV_SUFFIX=1 is provided via CI.
+# This keeps PKG_RELEASE as a simple integer so the date is only encoded once in PKG_VERSION.
 ifneq ($(strip $(DEV_SUFFIX)),)
 ifeq ($(DEV_SUFFIX),1)
   PKG_VERSION:=$(PKG_VERSION)-dev
