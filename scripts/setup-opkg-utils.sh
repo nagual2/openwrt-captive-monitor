@@ -2,10 +2,11 @@
 # shellcheck shell=ash
 # Setup helper to install opkg-utils on Ubuntu runners where apt no longer provides it (Ubuntu 24.04+)
 # - Installs required host dependencies for .ipk packaging
-# - Prefers an anonymous HTTPS tarball download from the OpenWrt opkg-utils GitHub mirror
+# - Prefers an anonymous HTTPS snapshot tarball from the canonical git.openwrt.org repository
 #   to install opkg-build, opkg-unbuild, and opkg-make-index
-# - Falls back to downloading raw scripts from GitHub if the tarball fetch fails
-# - Optionally uses a git clone when OPKG_UTILS_ALLOW_GIT=1 (for local development environments)
+# - Falls back to downloading raw scripts from git.openwrt.org if the tarball fetch fails
+# - Optionally uses a git clone from git.openwrt.org when OPKG_UTILS_ALLOW_GIT=1 (for local
+#   development environments)
 # - Verifies availability via `opkg-build -h` and `opkg-make-index -h`
 #
 # This script is idempotent and safe to re-run.
@@ -18,18 +19,23 @@ if (set -o pipefail) 2> /dev/null; then
     set -o pipefail
 fi
 
-# Determine repository root for cloning tools/ directory
+# Determine repository root for installing tools/ directory
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 TOOLS_DIR="$REPO_ROOT/tools"
 OPKG_UTILS_DIR="$TOOLS_DIR/opkg-utils"
+# Default location where opkg-utils binaries will be found after fetch.
+OPKG_UTILS_BIN_DIR="$OPKG_UTILS_DIR"
+# Track how we fetched opkg-utils (tarball, raw, git) for diagnostics.
+OPKG_UTILS_FETCH_MODE=""
 
 # Upstream opkg-utils repository and raw script locations.
 # These use anonymous HTTPS URLs suitable for non-interactive CI environments.
-OPKG_UTILS_REPO="https://github.com/openwrt/opkg-utils.git"
+OPKG_UTILS_REPO="https://git.openwrt.org/project/opkg-utils.git"
 OPKG_UTILS_BRANCH="master"
-OPKG_UTILS_TARBALL_URL="https://codeload.github.com/openwrt/opkg-utils/tar.gz/${OPKG_UTILS_BRANCH}"
-OPKG_UTILS_RAW_BASE="https://raw.githubusercontent.com/openwrt/opkg-utils/${OPKG_UTILS_BRANCH}"
+OPKG_UTILS_TARBALL_URL="https://git.openwrt.org/?p=project/opkg-utils.git;a=snapshot;h=HEAD;sf=tgz"
+OPKG_UTILS_RAW_BASE="https://git.openwrt.org/project/opkg-utils.git/plain"
+OPKG_UTILS_RAW_OPKG_BUILD="$OPKG_UTILS_RAW_BASE/opkg-build"
 
 # Packages required by build scripts and opkg-utils runtime
 # Keep this list in sync with CI workflows if they also install these directly
@@ -99,10 +105,14 @@ fetch_opkg_utils_tarball() {
     fi
 
     rm -f "$tmp_tar"
+    OPKG_UTILS_BIN_DIR="$OPKG_UTILS_DIR"
+    OPKG_UTILS_FETCH_MODE="tarball"
     return 0
 }
 
-# Optional: clone or update opkg-utils from OpenWrt GitHub mirror (opt-in via OPKG_UTILS_ALLOW_GIT=1)
+# Optional: clone or update opkg-utils from the canonical git.openwrt.org repository
+# (opt-in via OPKG_UTILS_ALLOW_GIT=1). This is primarily intended for local development
+# and is not used in CI by default.
 fetch_opkg_utils_git() {
     # Honor OPKG_UTILS_ALLOW_GIT=1 as an explicit opt-in, defaulting to disabled in CI.
     if [ "${OPKG_UTILS_ALLOW_GIT:-0}" != "1" ]; then
@@ -122,6 +132,8 @@ fetch_opkg_utils_git() {
     if [ -d "$OPKG_UTILS_DIR/.git" ]; then
         info "updating existing opkg-utils checkout at $OPKG_UTILS_DIR"
         if (cd "$OPKG_UTILS_DIR" && GIT_TERMINAL_PROMPT=0 git fetch --depth=1 origin && GIT_TERMINAL_PROMPT=0 git reset --hard "origin/${OPKG_UTILS_BRANCH}"); then
+            OPKG_UTILS_BIN_DIR="$OPKG_UTILS_DIR"
+            OPKG_UTILS_FETCH_MODE="git"
             return 0
         fi
         warn "failed to update existing opkg-utils checkout; attempting fresh clone"
@@ -130,6 +142,8 @@ fetch_opkg_utils_git() {
     info "cloning opkg-utils from $OPKG_UTILS_REPO using anonymous HTTPS"
     rm -rf "$OPKG_UTILS_DIR"
     if GIT_TERMINAL_PROMPT=0 git clone --branch "$OPKG_UTILS_BRANCH" --depth=1 "$OPKG_UTILS_REPO" "$OPKG_UTILS_DIR"; then
+        OPKG_UTILS_BIN_DIR="$OPKG_UTILS_DIR"
+        OPKG_UTILS_FETCH_MODE="git"
         return 0
     fi
 
@@ -137,17 +151,25 @@ fetch_opkg_utils_git() {
     return 1
 }
 
-# Fallback: download raw scripts from GitHub mirror when tarball fetch (and optional git) are unavailable
+# Fallback: download raw scripts from git.openwrt.org when tarball fetch is unavailable
 fetch_opkg_utils_raw() {
-    base="$OPKG_UTILS_RAW_BASE"
-
-    info "using raw download method for opkg-utils from $base"
+    info "using raw download method for opkg-utils from $OPKG_UTILS_RAW_BASE"
     rm -rf "$OPKG_UTILS_DIR"
-    mkdir -p "$OPKG_UTILS_DIR"
+    mkdir -p "$OPKG_UTILS_DIR/bin"
+
+    OPKG_UTILS_BIN_DIR="$OPKG_UTILS_DIR/bin"
+    OPKG_UTILS_FETCH_MODE="raw"
 
     for bin in opkg-build opkg-unbuild opkg-make-index; do
-        url="$base/$bin"
-        dest="$OPKG_UTILS_DIR/$bin"
+        case "$bin" in
+        opkg-build)
+            url="$OPKG_UTILS_RAW_OPKG_BUILD"
+            ;;
+        *)
+            url="$OPKG_UTILS_RAW_BASE/$bin"
+            ;;
+        esac
+        dest="$OPKG_UTILS_BIN_DIR/$bin"
         info "downloading $bin from $url"
         if ! download_file "$url" "$dest"; then
             err "failed to download $bin from $url"
@@ -161,12 +183,12 @@ fetch_opkg_utils_raw() {
 # Install utility scripts into /usr/local/bin
 install_opkg_binaries() {
     for bin in opkg-build opkg-unbuild opkg-make-index; do
-        if [ ! -x "$OPKG_UTILS_DIR/$bin" ]; then
-            err "missing $bin in $OPKG_UTILS_DIR"
+        if [ ! -x "$OPKG_UTILS_BIN_DIR/$bin" ]; then
+            err "missing $bin in $OPKG_UTILS_BIN_DIR"
             exit 1
         fi
         # Install with 0755 permissions, owned by root
-        sudo install -m0755 "$OPKG_UTILS_DIR/$bin" "/usr/local/bin/$bin"
+        sudo install -m0755 "$OPKG_UTILS_BIN_DIR/$bin" "/usr/local/bin/$bin"
     done
 }
 
@@ -187,14 +209,21 @@ verify_install() {
 main() {
     install_deps
 
-    # Preferred path: download and unpack tarball from GitHub (no git required)
+    # Preferred path: download and unpack tarball from git.openwrt.org (no git required)
     if ! fetch_opkg_utils_tarball; then
         warn "tarball fetch for opkg-utils failed, falling back to raw script download"
         if ! fetch_opkg_utils_raw; then
             warn "raw script download for opkg-utils failed"
+
             # Last resort for local environments that explicitly allow git
-            if ! fetch_opkg_utils_git; then
-                err "failed to fetch opkg-utils via tarball, raw download, or git (when enabled); aborting"
+            if [ "${OPKG_UTILS_ALLOW_GIT:-0}" = "1" ]; then
+                warn "attempting git-based opkg-utils fetch from $OPKG_UTILS_REPO because OPKG_UTILS_ALLOW_GIT=1"
+                if ! fetch_opkg_utils_git; then
+                    err "failed to fetch opkg-utils via tarball, raw download, or git; aborting"
+                    exit 1
+                fi
+            else
+                err "failed to fetch opkg-utils via tarball or raw download from git.openwrt.org; set OPKG_UTILS_ALLOW_GIT=1 to enable git-based fallback from $OPKG_UTILS_REPO"
                 exit 1
             fi
         fi
@@ -202,7 +231,7 @@ main() {
 
     install_opkg_binaries
     verify_install
-    info "opkg-utils installed successfully"
+    info "opkg-utils installed successfully using fetch mode: ${OPKG_UTILS_FETCH_MODE:-unknown}"
 }
 
 main "$@"
