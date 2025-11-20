@@ -135,6 +135,10 @@ jobs:
       - name: Verify version consistency
         run: |
           echo "=== Version Verification ==="
+          # Maintainer note: For manual date-based tags, bump VERSION/PKG_VERSION first
+          # (for example via scripts/bump-date-version.sh) and only then create
+          # the matching tag vYYYY.M.D.N. If the tag does not match VERSION/PKG_VERSION,
+          # this check will fail to protect against mis-versioned releases.
           TAG_VERSION="${{ needs.pre-check.outputs.tag_name }}"
           if [ -n "$TAG_VERSION" ]; then
             # Remove 'v' prefix if present
