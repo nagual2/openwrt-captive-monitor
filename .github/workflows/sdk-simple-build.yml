@@ -1,0 +1,63 @@
+name: Build OpenWrt Package (simple)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build OpenWrt Package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Download OpenWrt SDK (23.05.3 x86/64)
+        run: |
+          set -eu
+          SDK_URL="https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          mkdir -p sdk
+          curl -fsSL "$SDK_URL" -o sdk.tar.xz
+          tar -C sdk --strip-components=1 -xf sdk.tar.xz
+
+      - name: Build openwrt-captive-monitor
+        run: |
+          set -eu
+          cd sdk
+
+          FEED_DIR="$GITHUB_WORKSPACE"
+          FEEDNAME="local"
+
+          # Treat this repository as a local feed for the SDK
+          echo "src-link $FEEDNAME $FEED_DIR" >> feeds.conf
+
+          ./scripts/feeds update -a
+          ./scripts/feeds install openwrt-captive-monitor
+
+          # Build only the openwrt-captive-monitor package
+          make package/openwrt-captive-monitor/compile V=s
+
+      - name: Upload .ipk artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: ipk-x86_64
+          path: sdk/bin/packages/**/*.ipk
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 6
