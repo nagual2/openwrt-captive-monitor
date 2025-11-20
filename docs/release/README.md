@@ -19,15 +19,36 @@ This section contains documentation related to the release process, versioning, 
 
 ## 🚀 Release Overview
 
-### Release Types
-- **Major releases** (X.0.0) - Breaking changes and major features
-- **Minor releases** (X.Y.0) - New features and improvements
-- **Patch releases** (X.Y.Z) - Bug fixes and security patches
+### Active Scheme: Date-Based Releases (2025+)
 
-### Release Cadence
-- **Major**: As needed, with extensive testing
-- **Minor**: Monthly or as features are ready
-- **Patch**: As needed for critical fixes
+The current release process is **date-based**. Every official release is identified by a tag of the form:
+
+- **Tag:** `vYYYY.M.D.N`
+- **VERSION:** `YYYY.M.D.N` (no leading `v`)
+- **PKG_VERSION:** `YYYY.M.D.N`
+- **PKG_RELEASE:** `1` (fixed for each new `PKG_VERSION`)
+
+> **Example:** `v2025.11.20.2` → `VERSION=2025.11.20.2`, `PKG_VERSION=2025.11.20.2`, `PKG_RELEASE=1`
+>
+> - First release on that date might be `v2025.11.20.1`.
+> - Second release the same day becomes `v2025.11.20.2`.
+>
+> All three metadata locations **must match** before cutting a release.
+
+Release cadence with the date-based scheme:
+- **Normal releases:** Whenever changes are merged to `main` and a new date-based tag is created
+- **Multiple releases per day:** Supported via the `N` sequence number
+- **Hotfixes:** Use the same date-based format; the date reflects when the hotfix is released
+
+### Legacy Scheme: Semantic Versioning (Historical)
+
+Earlier versions of this project used **Semantic Versioning (SemVer)** with tags like `v1.2.3`:
+
+- **Major releases** (X.0.0) – Breaking changes and major features
+- **Minor releases** (X.Y.0) – New features and improvements
+- **Patch releases** (X.Y.Z) – Bug fixes and security patches
+
+This semantic versioning scheme is now considered **legacy** and is retained **only for historical reference**. Existing semantic tags and releases remain available on GitHub but are no longer used for new releases.
 
 ## 🔄 Release Process
 
@@ -68,16 +89,23 @@ This section contains documentation related to the release process, versioning, 
 ## 🔍 Version Information
 
 ### Current Version
-See the [VERSION](../../VERSION) file for the current version.
+See the [VERSION](../../VERSION) file for the current date-based version. It is always of the form `YYYY.M.D.N` and must match the latest `vYYYY.M.D.N` tag on `main`.
 
 ### Version History
 See the [Changelog](CHANGELOG.md) for detailed version history.
 
-### Semantic Versioning
-This project follows [Semantic Versioning 2.0.0](https://semver.org/):
-- **MAJOR**: Incompatible API changes
-- **MINOR**: New functionality in a backwards compatible manner
-- **PATCH**: Backwards compatible bug fixes
+### Version Rules (Date-Based)
+
+- **VERSION file:** `YYYY.M.D.N` (no leading `v`).
+- **Git tag:** `vYYYY.M.D.N`.
+- **PKG_VERSION:** `YYYY.M.D.N`.
+- **PKG_RELEASE:** `1` for each new `PKG_VERSION`.
+
+> **Invariant:** Tag, `VERSION`, and `PKG_VERSION` **must be identical**, and `PKG_RELEASE` must be a simple integer starting from `1` for each new version. Dev/CI builds may apply a `-dev` suffix at the artifact level, but release builds do not.
+
+### Legacy Semantic Versioning (Historical)
+
+Earlier releases used [Semantic Versioning 2.0.0](https://semver.org/) with tags like `v1.2.3`. Those tags and releases are still available on GitHub but are no longer used for new releases.
 
 ## 🛡️ Security Releases
 
@@ -175,15 +203,36 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/):
 
 ## 🚀 Обзор релизов
 
-### Типы релизов
+### Актуальная схема: датированные релизы (2025+)
+
+Текущий процесс релизов **основан на дате**. Каждый официальный релиз обозначается тегом вида:
+
+- **Тег:** `vYYYY.M.D.N`
+- **VERSION:** `YYYY.M.D.N` (без префикса `v`)
+- **PKG_VERSION:** `YYYY.M.D.N`
+- **PKG_RELEASE:** `1` (фиксированное значение для каждой новой версии `PKG_VERSION`)
+
+> **Пример:** `v2025.11.20.2` → `VERSION=2025.11.20.2`, `PKG_VERSION=2025.11.20.2`, `PKG_RELEASE=1`
+>
+> - Первый релиз в этот день может быть `v2025.11.20.1`.
+> - Второй релиз в тот же день — `v2025.11.20.2`.
+>
+> Все три места с версией **обязаны совпадать** перед выпуском релиза.
+
+Периодичность релизов в датированной схеме:
+- **Обычные релизы:** Каждый раз, когда изменения попадают в `main` и создаётся новый датированный тег
+- **Несколько релизов в один день:** Поддерживаются за счёт порядкового номера `N`
+- **Хотфиксы:** Используют тот же формат; дата отражает момент выпуска хотфикса
+
+### Устаревшая схема: семантическое версионирование (историческая справка)
+
+Ранее проект использовал **семантическое версионирование (SemVer)** с тегами вида `v1.2.3`:
+
 - **Мажорные релизы** (X.0.0) — Ломающие изменения и крупные функции
 - **Минорные релизы** (X.Y.0) — Новые функции и улучшения
 - **Патч‑релизы** (X.Y.Z) — Исправления ошибок и патчи безопасности
 
-### Периодичность релизов
-- **Мажорные**: По мере необходимости, после обширного тестирования
-- **Минорные**: Ежемесячно или по мере готовности функционала
-- **Патчи**: По необходимости для критических исправлений
+Эта схема сейчас считается **устаревшей** и сохранена **только в исторических целях**. Существующие семантические теги и релизы остаются на GitHub, но больше не используются для новых релизов.
 
 ## 🔄 Процесс релиза
 
@@ -224,16 +273,23 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/):
 ## 🔍 Информация о версиях
 
 ### Текущая версия
-Актуальную версию см. в файле [VERSION](../../VERSION).
+Актуальная версия указана в файле [VERSION](../../VERSION). Формат всегда `YYYY.M.D.N` и должен совпадать с последним тегом `vYYYY.M.D.N` в ветке `main`.
 
 ### История версий
 Подробную историю версий см. в [журнале изменений](CHANGELOG.md).
 
-### Семантическое версионирование
-Проект следует [Semantic Versioning 2.0.0](https://semver.org/):
-- **MAJOR**: Несовместимые изменения API
-- **MINOR**: Новая функциональность, совместимая назад
-- **PATCH**: Исправления ошибок, не ломающие совместимость
+### Правила версионирования (датированная схема)
+
+- **Файл VERSION:** `YYYY.M.D.N` (без префикса `v`).
+- **Git‑тег:** `vYYYY.M.D.N`.
+- **PKG_VERSION:** `YYYY.M.D.N`.
+- **PKG_RELEASE:** `1` для каждой новой версии `PKG_VERSION`.
+
+> **Инвариант:** Тег, `VERSION` и `PKG_VERSION` **обязаны совпадать**, а `PKG_RELEASE` должен быть простым целым числом, начинающимся с `1` для каждой новой версии. Dev/CI‑сборки могут добавлять суффикс `-dev` на уровне артефактов, но релизные сборки — нет.
+
+### Устаревшее семантическое версионирование (история)
+
+Ранние релизы использовали [Semantic Versioning 2.0.0](https://semver.org/) с тегами вида `v1.2.3`. Эти теги и релизы по‑прежнему доступны на GitHub, но больше не применяются для новых релизов.
 
 ## 🛡️ Релизы безопасности
 

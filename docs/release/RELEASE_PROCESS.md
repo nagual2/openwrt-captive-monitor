@@ -1,10 +1,66 @@
 # Release Process Documentation
 
-> **2025 Update:** The active release process now uses date-based versioning (`vYYYY.M.D.N`) documented in [`AUTO_VERSION_TAG.md`](./AUTO_VERSION_TAG.md). The sections below describe the legacy Release Please workflow and are retained for historical reference.
+> **2025 Update (Canonical):** The active release process now uses **date-based versioning** (`vYYYY.M.D.N`) and an automatic metadata sync workflow. This section describes the **current, canonical** process. The later sections remain as **archival documentation** of the previous Release Please + semantic versioning setup.
 
-## Overview
+## Overview (2025+ Date-Based Workflow)
 
-This project uses **automated semantic versioning** with GitHub Actions to manage releases. The process is completely automated when code is merged to the `main` branch, following the [Semantic Versioning 2.0.0](https://semver.org/) specification.
+The project now uses a **date-based auto-versioning workflow** to manage releases:
+
+- Each push to `main` triggers the `Auto Version Tag and Release` workflow.
+- The workflow computes the next date-based version `vYYYY.M.D.N`.
+- A helper script updates version metadata so that:
+  - The root `VERSION` file is set to `YYYY.M.D.N`.
+  - `PKG_VERSION` in `package/openwrt-captive-monitor/Makefile` is set to `YYYY.M.D.N`.
+  - `PKG_RELEASE` is set to `1` for each new `PKG_VERSION`.
+- The workflow then creates an annotated tag and GitHub Release for `vYYYY.M.D.N`.
+
+Release builds are performed by the **tag-based build workflow** (`tag-build-release.yml`), which validates that:
+
+- The Git tag name (without the leading `v`) matches the `VERSION` file.
+- The `VERSION` file matches `PKG_VERSION` in the package `Makefile`.
+- `PKG_RELEASE` in the package `Makefile` is `1` for that version.
+
+If any of these invariants are violated, the tagged build fails, preventing a broken release from being published.
+
+---
+
+## Canonical Date-Based Release Steps
+
+1. Ensure all required CI checks pass for your pull request.
+2. Merge the PR into `main` (squash merge is recommended).
+3. Wait for the **Auto Version Tag and Release** workflow to run:
+   - It determines the next `vYYYY.M.D.N` tag.
+   - It updates `VERSION`, `PKG_VERSION`, and `PKG_RELEASE` (`1`).
+   - It creates or updates the corresponding GitHub Release with notes.
+4. The **tag-build-release** workflow runs on that tag and:
+   - Validates the version metadata invariants described above.
+   - Builds and signs the IPK packages.
+   - Uploads IPK files and `SHA256SUMS` to the GitHub Release.
+
+### Verifying a Release Before Publishing
+
+Before you announce or depend on a release, verify:
+
+1. The tag name matches the contents of the `VERSION` file (e.g., tag `v2025.11.20.2` → `VERSION` file contains exactly `2025.11.20.2`).
+2. The package `Makefile` contains:
+   - `PKG_VERSION:=2025.11.20.2`
+   - `PKG_RELEASE:=1`
+3. The release assets on GitHub contain IPK files whose internal `Version` control field reflects `PKG_VERSION-PKG_RELEASE` (e.g., `2025.11.20.2-1`).
+
+For detailed CI wiring, see:
+- [`AUTO_VERSION_TAG.md`](./AUTO_VERSION_TAG.md) – auto-tag workflow
+- [`AUTO_VERSION_MIGRATION.md`](../AUTO_VERSION_MIGRATION.md) – migration notes
+- [`CI_STATUS_REPORT.md`](../ci/CI_STATUS_REPORT.md) – overview of workflows
+
+---
+
+## Archival: Previous Semantic Versioning / Release Please Workflow
+
+> **Note:** The content below describes the historical **Release Please + semantic versioning** process and is kept only as a reference for older tags and reports.
+
+## Overview (Legacy Semantic Versioning)
+
+This project historically used **automated semantic versioning** with GitHub Actions to manage releases. The process was completely automated when code was merged to the `main` branch, following the [Semantic Versioning 2.0.0](https://semver.org/) specification.
 
 ## Branch Protection and Security Requirements
 
@@ -32,9 +88,9 @@ These requirements ensure that:
 
 For detailed information about branch protection rules, see [`.github/settings.yml`](./.github/settings.yml).
 
-## Semantic Versioning
+## Semantic Versioning (Legacy)
 
-The project uses semantic versioning in the format: `MAJOR.MINOR.PATCH`
+The project previously used semantic versioning in the format: `MAJOR.MINOR.PATCH`.
 
 - **MAJOR** version: Incompatible API changes
 - **MINOR** version: New functionality in a backward-compatible manner
@@ -64,9 +120,9 @@ git commit -m "feat!: rewrite core detection engine
 BREAKING CHANGE: Configuration format has changed"
 ```
 
-## Automated Release Workflow
+## Automated Release Workflow (Legacy)
 
-The release process is fully automated and consists of three main workflows:
+The historical semantic-versioning-based release process was fully automated and consisted of three main workflows:
 
 ### 1. Release Please Workflow
 

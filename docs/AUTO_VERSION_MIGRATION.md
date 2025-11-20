@@ -35,16 +35,21 @@ v2025.1.15.1, v2025.1.15.2, v2025.12.3.1
 
 ## What Changed
 
-### 1. New Workflow
+### 1. New Workflow (2025 Update)
 
 **File:** `.github/workflows/auto-version-tag.yml`
 
-This workflow automatically:
+This workflow now:
 - Triggers on every push to `main` branch
-- Calculates the next version based on current date
-- Creates a git tag
+- Calculates the next version based on current date (`vYYYY.M.D.N`)
+- **Updates version metadata** so that:
+  - `VERSION` is set to `YYYY.M.D.N`
+  - `PKG_VERSION` is set to `YYYY.M.D.N`
+  - `PKG_RELEASE` is set to `1` for that version
+- Commits these changes back to `main` (if necessary)
+- Creates a git tag pointing at the metadata update commit
 - Creates a GitHub Release with commit history
-- Triggers the build workflow
+- Triggers the tagged build workflow
 
 ### 2. Updated Documentation
 
@@ -147,7 +152,11 @@ git push
 
 ### For CI/CD
 
-**Build workflow unchanged.** The `tag-build-release.yml` workflow still triggers on any `v*` tag, so it works with both formats.
+**Tagged build workflow.** The `tag-build-release.yml` workflow still triggers on any `v*` tag, and now additionally **verifies metadata invariants** for date-based tags:
+
+- Tag without `v` matches `VERSION` file (e.g., `v2025.11.20.2` ↔ `2025.11.20.2`).
+- `VERSION` matches `PKG_VERSION` in `package/openwrt-captive-monitor/Makefile`.
+- `PKG_RELEASE` is `1` for each new `PKG_VERSION`.
 
 **Status checks unchanged.** Branch protection rules remain the same.
 
@@ -244,20 +253,25 @@ If needed, you can revert to Release Please:
 
 ### Common Questions
 
-**Q: Can I use semantic versioning again?**  
-A: Yes, just disable the auto-version workflow and use Release Please.
+**Q: Can I use semantic versioning again?**
+A: Yes, you can disable the auto-version workflow and re-enable Release Please if you need to maintain semantic tags for a fork or a separate branch. For the main project, date-based tags are the canonical scheme and semantic tags are historical only.
 
-**Q: What happens to VERSION file?**  
-A: It's no longer automatically updated. Manual updates may be needed for package builds.
+**Q: What happens to the VERSION file now?**
+A: It is updated automatically by the auto-version workflow whenever a new date-based tag is created. The value in `VERSION` must always match the tag (without the leading `v`), for example:
 
-**Q: Can I create tags manually?**  
-A: Yes, but use the date format: `v2025.1.15.1`
+- Tag: `v2025.11.20.2`
+- `VERSION`: `2025.11.20.2`
+- `PKG_VERSION`: `2025.11.20.2`
+- `PKG_RELEASE`: `1`
 
-**Q: How do I know what changed in a release?**  
-A: Check the release notes in GitHub Releases - they list all commits.
+**Q: Can I create tags manually?**
+A: Yes, but use the date format: `vYYYY.M.D.N` (for example, `v2025.1.15.1`), and ensure you update `VERSION`, `PKG_VERSION`, and `PKG_RELEASE` to match before pushing the tag.
 
-**Q: Can I skip a release?**  
-A: Disable the workflow temporarily before merging, or merge to a different branch first.
+**Q: How do I know what changed in a release?**
+A: Check the release notes in GitHub Releases - they list all commits since the previous tag.
+
+**Q: Can I skip a release?**
+A: You can temporarily disable the workflow before merging, or merge to a different branch first and only merge to `main` when you are ready to create a tagged release.
 
 ## Timeline
 
@@ -341,14 +355,14 @@ A: Disable the workflow temporarily before merging, or merge to a different bran
 
 ## FAQ (кратко)
 
-- **Что будет с файлом `VERSION`?**  
-  Он больше не обновляется автоматически; при необходимости его можно обновлять вручную для отдельных сценариев (например, для сборки пакетов).
+- **Что будет с файлом `VERSION` сейчас?**
+  Он снова обновляется автоматически: при создании нового датированного тега workflow записывает в `VERSION` значение без префикса `v`, а также синхронизирует `PKG_VERSION` и устанавливает `PKG_RELEASE:=1` для этой версии.
 
-- **Можно ли создавать теги вручную?**  
-  Да, но желательно придерживаться формата `vYYYY.M.D.N`.
+- **Можно ли создавать теги вручную?**
+  Да, но желательно придерживаться формата `vYYYY.M.D.N` и перед пушем тега убедиться, что `VERSION`, `PKG_VERSION` и `PKG_RELEASE` (`1`) приведены к тому же значению.
 
-- **Можно ли пропустить релиз?**  
-  Можно временно отключить workflow или мёрджить изменения во вспомогательную ветку, а затем уже в `main`.
+- **Можно ли пропустить релиз?**
+  Можно временно отключить workflow или мёрджить изменения во вспомогательную ветку, а затем уже в `main` в нужный момент.
 
 ## Дополнительные материалы
 
