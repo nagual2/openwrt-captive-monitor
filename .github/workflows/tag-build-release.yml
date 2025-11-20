@@ -5,12 +5,6 @@ on:
     tags:
       # Date-based release tags only: vYYYY.MM.DD.N (e.g., v2025.11.19.5)
       - 'v[0-9][0-9][0-9][0-9].[0-9]*.[0-9]*.[0-9]*'
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag to build (e.g., v2025.11.19.5; must match vYYYY.MM.DD.N)'
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -23,986 +17,381 @@ defaults:
   run:
     shell: bash
 
-# Ensure workflow runs only for tags, not branches
 jobs:
-  pre-check:
-    name: Pre-flight Check
+  build-packages:
+    name: Build OpenWrt Packages
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-    outputs:
-      should_proceed: ${{ steps.check.outputs.should_proceed }}
-      tag_name: ${{ steps.check.outputs.tag_name }}
-    
-    steps:
-      - name: Check if this is a tag push
-        id: check
-        run: |
-          set -euo pipefail
-          echo "=== Pre-flight Check ==="
-          echo "Event: ${{ github.event_name }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "Ref type: ${{ github.ref_type }}"
 
-          validate_tag() {
-            local tag="$1"
-
-            echo "Resolved tag: $tag"
-
-            # Accept only date-based release tags: vYYYY.MM.DD.N (e.g., v2025.11.19.5)
-            if echo "$tag" | grep -Eq "^v[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]+$"; then
-              echo "Tag matches expected date-based pattern (vYYYY.MM.DD.N)"
-              echo "should_proceed=true" >> "$GITHUB_OUTPUT"
-              echo "tag_name=$tag" >> "$GITHUB_OUTPUT"
-            else
-              echo "Tag '$tag' does not match expected date-based release pattern (vYYYY.MM.DD.N); skipping release build"
-              echo "should_proceed=false" >> "$GITHUB_OUTPUT"
-              echo "tag_name=" >> "$GITHUB_OUTPUT"
-            fi
-          }
-
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            tag_input="${{ github.event.inputs.tag }}"
-            echo "Manual workflow dispatch for tag: $tag_input"
-            validate_tag "$tag_input"
-          elif [ "${{ github.ref_type }}" = "tag" ]; then
-            tag_ref="${{ github.ref_name }}"
-            echo "Tag push detected: $tag_ref"
-            validate_tag "$tag_ref"
-          else
-            echo "Not a tag push, skipping"
-            echo "should_proceed=false" >> "$GITHUB_OUTPUT"
-            echo "tag_name=" >> "$GITHUB_OUTPUT"
-          fi
-
-  build-package:
-    name: Build OpenWrt Package
-    runs-on: ubuntu-24.04
-    needs: pre-check
-    if: needs.pre-check.outputs.should_proceed == 'true'
-    permissions:
-      contents: read
-    outputs:
-      ipk_name: ${{ steps.artifacts.outputs.ipk_name }}
-      ipk_file: ${{ steps.artifacts.outputs.ipk_file }}
-      build_successful: ${{ steps.build.outputs.success }}
-      artifact_dir: ${{ steps.artifacts.outputs.artifact_dir }}
-      artifact_name: ${{ steps.artifacts.outputs.artifact_name }}
-      package_dir: ${{ steps.package.outputs.package_dir }}
-      package_artifact_name: ${{ steps.package.outputs.package_artifact_name }}
-    
-    env:
-      # Using OpenWrt 23.05.2 stable release
-      OPENWRT_VERSION: "23.05.2"
-      OPENWRT_ARCH: "x86_64"
-      # SHA256 checksum for the SDK
-      SDK_CHECKSUM: "df9cbce6054e6bd46fcf28e2ddd53c728ceef6cb27d1d7fc54a228f272c945b0"  # OpenWrt 23.05.2 x86/64 SDK
-      # Release channel naming for artifacts
-      BUILD_CHANNEL: release
-      BUILD_NAME: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Supported OpenWrt SDK targets for release builds (must match CI matrix)
+          - openwrt_version: '23.05.3'
+            target: 'x86'
+            subtarget: '64'
+            arch: 'x86_64'
+            sdk_slug: 'x86_64'
+            sdk_target: 'x86/64'
+          - openwrt_version: '23.05.3'
+            target: 'ath79'
+            subtarget: 'generic'
+            arch: 'ath79-generic'
+            sdk_slug: 'ath79-generic'
+            sdk_target: 'ath79/generic'
+          - openwrt_version: '23.05.3'
+            target: 'ramips'
+            subtarget: 'mt76x8'
+            arch: 'ramips-mt76x8'
+            sdk_slug: 'ramips-mt76x8'
+            sdk_target: 'ramips/mt76x8'
+          - openwrt_version: '23.05.3'
+            target: 'mediatek'
+            subtarget: 'filogic'
+            arch: 'mediatek-filogic'
+            sdk_slug: 'mediatek-filogic'
+            sdk_target: 'mediatek/filogic'
+          - openwrt_version: '23.05.3'
+            target: 'ipq40xx'
+            subtarget: 'generic'
+            arch: 'ipq40xx-generic'
+            sdk_slug: 'ipq40xx-generic'
+            sdk_target: 'ipq40xx/generic'
+          - openwrt_version: '23.05.3'
+            target: 'ipq806x'
+            subtarget: 'generic'
+            arch: 'ipq806x-generic'
+            sdk_slug: 'ipq806x-generic'
+            sdk_target: 'ipq806x/generic'
+          - openwrt_version: '23.05.3'
+            target: 'bcm27xx'
+            subtarget: 'bcm2711'
+            arch: 'bcm27xx-bcm2711'
+            sdk_slug: 'bcm27xx-bcm2711'
+            sdk_target: 'bcm27xx/bcm2711'
+          - openwrt_version: '23.05.3'
+            target: 'rockchip'
+            subtarget: 'armv8'
+            arch: 'rockchip-armv8'
+            sdk_slug: 'rockchip-armv8'
+            sdk_target: 'rockchip/armv8'
 
     steps:
-      - name: Debug workflow context
-        run: |
-          echo "=== Workflow Debug Information ==="
-          echo "Event name: ${{ github.event_name }}"
-          echo "OpenWrt version: ${{ env.OPENWRT_VERSION }}"
-          echo "Architecture: ${{ env.OPENWRT_ARCH }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "Ref name: ${{ github.ref_name }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Actor: ${{ github.actor }}"
-          echo "Workflow: ${{ github.workflow }}"
-          echo "Run ID: ${{ github.run_id }}"
-          echo "Run attempt: ${{ github.run_attempt }}"
-      - name: Determine checkout ref
-        id: ref
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "ref=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.ref_type }}" = "tag" ]; then
-            echo "ref=${{ github.ref }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "ref=main" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Check out repository
         uses: actions/checkout@v5
         with:
-          ref: ${{ steps.ref.outputs.ref }}
           fetch-depth: 0
 
-      - name: Verify version consistency
+      - name: Set build environment
         run: |
-          echo "=== Version Verification ==="
-          # Maintainer note: For manual date-based tags, bump VERSION/PKG_VERSION first
-          # (for example via scripts/bump-date-version.sh) and only then create
-          # the matching tag vYYYY.M.D.N. If the tag does not match VERSION/PKG_VERSION,
-          # this check will fail to protect against mis-versioned releases.
-          TAG_VERSION="${{ needs.pre-check.outputs.tag_name }}"
-          if [ -n "$TAG_VERSION" ]; then
-            # Remove 'v' prefix if present
-            CLEAN_VERSION="${TAG_VERSION#v}"
-            echo "Tag version: $TAG_VERSION"
-            echo "Clean version: $CLEAN_VERSION"
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
+          # Prefer an 8-character short SHA for artifact naming consistency
+          resolved_sha="${GITHUB_SHA:-}"
+          if [ -z "$resolved_sha" ]; then
+            resolved_sha=$(git rev-parse HEAD 2> /dev/null || echo nogit)
+          fi
+          short_sha=$(echo "$resolved_sha" | cut -c1-8)
+          tag_name="${GITHUB_REF_NAME:-}"
+          if [ -z "$tag_name" ]; then
+            tag_name=$(git describe --tags --exact-match 2> /dev/null || echo "untagged")
+          fi
+          {
+            echo "BUILD_NAME=tag-${tag_name}"
+            echo "SHORT_SHA=${short_sha}"
+            echo "TAG_NAME=${tag_name}"
+          } >> "$GITHUB_ENV"
+          echo "Using BUILD_NAME=tag-${tag_name} (sha=${short_sha})"
 
-            FILE_VERSION=$(cat VERSION)
-            echo "VERSION file: $FILE_VERSION"
+      - name: Prepare package structure for SDK
+        run: |
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
+          # Create the expected package structure for the SDK action
+          mkdir -p feed/package
+          cp -r package/openwrt-captive-monitor feed/package/
+          # Create artifacts directory
+          mkdir -p "artifacts/${BUILD_NAME}"
 
-            MAKEFILE_VERSION=$(grep '^PKG_VERSION:=' package/openwrt-captive-monitor/Makefile | cut -d'=' -f2 | tr -d ' ')
-            MAKEFILE_RELEASE=$(grep '^PKG_RELEASE:=' package/openwrt-captive-monitor/Makefile | cut -d'=' -f2 | tr -d ' ')
-            echo "Makefile PKG_VERSION: $MAKEFILE_VERSION"
-            echo "Makefile PKG_RELEASE: $MAKEFILE_RELEASE"
-
-            if [ "$CLEAN_VERSION" != "$FILE_VERSION" ] || [ "$CLEAN_VERSION" != "$MAKEFILE_VERSION" ]; then
-              echo "ERROR: Version mismatch detected!"
-              echo "  Expected (from tag): $CLEAN_VERSION"
-              echo "  VERSION file:        $FILE_VERSION"
-              echo "  Makefile PKG_VERSION: $MAKEFILE_VERSION"
-              exit 1
-            fi
-
-            # Enforce numeric PKG_RELEASE and guard against date-stamp values
-            if ! printf '%s\n' "$MAKEFILE_RELEASE" | grep -Eq '^[0-9]+$'; then
-              echo "ERROR: PKG_RELEASE must be a numeric integer (^[0-9]+$)."
-              echo "  Got: '$MAKEFILE_RELEASE'"
-              exit 1
-            fi
-
-            # Fail fast when a date-style stamp sneaks into PKG_RELEASE (e.g., 20251120)
-            if printf '%s\n' "$MAKEFILE_RELEASE" | grep -Eq '^[0-9]{8}([0-9]{2,4})?$'; then
-              echo "ERROR: PKG_RELEASE looks like a date stamp ('$MAKEFILE_RELEASE')."
-              echo "       PKG_RELEASE is now a small integer counter (e.g., 1, 2, 3)."
-              exit 1
-            fi
-
-            echo "✓ VERSION, PKG_VERSION, and PKG_RELEASE are consistent with tag"
-          else
-            echo "No tag version provided, skipping version check"
+          # Ensure a placeholder feeds.conf.default exists for the SDK action to patch
+          # The openwrt/gh-action-sdk action expects this file under FEED_DIR and will
+          # inject the local src-link feed path at runtime. Upstream feeds are not required
+          # for this package build.
+          if [ ! -f feed/feeds.conf.default ]; then
+            {
+              echo "# Placeholder feeds.conf.default for SDK action"
+              echo "# The action will inject: src-link ${FEEDNAME:-local} <resolved-path>"
+            } > feed/feeds.conf.default
           fi
 
-      - name: Install required tools
-        run: sudo apt-get update && sudo apt-get install -y binutils tar
-
-      - name: Cache OpenWrt SDK
-        id: cache-sdk
-        uses: actions/cache@v4
-        with:
-          path: openwrt-sdk-*
-          key: ${{ runner.os }}-openwrt-sdk-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_ARCH }}-v3
-          restore-keys: |
-            ${{ runner.os }}-openwrt-sdk-${{ env.OPENWRT_VERSION }}-${{ env.OPENWRT_ARCH }}-
-
-      - name: Install build dependencies
-        run: |
-          set -euxo pipefail
-          sudo rm -f /etc/apt/sources.list.d/microsoft*.list
-          
-          echo 'Acquire::http::Timeout "30";' | sudo tee -a /etc/apt/apt.conf.d/99timeout
-          echo 'Acquire::https::Timeout "30";' | sudo tee -a /etc/apt/apt.conf.d/99timeout
-          echo 'Acquire::Retries "3";' | sudo tee -a /etc/apt/apt.conf.d/99retry
-          
-          for attempt in {1..3}; do
-            echo "Attempt $attempt/3: Updating package lists..."
-            if sudo apt-get update -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=3; then
-              echo "✓ Package update successful"
-              break
-            else
-              if [ "$attempt" -lt 3 ]; then
-                echo "✗ Package update failed, retrying in 10s..."
-                sleep 10
-              else
-                echo "❌ Package update failed after 3 attempts"
-                exit 1
-              fi
-            fi
-          done
-          
-          for attempt in {1..3}; do
-            echo "Attempt $attempt/3: Installing dependencies..."
-            if sudo apt-get -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o Acquire::Retries=3 \
-              install -y --no-install-recommends \
-              build-essential \
-              ccache \
-              curl \
-              file \
-              gawk \
-              gettext \
-              git \
-              libncurses5-dev \
-              libssl-dev \
-              python3 \
-              rsync \
-              unzip \
-              wget \
-              zlib1g-dev \
-              flex \
-              bison; then
-              echo "✓ Dependencies installed successfully"
-              break
-            else
-              if [ "$attempt" -lt 3 ]; then
-                echo "✗ Dependency installation failed, retrying in 10s..."
-                sleep 10
-              else
-                echo "❌ Dependency installation failed after 3 attempts"
-                exit 1
-              fi
-            fi
-          done
-
-      - name: Install axel downloader
-        run: |
-          set -euxo pipefail
-          echo "Installing axel downloader..."
-          sudo apt-get update
-          sudo apt-get install -y axel
+          echo "Prepared package structure:"
+          find feed -type f -name "Makefile" | head -5
 
       - name: Validate SDK image and target
         run: |
-          set -euo pipefail
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
           ./scripts/validate-sdk-image.sh \
-            "ghcr.io/openwrt/sdk:${{ env.OPENWRT_ARCH }}-${{ env.OPENWRT_VERSION }}" \
-            "x86/64" \
-            "${{ env.OPENWRT_VERSION }}" \
-            "${{ env.OPENWRT_ARCH }}"
+            "ghcr.io/openwrt/sdk:${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}" \
+            "${{ matrix.sdk_target }}" \
+            "${{ matrix.openwrt_version }}" \
+            "${{ matrix.sdk_slug }}"
 
-      - name: Validate SDK download URLs
-        run: |
-          set -euo pipefail
-          ./scripts/validate-sdk-url.sh \
-            "${{ env.OPENWRT_VERSION }}" \
-            "x86/64" \
-            "${{ env.OPENWRT_ARCH }}"
+      - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
+        uses: openwrt/gh-action-sdk@v9
+        env:
+          # Use the official SDK container pinned to the OpenWrt version and target
+          # e.g., ghcr.io/openwrt/sdk:x86-64-23.05.3
+          CONTAINER: ghcr.io/openwrt/sdk:${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}
+          # Package(s) to build inside the SDK
+          PACKAGES: openwrt-captive-monitor
+          BUILD_LOG: 1
+          V: s
+          # Feed configuration - use default feeds plus our local feed
+          FEEDNAME: local
+          # Mount points for the action
+          ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
+          FEED_DIR: ${{ github.workspace }}/feed
+          # Standardized SDK parameters
+          SDK_TARGET: ${{ matrix.sdk_target }}
+          ARCH: ${{ matrix.arch }}
 
-      - name: Download and extract OpenWrt SDK
-        if: steps.cache-sdk.outputs.cache-hit != 'true'
+      - name: List and validate produced artifacts
         run: |
-          set -euxo pipefail
-          SDK_VERSION="${{ env.OPENWRT_VERSION }}"
-          SDK_FILE="openwrt-sdk-${SDK_VERSION}-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
-          SDK_CHECKSUM="${{ env.SDK_CHECKSUM }}"
-          
-          # Primary and fallback mirrors
-          MIRRORS=(
-            "https://github.com/nagual2/openwrt-captive-monitor/releases/download/sdk-${SDK_VERSION}/${SDK_FILE}"
-            "https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
-            "https://mirror2.openwrt.org/sources/${SDK_FILE}"
-            "https://mirror.bytemark.co.uk/openwrt/releases/${SDK_VERSION}/targets/x86/64/${SDK_FILE}"
-          )
-          
-          echo "=== Downloading OpenWrt SDK ==="
-          echo "Available mirrors:"
-          printf '  • %s\n' "${MIRRORS[@]}"
-          
-          # Function to download with axel
-          download_with_axel() {
-            local url=$1
-            local attempt=$2
-            local max_attempts=3
-            local wait_time=5
-            
-            echo "🔍 Attempt ${attempt}/${max_attempts}: Trying mirror: $url"
-            
-            # Clean up any partial downloads
-            rm -f "${SDK_FILE}.st" "${SDK_FILE}"
-            
-            # Use axel with 16 connections (adjustable)
-            if ! axel \
-              --num-connections=16 \
-              --output="${SDK_FILE}" \
-              --insecure \
-              --alternate \
-              --timeout=60 \
-              --max-redirect=3 \
-              "$url"; then
-              
-              echo "⚠️  Download failed from $url"
-              return 1
-            fi
-            
-            # Verify file size
-            local sdk_size
-            sdk_size=$(stat -c%s "$SDK_FILE" 2>/dev/null || echo 0)
-            
-            if [ "$sdk_size" -lt 100000000 ]; then
-              echo "❌ Invalid file size: ${sdk_size} bytes"
-              rm -f "$SDK_FILE"
-              return 1
-            fi
-            
-            echo "✅ Successfully downloaded ${sdk_size} bytes"
-            return 0
-          }
-          
-          # Try each mirror in sequence
-          for mirror in "${MIRRORS[@]}"; do
-            for attempt in {1..3}; do
-              if download_with_axel "$mirror" "$attempt"; then
-                # Download successful, verify checksum
-                echo "🔍 Verifying checksum..."
-                if echo "${SDK_CHECKSUM}  ${SDK_FILE}" | sha256sum --check --strict; then
-                  echo "✅ Checksum verified"
-                  break 2  # Exit both loops
-                else
-                  echo "❌ Checksum verification failed"
-                  rm -f "$SDK_FILE"
-                fi
-              fi
-              
-              if [ "$attempt" -lt 3 ]; then
-                wait_time=$((attempt * 5))
-                echo "⏳ Waiting ${wait_time}s before retry..."
-                sleep "$wait_time"
-              fi
-            done
-          done
-          
-          # Final check if download was successful
-          if [ ! -f "$SDK_FILE" ]; then
-            echo "❌ All download attempts failed"
-            exit 1
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
           fi
-          
-          ACTUAL_SHA=$(sha256sum "$SDK_FILE" | cut -d' ' -f1)
-          if [ "$SDK_CHECKSUM" != "$ACTUAL_SHA" ]; then
-            echo "ERROR: Checksum mismatch!"
-            echo "Expected: ${SDK_CHECKSUM}"
-            echo "Actual:   ${ACTUAL_SHA}"
-            exit 1
-          fi
-          
-          echo "✓ SDK verified, extracting..."
-          tar -xf "$SDK_FILE"
-          rm "$SDK_FILE"
+          ART_DIR="artifacts/${BUILD_NAME}"
+          echo "Artifacts directory: $ART_DIR"
 
-      - name: Find SDK directory
-        id: sdk
-        run: |
-          SDK_DIR=$(find . -maxdepth 1 -type d -name "openwrt-sdk-*" | head -n1)
-          if [ -z "$SDK_DIR" ]; then
-            echo "ERROR: SDK directory not found"
-            exit 1
-          fi
-          echo "sdk_dir=$SDK_DIR" >> "$GITHUB_OUTPUT"
-          echo "Found SDK directory: $SDK_DIR"
-
-      - name: Copy package to SDK
-        run: |
-          set -euxo pipefail
-          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
-          
-          echo "=== Copying package to SDK ==="
-          rm -rf "$SDK_DIR/package/openwrt-captive-monitor"
-          mkdir -p "$SDK_DIR/package/openwrt-captive-monitor"
-          cp -r package/openwrt-captive-monitor/* "$SDK_DIR/package/openwrt-captive-monitor/"
-          cp VERSION "$SDK_DIR/package/openwrt-captive-monitor/"
-          mkdir -p "$SDK_DIR/package/openwrt-captive-monitor/files/"
-          cp LICENSE "$SDK_DIR/package/openwrt-captive-monitor/files/"
-          
-          echo "Package copied successfully"
-
-      - name: Update and install feeds
-        run: |
-          set -euo pipefail
-          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
-          cd "$SDK_DIR"
-          
-          git config --global http.postBuffer 524288000
-          git config --global core.compression 0
-          
-          update_feeds_with_retry() {
-            local max_attempts=10
-            local attempt=1
-            
-            while [ $attempt -le $max_attempts ]; do
-              echo "Attempt $attempt/$max_attempts: Updating feeds..."
-              
-              rm -rf feeds/
-              rm -f feeds.conf.old
-              
-              if ./scripts/feeds update -a; then
-                echo "✓ Feeds updated successfully"
-                return 0
-              fi
-              
-              if [ $attempt -lt $max_attempts ]; then
-                local base_wait=$((2 ** (attempt - 1)))
-                local jitter=$((base_wait / 5))
-                local wait_time=$((base_wait + RANDOM % jitter))
-                echo "✗ Feed update failed, waiting ${wait_time}s before retry..."
-                sleep "$wait_time"
-              fi
-              attempt=$((attempt + 1))
-            done
-            
-            echo "✗ Feed update failed after $max_attempts attempts"
-            return 1
-          }
-          
-          install_feeds_with_retry() {
-            local max_attempts=10
-            local attempt=1
-            
-            while [ $attempt -le $max_attempts ]; do
-              echo "Attempt $attempt/$max_attempts: Installing feeds..."
-              if ./scripts/feeds install -a; then
-                echo "✓ Feeds installed successfully"
-                return 0
-              fi
-              
-              if [ $attempt -lt $max_attempts ]; then
-                local base_wait=$((2 ** (attempt - 1)))
-                local jitter=$((base_wait / 5))
-                local wait_time=$((base_wait + RANDOM % jitter))
-                echo "✗ Feed install failed, waiting ${wait_time}s before retry..."
-                sleep "$wait_time"
-              fi
-              attempt=$((attempt + 1))
-            done
-            
-            echo "✗ Feed install failed after $max_attempts attempts"
-            return 1
-          }
-          
-          update_feeds_with_retry || exit 1
-          install_feeds_with_retry || exit 1
-
-      - name: Configure SDK
-        run: |
-          set -euxo pipefail
-          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
-          cd "$SDK_DIR"
-          
-          echo "=== Configuring SDK ==="
-          make defconfig
-          
-          echo "✓ SDK configuration complete"
-
-      - name: Build package
-        id: build
-        run: |
-          set -euo pipefail
-          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
-          cd "$SDK_DIR"
-          
-          echo "=== Building package ==="
-          if make package/openwrt-captive-monitor/compile V=s 2>&1 | tee build.log; then
-            echo "✓ Package built successfully"
-            echo "success=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "=== BUILD FAILED ==="
-            tail -100 build.log
-            echo "success=false" >> "$GITHUB_OUTPUT"
-            echo "Build failed but continuing to set outputs"
-          fi
-
-      - name: Check build success
-        if: steps.build.outputs.success == 'false'
-        run: |
-          echo "Build failed, exiting"
-          exit 1
-
-      - name: Compute BUILD_NAME
-        run: |
-          set -euo pipefail
-          if [ -z "${BUILD_NAME:-}" ]; then
-            ts=$(date -u +%Y%m%d-%H%M%S)
-            short_sha=$(echo "${GITHUB_SHA:-$(git rev-parse --short HEAD 2>/dev/null || echo nogit)}" | cut -c1-7)
-            echo "BUILD_NAME=${ts}-${short_sha}" >> "$GITHUB_ENV"
-          else
-            echo "BUILD_NAME=${BUILD_NAME}" >> "$GITHUB_ENV"
-          fi
-          echo "Using BUILD_NAME=$(grep -m1 '^BUILD_NAME=' "$GITHUB_ENV" | cut -d= -f2)"
-
-      - name: Stage build artifacts
-        run: |
-          set -euo pipefail
-          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
-          # Stage artifacts from the SDK bin directory and local dist/opkg
-          sh ./scripts/stage_artifacts.sh "$SDK_DIR/bin"
-
-      - name: Collect staged artifact metadata
-        id: artifacts
-        run: |
-          set -euo pipefail
-          ARTIFACT_DIR="artifacts/${BUILD_NAME}"
-          if [ ! -d "$ARTIFACT_DIR" ]; then
-            echo "ERROR: Artifact directory not found: $ARTIFACT_DIR"
+          if [ ! -d "$ART_DIR" ]; then
+            echo "ERROR: Artifact directory not found: $ART_DIR"
             exit 1
           fi
 
-          file_count=$(find "$ARTIFACT_DIR" -type f | wc -l | tr -d ' ')
-          if [ "$file_count" -eq 0 ]; then
-            echo "ERROR: Artifact directory is empty: $ARTIFACT_DIR"
-            exit 1
-          fi
+          ls -la "$ART_DIR"
+          echo "IPK files:"
 
           # Robust IPK discovery with quoted paths and existence checks
-          IPK_STAGED=""
-          for ipk_pattern in "$ARTIFACT_DIR"/openwrt-captive-monitor_*.ipk; do
+          IPK_COUNT=0
+
+          # Top-level .ipk files
+          for ipk in "$ART_DIR"/*.ipk; do
+            [ -e "$ipk" ] || continue
+            basename "$ipk"
+            IPK_COUNT=$((IPK_COUNT + 1))
+          done
+
+          # One-level-deep .ipk files
+          for dir in "$ART_DIR"/*; do
+            [ -e "$dir" ] || continue
+            for f in "$dir"/*.ipk; do
+              [ -e "$f" ] || continue
+              basename "$f"
+              IPK_COUNT=$((IPK_COUNT + 1))
+            done
+          done
+
+          if [ "$IPK_COUNT" -eq 0 ]; then
+            echo "error: no .ipk files found in $ART_DIR" >&2
+            exit 1
+          fi
+
+      - name: Install verification tools
+        uses: ./.github/actions/setup-system-packages
+        with:
+          packages: binutils tar
+
+      - name: Verify package internals
+        run: |
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
+          # Robust IPK discovery with quoted paths and existence checks
+          IPK_FILE=""
+          for ipk_pattern in "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
             if [ -e "$ipk_pattern" ]; then
-              IPK_STAGED="$ipk_pattern"
+              IPK_FILE="$ipk_pattern"
               break
             fi
           done
-          
-          if [ -z "$IPK_STAGED" ]; then
-            echo "ERROR: Unable to locate staged .ipk in $ARTIFACT_DIR"
-            echo "Contents:"; ls -la "$ARTIFACT_DIR"
+
+          if [ -z "$IPK_FILE" ]; then
+            echo "error: no openwrt-captive-monitor package found" >&2
             exit 1
           fi
+          echo "Verifying package: $IPK_FILE"
+          ./scripts/verify_package.sh "$IPK_FILE"
 
-          IPK_NAME=$(basename "$IPK_STAGED")
-          # Include target info in artifact name for consistency
-          ARTIFACT_NAME="ipk-x86-64-${BUILD_NAME}"
-
-          {
-            echo "ipk_file=$IPK_STAGED"
-            echo "ipk_name=$IPK_NAME"
-            echo "artifact_dir=$ARTIFACT_DIR"
-            echo "artifact_name=$ARTIFACT_NAME"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "Artifacts prepared:"
-          ls -la "$ARTIFACT_DIR"
-
-      - name: List and validate produced filenames
+      - name: Validate IPK version metadata
         run: |
-          set -euo pipefail
-          echo "Release artifacts directory: artifacts/${BUILD_NAME}"
-          
-          # Robust file discovery with existence checks
-          if [ -d "artifacts/${BUILD_NAME}" ]; then
-            for ipk_pattern in "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
-              if [ -e "$ipk_pattern" ]; then
-                basename "$ipk_pattern"
-              fi
-            done | sort
-          else
-            echo "ERROR: Artifact directory does not exist"
-            exit 1
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
           fi
-          
-          IPK_NAME="${{ steps.artifacts.outputs.ipk_name }}"
-          echo "IPK filename: $IPK_NAME"
-          if echo "$IPK_NAME" | grep -qiE 'dev'; then
-            echo "ERROR: Release package filename should not contain 'dev'" >&2
-            exit 1
-          fi
-          echo "✓ Release package filename does not contain 'dev'"
-
-      - name: Validate package
-        run: |
-          set -euxo pipefail
-          echo "=== Validating package ==="
-          IPK_FILE="${{ steps.artifacts.outputs.ipk_file }}"
-          ./scripts/validate_ipk.sh "$IPK_FILE"
-          echo "=== Validating IPK Version metadata for release ==="
-          ./scripts/validate-ipk-version.sh "$IPK_FILE" release
-          echo "✓ Package structural and version validation successful"
-
-      - name: Display package information
-        run: |
-          set -euxo pipefail
-          IPK_FILE="${{ steps.artifacts.outputs.ipk_file }}"
-          
-          echo "=== Package Information ==="
-          echo "File: ${{ steps.artifacts.outputs.ipk_name }}"
-          echo "Size: $(stat -c%s "$IPK_FILE") bytes"
-          
-          TEMP_DIR=$(mktemp -d)
-          cd "$TEMP_DIR"
-          ar x "$IPK_FILE"
-          tar -xzf control.tar.gz
-          
+          echo "=== Validating Version field in .ipk control metadata ==="
+          for IPK_FILE in "artifacts/${BUILD_NAME}"/*.ipk; do
+            if [ ! -e "$IPK_FILE" ]; then
+              echo "warning: no .ipk files found" >&2
+              continue
+            fi
+            echo ""
+            echo "Validating: $(basename "$IPK_FILE")"
+            ./scripts/validate-ipk-version.sh "$IPK_FILE" "release"
+          done
           echo ""
-          echo "=== Package Control Information ==="
-          cat control
-          
-          rm -rf "$TEMP_DIR"
+          echo "All packages validated successfully"
 
-      - name: Prepare package directory with built IPKs
-        id: package
+      - name: Stage package artifacts with SHA256SUMS
         run: |
-          set -euo pipefail
-          SDK_DIR="${{ steps.sdk.outputs.sdk_dir }}"
-          
-          echo "=== Staging IPK files under package/ ==="
-          mkdir -p package
-          copied=0
-          while IFS= read -r -d '' f; do
-            echo "Copying: $f"
-            cp -v "$f" package/
-            copied=$((copied+1))
-          done < <(find "$SDK_DIR/bin" -type f -name '*.ipk' -print0)
-          
-          if [ "$copied" -eq 0 ]; then
-            echo "ERROR: No .ipk files found under $SDK_DIR/bin" >&2
-            find "$SDK_DIR/bin" -maxdepth 3 -type f | sed 's/^/  - /'
-            exit 1
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
           fi
-          
-          echo "=== Generating checksums (SHA256SUMS) ==="
-          sha256sum package/*.ipk > package/SHA256SUMS
-          ls -la package
-          {
-            echo "package_dir=package"
-            echo "package_artifact_name=package-${BUILD_NAME}"
-          } >> "$GITHUB_OUTPUT"
+          ./scripts/stage-package-artifacts.sh "artifacts/${BUILD_NAME}"
 
-      - name: Upload package directory as artifact
+      - name: Upload package artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: ${{ steps.package.outputs.package_artifact_name }}
+          name: captive-monitor-${{ matrix.sdk_target }}+${{ env.SHORT_SHA }}
           path: package
           retention-days: 30
           if-no-files-found: error
           compression-level: 6
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ steps.artifacts.outputs.artifact_name }}
-          path: ${{ steps.artifacts.outputs.artifact_dir }}
-          retention-days: 30
-          if-no-files-found: error
-          compression-level: 6
+      - name: Build summary
+        run: |
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
+          {
+            echo "## 📦 Build Summary"
+            echo ""
+            echo "**Tag:** ${{ env.TAG_NAME }}"
+            echo "**Target:** ${{ matrix.sdk_target }}"
+            echo "**Architecture:** ${{ matrix.arch }}"
+            echo "**OpenWrt Version:** ${{ matrix.openwrt_version }}"
+            echo "**Short SHA:** ${{ env.SHORT_SHA }}"
+            echo ""
+            echo "### 📋 Generated Packages"
+            find "artifacts/${BUILD_NAME}" -name "*.ipk" -exec echo "- {}" \;
+          } >> "$GITHUB_STEP_SUMMARY"
 
-  sign-and-publish:
-    name: Sign and Publish Release
+  publish-release:
+    name: Publish GitHub Release
     runs-on: ubuntu-24.04
-    needs: [pre-check, build-package]
-    if: needs.pre-check.outputs.should_proceed == 'true' && needs.build-package.outputs.build_successful == 'true'
-    
+    needs: build-packages
     permissions:
       contents: write
-      id-token: write
-    
-    env:
-      RELEASE_CLOUD_PROVIDER: ${{ secrets.RELEASE_CLOUD_PROVIDER }}
-      RELEASE_OIDC_ROLE_ARN: ${{ secrets.RELEASE_OIDC_ROLE_ARN }}
-      RELEASE_OIDC_AUDIENCE: ${{ secrets.RELEASE_OIDC_AUDIENCE }}
-      RELEASE_AWS_REGION: ${{ secrets.RELEASE_AWS_REGION }}
-      RELEASE_TAG: ${{ needs.pre-check.outputs.tag_name }}
-      RELEASE_ASSETS_DIR: ${{ needs.build-package.outputs.artifact_dir }}
-      BUILD_ARTIFACT_NAME: ${{ needs.build-package.outputs.artifact_name }}
-      PACKAGE_ARTIFACT_NAME: ${{ needs.build-package.outputs.package_artifact_name }}
-    
+
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v6
-        with:
-          name: ${{ env.BUILD_ARTIFACT_NAME }}
-          path: .
-
-      - name: Show release artifact contents
-        run: |
-          set -euxo pipefail
-          if [ ! -d "$RELEASE_ASSETS_DIR" ]; then
-            echo "❌ Expected release asset directory $RELEASE_ASSETS_DIR is missing"
-            ls -R .
-            exit 1
-          fi
-
-          echo "=== Release asset directory ==="
-          ls -la "$RELEASE_ASSETS_DIR"
-          echo ""
-          echo "=== Release asset details ==="
-          ls -R "$RELEASE_ASSETS_DIR"
-
-      - name: Check OIDC configuration
-        id: check_oidc
-        run: |
-          if [ -n "${{ secrets.RELEASE_OIDC_ROLE_ARN }}" ]; then
-            echo "has_oidc=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_oidc=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Configure optional cloud federation
-        if: steps.check_oidc.outputs.has_oidc == 'true'
-        uses: ./.github/actions/oidc-assume-role
-        with:
-          provider: ${{ env.RELEASE_CLOUD_PROVIDER != '' && env.RELEASE_CLOUD_PROVIDER || vars.RELEASE_CLOUD_PROVIDER || 'aws' }}
-          role-arn: ${{ env.RELEASE_OIDC_ROLE_ARN }}
-          audience: ${{ env.RELEASE_OIDC_AUDIENCE != '' && env.RELEASE_OIDC_AUDIENCE || vars.RELEASE_OIDC_AUDIENCE || 'sts.amazonaws.com' }}
-          session-name: ${{ format('openwrt-release-{0}', github.run_id) }}
-          duration-seconds: ${{ vars.RELEASE_OIDC_SESSION_DURATION != '' && vars.RELEASE_OIDC_SESSION_DURATION || '3600' }}
-          aws-region: ${{ env.RELEASE_AWS_REGION != '' && env.RELEASE_AWS_REGION || vars.RELEASE_AWS_REGION }}
-
-      - name: Gather GitHub OIDC token claims
-        env:
-          OIDC_AUDIENCE: sigstore
-        run: |
-          set -euo pipefail
-
-          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
-            echo "OIDC metadata not available. Ensure id-token permissions are granted."
-            exit 1
-          fi
-
-          response=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${OIDC_AUDIENCE}")
-
-          # Extract token from response using jq
-          token=$(echo "$response" | jq -r '.value')
-          if [ -z "$token" ]; then
-            echo "Error: Failed to extract token from response"
-            exit 1
-          fi
-          echo "::add-mask::$token"
-          export OIDC_TOKEN="$token"
-
-          # Process token using pure shell
-          IFS='.' read -ra token_parts <<< "$token"
-          if [ ${#token_parts[@]} -lt 2 ]; then
-            echo "Error: Invalid token format"
-            exit 1
-          fi
-          
-          # Decode the payload (second part of the JWT)
-          payload_segment=${token_parts[1]}
-          # Add padding if needed
-          padding=$((4 - ${#payload_segment} % 4))
-          if [ $padding -eq 4 ]; then
-            padding=0
-          fi
-          
-          # Decode base64url to base64 and then decode
-          payload_base64=$(echo -n "$payload_segment" | tr '_-' '/+' | tr -d '\n')
-          for ((i=0; i<padding; i++)); do
-            payload_base64="${payload_base64}="
-          done
-          
-          # Decode and extract claims
-          claims=$(echo "$payload_base64" | base64 -d 2>/dev/null || echo "")
-          if [ -z "$claims" ]; then
-            echo "Error: Failed to decode token payload"
-            exit 1
-          fi
-          
-          # Extract and display claims
-          issuer=$(echo "$claims" | jq -r '.iss // "unknown"')
-          subject=$(echo "$claims" | jq -r '.sub // "unknown"')
-          audience=$(echo "$claims" | jq -r '.aud // "unknown"')
-          
-          echo "OIDC issuer: $issuer"
-          echo "OIDC subject: $subject"
-          echo "OIDC audience: $audience"
-
-          echo "OIDC token obtained; proceeding with keyless signing."
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v4
-        with:
-          cosign-release: latest
-
-      - name: Show cosign version
-        run: cosign version
-
-      - name: Generate provenance manifest
-        id: provenance
-        run: |
-          set -euo pipefail
-          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
-          cd "$RELEASE_ASSETS_DIR"
-
-          ipk_file=$(find . -maxdepth 1 -name "*.ipk" -printf '%f\n' | head -n1 || true)
-          if [ -z "$ipk_file" ]; then
-            echo "Unable to locate built IPK artifact."
-            exit 1
-          fi
-
-          sha256=$(sha256sum "$ipk_file" | awk '{print $1}')
-          build_timestamp=$(date --utc +%FT%TZ)
-          git_sha=$(git rev-parse HEAD)
-
-          export IPK_FILE="$ipk_file"
-          export IPK_SHA256="$sha256"
-          export BUILD_TIMESTAMP="$build_timestamp"
-          export GIT_SHA="$git_sha"
-
-          python3 <<'PY'
-            import json
-            import os
-
-            ipk_file = os.environ["IPK_FILE"]
-            sha256 = os.environ["IPK_SHA256"]
-            workflow = os.environ.get("GITHUB_WORKFLOW", "")
-            ref = os.environ.get("GITHUB_REF", "")
-            openwrt_version = os.environ.get("OPENWRT_VERSION", "")
-            openwrt_arch = os.environ.get("OPENWRT_ARCH", "")
-            repository = os.environ.get("GITHUB_REPOSITORY", "")
-            run_id = os.environ.get("GITHUB_RUN_ID", "")
-            run_attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "")
-            build_timestamp = os.environ["BUILD_TIMESTAMP"]
-            git_sha = os.environ["GIT_SHA"]
-
-            statement = {
-                "_type": "https://in-toto.io/Statement/v1",
-                "predicateType": "https://slsa.dev/provenance/v1",
-                "subject": [
-                    {
-                        "name": ipk_file,
-                        "digest": {"sha256": sha256}
-                    }
-                ],
-                "predicate": {
-                    "buildDefinition": {
-                        "buildType": "https://github.com/nagual2/openwrt-captive-monitor/.github/workflows/tag-build-release.yml",
-                        "externalParameters": {
-                            "workflow": workflow,
-                            "ref": ref
-                        },
-                        "internalParameters": {
-                            "openwrtVersion": openwrt_version,
-                            "openwrtArch": openwrt_arch
-                        },
-                        "resolvedDependencies": [
-                            {
-                                "uri": f"git+https://github.com/{repository}@{git_sha}",
-                                "digest": {"sha1": git_sha}
-                            }
-                        ]
-                    },
-                    "runDetails": {
-                        "builder": {
-                            "id": f"https://github.com/{repository}/actions/runs/{run_id}"
-                        },
-                        "metadata": {
-                            "invocationId": f"{run_id}-{run_attempt}",
-                            "buildFinishedOn": build_timestamp
-                        }
-                    }
-                }
-            }
-
-            with open(f"{ipk_file}.provenance.json", "w", encoding="utf-8") as handle:
-                json.dump(statement, handle, indent=2)
-                handle.write("\n")
-          PY
-
-          provenance_file="${ipk_file}.provenance.json"
-          echo "Generated provenance manifest: $provenance_file"
-          echo "provenance_file=$RELEASE_ASSETS_DIR/$provenance_file" >> "$GITHUB_OUTPUT"
-
-      - name: Create checksums
-        run: |
-          set -euo pipefail
-          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
-          cd "$RELEASE_ASSETS_DIR"
-
-          echo "=== Creating checksums ==="
-          files=$(find . -maxdepth 1 -type f ! -name 'SHA256SUMS' ! -name '*.sig' ! -name '*.sigstore' ! -name '*.pem' -printf '%P\n' | sort)
-          if [ -z "$files" ]; then
-            echo "No build outputs found to hash."
-            exit 1
-          fi
-
-          printf '%s\n' "$files" | xargs -d '\n' -I{} sha256sum "{}" > SHA256SUMS
-          cat SHA256SUMS
-
-      - name: Sign release artifacts with Cosign
-        env:
-          COSIGN_YES: "true"
-          COSIGN_EXPERIMENTAL: "1"
-          SIGSTORE_ID_TOKEN_AUDIENCE: sigstore
-        run: |
-          set -euo pipefail
-          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
-          cd "$RELEASE_ASSETS_DIR"
-
-          echo "=== Signing artifacts with Cosign ==="
-          while IFS= read -r -d '' artifact; do
-            filename=$(basename "$artifact")
-            echo "Signing ${filename}"
-            cosign sign-blob \
-              --yes \
-              --bundle "${filename}.sigstore" \
-              --output-certificate "${filename}.pem" \
-              --output-signature "${filename}.sig" \
-              "$filename"
-          done < <(find . -maxdepth 1 -type f ! -name '*.sig' ! -name '*.sigstore' ! -name '*.pem' -print0)
-          echo "✓ Cosign signing complete"
-
-      - name: Verify primary signatures
-        env:
-          IDENTITY_REGEX: "^https://github.com/${{ github.repository }}/.github/workflows/tag-build-release.yml@.*"
-        run: |
-          set -euo pipefail
-          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
-          cd "$RELEASE_ASSETS_DIR"
-
-          ipk_file=$(find . -maxdepth 1 -name "*.ipk" -printf '%f\n' | head -n1 || true)
-          if [ -z "$ipk_file" ]; then
-            echo "No IPK artifact found for verification."
-            exit 1
-          fi
-
-          cosign verify-blob \
-            --certificate "${ipk_file}.pem" \
-            --signature "${ipk_file}.sig" \
-            --certificate-identity-regexp "$IDENTITY_REGEX" \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            "$ipk_file"
-
-          prov_file="${ipk_file}.provenance.json"
-          if [ -f "$prov_file" ]; then
-            cosign verify-blob \
-              --certificate "${prov_file}.pem" \
-              --signature "${prov_file}.sig" \
-              --certificate-identity-regexp "$IDENTITY_REGEX" \
-              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-              "$prov_file"
-          fi
-
-          echo "Verified Cosign signatures for $ipk_file and provenance manifest."
-
       - name: Download package artifacts
         uses: actions/download-artifact@v6
         with:
-          name: ${{ env.PACKAGE_ARTIFACT_NAME }}
-          path: .
+          path: artifacts
 
-      - name: Show package directory contents
+      - name: Prepare aggregated package directory
         run: |
-          set -euxo pipefail
-          if [ ! -d "package" ]; then
-            echo "❌ package/ directory not found after artifact download"
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
+
+          ARTIFACTS_ROOT="artifacts"
+
+          if [ ! -d "$ARTIFACTS_ROOT" ]; then
+            echo "❌ artifacts directory not found at $ARTIFACTS_ROOT"
             ls -la
             exit 1
           fi
-          echo "=== package/ contents ==="
-          ls -la package
+
+          mkdir -p package
+          ipk_count=0
+
+          for dir in "$ARTIFACTS_ROOT"/*; do
+            [ -d "$dir" ] || continue
+            echo "Processing artifacts from $dir"
+            for ipk in "$dir"/*.ipk; do
+              [ -f "$ipk" ] || continue
+              cp -v "$ipk" package/
+              ipk_count=$((ipk_count + 1))
+            done
+          done
+
+          if [ "$ipk_count" -eq 0 ]; then
+            echo "❌ no .ipk files found under $ARTIFACTS_ROOT" >&2
+            find "$ARTIFACTS_ROOT" -maxdepth 2 -type f | sed 's/^/  - /'
+            exit 1
+          fi
+
+          echo "Aggregated $ipk_count .ipk file(s) into package/"
+
+          cd package
+          if command -v sha256sum > /dev/null 2>&1; then
+            sha256sum ./*.ipk > SHA256SUMS
+          elif command -v shasum > /dev/null 2>&1; then
+            shasum -a 256 ./*.ipk > SHA256SUMS
+          else
+            echo "❌ neither sha256sum nor shasum found" >&2
+            exit 1
+          fi
+
+          echo "Generated SHA256SUMS:"
+          cat SHA256SUMS
+
+      - name: Install GitHub CLI
+        uses: ./.github/actions/setup-system-packages
+        with:
+          packages: gh
 
       - name: Create or update GitHub Release with package assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          : "${RELEASE_TAG:?RELEASE_TAG is required}"
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
 
-          # Require at least one IPK before creating or updating a release
-          if ! ls package/*.ipk >/dev/null 2>&1; then
+          TAG="${GITHUB_REF_NAME:-}"
+          if [ -z "$TAG" ]; then
+            echo "❌ Unable to determine tag name from GITHUB_REF_NAME"
+            exit 1
+          fi
+
+          if ! ls package/*.ipk > /dev/null 2>&1; then
             echo "❌ No .ipk files found in package/; refusing to create an empty release"
             exit 1
           fi
 
-          TAG="$RELEASE_TAG"
-
           # Create the release if it does not already exist
-          RELEASE_ID=$(gh release view "$TAG" --json id --jq '.id' 2>/dev/null || echo "")
+          RELEASE_ID=$(gh release view "$TAG" --json id --jq '.id' 2> /dev/null || echo "")
           if [ -z "$RELEASE_ID" ]; then
             echo "ℹ️  Creating GitHub Release for tag $TAG"
             gh release create "$TAG" \
               --title "$TAG" \
-              --generate-notes \
+              --notes "Automated release for $TAG" \
               --latest
           else
             echo "ℹ️  GitHub Release for tag $TAG already exists (id=$RELEASE_ID); uploading assets"
@@ -1016,118 +405,13 @@ jobs:
           printf '  + %s\n' "${files[@]}"
           gh release upload "$TAG" "${files[@]}" --clobber
 
-      - name: Upload non-IPK artifacts to GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release summary
         run: |
-          set -euxo pipefail
-          : "${RELEASE_TAG:?RELEASE_TAG is required}"
-          : "${RELEASE_ASSETS_DIR:?RELEASE_ASSETS_DIR is required}"
-
-          TAG="$RELEASE_TAG"
-          if [ ! -d "$RELEASE_ASSETS_DIR" ]; then
-            echo "❌ Release asset directory not found: $RELEASE_ASSETS_DIR"
-            exit 1
-          fi
-
-          # Ensure the release exists before uploading additional artifacts
-          RELEASE_ID=$(gh release view "$TAG" --json id --jq '.id' 2>/dev/null || echo "")
-          if [ -z "$RELEASE_ID" ]; then
-            echo "❌ Expected GitHub Release for tag $TAG to exist before uploading non-IPK artifacts"
-            exit 1
-          fi
-
-          echo "=== Uploading non-IPK artifacts to release ==="
-          cd "$RELEASE_ASSETS_DIR"
-
-          files=$(find . -maxdepth 1 -type f ! -name '*.ipk' ! -name 'SHA256SUMS' -printf '%P\n' | sort)
-          if [ -z "$files" ]; then
-            echo "ℹ️  No non-IPK files found in $RELEASE_ASSETS_DIR to upload (skipping)"
-          else
-            while IFS= read -r file; do
-              if [ -z "$file" ]; then
-                continue
-              fi
-              echo "Uploading: $file"
-              gh release upload "$TAG" "$file" --clobber
-            done <<< "$files"
-          fi
-
-          echo "✅ Release updated successfully"
-          echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/$TAG"
-
-      - name: Update release notes with download links
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          : "${RELEASE_TAG:?RELEASE_TAG is required}"
-          repo="${GITHUB_REPOSITORY}"
-          tag="${RELEASE_TAG}"
-
-          if [ ! -d package ]; then
-            echo "❌ package/ directory missing; cannot update release notes"
-            exit 1
-          fi
-
-          tmpdir=$(mktemp -d)
-          body_current="$tmpdir/body_current.md"
-          body_clean="$tmpdir/body_clean.md"
-          downloads="$tmpdir/downloads.md"
-          body_updated="$tmpdir/body_updated.md"
-
-          # Fetch current body
-          gh release view "$tag" --json body --jq '.body // ""' > "$body_current"
-
-          # Build downloads section with deterministic ordering
+          TAG="${GITHUB_REF_NAME:-}"
           {
-            echo "<!-- BEGIN-PACKAGE-DOWNLOADS -->"
-            echo "### Downloads"
-            echo
-            for f in package/*.ipk; do
-              [ -e "$f" ] || continue
-              bn=$(basename "$f")
-              url="https://github.com/${repo}/releases/download/${tag}/${bn}"
-              printf "- %s — %s\n" "$bn" "$url"
-            done | sort
-            if [ -f package/SHA256SUMS ]; then
-              url="https://github.com/${repo}/releases/download/${tag}/SHA256SUMS"
-              echo "- SHA256SUMS — $url"
-            fi
-            echo "<!-- END-PACKAGE-DOWNLOADS -->"
-          } > "$downloads"
-
-          # Remove previous Downloads section if present, then append the fresh one
-          if grep -q "BEGIN-PACKAGE-DOWNLOADS" "$body_current"; then
-            # Remove block between markers
-            sed '/<!-- BEGIN-PACKAGE-DOWNLOADS -->/,/<!-- END-PACKAGE-DOWNLOADS -->/d' "$body_current" > "$body_clean"
-          else
-            cp "$body_current" "$body_clean"
-          fi
-          # Ensure trailing newline
-          printf "\n\n" >> "$body_clean"
-          cat "$downloads" >> "$body_clean"
-
-          # Update the release body
-          gh release edit "$tag" --notes-file "$body_clean"
-
-      - name: Verify release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euxo pipefail
-          : "${RELEASE_TAG:?RELEASE_TAG is required}"
-
-          echo "=== Release Assets ==="
-          asset_json=$(gh release view "$RELEASE_TAG" --json assets)
-          asset_count=$(echo "$asset_json" | jq '.assets | length')
-
-          if [ "$asset_count" -eq 0 ]; then
-            echo "❌ No assets found on release $RELEASE_TAG"
-            exit 1
-          fi
-
-          echo "$asset_json" | jq -r '.assets[] | "\(.name) - \(.size) bytes"'
+            echo "## Release summary"
+            echo ""
+            echo "Tag: $TAG"
+            echo "Attached assets:"
+            ls -1 package
+          } >> "$GITHUB_STEP_SUMMARY"
