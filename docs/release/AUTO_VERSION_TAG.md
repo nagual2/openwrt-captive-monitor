@@ -49,6 +49,17 @@ After creating the tag, the workflow:
    - Tag: The newly created version tag
 3. **Triggers build workflow** (`tag-build-release.yml`) automatically via the new tag
 
+### Version Metadata Invariants
+
+The auto-version workflow and tagged build pipeline keep version metadata in sync:
+
+- **Git tag:** `vYYYY.M.D.N`
+- **VERSION file:** `YYYY.M.D.N` (no leading `v`)
+- **PKG_VERSION:** `YYYY.M.D.N` in `package/openwrt-captive-monitor/Makefile`
+- **PKG_RELEASE:** `1` for each new `PKG_VERSION` (numeric, reset to `1` when the base version changes)
+
+When the workflow runs, it updates `VERSION`, `PKG_VERSION`, and `PKG_RELEASE` before creating the tag. The downstream `tag-build-release.yml` job validates these invariants and fails the build if they do not hold.
+
 ## Workflow Sequence
 
 ```

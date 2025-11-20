@@ -282,7 +282,7 @@
     - Keep: YES
 
 36. **docs/project/management.md** - Project management
-    - Purpose: Semantic versioning, release cadence, project boards
+    - Purpose: Date-based versioning strategy (with historical SemVer context), release cadence, project boards
     - Audience: Maintainers
     - Actively used: YES
     - Up-to-date: YES

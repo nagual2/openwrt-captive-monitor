@@ -52,21 +52,42 @@ busybox sh tests/run.sh
 
 ## 🚀 Release Process
 
-### 1. Create Release Branch
+### 1. Date-Based Release Flow (2025+)
 
-```bash
-## Create release branch from develop
-git checkout develop
-git pull origin develop
-git checkout -b release/vX.Y.Z
+Releases are now driven by the **auto-version** workflow and date-based tags. For normal releases you **do not create a manual release branch or tag**.
 
-## Update version if needed
-## Edit package/openwrt-captive-monitor/Makefile
-git add package/openwrt-captive-monitor/Makefile
-git commit -m "bump: version X.Y.Z"
-```
+Before merging to `main`:
 
-### 2. Final Testing
+- [ ] All required CI checks are green (`Lint` matrix, `Test`, security scans).
+- [ ] Release documentation and changelog are updated.
+- [ ] Any breaking changes are clearly documented.
+
+After merging to `main`:
+
+1. The **Auto Version Tag and Release** workflow runs and:
+   - Computes the next version tag `vYYYY.M.D.N`.
+   - Updates `VERSION`, `PKG_VERSION`, and `PKG_RELEASE` (`1`).
+   - Creates the annotated tag and GitHub Release.
+2. The **tag-build-release** workflow builds signed IPK artifacts for that tag.
+
+### 2. Verifying Version Invariants
+
+Before announcing a release, verify that version metadata is consistent:
+
+- [ ] **Tag vs VERSION**: For tag `vYYYY.M.D.N`, the root `VERSION` file contains `YYYY.M.D.N`.
+- [ ] **VERSION vs PKG_VERSION**: `PKG_VERSION` in `package/openwrt-captive-monitor/Makefile` is exactly `YYYY.M.D.N`.
+- [ ] **PKG_RELEASE**: `PKG_RELEASE` is set to `1` for this release.
+- [ ] **IPK metadata**: The `Version` field inside IPK control files is `YYYY.M.D.N-1`.
+
+> **Example invariant:**
+> - Tag: `v2025.11.20.2`
+> - `VERSION`: `2025.11.20.2`
+> - `PKG_VERSION`: `2025.11.20.2`
+> - `PKG_RELEASE`: `1`
+>
+> The CI `tag-build-release.yml` workflow enforces these rules and will fail if they are not met.
+
+### 3. Final Testing
 
 - [ ] Smoke test on real hardware
 - [ ] Configuration validation
@@ -74,9 +95,21 @@ git commit -m "bump: version X.Y.Z"
 - [ ] Captive portal simulation testing
 - [ ] Cleanup verification
 
-### 3. Tag and Merge
+### 3. Legacy: Manual Tag and Merge (Historical SemVer)
+
+> **Note:** The following manual branching and tagging flow applies only to historical semantic versions like `v1.2.3` and is kept for reference.
 
 ```bash
+## Create release branch from develop (legacy flow)
+git checkout develop
+git pull origin develop
+git checkout -b release/vX.Y.Z
+
+## Update version if needed (legacy PKG_VERSION semantics)
+## Edit package/openwrt-captive-monitor/Makefile
+git add package/openwrt-captive-monitor/Makefile
+git commit -m "bump: version X.Y.Z"
+
 ## Merge to main
 git checkout main
 git merge --no-ff release/vX.Y.Z
@@ -142,11 +175,12 @@ find . -type f -name "Packages*" -exec sha256sum {} + >> SHA256SUMS
 
 ### 1. Verification
 
-- [ ] GitHub Release published correctly
-- [ ] All artifacts attached to release
-- [ ] Checksums generated and verified
-- [ ] Package installs correctly on test device
-- [ ] Service starts and functions properly
+- [ ] GitHub Release published correctly for expected tag `vYYYY.M.D.N`.
+- [ ] **Version invariants hold** (tag ↔ `VERSION` ↔ `PKG_VERSION`, `PKG_RELEASE=1`).
+- [ ] All artifacts attached to release (IPKs + `SHA256SUMS`).
+- [ ] Checksums generated and verified.
+- [ ] Package installs correctly on test device.
+- [ ] Service starts and functions properly.
 
 ### 2. Documentation Updates
 

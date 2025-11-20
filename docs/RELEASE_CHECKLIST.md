@@ -9,9 +9,11 @@
 ---
 
 
-This checklist documents the flow we used for the `v1.0.1` release (update the
-version string whenever you cut the next release) and can be repeated for
-subsequent versions.
+This checklist documents the flow we used for the **semantic-versioned** `v1.0.1` release and is kept as a **historical reference**. The steps here assume tags like `v1.0.1` and manual version bumps.
+
+For the **current date-based release process** (`vYYYY.M.D.N` with `PKG_VERSION=YYYY.M.D.N` and `PKG_RELEASE=1`), see:
+- [`docs/release/RELEASE_PROCESS.md`](./release/RELEASE_PROCESS.md)
+- [`docs/project/release-checklist.md`](./project/release-checklist.md)
 
 ## 1. Triage and code verification
 
