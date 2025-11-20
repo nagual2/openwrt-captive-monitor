@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openwrt-captive-monitor
-PKG_VERSION:=1.0.8
+PKG_VERSION:=2025.11.20.4
 PKG_RELEASE:=1
 
 # Append -dev to PKG_VERSION only for main branch builds when DEV_SUFFIX=1 is provided via CI
