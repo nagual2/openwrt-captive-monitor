@@ -10,160 +10,218 @@
 
 ## Overview
 
-The CI pipeline includes automated validation of `.ipk` package version metadata to ensure correct version suffix handling based on the build context:
+The CI pipeline includes automated validation of `.ipk` package version metadata to enforce a strict, date‑based version scheme.
+
+Validation covers three contexts:
 
 - **Main branch** development builds
 - **Pull request** builds
 - **Tagged release** builds
 
-The validation is implemented in `scripts/validate-ipk-version.sh` and is wired into the SDK-based CI workflows as well as the tag-based release workflow.
+The logic is implemented in `scripts/validate-ipk-version.sh` and wired into both the SDK‑based CI workflows and the tag‑based release workflow.
+
+---
+
+## Version model
+
+All builds share the same base “date version”:
+
+- **Format:** `YYYY.M.D.N`
+- **Regex:** `^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+$`
+- **Meaning:**
+  - `YYYY` – four‑digit year (e.g. `2025`)
+  - `M` – month `1–12` (no leading zero required)
+  - `D` – day `1–31` (no leading zero required)
+  - `N` – build counter for that calendar date
+
+The final `Version` field inside the `.ipk` control metadata is built by combining:
+
+```text
+<date-version> [-dev] - <PKG_RELEASE>
+```
+
+where `PKG_RELEASE` is now a **small, numeric integer counter** (`^[0-9]+$`), e.g. `1`, `2`, `3`.
+
+This scheme intentionally **rejects semantic versions** like `1.0.8` and legacy date‑stamp releases embedded in `PKG_RELEASE` such as `20240101`.
+
+---
 
 ## Validation Rules
 
 ### Main Branch Builds
 
-Packages built from the `main` branch **must** include a `-dev` suffix in their `Version` field:
+Packages built from the `main` branch **must** include `-dev` between the date version and the numeric release:
 
-- **Pattern**: `^[0-9][0-9\.]*-dev(-[0-9]{8}([0-9]{2})?)?$`
-- **Examples**:
-  - `1.0.8-dev`
-  - `1.0.8-dev-20240101`
-  - `1.0.8-dev-2024010112`
+- **Pattern:**  
+  `^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+-dev-[0-9]+$`
+- **Examples (valid):**
+  - `2025.11.20.2-dev-1`
+  - `2025.11.20.5-dev-3`
 
 ### Pull Request Builds
 
-Packages built from pull requests **must NOT** include a `-dev` suffix:
+Packages built from pull requests **must NOT** include `-dev`:
 
-- **Pattern**: `^[0-9][0-9\.]*(-[0-9]{8}([0-9]{2})?)?$`
-- **Examples**:
-  - `1.0.8`
-  - `1.0.8-20240101`
-  - `1.0.8-2024010112`
+- **Pattern:**  
+  `^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+-[0-9]+$`
+- **Examples (valid):**
+  - `2025.11.20.2-1`
+  - `2025.11.20.5-3`
 
-### Release Builds (Tag-Based)
+### Release Builds (Tag‑Based)
 
-Packages built for **tagged releases** (workflow `tag-build-release.yml`) **must NOT** include a `-dev` suffix. They use the **same pattern as PR builds**:
+Packages built for **tagged releases** (workflow `tag-build-release.yml`) use the **same pattern as PR builds** and also **must NOT** include `-dev`:
 
-- **Pattern**: `^[0-9][0-9\.]*(-[0-9]{8}([0-9]{2})?)?$`
-- **Examples**:
-  - `1.0.8`
-  - `1.0.8-20240101`
-  - `1.0.8-2024010112`
+- **Pattern:**  
+  `^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+-[0-9]+$`
+- **Examples (valid):**
+  - `2025.11.20.2-1`
+  - `2025.11.20.5-2`
 
 ### PKG_RELEASE Validation
 
-The validation also checks for date-based release suffixes embedded in the `Version` field (which correspond to `PKG_RELEASE`):
+The `PKG_RELEASE` component (the last `-<number>` in the `Version` string):
 
-- **Format**: `YYYYMMDD` or `YYYYMMDDHHMM`
-- **Examples**: `20240101`, `202401011530`
+- **Must** match `^[0-9]+$` (only digits)
+- Is expected to be a **small integer counter** (e.g. `1`, `2`, `3`)
+- **Must not** be a date stamp like `20240101` or `202401011530`
 
-If a date suffix is present but does not match one of these formats, validation fails.
+If `PKG_RELEASE` contains anything other than digits, or looks like a long date stamp, validation fails.
+
+---
 
 ## Implementation
 
 ### Script Location
 
-The logic is implemented in:
+Version validation is implemented in:
 
 - `scripts/validate-ipk-version.sh`
 
 ### How It Works
 
-`validate-ipk-version.sh` operates as follows:
+`scripts/validate-ipk-version.sh`:
 
-1. Takes two arguments: the `.ipk` path and a **branch type** (`main`, `pr`, or `release`).
-2. Extracts the `.ipk` archive (an `ar` archive) to a temporary directory.
+1. Accepts two arguments: the `.ipk` path and a **branch type** (`main`, `pr`, or `release`).
+2. Extracts the `.ipk` (an `ar` archive) to a temporary directory.
 3. Extracts `control.tar.gz` and locates the `control` metadata file.
 4. Reads the `Version` field from the control file.
-5. Validates the `Version` value against the regex appropriate for the branch type:
-   - `main` → must contain `-dev`.
-   - `pr` → must **not** contain `-dev`.
-   - `release` → must **not** contain `-dev`.
-6. If a date suffix is present, validates its length (8 or 10 digits) as a plausible `PKG_RELEASE` value.
+5. Validates the `Version` value:
+   - Ensures the base component matches the date‑version regex (`YYYY.M.D.N`).
+   - Ensures the trailing `PKG_RELEASE` component is numeric (`^[0-9]+$`).
+   - Enforces branch‑specific suffix rules:
+     - `main` → `<date-version>-dev-<PKG_RELEASE>`
+     - `pr` → `<date-version>-<PKG_RELEASE>` (no `-dev`)
+     - `release` → `<date-version>-<PKG_RELEASE>` (no `-dev`)
+6. Prints detailed diagnostics when validation fails, including whether the base date or the release number is invalid.
 7. Exits with status:
    - `0` on success
    - `1` on failure
 
+---
+
 ## CI Integration
 
-The validation is run in three CI contexts:
+Validation runs in three CI contexts:
 
 1. **Main branch dev builds** – job `build-dev-package` in `.github/workflows/ci.yml`:
-   - For each generated `.ipk` under `artifacts/${BUILD_NAME}`, CI runs:
+   - For each generated `.ipk`, CI runs:
      - `./scripts/validate-ipk-version.sh "$IPK_FILE" main`
-   - Ensures dev artifacts are clearly marked with `-dev`.
+   - Ensures dev artifacts are clearly marked with `-dev` and follow the date‑based format.
 
 2. **Pull request builds** – job `build-pr-package` in `.github/workflows/ci.yml`:
    - For each `.ipk` in the PR artifacts directory, CI runs:
      - `./scripts/validate-ipk-version.sh "$IPK_FILE" pr`
-   - Ensures candidate packages do **not** carry the `-dev` suffix.
+   - Ensures candidate packages use date‑based versions **without** `-dev`.
 
 3. **Tagged releases** – job `Build OpenWrt Package` in `.github/workflows/tag-build-release.yml`:
-   - After the release package is built and structurally validated, CI runs:
+   - After building and verifying the release package, CI runs:
      - `./scripts/validate-ipk-version.sh "$IPK_FILE" release`
-   - Ensures final release IPKs have clean `Version` metadata suitable for distribution.
+   - Ensures final release IPKs have clean, date‑based `Version` metadata suitable for distribution.
+
+---
 
 ## Usage
 
 ### Manual Validation
 
-You can validate a built `.ipk` by hand, for example after downloading it from a CI artifact or GitHub Release:
+You can validate a built `.ipk` by hand, for example after downloading it from CI artifacts or a GitHub Release:
 
 ```bash
-# Main branch dev build (Version must include -dev)
-./scripts/validate-ipk-version.sh openwrt-captive-monitor_1.0.8-dev_all.ipk main
+# Main branch dev build (Version must be <date-version>-dev-<PKG_RELEASE>)
+./scripts/validate-ipk-version.sh openwrt-captive-monitor_2025.11.20.2-dev-1_all.ipk main
 
-# Pull request build (Version must NOT include -dev)
-./scripts/validate-ipk-version.sh openwrt-captive-monitor_1.0.8_all.ipk pr
+# Pull request build (Version must be <date-version>-<PKG_RELEASE>, no -dev)
+./scripts/validate-ipk-version.sh openwrt-captive-monitor_2025.11.20.2-1_all.ipk pr
 
-# Tagged release build (Version must NOT include -dev)
-./scripts/validate-ipk-version.sh openwrt-captive-monitor_1.0.8_all.ipk release
+# Tagged release build (same pattern as PR)
+./scripts/validate-ipk-version.sh openwrt-captive-monitor_2025.11.20.2-1_all.ipk release
 ```
 
 ### CI Validation
 
 In CI, validation runs automatically and checks **all** `.ipk` files in the relevant artifacts directory. If any package fails validation, the job (and workflow) fails, preventing accidentally mis‑versioned packages from being published.
 
+---
+
 ## Troubleshooting
 
-### Common Failure Scenarios
-
-**1. Main branch package without `-dev`:**
+### 1. Main branch package without `-dev`
 
 ```text
 ✗ Validation FAILED: Version does not match main branch pattern
-  Expected: version with '-dev' suffix (e.g., 1.0.8-dev or 1.0.8-dev-20240101)
-  Got: 1.0.8-20240101
+  Expected: version with '-dev' and numeric PKG_RELEASE (e.g., 2025.11.20.2-dev-1)
+  Got: 2025.11.20.2-1
 ```
 
-Resolution:
+**Resolution:**
 
-- Ensure the CI environment passes `DEV_SUFFIX=1` into the OpenWrt SDK build.
-- Check that `package/openwrt-captive-monitor/Makefile` appends `-dev` when `DEV_SUFFIX=1`.
+- Ensure the CI environment passes `DEV_SUFFIX=1` into the OpenWrt SDK build for `main`.
+- Check that `package/openwrt-captive-monitor/Makefile` appends `-dev` to `PKG_VERSION` when `DEV_SUFFIX=1`.
 
-**2. PR or release package with `-dev`:**
+### 2. PR or release package with `-dev`
 
 ```text
-✗ Validation FAILED: Version incorrectly includes '-dev' suffix for PR/non-main branch
-  Expected: version without '-dev' suffix (e.g., 1.0.8 or 1.0.8-20240101)
-  Got: 1.0.8-dev-20240101
+✗ Validation FAILED: Version incorrectly includes '-dev' suffix for non-main build
+  Expected: version without '-dev' (e.g., 2025.11.20.2-1)
+  Got: 2025.11.20.2-dev-1
 ```
 
-Resolution:
+**Resolution:**
 
 - Ensure PR builds and tagged releases build with `DEV_SUFFIX=0` (or unset).
 - Verify that the package `Makefile` only appends `-dev` when explicitly requested.
 
-**3. Invalid date suffix:**
+### 3. Semver-style or non‑date base version
 
 ```text
-✗ Validation FAILED: Date format invalid (expected YYYYMMDD or YYYYMMDDHHMM)
+✗ Validation FAILED: Base component '1.0.8' is not a valid date-based version (expected YYYY.M.D.N)
+  Got: 1.0.8-dev-1
 ```
 
-Resolution:
+**Resolution:**
 
-- Confirm that `PKG_RELEASE` uses a valid date format: `YYYYMMDD` or `YYYYMMDDHHMM`.
-- Update the package metadata before re-running the build.
+- Update `PKG_VERSION` in the package `Makefile` to use the `YYYY.M.D.N` format.
+- Regenerate the package so that the `Version` control field matches the date‑based scheme.
+
+### 4. Non-numeric or date-stamp PKG_RELEASE
+
+```text
+ERROR: PKG_RELEASE must be a numeric integer (^[0-9]+$).
+  Got: '2024-01-01'
+```
+
+or
+
+```text
+ERROR: PKG_RELEASE looks like a date stamp ('20240101').
+       PKG_RELEASE is now a small integer counter (e.g., 1, 2, 3).
+```
+
+**Resolution:**
+
+- Set `PKG_RELEASE` in the package `Makefile` to a small integer (`1`, `2`, `3`, …).
+- Avoid embedding date stamps in `PKG_RELEASE`; the date already lives in `PKG_VERSION` via `<date-version>`.
 
 ---
 
@@ -179,54 +237,87 @@ Resolution:
 
 ## Обзор
 
-Конвейер CI выполняет автоматическую проверку поля `Version` в `.ipk`‑пакетах, чтобы:
+Конвейер CI выполняет автоматическую проверку поля `Version` в `.ipk`‑пакетах, чтобы обеспечить единый формат **дата‑версий** и корректные суффиксы в зависимости от контекста сборки:
 
-- Сборки из ветки **`main`** всегда имели суффикс `-dev`.
-- Сборки из **pull request'ов** не содержали суффикс `-dev`.
-- Сборки для **релизных тегов** (workflow `tag-build-release.yml`) также не имели суффикс `-dev`.
+- Сборки из ветки **`main`**
+- Сборки из **pull request'ов**
+- Сборки для **релизных тегов**
 
-Скрипт `scripts/validate-ipk-version.sh` проверяет только метаданные пакета и не изменяет сам архив.
+Валидация реализована в `scripts/validate-ipk-version.sh` и используется как в SDK‑сборках, так и в workflow для тегированных релизов.
+
+---
+
+## Модель версионирования
+
+Общий базовый формат версии:
+
+- **Формат:** `YYYY.M.D.N`
+- **Регулярное выражение:** `^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+$`
+- **Семантика:**
+  - `YYYY` – год из 4 цифр (например, `2025`)
+  - `M` – месяц `1–12` (ведущий ноль не обязателен)
+  - `D` – день `1–31` (ведущий ноль не обязателен)
+  - `N` – счётчик сборки для данной календарной даты
+
+Поле `Version` в `control`‑файле пакета строится по схеме:
+
+```text
+<date-version> [-dev] - <PKG_RELEASE>
+```
+
+где `PKG_RELEASE` — это **небольшое целое число** (`^[0-9]+$`), например `1`, `2`, `3`.
+
+Таким образом:
+
+- Базовая версия кодирует дату и номер сборки (`2025.11.20.2`).
+- `PKG_RELEASE` служит коротким счётчиком релизов для одной и той же базовой версии.
+- Семантические версии (`1.0.8`) и старые форматы с датой в `PKG_RELEASE` (`20240101`) **отвергаются**.
+
+---
 
 ## Правила валидации
 
 ### Сборки из ветки main
 
-Пакеты, собранные из ветки `main`, **должны** содержать суффикс `-dev` в поле `Version`:
+Пакеты, собранные из ветки `main`, **обязаны** содержать суффикс `-dev` между базовой датой и номером релиза:
 
-- **Шаблон**: `^[0-9][0-9\.]*-dev(-[0-9]{8}([0-9]{2})?)?$`
-- **Примеры**:
-  - `1.0.8-dev`
-  - `1.0.8-dev-20240101`
-  - `1.0.8-dev-2024010112`
+- **Шаблон:**  
+  `^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+-dev-[0-9]+$`
+- **Примеры (корректные):**
+  - `2025.11.20.2-dev-1`
+  - `2025.11.20.5-dev-3`
 
 ### Сборки из pull request'ов
 
-Пакеты, собранные в контексте pull request, **НЕ должны** содержать суффикс `-dev`:
+Пакеты, собранные в контексте pull request, **НЕ должны** содержать `-dev`:
 
-- **Шаблон**: `^[0-9][0-9\.]*(-[0-9]{8}([0-9]{2})?)?$`
-- **Примеры**:
-  - `1.0.8`
-  - `1.0.8-20240101`
-  - `1.0.8-2024010112`
+- **Шаблон:**  
+  `^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+-[0-9]+$`
+- **Примеры (корректные):**
+  - `2025.11.20.2-1`
+  - `2025.11.20.5-3`
 
 ### Релизные сборки (теги)
 
-Пакеты, собранные для **релизных тегов** (`v...`), также **НЕ должны** содержать суффикс `-dev` и используют тот же шаблон, что и PR‑сборки:
+Пакеты, собранные для **релизных тегов** (`v...`), используют тот же шаблон, что и PR‑сборки, и также **НЕ должны** содержать `-dev`:
 
-- **Шаблон**: `^[0-9][0-9\.]*(-[0-9]{8}([0-9]{2})?)?$`
-- **Примеры**:
-  - `1.0.8`
-  - `1.0.8-20240101`
-  - `1.0.8-2024010112`
+- **Шаблон:**  
+  `^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+-[0-9]+$`
+- **Примеры (корректные):**
+  - `2025.11.20.2-1`
+  - `2025.11.20.5-2`
 
 ### Проверка PKG_RELEASE
 
-Дополнительно проверяется дата‑суффикс релиза, закодированный в конце `Version`:
+Компонент `PKG_RELEASE` (последний `-<number>` в `Version`):
 
-- **Формат**: `YYYYMMDD` или `YYYYMMDDHHMM`
-- **Примеры**: `20240101`, `202401011530`
+- **Обязан** соответствовать `^[0-9]+$` (только цифры).
+- Должен быть **небольшим целым** (`1`, `2`, `3`, …).
+- **Не должен** выглядеть как дата (`20240101`, `202401011530` и т.п.).
 
-Если суффикс даты присутствует, но не соответствует одному из этих форматов, проверка считается неуспешной.
+Если `PKG_RELEASE` содержит что‑то кроме цифр или похож на длинную дату, проверка считается неуспешной.
+
+---
 
 ## Реализация
 
@@ -236,61 +327,95 @@ Resolution:
 
 ### Логика работы
 
-1. Скрипт принимает два аргумента: путь до `.ipk` и тип ветки: `main`, `pr` или `release`.
+`scripts/validate-ipk-version.sh`:
+
+1. Принимает два аргумента: путь до `.ipk` и тип ветки: `main`, `pr` или `release`.
 2. Извлекает `control.tar.gz` из IPK‑архива и находит файл `control`.
 3. Считывает значение поля `Version`.
-4. Сопоставляет версию с регулярным выражением в зависимости от типа ветки:
-   - `main` → версия **обязана** содержать `-dev`.
-   - `pr` → версия **не должна** содержать `-dev`.
-   - `release` → версия **не должна** содержать `-dev`.
-5. При наличии суффикса даты проверяет его длину (8 или 10 цифр) как допустимое значение `PKG_RELEASE`.
+4. Проверяет:
+   - Что базовая часть версии соответствует формату `YYYY.M.D.N`.
+   - Что компонент `PKG_RELEASE` содержит только цифры.
+   - Что структура и суффиксы соответствуют типу ветки:
+     - `main` → `<date-version>-dev-<PKG_RELEASE>`
+     - `pr` → `<date-version>-<PKG_RELEASE>`
+     - `release` → `<date-version>-<PKG_RELEASE>`
+5. В случае ошибки выводит подробные сообщения: какая часть версии некорректна (база или номер релиза).
 6. Возвращает код выхода `0` при успехе или `1` при ошибке.
+
+---
 
 ## Интеграция с CI
 
 Проверка вызывается в трёх контекстах CI:
 
-1. **build-dev-package** (ветка `main`) – проверяет, что версии содержат суффикс `-dev`.
-2. **build-pr-package** (pull request'ы) – проверяет, что версии **не** содержат суффикс `-dev`.
-3. **tag-build-release.yml / Build OpenWrt Package** (релизные теги) – проверяет, что релизные `.ipk` имеют «чистую» версию без `-dev`.
+1. **build-dev-package** (ветка `main`) – для каждого `.ipk` выполняется:
+   - `./scripts/validate-ipk-version.sh "$IPK_FILE" main`
+   - Гарантирует наличие суффикса `-dev` и корректный формат даты.
+
+2. **build-pr-package** (pull request'ы) – для каждого `.ipk` выполняется:
+   - `./scripts/validate-ipk-version.sh "$IPK_FILE" pr`
+   - Гарантирует отсутствие `-dev` и дату‑ориентированную версию.
+
+3. **tag-build-release.yml / Build OpenWrt Package** (релизные теги) – для релизных пакетов выполняется:
+   - `./scripts/validate-ipk-version.sh "$IPK_FILE" release`
+   - Гарантирует «чистые» версии без `-dev`, с корректным `PKG_RELEASE`.
+
+---
 
 ## Использование вручную
 
 Примеры ручного запуска проверки:
 
 ```bash
-# Для сборок из ветки main (должен быть -dev)
-./scripts/validate-ipk-version.sh openwrt-captive-monitor_1.0.8-dev_all.ipk main
+# Для сборок из ветки main (должен быть формат <date-version>-dev-<PKG_RELEASE>)
+./scripts/validate-ipk-version.sh openwrt-captive-monitor_2025.11.20.2-dev-1_all.ipk main
 
-# Для PR‑сборок (не должно быть -dev)
-./scripts/validate-ipk-version.sh openwrt-captive-monitor_1.0.8_all.ipk pr
+# Для PR‑сборок (формат <date-version>-<PKG_RELEASE>, без -dev)
+./scripts/validate-ipk-version.sh openwrt-captive-monitor_2025.11.20.2-1_all.ipk pr
 
-# Для релизных тегов (не должно быть -dev)
-./scripts/validate-ipk-version.sh openwrt-captive-monitor_1.0.8_all.ipk release
+# Для релизных тегов (тот же формат, что и для PR)
+./scripts/validate-ipk-version.sh openwrt-captive-monitor_2025.11.20.2-1_all.ipk release
 ```
+
+---
 
 ## Устранение неполадок
 
-**1. Ветка main без `-dev`**
+### 1. Ветка main без `-dev`
 
 ```text
 ✗ Validation FAILED: Version does not match main branch pattern
-  Expected: version with '-dev' suffix (e.g., 1.0.8-dev or 1.0.8-dev-20240101)
-  Got: 1.0.8-20240101
+  Expected: version with '-dev' and numeric PKG_RELEASE (e.g., 2025.11.20.2-dev-1)
+  Got: 2025.11.20.2-1
 ```
 
-**2. PR/релизная сборка с `-dev`**
+### 2. PR/релизная сборка с `-dev`
 
 ```text
-✗ Validation FAILED: Version incorrectly includes '-dev' suffix for PR/non-main branch
-  Expected: version without '-dev' suffix (e.g., 1.0.8 or 1.0.8-20240101)
-  Got: 1.0.8-dev-20240101
+✗ Validation FAILED: Version incorrectly includes '-dev' suffix for non-main build
+  Expected: version without '-dev' (e.g., 2025.11.20.2-1)
+  Got: 2025.11.20.2-dev-1
 ```
 
-**3. Некорректный формат даты**
+### 3. Семантическая или «старая» версия
 
 ```text
-✗ Validation FAILED: Date format invalid (expected YYYYMMDD or YYYYMMDDHHMM)
+✗ Validation FAILED: Base component '1.0.8' is not a valid date-based version (expected YYYY.M.D.N)
+  Got: 1.0.8-dev-1
 ```
 
-Во всех случаях рекомендуется скорректировать `PKG_VERSION`/`PKG_RELEASE` в `Makefile` пакета и повторно запустить сборку или соответствующий workflow.
+### 4. Некорректный PKG_RELEASE
+
+```text
+ERROR: PKG_RELEASE must be a numeric integer (^[0-9]+$).
+  Got: '2024-01-01'
+```
+
+или
+
+```text
+ERROR: PKG_RELEASE looks like a date stamp ('20240101').
+       PKG_RELEASE is now a small integer counter (e.g., 1, 2, 3).
+```
+
+Во всех случаях рекомендуется скорректировать `PKG_VERSION`/`PKG_RELEASE` в `Makefile` пакета согласно новой схеме `YYYY.M.D.N` + числовой `PKG_RELEASE`, после чего повторно запустить сборку или соответствующий workflow.

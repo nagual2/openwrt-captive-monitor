@@ -4,7 +4,7 @@
 #
 # Usage: validate-ipk-version.sh <ipk_file> <branch_type>
 #   ipk_file: Path to .ipk package file
-#   branch_type: Either "main" or "pr"
+#   branch_type: One of "main", "pr", or "release"
 #
 # Exit codes:
 #   0: Validation passed
@@ -52,13 +52,25 @@ Arguments:
   ipk_file     Path to .ipk package file
   branch_type  One of "main", "pr", or "release"
 
+Version format (shared base):
+  <date-version>: YYYY.M.D.N where:
+    - YYYY is a 4-digit year (e.g., 2025)
+    - M is month 1-12 (no leading zero required)
+    - D is day 1-31 (no leading zero required)
+    - N is a numeric build counter for that date
+  Regex for <date-version>:
+    ^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+$
+
 Branch-specific rules:
-  main:    Version must match ^[0-9][0-9\.]*-dev(-[0-9]{8}([0-9]{2})?)?$
-           (must include -dev suffix)
-  pr:      Version must match ^[0-9][0-9\.]*(-[0-9]{8}([0-9]{2})?)?$
-           (must NOT include -dev suffix; non-main validation builds)
-  release: Version must match ^[0-9][0-9\.]*(-[0-9]{8}([0-9]{2})?)?$
-           (must NOT include -dev suffix; final tag-based releases)
+  main:    Version must be <date-version>-dev-<PKG_RELEASE>
+           Regex: ^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+-dev-[0-9]+$
+           Example: 2025.11.20.2-dev-1
+  pr:      Version must be <date-version>-<PKG_RELEASE> (no -dev)
+           Regex: ^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+-[0-9]+$
+           Example: 2025.11.20.2-1
+  release: Same as "pr" (tagged release builds use clean versions without -dev)
+
+PKG_RELEASE must be a purely numeric, non-negative integer (^[0-9]+$).
 
 Exit codes:
   0: Validation passed
@@ -109,10 +121,16 @@ temp_dir=$(mktemp -d)
 work_dir="$temp_dir/ipk"
 mkdir -p "$work_dir"
 
+# Resolve IPK path to an absolute path so extraction works from any CWD
+case "$ipk_file" in
+    /*) ipk_path="$ipk_file" ;;
+    *) ipk_path="$(pwd)/$ipk_file" ;;
+esac
+
 # Extract .ipk archive (ar archive)
 (
     cd "$work_dir"
-    ar x "$ipk_file" 2> /dev/null
+    ar x "$ipk_path" 2> /dev/null
 ) || {
     printf "%serror:%s failed to extract IPK archive\n" "$RED" "$NC" >&2
     exit 1
@@ -163,69 +181,77 @@ printf "\n"
 # Validate version based on branch type
 validation_passed=0
 
+# Shared base regex for the date-based version component (YYYY.M.D.N)
+base_regex='^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+'
+
 if [ "$branch_type" = "main" ]; then
-    # Main branch: Version must include -dev suffix
-    # Pattern: ^[0-9][0-9\.]*-dev(-[0-9]{8}([0-9]{2})?)?$
+    # Main branch: <date-version>-dev-<PKG_RELEASE>
     printf "%sValidating main branch rules:%s\n" "$CYAN" "$NC"
-    printf "  - Version must include '-dev' suffix\n"
-    printf "  - Pattern: ^[0-9][0-9\\.]*-dev(-[0-9]{8}([0-9]{2})?)?$\n"
+    printf "  - Base version must be date-based: YYYY.M.D.N\n"
+    printf "  - PKG_RELEASE must be numeric (^[0-9]+$)\n"
+    printf "  - Expected Version format: <YYYY.M.D.N>-dev-<PKG_RELEASE>\n"
+    printf "    Example: 2025.11.20.2-dev-1\n"
     printf "\n"
 
-    # Check if version matches pattern
-    # Using grep with extended regex for validation
-    if printf '%s\n' "$version" | grep -Eq '^[0-9][0-9.]*-dev(-[0-9]{8}([0-9]{2})?)?$'; then
+    main_pattern='^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+-dev-[0-9]+$'
+
+    if printf '%s\n' "$version" | grep -Eq "$main_pattern"; then
         validation_passed=1
-        printf "%s✓ Validation PASSED:%s Version correctly includes '-dev' suffix\n" "$GREEN" "$NC"
+        printf "%s✓ Validation PASSED:%s Version matches main branch pattern\n" "$GREEN" "$NC"
     else
         printf "%s✗ Validation FAILED:%s Version does not match main branch pattern\n" "$RED" "$NC" >&2
-        printf "  Expected: version with '-dev' suffix (e.g., 1.0.8-dev or 1.0.8-dev-20240101)\n" >&2
-        printf "  Got: %s\n" "$version" >&2
+        # Provide more detailed diagnostics
+        if ! printf '%s\n' "$version" | grep -q -- '-dev-'; then
+            printf "  Expected: version with '-dev-' and numeric PKG_RELEASE (e.g., 2025.11.20.2-dev-1)\n" >&2
+            printf "  Got: %s\n" "$version" >&2
+        else
+            base_part=$(printf '%s\n' "$version" | sed 's/-dev-[^-]*$//')
+            release_part=$(printf '%s\n' "$version" | sed 's/.*-dev-//')
+            if ! printf '%s\n' "$base_part" | grep -Eq "${base_regex}$"; then
+                printf "  Base component '%s' is not a valid date-based version (expected YYYY.M.D.N)\n" "$base_part" >&2
+            elif ! printf '%s\n' "$release_part" | grep -Eq '^[0-9]+$'; then
+                printf "  PKG_RELEASE component '%s' must be numeric (e.g., 1, 2, 3)\n" "$release_part" >&2
+            else
+                printf "  Got: %s\n" "$version" >&2
+            fi
+        fi
     fi
 else
-    # PR/non-main branch: Version must NOT include -dev suffix
-    # Pattern: ^[0-9][0-9\.]*(-[0-9]{8}([0-9]{2})?)?$
-    printf "%sValidating PR/non-main branch rules:%s\n" "$CYAN" "$NC"
-    printf "  - Version must NOT include '-dev' suffix\n"
-    printf "  - Pattern: ^[0-9][0-9\\.]*(-[0-9]{8}([0-9]{2})?)?$\n"
+    # PR and tagged release builds: <date-version>-<PKG_RELEASE> (no -dev)
+    printf "%sValidating PR/release rules:%s\n" "$CYAN" "$NC"
+    printf "  - Base version must be date-based: YYYY.M.D.N\n"
+    printf "  - PKG_RELEASE must be numeric (^[0-9]+$)\n"
+    printf "  - Expected Version format: <YYYY.M.D.N>-<PKG_RELEASE>\n"
+    printf "    Example: 2025.11.20.2-1\n"
+    printf "  - '-dev' suffix is not allowed\n"
     printf "\n"
 
-    # Check if version matches pattern (without -dev)
-    if printf '%s\n' "$version" | grep -Eq '^[0-9][0-9.]*(-[0-9]{8}([0-9]{2})?)?$'; then
-        # Also verify it does NOT contain -dev
+    pr_pattern='^[0-9]{4}\.(1[0-2]|[1-9])\.(3[01]|[12][0-9]|[1-9])\.[0-9]+-[0-9]+$'
+
+    if printf '%s\n' "$version" | grep -Eq "$pr_pattern"; then
         if printf '%s\n' "$version" | grep -q -- '-dev'; then
-            printf "%s✗ Validation FAILED:%s Version incorrectly includes '-dev' suffix for PR/non-main branch\n" "$RED" "$NC" >&2
-            printf "  Expected: version without '-dev' suffix (e.g., 1.0.8 or 1.0.8-20240101)\n" >&2
+            printf "%s✗ Validation FAILED:%s Version incorrectly includes '-dev' suffix for non-main build\n" "$RED" "$NC" >&2
+            printf "  Expected: version without '-dev' (e.g., 2025.11.20.2-1)\n" >&2
             printf "  Got: %s\n" "$version" >&2
         else
             validation_passed=1
-            printf "%s✓ Validation PASSED:%s Version correctly excludes '-dev' suffix\n" "$GREEN" "$NC"
+            printf "%s✓ Validation PASSED:%s Version matches PR/release pattern\n" "$GREEN" "$NC"
         fi
     else
-        printf "%s✗ Validation FAILED:%s Version does not match PR/non-main branch pattern\n" "$RED" "$NC" >&2
-        printf "  Expected: version without '-dev' suffix (e.g., 1.0.8 or 1.0.8-20240101)\n" >&2
-        printf "  Got: %s\n" "$version" >&2
+        printf "%s✗ Validation FAILED:%s Version does not match PR/release pattern\n" "$RED" "$NC" >&2
+        base_part=$(printf '%s\n' "$version" | sed 's/-[^-]*$//')
+        release_part=$(printf '%s\n' "$version" | sed 's/.*-//')
+        if printf '%s\n' "$version" | grep -q -- '-dev'; then
+            printf "  '-dev' suffix is not allowed for PR/release builds\n" >&2
+        fi
+        if ! printf '%s\n' "$base_part" | grep -Eq "${base_regex}$"; then
+            printf "  Base component '%s' is not a valid date-based version (expected YYYY.M.D.N)\n" "$base_part" >&2
+        elif ! printf '%s\n' "$release_part" | grep -Eq '^[0-9]+$'; then
+            printf "  PKG_RELEASE component '%s' must be numeric (e.g., 1, 2, 3)\n" "$release_part" >&2
+        else
+            printf "  Got: %s\n" "$version" >&2
+        fi
     fi
-fi
-
-printf "\n"
-
-# Validate PKG_RELEASE format by checking the date suffix in Version
-# The Version format includes PKG_RELEASE as: VERSION-RELEASE
-# For date-based releases, it should be YYYYMMDD or YYYYMMDDHHMM
-if printf '%s\n' "$version" | grep -Eq -- '-[0-9]{8}([0-9]{2})?$'; then
-    date_suffix=$(printf '%s\n' "$version" | sed -n 's/.*-\([0-9]\{8\}\([0-9]\{2\}\)\?\)$/\1/p')
-    printf "%sPKG_RELEASE validation:%s\n" "$CYAN" "$NC"
-    printf "  Date suffix found: %s\n" "$date_suffix"
-
-    # Basic validation: check if it's a plausible date
-    if [ ${#date_suffix} -eq 8 ] || [ ${#date_suffix} -eq 10 ]; then
-        printf "%s  ✓ Date format valid%s (YYYYMMDD or YYYYMMDDHHMM)\n" "$GREEN" "$NC"
-    else
-        printf "%s  ✗ Date format invalid%s (expected YYYYMMDD or YYYYMMDDHHMM)\n" "$RED" "$NC" >&2
-        validation_passed=0
-    fi
-else
-    printf "%sNote:%s No date-based PKG_RELEASE suffix detected (optional)\n" "$YELLOW" "$NC"
 fi
 
 printf "\n"
