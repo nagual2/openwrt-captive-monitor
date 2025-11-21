@@ -102,10 +102,11 @@ jobs:
           # Check if there are any changes to commit
           if git diff --quiet --exit-code VERSION package/openwrt-captive-monitor/Makefile; then
             echo "No metadata changes detected; skipping commit."
-            echo "updated=false" >> "$GITHUB_OUTPUT"
-            echo "clean_version=$CLEAN_VERSION" >> "$GITHUB_OUTPUT"
-            # Capture current HEAD for tagging even if no changes
-            echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            {
+              echo "updated=false"
+              echo "clean_version=$CLEAN_VERSION"
+              echo "commit_sha=$(git rev-parse HEAD)"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -123,9 +124,11 @@ jobs:
           COMMIT_SHA=$(git rev-parse HEAD)
           echo "Version bump commit SHA: $COMMIT_SHA"
 
-          echo "updated=true" >> "$GITHUB_OUTPUT"
-          echo "clean_version=$CLEAN_VERSION" >> "$GITHUB_OUTPUT"
-          echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
+          {
+            echo "updated=true"
+            echo "clean_version=$CLEAN_VERSION"
+            echo "commit_sha=$COMMIT_SHA"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Generate release notes
         if: steps.auto-version-skip.outputs.skip != 'true'
@@ -204,7 +207,7 @@ jobs:
           # Use PAT if available to trigger downstream workflows
           if [ -n "${PAT_TOKEN:-}" ]; then
             echo "Using PAT_TOKEN to push tag..."
-            git push https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}.git "$NEW_TAG"
+            git push "https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}.git" "$NEW_TAG"
           else
             echo "PAT_TOKEN not found, falling back to origin push (no downstream trigger)..."
             git push origin "$NEW_TAG"
