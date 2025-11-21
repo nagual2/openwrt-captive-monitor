@@ -181,13 +181,21 @@ jobs:
 
       - name: Create and push tag
         if: steps.auto-version-skip.outputs.skip != 'true' && steps.tag-check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
           NEW_TAG="${{ steps.version.outputs.version }}"
 
           git tag -a "$NEW_TAG" -m "Release $NEW_TAG" HEAD
-          git push origin "$NEW_TAG"
+          
+          # Use PAT if available to trigger downstream workflows
+          if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
+            git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git "$NEW_TAG"
+          else
+            git push origin "$NEW_TAG"
+          fi
 
       - name: Check release status
         if: steps.auto-version-skip.outputs.skip != 'true'
