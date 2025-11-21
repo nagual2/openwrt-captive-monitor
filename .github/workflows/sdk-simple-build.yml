@@ -50,6 +50,9 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install openwrt-captive-monitor
 
+          # Non-interactive target configuration
+          make defconfig
+
           # Build only the openwrt-captive-monitor package
           make package/openwrt-captive-monitor/compile V=s
 
