@@ -162,12 +162,12 @@ fetch_opkg_utils_raw() {
 
     for bin in opkg-build opkg-unbuild opkg-make-index; do
         case "$bin" in
-        opkg-build)
-            url="$OPKG_UTILS_RAW_OPKG_BUILD"
-            ;;
-        *)
-            url="$OPKG_UTILS_RAW_BASE/$bin"
-            ;;
+            opkg-build)
+                url="$OPKG_UTILS_RAW_OPKG_BUILD"
+                ;;
+            *)
+                url="$OPKG_UTILS_RAW_BASE/$bin"
+                ;;
         esac
         dest="$OPKG_UTILS_BIN_DIR/$bin"
         info "downloading $bin from $url"

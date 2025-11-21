@@ -13,7 +13,7 @@
 #
 
 set -eu
-if (set -o pipefail) 2>/dev/null; then
+if (set -o pipefail) 2> /dev/null; then
     # shellcheck disable=SC3040
     set -o pipefail
 fi

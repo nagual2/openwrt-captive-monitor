@@ -116,36 +116,36 @@ for root in $search_roots; do
         else
             # Handle the case where root already points at an SDK bin/ directory
             case "$root" in
-            */bin)
-                [ -d "$root/packages" ] && packages_dir="$root/packages"
-                [ -d "$root/targets" ] && targets_dir="$root/targets"
-                ;;
+                */bin)
+                    [ -d "$root/packages" ] && packages_dir="$root/packages"
+                    [ -d "$root/targets" ] && targets_dir="$root/targets"
+                    ;;
             esac
         fi
 
         if [ -n "$packages_dir" ] && [ -d "$packages_dir" ]; then
             find "$packages_dir" -type f \
                 \( -name '*.ipk' \
-                   -o -name 'Packages' \
-                   -o -name 'Packages.gz' \
-                   -o -name 'SHA256SUMS*' \
-                   -o -name '*sha256sums*' \
-                   -o -name '*.json' \
-                   -o -name '*.log' \
-                   -o -name '*.txt' \) \
+                -o -name 'Packages' \
+                -o -name 'Packages.gz' \
+                -o -name 'SHA256SUMS*' \
+                -o -name '*sha256sums*' \
+                -o -name '*.json' \
+                -o -name '*.log' \
+                -o -name '*.txt' \) \
                 -print >> "$list_file"
         fi
 
         if [ -n "$targets_dir" ] && [ -d "$targets_dir" ]; then
             find "$targets_dir" -type f \
                 \( -name '*.img' \
-                   -o -name '*.img.gz' \
-                   -o -name '*.bin' \
-                   -o -name '*.tar' \
-                   -o -name '*.tar.gz' \
-                   -o -name '*manifest*' \
-                   -o -name 'SHA256SUMS*' \
-                   -o -name '*sha256sums*' \) \
+                -o -name '*.img.gz' \
+                -o -name '*.bin' \
+                -o -name '*.tar' \
+                -o -name '*.tar.gz' \
+                -o -name '*manifest*' \
+                -o -name 'SHA256SUMS*' \
+                -o -name '*sha256sums*' \) \
                 -print >> "$list_file"
         fi
     fi
@@ -166,14 +166,14 @@ echo "Staging $count artifact(s) into $artifacts_dir"
 while IFS= read -r src; do
     # Normalize source path to absolute for reliable comparisons
     case "$src" in
-    /*) src_abs="$src" ;;
-    ./*) src_abs="$repo_root/${src#./}" ;;
-    *) src_abs="$repo_root/$src" ;;
+        /*) src_abs="$src" ;;
+        ./*) src_abs="$repo_root/${src#./}" ;;
+        *) src_abs="$repo_root/$src" ;;
     esac
 
     # Skip files that are already inside the destination artifacts directory
     case "$src_abs" in
-    "$artifacts_dir"/*) continue ;;
+        "$artifacts_dir"/*) continue ;;
     esac
 
     base=$(basename "$src_abs")
