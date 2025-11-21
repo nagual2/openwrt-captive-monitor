@@ -685,4 +685,5 @@ jobs:
             echo ""
             echo "### 📋 Generated Packages"
             find "artifacts/${BUILD_NAME}" -name "*.ipk" -exec echo "- {}" \;
-          } >> "$GITHUB_STEP_SUMMARY"
+          } >> "$GITHUB_STEP_SUMMARY" 
+ 
