@@ -152,8 +152,8 @@ jobs:
         uses: openwrt/gh-action-sdk@v9
         env:
           # Use the official SDK container pinned to the OpenWrt version and target
-          # e.g., ghcr.io/openwrt/sdk:x86-64-23.05.3
-          CONTAINER: ghcr.io/openwrt/sdk:${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}
+          # e.g., x86-64-23.05.3
+          ARCH: ${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}
           # Package(s) to build inside the SDK
           PACKAGES: openwrt-captive-monitor
           BUILD_LOG: 1
@@ -163,9 +163,6 @@ jobs:
           # Mount points for the action
           ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
           FEED_DIR: ${{ github.workspace }}/feed
-          # Standardized SDK parameters
-          SDK_TARGET: ${{ matrix.sdk_target }}
-          ARCH: ${{ matrix.arch }}
 
       - name: List and validate produced artifacts
         run: |
