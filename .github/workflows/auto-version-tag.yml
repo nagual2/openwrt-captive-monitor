@@ -104,6 +104,8 @@ jobs:
             echo "No metadata changes detected; skipping commit."
             echo "updated=false" >> "$GITHUB_OUTPUT"
             echo "clean_version=$CLEAN_VERSION" >> "$GITHUB_OUTPUT"
+            # Capture current HEAD for tagging even if no changes
+            echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -117,8 +119,13 @@ jobs:
           echo "Pushing metadata bump commit to main..."
           git push origin HEAD:main
 
+          # Capture the SHA of the version bump commit for tagging
+          COMMIT_SHA=$(git rev-parse HEAD)
+          echo "Version bump commit SHA: $COMMIT_SHA"
+
           echo "updated=true" >> "$GITHUB_OUTPUT"
           echo "clean_version=$CLEAN_VERSION" >> "$GITHUB_OUTPUT"
+          echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Generate release notes
         if: steps.auto-version-skip.outputs.skip != 'true'
@@ -187,10 +194,13 @@ jobs:
           set -euo pipefail
 
           NEW_TAG="${{ steps.version.outputs.version }}"
+          COMMIT_SHA="${{ steps.update-metadata.outputs.commit_sha }}"
 
-          # Create tag on HEAD (which includes version bump after push)
-          git tag -a "$NEW_TAG" -m "Release $NEW_TAG" HEAD
-          
+          echo "Creating tag $NEW_TAG on commit $COMMIT_SHA"
+
+          # Create tag on the specific commit SHA (version bump commit)
+          git tag -a "$NEW_TAG" -m "Release $NEW_TAG" "$COMMIT_SHA"
+
           # Use PAT if available to trigger downstream workflows
           if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
             git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git "$NEW_TAG"
