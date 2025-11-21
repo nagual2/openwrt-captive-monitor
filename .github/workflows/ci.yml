@@ -158,49 +158,49 @@ jobs:
       matrix:
         include:
           # Supported OpenWrt SDK targets for CI package builds
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'x86'
             subtarget: '64'
             arch: 'x86_64'
             sdk_slug: 'x86_64'
             sdk_target: 'x86/64'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'ath79'
             subtarget: 'generic'
             arch: 'ath79-generic'
             sdk_slug: 'ath79-generic'
             sdk_target: 'ath79/generic'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'ramips'
             subtarget: 'mt76x8'
             arch: 'ramips-mt76x8'
             sdk_slug: 'ramips-mt76x8'
             sdk_target: 'ramips/mt76x8'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'mediatek'
             subtarget: 'filogic'
             arch: 'mediatek-filogic'
             sdk_slug: 'mediatek-filogic'
             sdk_target: 'mediatek/filogic'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'ipq40xx'
             subtarget: 'generic'
             arch: 'ipq40xx-generic'
             sdk_slug: 'ipq40xx-generic'
             sdk_target: 'ipq40xx/generic'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'ipq806x'
             subtarget: 'generic'
             arch: 'ipq806x-generic'
             sdk_slug: 'ipq806x-generic'
             sdk_target: 'ipq806x/generic'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'bcm27xx'
             subtarget: 'bcm2711'
             arch: 'bcm27xx-bcm2711'
             sdk_slug: 'bcm27xx-bcm2711'
             sdk_target: 'bcm27xx/bcm2711'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'rockchip'
             subtarget: 'armv8'
             arch: 'rockchip-armv8'
@@ -273,12 +273,20 @@ jobs:
             "${{ matrix.openwrt_version }}" \
             "${{ matrix.sdk_slug }}"
 
+      - name: Cache OpenWrt SDK
+        uses: actions/cache@v4
+        with:
+          path: sdk.tar.xz
+          key: openwrt-sdk-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}
+          restore-keys: |
+            openwrt-sdk-${{ matrix.openwrt_version }}-
+
       - name: Download OpenWrt SDK
         run: |
           set -eu
           # Construct SDK URL based on matrix variables
           # URL format:
-          # https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          # https://downloads.openwrt.org/releases/23.05.5/targets/x86/64/openwrt-sdk-23.05.5-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
           # We need to dynamically determine the GCC/musl version part which is tricky.
           # However, the 'openwrt/gh-action-sdk' does this internally.
           # For manual steps, it's safer to use the 'sdk-simple-build.yml' approach
@@ -308,18 +316,18 @@ jobs:
           # No, that's complex.
 
           # Let's look at how 'sdk-simple-build.yml' does it:
-          # SDK_URL="https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          # SDK_URL="https://downloads.openwrt.org/releases/23.05.5/targets/x86/64/openwrt-sdk-23.05.5-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
 
           # We need this for all targets.
           # We can add 'sdk_url_part' to the matrix? Or just 'sdk_name'.
           # The matrix already has 'sdk_slug'.
 
           # Let's look at the matrix again.
-          # x86/64 -> openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
-          # ramips/mt76x8 -> openwrt-sdk-23.05.3-ramips-mt76x8_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          # x86/64 -> openwrt-sdk-23.05.5-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          # ramips/mt76x8 -> openwrt-sdk-23.05.5-ramips-mt76x8_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
           # The suffix `_gcc-12.3.0_musl.Linux-x86_64.tar.xz` is constant for
-          # 23.05.3 on x86_64 host?
+          # 23.05.5 on x86_64 host?
           # Yes, usually.
 
           # Let's try to construct the URL dynamically.
@@ -329,16 +337,20 @@ jobs:
           # openwrt-sdk-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}_gcc-12.3.0_musl.Linux-x86_64.tar.xz
 
           # Wait, 'sdk_slug' for x86/64 is 'x86-64'.
-          # File is 'openwrt-sdk-23.05.3-x86-64_...'
+          # File is 'openwrt-sdk-23.05.5-x86-64_...'
 
-          # Let's assume the suffix is constant for 23.05.3.
+          # Let's assume the suffix is constant for 23.05.5.
           # If not, we might fail.
 
           SDK_FILE="openwrt-sdk-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
           SDK_URL="https://downloads.openwrt.org/releases/${{ matrix.openwrt_version }}/targets/${{ matrix.target }}/${{ matrix.subtarget }}/${SDK_FILE}"
 
-          echo "Downloading SDK from $SDK_URL"
-          curl -fsSL "$SDK_URL" -o sdk.tar.xz
+          if [ ! -f sdk.tar.xz ]; then
+            echo "Downloading SDK from $SDK_URL"
+            curl -fsSL "$SDK_URL" -o sdk.tar.xz
+          else
+            echo "Using cached SDK"
+          fi
           mkdir -p sdk
           tar -C sdk --strip-components=1 -xf sdk.tar.xz
 
@@ -525,49 +537,49 @@ jobs:
       matrix:
         # Reuse the same SDK target coverage for PR validation builds
         include:
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'x86'
             subtarget: '64'
             arch: 'x86_64'
             sdk_slug: 'x86_64'
             sdk_target: 'x86/64'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'ath79'
             subtarget: 'generic'
             arch: 'ath79-generic'
             sdk_slug: 'ath79-generic'
             sdk_target: 'ath79/generic'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'ramips'
             subtarget: 'mt76x8'
             arch: 'ramips-mt76x8'
             sdk_slug: 'ramips-mt76x8'
             sdk_target: 'ramips/mt76x8'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'mediatek'
             subtarget: 'filogic'
             arch: 'mediatek-filogic'
             sdk_slug: 'mediatek-filogic'
             sdk_target: 'mediatek/filogic'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'ipq40xx'
             subtarget: 'generic'
             arch: 'ipq40xx-generic'
             sdk_slug: 'ipq40xx-generic'
             sdk_target: 'ipq40xx/generic'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'ipq806x'
             subtarget: 'generic'
             arch: 'ipq806x-generic'
             sdk_slug: 'ipq806x-generic'
             sdk_target: 'ipq806x/generic'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'bcm27xx'
             subtarget: 'bcm2711'
             arch: 'bcm27xx-bcm2711'
             sdk_slug: 'bcm27xx-bcm2711'
             sdk_target: 'bcm27xx/bcm2711'
-          - openwrt_version: '23.05.3'
+          - openwrt_version: '23.05.5'
             target: 'rockchip'
             subtarget: 'armv8'
             arch: 'rockchip-armv8'
@@ -643,7 +655,7 @@ jobs:
         uses: openwrt/gh-action-sdk@v9
         env:
           # Use the official SDK container pinned to the OpenWrt version and target
-          # e.g., x86-64-23.05.3
+          # e.g., x86-64-23.05.5
           ARCH: ${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}
           # Package(s) to build inside the SDK
           PACKAGES: openwrt-captive-monitor
