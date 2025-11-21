@@ -6,7 +6,7 @@ on:
       sdk_version:
         description: 'OpenWrt SDK version'
         required: true
-        default: '23.05.3'
+        default: '23.05.5'
       force_update:
         description: 'Force update existing release'
         required: false

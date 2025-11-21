@@ -25,15 +25,28 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v5
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-      - name: Download OpenWrt SDK (23.05.3 x86/64)
+      - name: Cache OpenWrt SDK
+        uses: actions/cache@v4
+        with:
+          path: sdk.tar.xz
+          key: openwrt-sdk-23.05.5-x86-64
+          restore-keys: |
+            openwrt-sdk-23.05.5-
+
+      - name: Download OpenWrt SDK (23.05.5 x86/64)
         run: |
           set -eu
-          SDK_URL="https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          SDK_URL="https://downloads.openwrt.org/releases/23.05.5/targets/x86/64/openwrt-sdk-23.05.5-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          if [ ! -f sdk.tar.xz ]; then
+            echo "Downloading SDK from $SDK_URL"
+            curl -fsSL "$SDK_URL" -o sdk.tar.xz
+          else
+            echo "Using cached SDK"
+          fi
           mkdir -p sdk
-          curl -fsSL "$SDK_URL" -o sdk.tar.xz
           tar -C sdk --strip-components=1 -xf sdk.tar.xz
 
       - name: Build openwrt-captive-monitor
