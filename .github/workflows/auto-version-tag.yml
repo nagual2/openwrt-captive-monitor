@@ -188,11 +188,8 @@ jobs:
 
           NEW_TAG="${{ steps.version.outputs.version }}"
 
-          # Fetch latest changes to ensure we have the version bump commit
-          git fetch origin main
-          
-          # Create tag on the latest commit (which includes version bump)
-          git tag -a "$NEW_TAG" -m "Release $NEW_TAG" origin/main
+          # Create tag on HEAD (which includes version bump after push)
+          git tag -a "$NEW_TAG" -m "Release $NEW_TAG" HEAD
           
           # Use PAT if available to trigger downstream workflows
           if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
