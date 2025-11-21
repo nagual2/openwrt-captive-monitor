@@ -12,7 +12,7 @@
 #
 
 set -eu
-if (set -o pipefail) 2>/dev/null; then
+if (set -o pipefail) 2> /dev/null; then
     # shellcheck disable=SC3040
     set -o pipefail
 fi
@@ -83,11 +83,11 @@ info "Checking SDK image availability in registry..."
 max_attempts=3
 attempt=1
 
-if command -v docker >/dev/null 2>&1; then
+if command -v docker > /dev/null 2>&1; then
     # Prefer Docker manifest inspection when available
     while [ $attempt -le $max_attempts ]; do
         printf "  Attempt %d/%d: " "$attempt" "$max_attempts"
-        if docker manifest inspect "$CONTAINER_IMAGE" >/dev/null 2>&1; then
+        if docker manifest inspect "$CONTAINER_IMAGE" > /dev/null 2>&1; then
             success "Docker image exists in registry"
             success "SDK image validation passed"
             exit 0
@@ -116,11 +116,11 @@ try_head() {
         code=$(curl -sS -o /dev/null -D "$hdr_file" -w "%{http_code}" \
             -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
             -H "Authorization: Bearer $token" \
-            "$registry_endpoint" 2>/dev/null || printf '000')
+            "$registry_endpoint" 2> /dev/null || printf '000')
     else
         code=$(curl -sS -o /dev/null -D "$hdr_file" -w "%{http_code}" \
             -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
-            "$registry_endpoint" 2>/dev/null || printf '000')
+            "$registry_endpoint" 2> /dev/null || printf '000')
     fi
     www_auth=$(grep -i '^WWW-Authenticate:' "$hdr_file" | head -n1 || true)
     rm -f "$hdr_file"
@@ -145,7 +145,7 @@ fetch_token() {
     svc="$2"
     scp="$3"
     # Construct token URL; components are safe as-is for GHCR
-    token_json=$(curl -sS "${realm_url}?service=${svc}&scope=${scp}" 2>/dev/null || printf '')
+    token_json=$(curl -sS "${realm_url}?service=${svc}&scope=${scp}" 2> /dev/null || printf '')
     token=$(printf '%s' "$token_json" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p' | head -n1)
     printf '%s' "$token"
 }

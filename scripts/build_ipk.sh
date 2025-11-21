@@ -57,27 +57,27 @@ require_command() {
     fi
 
     case "$tool" in
-    opkg-build)
-        hint="Install opkg-utils from OpenWrt upstream (see 'scripts/setup-opkg-utils.sh')."
-        ;;
-    opkg-make-index)
-        hint="Install opkg-utils from OpenWrt upstream (see 'scripts/setup-opkg-utils.sh')."
-        ;;
-    gzip)
-        hint="Install gzip (e.g., 'sudo apt-get install -y gzip')."
-        ;;
-    md5sum | sha256sum)
-        hint="Install coreutils (e.g., 'sudo apt-get install -y coreutils')."
-        ;;
-    stat)
-        hint="Install coreutils (e.g., 'sudo apt-get install -y coreutils')."
-        ;;
-    tar)
-        hint="Install tar (e.g., 'sudo apt-get install -y tar')."
-        ;;
-    *)
-        hint=""
-        ;;
+        opkg-build)
+            hint="Install opkg-utils from OpenWrt upstream (see 'scripts/setup-opkg-utils.sh')."
+            ;;
+        opkg-make-index)
+            hint="Install opkg-utils from OpenWrt upstream (see 'scripts/setup-opkg-utils.sh')."
+            ;;
+        gzip)
+            hint="Install gzip (e.g., 'sudo apt-get install -y gzip')."
+            ;;
+        md5sum | sha256sum)
+            hint="Install coreutils (e.g., 'sudo apt-get install -y coreutils')."
+            ;;
+        stat)
+            hint="Install coreutils (e.g., 'sudo apt-get install -y coreutils')."
+            ;;
+        tar)
+            hint="Install tar (e.g., 'sudo apt-get install -y tar')."
+            ;;
+        *)
+            hint=""
+            ;;
     esac
 
     if [ -n "$hint" ]; then
@@ -182,64 +182,64 @@ version_suffix="${VERSION_SUFFIX:-}"
 
 while [ $# -gt 0 ]; do
     case "$1" in
-    --arch)
-        [ $# -ge 2 ] || {
-            echo "error: --arch requires a value" >&2
+        --arch)
+            [ $# -ge 2 ] || {
+                echo "error: --arch requires a value" >&2
+                usage
+                exit 1
+            }
+            arch="$2"
+            shift 2
+            ;;
+        --feed-root)
+            [ $# -ge 2 ] || {
+                echo "error: --feed-root requires a value" >&2
+                usage
+                exit 1
+            }
+            feed_root="$2"
+            shift 2
+            ;;
+        --maintainer)
+            [ $# -ge 2 ] || {
+                echo "error: --maintainer requires a value" >&2
+                usage
+                exit 1
+            }
+            maintainer_override="$2"
+            shift 2
+            ;;
+        --maintainer-email)
+            [ $# -ge 2 ] || {
+                echo "error: --maintainer-email requires a value" >&2
+                usage
+                exit 1
+            }
+            maintainer_email_override="$2"
+            shift 2
+            ;;
+        --spdx-id)
+            [ $# -ge 2 ] || {
+                echo "error: --spdx-id requires a value" >&2
+                usage
+                exit 1
+            }
+            spdx_id_override="$2"
+            shift 2
+            ;;
+        --release-mode)
+            release_mode=true
+            shift
+            ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "error: unknown option $1" >&2
             usage
             exit 1
-        }
-        arch="$2"
-        shift 2
-        ;;
-    --feed-root)
-        [ $# -ge 2 ] || {
-            echo "error: --feed-root requires a value" >&2
-            usage
-            exit 1
-        }
-        feed_root="$2"
-        shift 2
-        ;;
-    --maintainer)
-        [ $# -ge 2 ] || {
-            echo "error: --maintainer requires a value" >&2
-            usage
-            exit 1
-        }
-        maintainer_override="$2"
-        shift 2
-        ;;
-    --maintainer-email)
-        [ $# -ge 2 ] || {
-            echo "error: --maintainer-email requires a value" >&2
-            usage
-            exit 1
-        }
-        maintainer_email_override="$2"
-        shift 2
-        ;;
-    --spdx-id)
-        [ $# -ge 2 ] || {
-            echo "error: --spdx-id requires a value" >&2
-            usage
-            exit 1
-        }
-        spdx_id_override="$2"
-        shift 2
-        ;;
-    --release-mode)
-        release_mode=true
-        shift
-        ;;
-    -h | --help)
-        usage
-        exit 0
-        ;;
-    *)
-        echo "error: unknown option $1" >&2
-        usage
-        exit 1
-        ;;
+            ;;
     esac
 done
 
@@ -423,13 +423,13 @@ rel_packages_file="$packages_file"
 rel_packages_file_gz="$packages_file_gz"
 
 case "$rel_output_ipk" in
-"$repo_root"/*) rel_output_ipk="${rel_output_ipk#"$repo_root"/}" ;;
+    "$repo_root"/*) rel_output_ipk="${rel_output_ipk#"$repo_root"/}" ;;
 esac
 case "$rel_packages_file" in
-"$repo_root"/*) rel_packages_file="${rel_packages_file#"$repo_root"/}" ;;
+    "$repo_root"/*) rel_packages_file="${rel_packages_file#"$repo_root"/}" ;;
 esac
 case "$rel_packages_file_gz" in
-"$repo_root"/*) rel_packages_file_gz="${rel_packages_file_gz#"$repo_root"/}" ;;
+    "$repo_root"/*) rel_packages_file_gz="${rel_packages_file_gz#"$repo_root"/}" ;;
 esac
 
 # Calculate checksums for release mode

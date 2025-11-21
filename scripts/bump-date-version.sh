@@ -92,7 +92,7 @@ if [ "$#" -eq 1 ]; then
     # Strip a single leading 'v' for convenience
     case "$raw_version" in
         v*) new_version=${raw_version#v} ;;
-        *)  new_version=$raw_version ;;
+        *) new_version=$raw_version ;;
     esac
 else
     # No explicit version provided: compute the next version for today
@@ -115,10 +115,10 @@ else
             git fetch --tags --force > /dev/null 2>&1 || true
         fi
 
-        LAST_SEQUENCE=$(git tag --list "${DATE_PREFIX}.*" \
-            | sed -nE "s/^${DATE_PREFIX}\.([0-9]+)$/\\1/p" \
-            | sort -n \
-            | tail -n1)
+        LAST_SEQUENCE=$(git tag --list "${DATE_PREFIX}.*" |
+            sed -nE "s/^${DATE_PREFIX}\.([0-9]+)$/\\1/p" |
+            sort -n |
+            tail -n1)
 
         if [ -z "$LAST_SEQUENCE" ]; then
             NEXT_SEQUENCE=1

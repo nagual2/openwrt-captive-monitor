@@ -39,11 +39,11 @@ NC='\033[0m' # No Color
 
 # Disable colors if NO_COLOR is set or stdout is not a TTY
 if [ -n "${NO_COLOR:-}" ] || [ ! -t 1 ]; then
-	RED=''
-	GREEN=''
-	YELLOW=''
-	BLUE=''
-	MAGENTA=''
-	CYAN=''
-	NC=''
+    RED=''
+    GREEN=''
+    YELLOW=''
+    BLUE=''
+    MAGENTA=''
+    CYAN=''
+    NC=''
 fi

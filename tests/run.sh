@@ -19,10 +19,10 @@ else
 fi
 SYSTEM_SHELL=$(PATH="$BASE_PATH" command -v sh 2> /dev/null || printf '/bin/sh')
 case "$SYSTEM_SHELL" in
-*/*) ;;
-*)
-    SYSTEM_SHELL="/bin/sh"
-    ;;
+    */*) ;;
+    *)
+        SYSTEM_SHELL="/bin/sh"
+        ;;
 esac
 REAL_SLEEP_BIN=$(PATH="$BASE_PATH" command -v sleep 2> /dev/null || printf '/bin/sleep')
 DNSMASQ_MOCK="$MOCK_DIR/dnsmasq"
@@ -63,10 +63,10 @@ assert_contains() {
     haystack="$2"
     message=${3:-"Expected to find '$needle'"}
     case "$haystack" in
-    *"$needle"*) ;;
-    *)
-        fail "$message"
-        ;;
+        *"$needle"*) ;;
+        *)
+            fail "$message"
+            ;;
     esac
 }
 
@@ -113,19 +113,19 @@ run_with_env() {
         mkdir -p "$STATE_DIR"
         while [ "$#" -gt 0 ]; do
             case "$1" in
-            --)
-                shift
-                break
-                ;;
-            *=*)
-                var=${1%%=*}
-                value=${1#*=}
-                export "$var=$value"
-                shift
-                ;;
-            *)
-                break
-                ;;
+                --)
+                    shift
+                    break
+                    ;;
+                *=*)
+                    var=${1%%=*}
+                    value=${1#*=}
+                    export "$var=$value"
+                    shift
+                    ;;
+                *)
+                    break
+                    ;;
             esac
         done
         use_real_busybox="$HAS_REAL_BUSYBOX"

@@ -33,7 +33,7 @@ printf "\n"
 # Build auth header if token available
 AUTH_HEADER=""
 if [ -n "$TOKEN" ]; then
-	AUTH_HEADER="-H Authorization: token $TOKEN"
+    AUTH_HEADER="-H Authorization: token $TOKEN"
 fi
 
 ###############################################################################
@@ -44,18 +44,18 @@ printf "%s=== 📊 Latest %s Workflow Runs ===%s\n" "$BLUE" "$LIMIT" "$NC"
 printf "\n"
 
 curl -s $AUTH_HEADER \
-	"https://api.github.com/repos/$REPO/actions/runs?per_page=$LIMIT" |
-	jq -r '.workflow_runs[] |
+    "https://api.github.com/repos/$REPO/actions/runs?per_page=$LIMIT" |
+    jq -r '.workflow_runs[] |
         "\(.created_at | split("T")[0]) | \(.created_at | split("T")[1] | split("Z")[0]) | \(.name) | \(.head_branch) | \(.conclusion)"' |
-	while read -r DATE TIME WORKFLOW BRANCH CONCLUSION; do
-		if [ "$CONCLUSION" = "success" ]; then
-			printf "%s✓%s %s %s | %s | %s\n" "$GREEN" "$NC" "$DATE" "$TIME" "$WORKFLOW" "$BRANCH"
-		elif [ "$CONCLUSION" = "failure" ]; then
-			printf "%s✗%s %s %s | %s | %s\n" "$RED" "$NC" "$DATE" "$TIME" "$WORKFLOW" "$BRANCH"
-		else
-			printf "%s⊘%s %s %s | %s | %s\n" "$YELLOW" "$NC" "$DATE" "$TIME" "$WORKFLOW" "$BRANCH"
-		fi
-	done
+    while read -r DATE TIME WORKFLOW BRANCH CONCLUSION; do
+        if [ "$CONCLUSION" = "success" ]; then
+            printf "%s✓%s %s %s | %s | %s\n" "$GREEN" "$NC" "$DATE" "$TIME" "$WORKFLOW" "$BRANCH"
+        elif [ "$CONCLUSION" = "failure" ]; then
+            printf "%s✗%s %s %s | %s | %s\n" "$RED" "$NC" "$DATE" "$TIME" "$WORKFLOW" "$BRANCH"
+        else
+            printf "%s⊘%s %s %s | %s | %s\n" "$YELLOW" "$NC" "$DATE" "$TIME" "$WORKFLOW" "$BRANCH"
+        fi
+    done
 
 printf "\n"
 
@@ -67,18 +67,18 @@ printf "%s=== ❌ Latest Failed Run Analysis ===%s\n" "$BLUE" "$NC"
 printf "\n"
 
 LATEST_FAILED=$(curl -s $AUTH_HEADER \
-	"https://api.github.com/repos/$REPO/actions/runs?status=failure&per_page=1" |
-	jq -r '.workflow_runs[0] | .id // empty')
+    "https://api.github.com/repos/$REPO/actions/runs?status=failure&per_page=1" |
+    jq -r '.workflow_runs[0] | .id // empty')
 
 if [ -n "$LATEST_FAILED" ] && [ "$LATEST_FAILED" != "null" ]; then
-	printf "Failed Run ID: %s\n" "$LATEST_FAILED"
-	printf "\n"
+    printf "Failed Run ID: %s\n" "$LATEST_FAILED"
+    printf "\n"
 
-	# Get run metadata
-	printf "%s--- RUN METADATA ---%s\n" "$BLUE" "$NC"
-	curl -s $AUTH_HEADER \
-		"https://api.github.com/repos/$REPO/actions/runs/$LATEST_FAILED" |
-		jq '{
+    # Get run metadata
+    printf "%s--- RUN METADATA ---%s\n" "$BLUE" "$NC"
+    curl -s $AUTH_HEADER \
+        "https://api.github.com/repos/$REPO/actions/runs/$LATEST_FAILED" |
+        jq '{
             name: .name,
             status: .status,
             conclusion: .conclusion,
@@ -86,13 +86,13 @@ if [ -n "$LATEST_FAILED" ] && [ "$LATEST_FAILED" != "null" ]; then
             created: .created_at,
             attempt: .run_attempt
         }'
-	printf "\n"
+    printf "\n"
 
-	# Get failed jobs and steps
-	printf "%s--- FAILED JOBS AND STEPS ---%s\n" "$BLUE" "$NC"
-	curl -s $AUTH_HEADER \
-		"https://api.github.com/repos/$REPO/actions/runs/$LATEST_FAILED/jobs" |
-		jq '.jobs[] |
+    # Get failed jobs and steps
+    printf "%s--- FAILED JOBS AND STEPS ---%s\n" "$BLUE" "$NC"
+    curl -s $AUTH_HEADER \
+        "https://api.github.com/repos/$REPO/actions/runs/$LATEST_FAILED/jobs" |
+        jq '.jobs[] |
             select(.conclusion != "success") |
             {
                 job_name: .name,
@@ -108,9 +108,9 @@ if [ -n "$LATEST_FAILED" ] && [ "$LATEST_FAILED" != "null" ]; then
                     }
                 ]
             }' | head -50
-	printf "\n"
+    printf "\n"
 else
-	printf "%s\n" "No failed runs found"
+    printf "%s\n" "No failed runs found"
 fi
 
 ###############################################################################
@@ -121,8 +121,8 @@ printf "%s=== 📈 Failure Statistics (Last %s Days) ===%s\n" "$BLUE" "$DAYS" "$
 printf "\n"
 
 STATS=$(curl -s $AUTH_HEADER \
-	"https://api.github.com/repos/$REPO/actions/runs?per_page=100" |
-	jq '{
+    "https://api.github.com/repos/$REPO/actions/runs?per_page=100" |
+    jq '{
         total: (.workflow_runs | length),
         succeeded: ([.workflow_runs[] | select(.conclusion == "success")] | length),
         failed: ([.workflow_runs[] | select(.conclusion == "failure")] | length),
@@ -141,8 +141,8 @@ printf "\n"
 printf "Success Rate: %s%s%%%s (%s/%s)\n" "$GREEN" "$SUCCESS_RATE" "$NC" "$SUCCEEDED" "$TOTAL"
 
 if [ "$FAILED" -gt 0 ]; then
-	FAILURE_RATE=$(((FAILED * 100) / TOTAL))
-	printf "Failure Rate: %s%s%%%s (%s/%s)\n" "$RED" "$FAILURE_RATE" "$NC" "$FAILED" "$TOTAL"
+    FAILURE_RATE=$(((FAILED * 100) / TOTAL))
+    printf "Failure Rate: %s%s%%%s (%s/%s)\n" "$RED" "$FAILURE_RATE" "$NC" "$FAILED" "$TOTAL"
 fi
 
 printf "\n"
@@ -156,32 +156,32 @@ printf "\n"
 
 echo "Analyzing last 10 failed runs for patterns..."
 FAILURES=$(curl -s $AUTH_HEADER \
-	"https://api.github.com/repos/$REPO/actions/runs?status=failure&per_page=10" |
-	jq -r '.workflow_runs[] | .id')
+    "https://api.github.com/repos/$REPO/actions/runs?status=failure&per_page=10" |
+    jq -r '.workflow_runs[] | .id')
 
 PATTERN_COUNT=0
 
 echo "$FAILURES" | while read -r RUN_ID; do
-	if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
-		continue
-	fi
+    if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+        continue
+    fi
 
-	FAILED_STEPS=$(curl -s $AUTH_HEADER \
-		"https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/jobs" |
-		jq -r '.jobs[] |
+    FAILED_STEPS=$(curl -s $AUTH_HEADER \
+        "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/jobs" |
+        jq -r '.jobs[] |
             select(.conclusion == "failure") |
             .steps[] |
             select(.conclusion == "failure") |
             .name' | tr '\n' '; ')
 
-	if [ -n "$FAILED_STEPS" ]; then
-		printf "  Run %s: Failed steps: %s\n" "$RUN_ID" "$FAILED_STEPS"
-		PATTERN_COUNT=$((PATTERN_COUNT + 1))
-	fi
+    if [ -n "$FAILED_STEPS" ]; then
+        printf "  Run %s: Failed steps: %s\n" "$RUN_ID" "$FAILED_STEPS"
+        PATTERN_COUNT=$((PATTERN_COUNT + 1))
+    fi
 done
 
 if [ "$PATTERN_COUNT" -eq 0 ]; then
-	printf "  %s\n" "No clear failure patterns found in recent runs"
+    printf "  %s\n" "No clear failure patterns found in recent runs"
 fi
 
 printf "\n"
@@ -191,14 +191,14 @@ printf "\n"
 ###############################################################################
 
 if [ "$FAILED" -gt 5 ]; then
-	printf "%s=== ⚠️  RECOMMENDATIONS ===%s\n" "$YELLOW" "$NC"
-	printf "\n"
-	echo "High failure rate detected (${FAILURE_RATE}%). Consider:"
-	echo "  1. Check external dependencies (feed mirrors, CDNs, GitHub API limits)"
-	echo "  2. Review retry logic configuration (timeouts, backoff strategy)"
-	echo "  3. Analyze workflow logs for specific error messages"
-	echo "  4. Check GitHub Status for service incidents"
-	printf "\n"
+    printf "%s=== ⚠️  RECOMMENDATIONS ===%s\n" "$YELLOW" "$NC"
+    printf "\n"
+    echo "High failure rate detected (${FAILURE_RATE}%). Consider:"
+    echo "  1. Check external dependencies (feed mirrors, CDNs, GitHub API limits)"
+    echo "  2. Review retry logic configuration (timeouts, backoff strategy)"
+    echo "  3. Analyze workflow logs for specific error messages"
+    echo "  4. Check GitHub Status for service incidents"
+    printf "\n"
 fi
 
 printf "%s=== Report Complete ===%s\n" "$BLUE" "$NC"
