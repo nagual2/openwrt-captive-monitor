@@ -14,6 +14,14 @@ PKG_ARCH:=all
 
 include $(INCLUDE_DIR)/package.mk
 
+# Mark this as a script-only package with no configure/compile steps.
+define Build/Configure
+endef
+
+define Build/Compile
+    # Nothing to compile; all content is installed from the ./files tree
+endef
+
 define Package/openwrt-captive-monitor
   SECTION:=net
   CATEGORY:=Network
@@ -34,16 +42,16 @@ define Package/openwrt-captive-monitor/conffiles
 endef
 
 define Package/openwrt-captive-monitor/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) ./files/usr/sbin/openwrt_captive_monitor $(1)/usr/sbin/openwrt_captive_monitor
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/etc/init.d/captive-monitor $(1)/etc/init.d/captive-monitor
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/etc/config/captive-monitor $(1)/etc/config/captive-monitor
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/etc/uci-defaults/99-captive-monitor $(1)/etc/uci-defaults/99-captive-monitor
-	$(INSTALL_DIR) $(1)/usr/share/licenses/$(PKG_NAME)
-	$(INSTALL_DATA) ./LICENSE $(1)/usr/share/licenses/$(PKG_NAME)/LICENSE
+    $(INSTALL_DIR) $(1)/usr/sbin
+    $(INSTALL_BIN) ./files/usr/sbin/openwrt_captive_monitor $(1)/usr/sbin/openwrt_captive_monitor
+    $(INSTALL_DIR) $(1)/etc/init.d
+    $(INSTALL_BIN) ./files/etc/init.d/captive-monitor $(1)/etc/init.d/captive-monitor
+    $(INSTALL_DIR) $(1)/etc/config
+    $(INSTALL_CONF) ./files/etc/config/captive-monitor $(1)/etc/config/captive-monitor
+    $(INSTALL_DIR) $(1)/etc/uci-defaults
+    $(INSTALL_BIN) ./files/etc/uci-defaults/99-captive-monitor $(1)/etc/uci-defaults/99-captive-monitor
+    $(INSTALL_DIR) $(1)/usr/share/licenses/$(PKG_NAME)
+    $(INSTALL_DATA) ./LICENSE $(1)/usr/share/licenses/$(PKG_NAME)/LICENSE
 endef
 
 define Package/openwrt-captive-monitor/postinst
