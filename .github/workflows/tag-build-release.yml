@@ -1,4 +1,5 @@
-name: Build and Release Package
+# Test merge commit
+
 
 on:
   workflow_dispatch:
@@ -20,6 +21,9 @@ defaults:
 
 jobs:
   build-packages:
+    env:
+      ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
+
     name: Build OpenWrt Packages
     runs-on: ubuntu-24.04
     permissions:
@@ -143,6 +147,14 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
+          # Determine SDK suffix based on target (musl vs musl_eabi)
+          if [[ "${{ matrix.sdk_slug }}" == "ipq40xx-generic" ]]; then
+            SDK_SUFFIX="_musl_eabi"
+          else
+            SDK_SUFFIX="_musl"
+          fi
+          SDK_FILE="openwrt-sdk-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}_gcc-12.3.0${SDK_SUFFIX}.Linux-x86_64.tar.xz"
+          SDK_URL="https://downloads.openwrt.org/releases/${{ matrix.openwrt_version }}/targets/${{ matrix.target }}/${{ matrix.subtarget }}/${SDK_FILE}"
           ./scripts/validate-sdk-image.sh \
             "ghcr.io/openwrt/sdk:${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}" \
             "${{ matrix.sdk_target }}" \
@@ -172,7 +184,7 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          ART_DIR="artifacts/${BUILD_NAME}"
+          ART_DIR="${{ env.ARTIFACTS_DIR }}"
           echo "Artifacts directory: $ART_DIR"
 
           if [ ! -d "$ART_DIR" ]; then
@@ -214,6 +226,8 @@ jobs:
           packages: binutils tar
 
       - name: Verify package internals
+        env:
+          ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
         run: |
           set -eu
           if (set -o pipefail) 2> /dev/null; then
@@ -222,7 +236,7 @@ jobs:
           fi
           # Robust IPK discovery with quoted paths and existence checks
           IPK_FILE=""
-          for ipk_pattern in "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
+          for ipk_pattern in "${{ env.ARTIFACTS_DIR }}"/openwrt-captive-monitor_*.ipk; do
             if [ -e "$ipk_pattern" ]; then
               IPK_FILE="$ipk_pattern"
               break
@@ -244,7 +258,7 @@ jobs:
             set -o pipefail
           fi
           echo "=== Validating Version field in .ipk control metadata ==="
-          for IPK_FILE in "artifacts/${BUILD_NAME}"/*.ipk; do
+          for IPK_FILE in "${{ env.ARTIFACTS_DIR }}"/*.ipk; do
             if [ ! -e "$IPK_FILE" ]; then
               echo "warning: no .ipk files found" >&2
               continue
@@ -263,7 +277,7 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          ./scripts/stage-package-artifacts.sh "artifacts/${BUILD_NAME}"
+          ./scripts/stage-package-artifacts.sh "${{ env.ARTIFACTS_DIR }}"
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v5
