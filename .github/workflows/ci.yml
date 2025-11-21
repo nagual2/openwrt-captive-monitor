@@ -304,7 +304,7 @@ jobs:
 
           # Let's stick to the plan: Use manual steps.
           # We need to download the SDK.
-          # We can use the 'archive' directory listing to find the SDK file?
+          # We can use 'find' to locate the .ipk file.
           # No, that's complex.
 
           # Let's look at how 'sdk-simple-build.yml' does it:
@@ -336,7 +336,7 @@ jobs:
 
           SDK_FILE="openwrt-sdk-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
           SDK_URL="https://downloads.openwrt.org/releases/${{ matrix.openwrt_version }}/targets/${{ matrix.target }}/${{ matrix.subtarget }}/${SDK_FILE}"
-          
+
           echo "Downloading SDK from $SDK_URL"
           curl -fsSL "$SDK_URL" -o sdk.tar.xz
           mkdir -p sdk
@@ -346,38 +346,38 @@ jobs:
         run: |
           set -eu
           cd sdk
-          
+
           # Setup feed
           FEED_DIR="${{ github.workspace }}/feed"
           # We prepared 'feed/package' in the previous step, but we need to point to it.
           # The previous step 'Prepare package structure for SDK' created 'feed/package/openwrt-captive-monitor'.
           # We want to use that as a local feed.
-          
+
           # Actually, let's just link the source directly like in
           # 'sdk-simple-build.yml'.
           # In 'sdk-simple-build.yml':
           # FEED_DIR="$GITHUB_WORKSPACE"
           # echo "src-link local $FEED_DIR" >> feeds.conf
-          
+
           # Here we have 'package/openwrt-captive-monitor' in the workspace.
           # Let's use that.
-          
+
           echo "src-link local ${{ github.workspace }}" >> feeds.conf
-          
+
           ./scripts/feeds update -a
           ./scripts/feeds install openwrt-captive-monitor
-          
+
           # Config
           make defconfig
-          
+
           # Compile
           echo "Compiling openwrt-captive-monitor..."
           make package/openwrt-captive-monitor/compile V=s
-          
+
           # Move artifacts
           # The SDK builds to bin/packages/<arch>/local/
           # We need to move them to artifacts/${BUILD_NAME}
-          
+
           mkdir -p "${{ github.workspace }}/artifacts/${BUILD_NAME}"
           find bin/packages -name "*.ipk" -exec cp {} \
             "${{ github.workspace }}/artifacts/${BUILD_NAME}/" \;
