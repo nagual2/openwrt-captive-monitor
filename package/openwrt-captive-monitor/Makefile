@@ -30,20 +30,20 @@ define Package/openwrt-captive-monitor/description
 endef
 
 define Package/openwrt-captive-monitor/conffiles
-    /etc/config/captive-monitor
+/etc/config/captive-monitor
 endef
 
 define Package/openwrt-captive-monitor/install
-    $(INSTALL_DIR) $(1)/usr/sbin
-    $(INSTALL_BIN) ./files/usr/sbin/openwrt_captive_monitor $(1)/usr/sbin/openwrt_captive_monitor
-    $(INSTALL_DIR) $(1)/etc/init.d
-    $(INSTALL_BIN) ./files/etc/init.d/captive-monitor $(1)/etc/init.d/captive-monitor
-    $(INSTALL_DIR) $(1)/etc/config
-    $(INSTALL_CONF) ./files/etc/config/captive-monitor $(1)/etc/config/captive-monitor
-    $(INSTALL_DIR) $(1)/etc/uci-defaults
-    $(INSTALL_BIN) ./files/etc/uci-defaults/99-captive-monitor $(1)/etc/uci-defaults/99-captive-monitor
-    $(INSTALL_DIR) $(1)/usr/share/licenses/$(PKG_NAME)
-    $(INSTALL_DATA) ./LICENSE $(1)/usr/share/licenses/$(PKG_NAME)/LICENSE
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) ./files/usr/sbin/openwrt_captive_monitor $(1)/usr/sbin/openwrt_captive_monitor
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/etc/init.d/captive-monitor $(1)/etc/init.d/captive-monitor
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) ./files/etc/config/captive-monitor $(1)/etc/config/captive-monitor
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/etc/uci-defaults/99-captive-monitor $(1)/etc/uci-defaults/99-captive-monitor
+	$(INSTALL_DIR) $(1)/usr/share/licenses/$(PKG_NAME)
+	$(INSTALL_DATA) ./LICENSE $(1)/usr/share/licenses/$(PKG_NAME)/LICENSE
 endef
 
 define Package/openwrt-captive-monitor/postinst
