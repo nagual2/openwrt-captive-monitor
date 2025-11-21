@@ -74,7 +74,8 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          yamllint -d "{extends: relaxed, rules: {truthy: disable}}" .github/workflows/ci.yml
+          yamllint -d "{extends: relaxed, rules: {truthy: disable}}" \
+            .github/workflows/ci.yml
 
       - name: Run shfmt
         if: matrix.linter == 'shfmt'
@@ -251,7 +252,8 @@ jobs:
           if [ ! -f feed/feeds.conf.default ]; then
             {
               echo "# Placeholder feeds.conf.default for SDK action"
-              echo "# The action will inject: src-link ${FEEDNAME:-local} <resolved-path>"
+              echo "# The action will inject: src-link ${FEEDNAME:-local}" \
+                "<resolved-path>"
             } > feed/feeds.conf.default
           fi
 
@@ -275,52 +277,63 @@ jobs:
         run: |
           set -eu
           # Construct SDK URL based on matrix variables
-          # URL format: https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          # URL format:
+          # https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
           # We need to dynamically determine the GCC/musl version part which is tricky.
           # However, the 'openwrt/gh-action-sdk' does this internally.
-          # For manual steps, it's safer to use the 'sdk-simple-build.yml' approach but generalized.
-          
-          # Actually, the SDK URL varies by target. 
-          # Let's use a helper script or just use the same logic as the simple build but adapted for matrix.
+          # For manual steps, it's safer to use the 'sdk-simple-build.yml' approach
+          # but generalized.
+
+          # Actually, the SDK URL varies by target.
+          # Let's use a helper script or just use the same logic as the simple build
+          # but adapted for matrix.
           # Since we have many targets, we need a robust way to get the SDK.
-          # The 'openwrt/gh-action-sdk' uses a Docker container. 
-          # We can emulate that by running the build INSIDE the official SDK container directly using 'jobs.<job_id>.container'.
-          # BUT 'jobs.<job_id>.container' doesn't support matrix variables easily for the image name.
-          
-          # Alternative: Use the 'Download OpenWrt SDK' step pattern from 'sdk-simple-build.yml' but we need the exact URL.
+          # The 'openwrt/gh-action-sdk' uses a Docker container.
+          # We can emulate that by running the build INSIDE the official SDK container
+          # directly using 'jobs.<job_id>.container'.
+          # BUT 'jobs.<job_id>.container' doesn't support matrix variables easily for
+          # the image name.
+
+          # Alternative: Use the 'Download OpenWrt SDK' step pattern from
+          # 'sdk-simple-build.yml' but we need the exact URL.
           # The URL depends on the target.
-          
-          # Let's try to use the 'openwrt/gh-action-sdk' container image but run MANUAL commands inside it?
+
+          # Let's try to use the 'openwrt/gh-action-sdk' container image but run
+          # MANUAL commands inside it?
           # No, the action entrypoint is fixed.
-          
+
           # Let's stick to the plan: Use manual steps.
           # We need to download the SDK.
-          # We can use the 'archive' directory listing to find the SDK file? No, that's complex.
-          
+          # We can use the 'archive' directory listing to find the SDK file?
+          # No, that's complex.
+
           # Let's look at how 'sdk-simple-build.yml' does it:
           # SDK_URL="https://downloads.openwrt.org/releases/23.05.3/targets/x86/64/openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
-          
+
           # We need this for all targets.
           # We can add 'sdk_url_part' to the matrix? Or just 'sdk_name'.
           # The matrix already has 'sdk_slug'.
-          
+
           # Let's look at the matrix again.
           # x86/64 -> openwrt-sdk-23.05.3-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
           # ramips/mt76x8 -> openwrt-sdk-23.05.3-ramips-mt76x8_gcc-12.3.0_musl.Linux-x86_64.tar.xz
-          
-          # The suffix `_gcc-12.3.0_musl.Linux-x86_64.tar.xz` is constant for 23.05.3 on x86_64 host?
+
+          # The suffix `_gcc-12.3.0_musl.Linux-x86_64.tar.xz` is constant for
+          # 23.05.3 on x86_64 host?
           # Yes, usually.
-          
+
           # Let's try to construct the URL dynamically.
-          # Base: https://downloads.openwrt.org/releases/${{ matrix.openwrt_version }}/targets/${{ matrix.target }}/${{ matrix.subtarget }}/
-          # File: openwrt-sdk-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}_gcc-12.3.0_musl.Linux-x86_64.tar.xz
-          
+          # Base:
+          # https://downloads.openwrt.org/releases/${{ matrix.openwrt_version }}/targets/${{ matrix.target }}/${{ matrix.subtarget }}/
+          # File:
+          # openwrt-sdk-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+
           # Wait, 'sdk_slug' for x86/64 is 'x86-64'.
           # File is 'openwrt-sdk-23.05.3-x86-64_...'
-          
+
           # Let's assume the suffix is constant for 23.05.3.
           # If not, we might fail.
-          
+
           SDK_FILE="openwrt-sdk-${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
           SDK_URL="https://downloads.openwrt.org/releases/${{ matrix.openwrt_version }}/targets/${{ matrix.target }}/${{ matrix.subtarget }}/${SDK_FILE}"
           
@@ -340,7 +353,8 @@ jobs:
           # The previous step 'Prepare package structure for SDK' created 'feed/package/openwrt-captive-monitor'.
           # We want to use that as a local feed.
           
-          # Actually, let's just link the source directly like in 'sdk-simple-build.yml'.
+          # Actually, let's just link the source directly like in
+          # 'sdk-simple-build.yml'.
           # In 'sdk-simple-build.yml':
           # FEED_DIR="$GITHUB_WORKSPACE"
           # echo "src-link local $FEED_DIR" >> feeds.conf
@@ -365,7 +379,8 @@ jobs:
           # We need to move them to artifacts/${BUILD_NAME}
           
           mkdir -p "${{ github.workspace }}/artifacts/${BUILD_NAME}"
-          find bin/packages -name "*.ipk" -exec cp {} "${{ github.workspace }}/artifacts/${BUILD_NAME}/" \;
+          find bin/packages -name "*.ipk" -exec cp {} \
+            "${{ github.workspace }}/artifacts/${BUILD_NAME}/" \;
 
       - name: List and validate produced artifacts
         run: |
@@ -424,7 +439,8 @@ jobs:
           fi
           # Robust IPK discovery with quoted paths and existence checks
           IPK_FILE=""
-          for ipk_pattern in "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
+          for ipk_pattern in \
+            "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
             if [ -e "$ipk_pattern" ]; then
               IPK_FILE="$ipk_pattern"
               break
@@ -453,7 +469,8 @@ jobs:
             fi
             echo ""
             echo "Validating: $(basename "$IPK_FILE")"
-            # Validate Version field for main branch builds (no dev/release suffix rules)
+            # Validate Version field for main branch builds
+            # (no dev/release suffix rules)
             ./scripts/validate-ipk-version.sh "$IPK_FILE" "main"
           done
           echo ""
@@ -695,7 +712,8 @@ jobs:
           fi
           # Robust IPK discovery with quoted paths and existence checks
           IPK_FILE=""
-          for ipk_pattern in "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
+          for ipk_pattern in \
+            "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
             if [ -e "$ipk_pattern" ]; then
               IPK_FILE="$ipk_pattern"
               break
