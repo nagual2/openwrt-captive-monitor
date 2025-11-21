@@ -1,6 +1,7 @@
 name: Build and Release Package
 
 on:
+  workflow_dispatch:
   push:
     tags:
       # Date-based release tags only: vYYYY.MM.DD.N (e.g., v2025.11.19.5)
