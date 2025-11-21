@@ -1,4 +1,5 @@
-name: Build and Release Package
+# Test merge commit
+
 
 on:
   workflow_dispatch:
