@@ -986,5 +986,4 @@ shfmt -i 2 -ci -sr -d openwrt_captive_monitor.sh
 Сделано с ❤️ для сообщества OpenWrt
 
 </div>
-   
- 
+ 
