@@ -1,4 +1,5 @@
 #!/bin/sh
+# formatted by shfmt
 # OpenWrt init script for captive portal monitor
 # shellcheck shell=ash
 # shellcheck disable=SC2034 # START, STOP and USE_PROCD are consumed by rc.common metadata.
