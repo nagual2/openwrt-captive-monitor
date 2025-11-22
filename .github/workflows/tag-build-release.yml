@@ -209,6 +209,9 @@ jobs:
             exit 1
           fi
 
+      - name: Setup opkg-utils
+        run: sh ./scripts/setup-opkg-utils.sh
+
       - name: Install verification tools
         uses: ./.github/actions/setup-system-packages
         with:
