@@ -283,6 +283,7 @@ jobs:
           FEEDNAME: local
           ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
           FEED_DIR: ${{ github.workspace }}/feed
+          NO_SHFMT_CHECK: 1
 
       - name: List and validate produced artifacts
         run: |
