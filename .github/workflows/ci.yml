@@ -86,6 +86,7 @@ jobs:
             set -o pipefail
           fi
           # Exclude init.d scripts as they are checked by openwrt/gh-action-sdk
+          # Exclude init.d scripts as they use OpenWrt-specific functions
           find . -name '*.sh' -o -type f -executable | \
             grep -v 'package/.*/files/etc/init.d/' | \
             xargs -r shfmt -d -s -i 4 -ci -sr
