@@ -100,8 +100,8 @@ jobs:
         if: matrix.linter == 'actionlint'
         run: |
           set -euo pipefail
-          # Lint only workflow files to avoid scanning binaries or temporary directories
-          "${ACTIONLINT_BIN}" -color -shellcheck= -pyflakes= .github/workflows
+          # Lint only workflow YAML files to avoid scanning binaries or temporary directories
+          "${ACTIONLINT_BIN}" -color -shellcheck= -pyflakes= .github/workflows/*.yml
 
   test:
     name: Test
