@@ -1,11 +1,11 @@
 # Test merge commit
 
+name: Tag Build Release
 
 on:
   workflow_dispatch:
   push:
     tags:
-      # Date-based release tags only: vYYYY.MM.DD.N (e.g., v2025.11.19.5)
       - 'v[0-9][0-9][0-9][0-9].[0-9]*.[0-9]*.[0-9]*'
 
 permissions:
@@ -21,9 +21,6 @@ defaults:
 
 jobs:
   build-packages:
-    env:
-      ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
-
     name: Build OpenWrt Packages
     runs-on: ubuntu-24.04
     permissions:
