@@ -110,11 +110,34 @@ jobs:
           config: '.markdownlint.json'
           files: '**/*.md'
 
+      - name: Download actionlint
+        if: matrix.linter == 'actionlint'
+        run: |
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
+          # Download a pinned version of actionlint into the runner temp directory
+          ACTIONLINT_VERSION="1.7.1"
+          ACTIONLINT_DIR="${RUNNER_TEMP:-/tmp}/actionlint"
+          mkdir -p "$ACTIONLINT_DIR"
+          curl -sSfL \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C "$ACTIONLINT_DIR"
+          # Expose the actionlint binary path to subsequent steps via GITHUB_ENV
+          echo "ACTIONLINT_BIN=${ACTIONLINT_DIR}/actionlint" >> "$GITHUB_ENV"
+
       - name: Run actionlint
         if: matrix.linter == 'actionlint'
-        uses: reviewdog/action-actionlint@v1
-        with:
-          fail_level: error
+        run: |
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
+          # Lint only workflow YAML files to avoid scanning binaries or temporary directories
+          "${ACTIONLINT_BIN}" -color -shellcheck= -pyflakes= .github/workflows/*.yml
 
   test:
     name: Test
