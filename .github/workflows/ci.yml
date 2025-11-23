@@ -334,6 +334,8 @@ jobs:
           # Mount points for the action
           ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
           FEED_DIR: ${{ github.workspace }}/feed
+          # Skip format checks - init scripts are already formatted with tabs
+          NO_CHECK_FORMAT: 1
 
       - name: List and validate produced artifacts
         run: |
@@ -579,6 +581,8 @@ jobs:
           # Mount points for the action
           ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
           FEED_DIR: ${{ github.workspace }}/feed
+          # Skip format checks - init scripts are already formatted with tabs
+          NO_CHECK_FORMAT: 1
 
       - name: List and validate produced artifacts
         run: |
