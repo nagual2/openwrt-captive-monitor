@@ -89,6 +89,7 @@ jobs:
           # Exclude init.d scripts as they use OpenWrt-specific functions
           # Skip temporary and build directories to avoid formatting generated files
           find . \( -name '*.sh' -o -type f -executable \) \
+            -not -path '*/.git/*' \
             -not -path '*/tmp/*' \
             -not -path '*/.tmp/*' \
             -not -path '*/build/*' | \
