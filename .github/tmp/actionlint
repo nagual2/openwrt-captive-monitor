@@ -1,8 +1,0 @@
-# Placeholder for the actionlint binary used in CI.
-# The real actionlint executable is downloaded at runtime into the runner
-# temporary directory (RUNNER_TEMP) and should not be committed to the repo.
-#
-# This text file remains so that any tooling that scans the repository (for
-# example, actionlint itself when run over the whole tree) does not encounter
-# a non-UTF-8 binary at .github/tmp/actionlint and fail with an encoding
-# error.
