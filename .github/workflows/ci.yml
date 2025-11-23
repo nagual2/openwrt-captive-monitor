@@ -4,9 +4,27 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '**.sh'
+      - '**.yml'
+      - '**.yaml'
+      - 'package/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/workflows/**'
+      - 'Makefile'
   pull_request:
     branches:
       - main
+    paths:
+      - '**.sh'
+      - '**.yml'
+      - '**.yaml'
+      - 'package/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/workflows/**'
+      - 'Makefile'
   workflow_dispatch:
 
 permissions:
@@ -14,7 +32,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 defaults:
   run:
@@ -39,6 +57,18 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+
+      - name: Cache linting tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/shfmt
+            ~/.cache/shellcheck
+            ~/.cache/actionlint
+          key: ${{ runner.os }}-lint-tools-${{ matrix.linter }}-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-lint-tools-${{ matrix.linter }}-
+            ${{ runner.os }}-lint-tools-
 
       - name: Install base dependencies
         uses: ./.github/actions/setup-system-packages
@@ -162,6 +192,15 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
+      - name: Cache test dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/test-deps
+          key: ${{ runner.os }}-test-deps-${{ hashFiles('tests/**') }}
+          restore-keys: |
+            ${{ runner.os }}-test-deps-
+
       - name: Install test dependencies
         uses: ./.github/actions/setup-system-packages
         with:
@@ -210,6 +249,16 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Cache OpenWrt SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/openwrt-sdk
+          key: ${{ runner.os }}-openwrt-sdk-${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}
+          restore-keys: |
+            ${{ runner.os }}-openwrt-sdk-${{ matrix.sdk_slug }}-
+            ${{ runner.os }}-openwrt-sdk-
 
       - name: Set dev build environment
         id: build-env
@@ -440,6 +489,16 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Cache OpenWrt SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/openwrt-sdk
+          key: ${{ runner.os }}-openwrt-sdk-${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}
+          restore-keys: |
+            ${{ runner.os }}-openwrt-sdk-${{ matrix.sdk_slug }}-
+            ${{ runner.os }}-openwrt-sdk-
 
       - name: Set build environment
         id: build-env
