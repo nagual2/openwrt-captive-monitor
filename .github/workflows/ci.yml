@@ -85,10 +85,9 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          # Exclude init.d scripts as they are checked by openwrt/gh-action-sdk
-          # Exclude init.d scripts as they use OpenWrt-specific functions
-          find . -name '*.sh' -o -type f -executable | \
-            grep -v 'package/.*/files/etc/init.d/' | \
+          # Exclude .git and init.d scripts
+          find . \( -path './.git' -o -path './package/*/files/etc/init.d' \) -prune -o \
+            \( -name '*.sh' -o -type f -executable \) -print | \
             xargs -r shfmt -d -s -i 4 -ci -sr
 
       - name: Run shellcheck
@@ -99,8 +98,10 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          # Exclude init.d scripts as they use OpenWrt-specific functions
-          find . -type f -name "*.sh" | grep -v 'package/.*/files/etc/init.d/' | xargs -r shellcheck
+          # Exclude .git and init.d scripts
+          find . \( -path './.git' -o -path './package/*/files/etc/init.d' \) -prune -o \
+            -type f -name "*.sh" -print | \
+            xargs -r shellcheck
           shellcheck openwrt_captive_monitor.sh
 
       - name: Run markdownlint
