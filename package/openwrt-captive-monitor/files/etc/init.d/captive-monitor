@@ -44,26 +44,26 @@ load_config() {
 
 start_service() {
     if [ ! -x "$SCRIPT_PATH" ]; then
-        logger -t captive-monitor -p user.err "Script not found or not executable: $SCRIPT_PATH"
-        return 1
+	logger -t captive-monitor -p user.err "Script not found or not executable: $SCRIPT_PATH"
+	return 1
     fi
 
     load_config
 
     if [ "$enabled" -ne 1 ]; then
-        logger -t captive-monitor -p user.info "Service disabled in UCI config, not starting"
-        return 0
+	logger -t captive-monitor -p user.info "Service disabled in UCI config, not starting"
+	return 0
     fi
 
     mode_arg=""
     case "$mode" in
     oneshot)
-        mode_arg="--oneshot"
-        ;;
+	mode_arg="--oneshot"
+	;;
     *)
-        mode="monitor"
-        mode_arg="--monitor"
-        ;;
+	mode="monitor"
+	mode_arg="--monitor"
+	;;
     esac
 
     logger -t captive-monitor -p user.info "Starting Captive Portal Monitor (mode: $mode)"
@@ -72,7 +72,7 @@ start_service() {
     procd_set_param command "$SCRIPT_PATH" "$mode_arg"
 
     if [ "$mode" = "monitor" ]; then
-        procd_set_param respawn 3600 5 5
+	procd_set_param respawn 3600 5 5
     fi
 
     procd_set_param stdout 1
@@ -89,11 +89,11 @@ start_service() {
     [ -n "$firewall_backend" ] && procd_set_param env REQUESTED_FIREWALL_BACKEND="$firewall_backend"
     case "$enable_syslog" in
     0 | false | no | disabled)
-        procd_set_param env ENABLE_SYSLOG=0
-        ;;
+	procd_set_param env ENABLE_SYSLOG=0
+	;;
     1 | true | yes | enabled)
-        procd_set_param env ENABLE_SYSLOG=1
-        ;;
+	procd_set_param env ENABLE_SYSLOG=1
+	;;
     esac
 
     procd_close_instance
@@ -102,9 +102,9 @@ start_service() {
 stop_service() {
     logger -t captive-monitor -p user.info "Stopping Captive Portal Monitor"
     if command -v procd_kill > /dev/null 2>&1; then
-        procd_kill "$SCRIPT_PATH"
+	procd_kill "$SCRIPT_PATH"
     else
-        killall openwrt_captive_monitor > /dev/null 2>&1 || true
+	killall openwrt_captive_monitor > /dev/null 2>&1 || true
     fi
 }
 
