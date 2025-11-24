@@ -357,7 +357,7 @@ jobs:
           echo "Copying SDK outputs to $ART_DIR"
 
           # Find and copy .ipk files from SDK bin/packages directory
-          find . -path "*/bin/packages/*/*.ipk" -type f -exec cp -v {} "$ART_DIR/" \;
+          find . -path "*/bin/packages/*/*.ipk" -type f -exec cp -Lv {} "$ART_DIR/" \;
 
           echo "Contents of $ART_DIR after copy:"
           ls -la "$ART_DIR"
@@ -629,7 +629,7 @@ jobs:
           echo "Copying SDK outputs to $ART_DIR"
 
           # Find and copy .ipk files from SDK bin/packages directory
-          find . -path "*/bin/packages/*/*.ipk" -type f -exec cp -v {} "$ART_DIR/" \;
+          find . -path "*/bin/packages/*/*.ipk" -type f -exec cp -Lv {} "$ART_DIR/" \;
 
           echo "Contents of $ART_DIR after copy:"
           ls -la "$ART_DIR"
