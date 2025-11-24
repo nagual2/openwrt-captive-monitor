@@ -15,6 +15,9 @@ PKG_ARCH:=all
 include $(INCLUDE_DIR)/package.mk
 
 # Mark this as a script-only package with no configure/compile steps.
+define Build/Prepare
+endef
+
 define Build/Configure
 endef
 
