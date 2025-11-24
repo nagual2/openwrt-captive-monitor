@@ -122,6 +122,7 @@ jobs:
             -not -path '*/tmp/*' \
             -not -path '*/.tmp/*' \
             -not -path '*/build/*' \
+            -not -path '*/init.d/*' \
             -not -path '*/package/*/files/etc/init.d/*' | \
             xargs -r shfmt -d -s -i 4 -ci -sr
 
