@@ -349,7 +349,7 @@ jobs:
           fi
 
           ls -la "$ART_DIR"
-          
+
           # Count .ipk files
           IPK_COUNT=$(find "$ART_DIR" -name "*.ipk" -type f | wc -l)
           echo "Found $IPK_COUNT .ipk files"
@@ -568,7 +568,7 @@ jobs:
           fi
 
           ls -la "$ART_DIR"
-          
+
           # Count .ipk files
           IPK_COUNT=$(find "$ART_DIR" -name "*.ipk" -type f | wc -l)
           echo "Found $IPK_COUNT .ipk files"
