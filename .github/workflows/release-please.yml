@@ -66,13 +66,24 @@ jobs:
         if: matrix.linter == 'shfmt'
         run: |
           set -euo pipefail
-          shfmt -d -s -i 4 -ci -sr .
+          # Exclude init.d scripts as they use tabs and OpenWrt-specific functions
+          # Skip temporary and build directories to avoid formatting generated files
+          find . \( -name '*.sh' -o -type f -executable \) \
+            -not -path '*/.git/*' \
+            -not -path '*/tmp/*' \
+            -not -path '*/.tmp/*' \
+            -not -path '*/build/*' \
+            -not -path '*/package/*/files/etc/init.d/*' | \
+            xargs -r shfmt -d -s -i 4 -ci -sr
 
       - name: Run shellcheck
         if: matrix.linter == 'shellcheck'
         run: |
           set -euo pipefail
-          find . -type f -name "*.sh" -exec shellcheck {} +
+          # Exclude .git and init.d scripts
+          find . \( -path './.git' -o -path './package/*/files/etc/init.d' \) -prune -o \
+            -type f -name "*.sh" -print | \
+            xargs -r shellcheck
           shellcheck openwrt_captive_monitor.sh
 
       - name: Run markdownlint
