@@ -95,38 +95,26 @@ if command -v file > /dev/null 2>&1; then
     file_type=$(file "$package_path")
     echo "File type: $file_type"
 
-    # If file is gzip compressed, try to decompress it first
+    # If file is gzip compressed, it might be double-compressed
+    # Try to decompress and check if it's an ar archive inside
     if echo "$file_type" | grep -q "gzip compressed"; then
-        echo "WARNING: File is gzip compressed, attempting to decompress..."
+        echo "WARNING: File is gzip compressed (expected ar archive)"
         temp_ipk="$package_path.decompressed"
         if gunzip -c "$package_path" > "$temp_ipk" 2> /dev/null; then
-            echo "Decompressed successfully, using decompressed file"
             new_file_type=$(file "$temp_ipk")
-            echo "New file type: $new_file_type"
+            echo "Decompressed file type: $new_file_type"
 
-            # If decompressed file is a tar archive, extract it and find the real .ipk
-            if echo "$new_file_type" | grep -q "tar archive"; then
-                echo "WARNING: Decompressed file is a tar archive, extracting..."
-                temp_extract_dir="$package_path.extracted"
-                mkdir -p "$temp_extract_dir"
-                if tar -xf "$temp_ipk" -C "$temp_extract_dir" 2> /dev/null; then
-                    # Find .ipk file inside the tar
-                    real_ipk=$(find "$temp_extract_dir" -name "*.ipk" -type f | head -1)
-                    if [ -n "$real_ipk" ] && [ -f "$real_ipk" ]; then
-                        echo "Found real .ipk file: $real_ipk"
-                        package_path="$real_ipk"
-                        echo "Real file type: $(file "$package_path")"
-                    else
-                        echo "ERROR: No .ipk file found in tar archive" >&2
-                    fi
-                else
-                    echo "ERROR: Failed to extract tar archive" >&2
-                fi
-            else
+            # Check if decompressed file is an ar archive (correct .ipk format)
+            if echo "$new_file_type" | grep -q "ar archive\|current ar archive"; then
+                echo "Found ar archive after decompression, using decompressed file"
                 package_path="$temp_ipk"
+            else
+                echo "WARNING: Decompressed file is not an ar archive"
+                echo "Attempting to use original file with ar anyway..."
+                rm -f "$temp_ipk"
             fi
         else
-            echo "ERROR: Failed to decompress file" >&2
+            echo "WARNING: Failed to decompress, attempting to use original file with ar..."
         fi
     fi
 fi
