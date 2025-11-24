@@ -372,10 +372,14 @@ jobs:
             set -o pipefail
           fi
           # Find .ipk file in SDK output directory
+          echo "Searching for openwrt-captive-monitor package in artifacts/${BUILD_NAME}"
+          find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f
           IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f | head -1)
 
           if [ -z "$IPK_FILE" ]; then
             echo "error: no openwrt-captive-monitor package found" >&2
+            echo "Available .ipk files:"
+            find "artifacts/${BUILD_NAME}" -name "*.ipk" -type f | head -20
             exit 1
           fi
           echo "Verifying package: $IPK_FILE"
@@ -591,10 +595,14 @@ jobs:
             set -o pipefail
           fi
           # Find .ipk file in SDK output directory
+          echo "Searching for openwrt-captive-monitor package in artifacts/${BUILD_NAME}"
+          find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f
           IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f | head -1)
 
           if [ -z "$IPK_FILE" ]; then
             echo "error: no openwrt-captive-monitor package found" >&2
+            echo "Available .ipk files:"
+            find "artifacts/${BUILD_NAME}" -name "*.ipk" -type f | head -20
             exit 1
           fi
           echo "Verifying package: $IPK_FILE"
