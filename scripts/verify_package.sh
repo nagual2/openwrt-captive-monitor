@@ -95,27 +95,14 @@ if command -v file > /dev/null 2>&1; then
     file_type=$(file "$package_path")
     echo "File type: $file_type"
 
-    # If file is gzip compressed, it might be double-compressed
-    # Try to decompress and check if it's an ar archive inside
+    # Modern OpenWrt IPK packages are tar.gz archives
+    # Legacy IPK packages are ar archives
     if echo "$file_type" | grep -q "gzip compressed"; then
-        echo "WARNING: File is gzip compressed (expected ar archive)"
-        temp_ipk="$package_path.decompressed"
-        if gunzip -c "$package_path" > "$temp_ipk" 2> /dev/null; then
-            new_file_type=$(file "$temp_ipk")
-            echo "Decompressed file type: $new_file_type"
-
-            # Check if decompressed file is an ar archive (correct .ipk format)
-            if echo "$new_file_type" | grep -q "ar archive\|current ar archive"; then
-                echo "Found ar archive after decompression, using decompressed file"
-                package_path="$temp_ipk"
-            else
-                echo "WARNING: Decompressed file is not an ar archive"
-                echo "Attempting to use original file with ar anyway..."
-                rm -f "$temp_ipk"
-            fi
-        else
-            echo "WARNING: Failed to decompress, attempting to use original file with ar..."
-        fi
+        echo "Detected gzip compressed file (modern IPK format)"
+    elif echo "$file_type" | grep -q "ar archive\|current ar archive"; then
+        echo "Detected ar archive (legacy IPK format)"
+    else
+        echo "WARNING: Unexpected file type for IPK package"
     fi
 fi
 
@@ -137,10 +124,17 @@ trap cleanup EXIT INT TERM HUP
 work_dir="$temp_dir/ipk"
 mkdir -p "$work_dir"
 
-(
-    cd "$work_dir"
-    ar x "$package_path"
-)
+# Modern OpenWrt IPK packages are tar.gz archives, not ar archives
+# Try to extract as tar.gz first, fall back to ar if that fails
+if tar -xzf "$package_path" -C "$work_dir" 2> /dev/null; then
+    echo "Extracted as tar.gz archive (modern IPK format)"
+else
+    echo "Attempting to extract as ar archive (legacy IPK format)"
+    (
+        cd "$work_dir"
+        ar x "$package_path"
+    )
+fi
 
 for archive in data.tar.gz control.tar.gz; do
     if [ ! -f "$work_dir/$archive" ]; then
