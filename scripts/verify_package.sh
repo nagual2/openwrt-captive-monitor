@@ -92,7 +92,21 @@ echo "Size: $package_size bytes"
 
 # Check file type
 if command -v file > /dev/null 2>&1; then
-    echo "File type: $(file "$package_path")"
+    file_type=$(file "$package_path")
+    echo "File type: $file_type"
+    
+    # If file is gzip compressed, try to decompress it first
+    if echo "$file_type" | grep -q "gzip compressed"; then
+        echo "WARNING: File is gzip compressed, attempting to decompress..."
+        temp_ipk="$package_path.decompressed"
+        if gunzip -c "$package_path" > "$temp_ipk" 2>/dev/null; then
+            echo "Decompressed successfully, using decompressed file"
+            package_path="$temp_ipk"
+            echo "New file type: $(file "$package_path")"
+        else
+            echo "ERROR: Failed to decompress file" >&2
+        fi
+    fi
 fi
 
 # Check if it's a symlink
@@ -105,6 +119,7 @@ echo ""
 temp_dir=$(mktemp -d)
 cleanup() {
     rm -rf "$temp_dir"
+    [ -f "$package_path.decompressed" ] && rm -f "$package_path.decompressed"
 }
 trap cleanup EXIT INT TERM HUP
 
