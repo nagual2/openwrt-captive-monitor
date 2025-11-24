@@ -332,21 +332,6 @@ jobs:
           # Skip format checks - init scripts are already formatted with tabs
           NO_CHECK_FORMAT: 1
 
-      - name: Copy SDK outputs to artifacts directory
-        run: |
-          set -eu
-          if (set -o pipefail) 2> /dev/null; then
-            # shellcheck disable=SC3040
-            set -o pipefail
-          fi
-          ART_DIR="artifacts/${BUILD_NAME}"
-          echo "Copying SDK outputs to $ART_DIR"
-
-          # Find and copy .ipk files from SDK bin/packages directory
-          find . -path "*/bin/packages/*/*.ipk" -type f -exec cp -Lv {} "$ART_DIR/" \;
-
-          echo "Contents of $ART_DIR after copy:"
-          ls -la "$ART_DIR"
 
       - name: List and validate produced artifacts
         run: |
@@ -566,21 +551,6 @@ jobs:
           # Skip format checks - init scripts are already formatted with tabs
           NO_CHECK_FORMAT: 1
 
-      - name: Copy SDK outputs to artifacts directory
-        run: |
-          set -eu
-          if (set -o pipefail) 2> /dev/null; then
-            # shellcheck disable=SC3040
-            set -o pipefail
-          fi
-          ART_DIR="artifacts/${BUILD_NAME}"
-          echo "Copying SDK outputs to $ART_DIR"
-
-          # Find and copy .ipk files from SDK bin/packages directory
-          find . -path "*/bin/packages/*/*.ipk" -type f -exec cp -Lv {} "$ART_DIR/" \;
-
-          echo "Contents of $ART_DIR after copy:"
-          ls -la "$ART_DIR"
 
       - name: List and validate produced artifacts
         run: |
