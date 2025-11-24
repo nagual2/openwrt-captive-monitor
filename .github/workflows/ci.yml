@@ -364,20 +364,10 @@ jobs:
           fi
 
           ls -la "$ART_DIR"
-          echo "IPK files:"
-
-          # Find .ipk file in SDK output directory
-          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f | head -1)
-
-          # One-level-deep .ipk files
-          for dir in "$ART_DIR"/*; do
-            [ -e "$dir" ] || continue
-            for f in "$dir"/*.ipk; do
-              [ -e "$f" ] || continue
-              basename "$f"
-              IPK_COUNT=$((IPK_COUNT + 1))
-            done
-          done
+          
+          # Count .ipk files
+          IPK_COUNT=$(find "$ART_DIR" -name "*.ipk" -type f | wc -l)
+          echo "Found $IPK_COUNT .ipk files"
 
           if [ "$IPK_COUNT" -eq 0 ]; then
             echo "error: no .ipk files found in $ART_DIR" >&2
@@ -608,20 +598,10 @@ jobs:
           fi
 
           ls -la "$ART_DIR"
-          echo "IPK files:"
-
-          # Find .ipk file in SDK output directory
-          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f | head -1)
-
-          # One-level-deep .ipk files
-          for dir in "$ART_DIR"/*; do
-            [ -e "$dir" ] || continue
-            for f in "$dir"/*.ipk; do
-              [ -e "$f" ] || continue
-              basename "$f"
-              IPK_COUNT=$((IPK_COUNT + 1))
-            done
-          done
+          
+          # Count .ipk files
+          IPK_COUNT=$(find "$ART_DIR" -name "*.ipk" -type f | wc -l)
+          echo "Found $IPK_COUNT .ipk files"
 
           if [ "$IPK_COUNT" -eq 0 ]; then
             echo "error: no .ipk files found in $ART_DIR" >&2
