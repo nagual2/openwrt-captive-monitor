@@ -306,6 +306,15 @@ jobs:
           echo "Prepared package structure:"
           find feed -type f -name "Makefile" | head -5
 
+          # Initialize git repo in feed to avoid SDK format check errors
+          cd feed
+          git init
+          git config user.email "ci@openwrt-captive-monitor"
+          git config user.name "CI Bot"
+          git add .
+          git commit -m "Initial commit" || true
+          cd ..
+
       - name: Validate SDK image and target
         run: |
           set -eu
@@ -552,6 +561,15 @@ jobs:
 
           echo "Prepared package structure:"
           find feed -type f -name "Makefile" | head -5
+
+          # Initialize git repo in feed to avoid SDK format check errors
+          cd feed
+          git init
+          git config user.email "ci@openwrt-captive-monitor"
+          git config user.name "CI Bot"
+          git add .
+          git commit -m "Initial commit" || true
+          cd ..
 
       - name: Validate SDK image and target
         run: |
