@@ -89,6 +89,17 @@ package_size=$(stat -c%s "$package_path")
 echo "=== Package Verification ==="
 echo "Package: $package_rel"
 echo "Size: $package_size bytes"
+
+# Check file type
+if command -v file > /dev/null 2>&1; then
+    echo "File type: $(file "$package_path")"
+fi
+
+# Check if it's a symlink
+if [ -L "$package_path" ]; then
+    echo "WARNING: Package is a symlink to: $(readlink -f "$package_path")"
+fi
+
 echo ""
 
 temp_dir=$(mktemp -d)
