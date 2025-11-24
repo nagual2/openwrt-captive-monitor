@@ -31,7 +31,7 @@ jobs:
     
     steps:
       - name: Check out repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Provision CLI dependencies
         uses: ./.github/actions/setup-system-packages
