@@ -184,3 +184,5 @@ if [ -n "$control_file" ] && [ -f "$control_file" ]; then
 else
     echo "warning: control metadata not found"
 fi
+
+exit 0
