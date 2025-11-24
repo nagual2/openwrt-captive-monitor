@@ -103,7 +103,7 @@ if command -v file > /dev/null 2>&1; then
             echo "Decompressed successfully, using decompressed file"
             new_file_type=$(file "$temp_ipk")
             echo "New file type: $new_file_type"
-            
+
             # If decompressed file is a tar archive, extract it and find the real .ipk
             if echo "$new_file_type" | grep -q "tar archive"; then
                 echo "WARNING: Decompressed file is a tar archive, extracting..."
