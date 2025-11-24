@@ -101,8 +101,30 @@ if command -v file > /dev/null 2>&1; then
         temp_ipk="$package_path.decompressed"
         if gunzip -c "$package_path" > "$temp_ipk" 2> /dev/null; then
             echo "Decompressed successfully, using decompressed file"
-            package_path="$temp_ipk"
-            echo "New file type: $(file "$package_path")"
+            new_file_type=$(file "$temp_ipk")
+            echo "New file type: $new_file_type"
+            
+            # If decompressed file is a tar archive, extract it and find the real .ipk
+            if echo "$new_file_type" | grep -q "tar archive"; then
+                echo "WARNING: Decompressed file is a tar archive, extracting..."
+                temp_extract_dir="$package_path.extracted"
+                mkdir -p "$temp_extract_dir"
+                if tar -xf "$temp_ipk" -C "$temp_extract_dir" 2> /dev/null; then
+                    # Find .ipk file inside the tar
+                    real_ipk=$(find "$temp_extract_dir" -name "*.ipk" -type f | head -1)
+                    if [ -n "$real_ipk" ] && [ -f "$real_ipk" ]; then
+                        echo "Found real .ipk file: $real_ipk"
+                        package_path="$real_ipk"
+                        echo "Real file type: $(file "$package_path")"
+                    else
+                        echo "ERROR: No .ipk file found in tar archive" >&2
+                    fi
+                else
+                    echo "ERROR: Failed to extract tar archive" >&2
+                fi
+            else
+                package_path="$temp_ipk"
+            fi
         else
             echo "ERROR: Failed to decompress file" >&2
         fi
@@ -120,6 +142,7 @@ temp_dir=$(mktemp -d)
 cleanup() {
     rm -rf "$temp_dir"
     [ -f "$package_path.decompressed" ] && rm -f "$package_path.decompressed"
+    [ -d "$package_path.extracted" ] && rm -rf "$package_path.extracted"
 }
 trap cleanup EXIT INT TERM HUP
 
