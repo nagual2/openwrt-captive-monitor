@@ -115,14 +115,17 @@ case "$ipk_file" in
     *) ipk_path="$(pwd)/$ipk_file" ;;
 esac
 
-# Extract .ipk archive (ar archive)
-(
-    cd "$work_dir"
-    ar x "$ipk_path" 2> /dev/null
-) || {
-    printf "%serror:%s failed to extract IPK archive\n" "$RED" "$NC" >&2
-    exit 1
-}
+# Extract .ipk archive (try tar.gz first, then ar for legacy format)
+if ! tar -xzf "$ipk_path" -C "$work_dir" 2> /dev/null; then
+    # Fall back to ar extraction for legacy format
+    (
+        cd "$work_dir"
+        ar x "$ipk_path" 2> /dev/null
+    ) || {
+        printf "%serror:%s failed to extract IPK archive\n" "$RED" "$NC" >&2
+        exit 1
+    }
+fi
 
 # Check for control archive
 if [ ! -f "$work_dir/control.tar.gz" ]; then
