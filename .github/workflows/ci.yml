@@ -366,15 +366,8 @@ jobs:
           ls -la "$ART_DIR"
           echo "IPK files:"
 
-          # Robust IPK discovery with quoted paths and existence checks
-          IPK_COUNT=0
-
-          # Top-level .ipk files
-          for ipk in "$ART_DIR"/*.ipk; do
-            [ -e "$ipk" ] || continue
-            basename "$ipk"
-            IPK_COUNT=$((IPK_COUNT + 1))
-          done
+          # Find .ipk file in SDK output directory
+          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f | head -1)
 
           # One-level-deep .ipk files
           for dir in "$ART_DIR"/*; do
@@ -403,15 +396,8 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          # Robust IPK discovery with quoted paths and existence checks
-          IPK_FILE=""
-          for ipk_pattern in \
-            "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
-            if [ -e "$ipk_pattern" ]; then
-              IPK_FILE="$ipk_pattern"
-              break
-            fi
-          done
+          # Find .ipk file in SDK output directory
+          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f | head -1)
 
           if [ -z "$IPK_FILE" ]; then
             echo "error: no openwrt-captive-monitor package found" >&2
@@ -624,15 +610,8 @@ jobs:
           ls -la "$ART_DIR"
           echo "IPK files:"
 
-          # Robust IPK discovery with quoted paths and existence checks
-          IPK_COUNT=0
-
-          # Top-level .ipk files
-          for ipk in "$ART_DIR"/*.ipk; do
-            [ -e "$ipk" ] || continue
-            basename "$ipk"
-            IPK_COUNT=$((IPK_COUNT + 1))
-          done
+          # Find .ipk file in SDK output directory
+          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f | head -1)
 
           # One-level-deep .ipk files
           for dir in "$ART_DIR"/*; do
@@ -661,15 +640,8 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          # Robust IPK discovery with quoted paths and existence checks
-          IPK_FILE=""
-          for ipk_pattern in \
-            "artifacts/${BUILD_NAME}"/openwrt-captive-monitor_*.ipk; do
-            if [ -e "$ipk_pattern" ]; then
-              IPK_FILE="$ipk_pattern"
-              break
-            fi
-          done
+          # Find .ipk file in SDK output directory
+          IPK_FILE=$(find "artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f | head -1)
 
           if [ -z "$IPK_FILE" ]; then
             echo "error: no openwrt-captive-monitor package found" >&2
