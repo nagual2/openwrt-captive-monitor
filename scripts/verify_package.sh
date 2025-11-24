@@ -37,7 +37,7 @@ resolve_path() {
 }
 
 print_usage() {
-	cat <<'EOF'
+	cat << 'EOF'
 Usage: scripts/verify_package.sh [package.ipk]
 
 When no package path is provided, the script searches under dist/opkg for the
