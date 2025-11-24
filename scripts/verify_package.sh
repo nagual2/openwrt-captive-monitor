@@ -114,6 +114,7 @@ fi
 echo ""
 
 temp_dir=$(mktemp -d)
+# shellcheck disable=SC2317
 cleanup() {
     rm -rf "$temp_dir"
     [ -f "$package_path.decompressed" ] && rm -f "$package_path.decompressed"
