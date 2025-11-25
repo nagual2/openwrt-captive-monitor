@@ -32,21 +32,16 @@ RUN MUSL_SUFFIX="_musl"; \
     fi && \
     SDK_FILE="openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0${MUSL_SUFFIX}.Linux-x86_64.tar.xz" && \
     SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/${SDK_FILE}" && \
+    SHA256_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/sha256sums" && \
     echo "Downloading SDK from: ${SDK_URL}" && \
     curl -fL --retry 15 --retry-delay 10 --retry-all-errors \
          --max-time 3600 --connect-timeout 60 --speed-limit 1000 --speed-time 30 \
          -o sdk.tar.xz "${SDK_URL}" && \
-    ls -lh sdk.tar.xz
-
-# Download and verify checksums
-RUN MUSL_SUFFIX="_musl"; \
-    if [ "${SDK_TARGET}" = "ipq40xx" ] || [ "${SDK_TARGET}" = "ipq806x" ]; then \
-        MUSL_SUFFIX="_musl_eabi"; \
-    fi && \
-    SDK_FILE="openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0${MUSL_SUFFIX}.Linux-x86_64.tar.xz" && \
-    SHA256_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/sha256sums" && \
+    echo "Downloading checksums from: ${SHA256_URL}" && \
     curl -fL --retry 5 --retry-delay 5 -o sha256sums "${SHA256_URL}" && \
-    grep "${SDK_FILE}" sha256sums | sha256sum -c -
+    echo "Verifying checksum for: ${SDK_FILE}" && \
+    grep "${SDK_FILE}" sha256sums | sha256sum -c - && \
+    ls -lh sdk.tar.xz
 
 # Extract SDK
 RUN mkdir -p /opt/openwrt-sdk && \
