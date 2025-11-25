@@ -64,31 +64,31 @@ SDK_SUBTARGET=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        -t|--target)
+        -t | --target)
             SDK_TARGET="$2"
             shift 2
             ;;
-        -s|--subtarget)
+        -s | --subtarget)
             SDK_SUBTARGET="$2"
             shift 2
             ;;
-        -v|--version)
+        -v | --version)
             OPENWRT_VERSION="$2"
             shift 2
             ;;
-        -u|--ubuntu)
+        -u | --ubuntu)
             UBUNTU_VERSION="$2"
             shift 2
             ;;
-        -r|--registry)
+        -r | --registry)
             REGISTRY="$2"
             shift 2
             ;;
-        -p|--push)
+        -p | --push)
             PUSH=true
             shift
             ;;
-        -h|--help)
+        -h | --help)
             usage
             ;;
         *)
@@ -99,7 +99,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate required arguments
-if [[ -z "$SDK_TARGET" ]] || [[ -z "$SDK_SUBTARGET" ]]; then
+if [[ -z $SDK_TARGET ]] || [[ -z $SDK_SUBTARGET ]]; then
     log_error "Target and subtarget are required"
     usage
 fi
@@ -107,7 +107,7 @@ fi
 # Build image tag
 SDK_SLUG="${SDK_TARGET}-${SDK_SUBTARGET}"
 IMAGE_TAG="${REGISTRY}/${IMAGE_NAME}:${OPENWRT_VERSION}-${SDK_SLUG}-latest"
-SHORT_SHA=$(git rev-parse --short=8 HEAD 2>/dev/null || echo "local")
+SHORT_SHA=$(git rev-parse --short=8 HEAD 2> /dev/null || echo "local")
 IMAGE_TAG_SHA="${REGISTRY}/${IMAGE_NAME}:${OPENWRT_VERSION}-${SDK_SLUG}-${SHORT_SHA}"
 
 log_info "Building OpenWrt SDK Docker image"
@@ -155,7 +155,7 @@ else
 fi
 
 # Push image if requested
-if [[ "$PUSH" == "true" ]]; then
+if [[ $PUSH == "true" ]]; then
     log_info "Pushing image to registry..."
     docker push "${IMAGE_TAG}"
     docker push "${IMAGE_TAG_SHA}"
