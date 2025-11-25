@@ -181,7 +181,7 @@ fi
 echo ""
 echo "=== Package Metadata ==="
 if [ -n "$control_file" ] && [ -f "$control_file" ]; then
-    cat "$control_file"
+    cat "$control_file" || true
 else
     echo "warning: control metadata not found"
 fi
