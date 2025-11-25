@@ -26,7 +26,7 @@ WORKDIR /tmp
 RUN SDK_SLUG="${SDK_TARGET}-${SDK_SUBTARGET}" && \
     SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
     echo "Downloading SDK from: ${SDK_URL}" && \
-    curl -fsSL "${SDK_URL}" -o sdk.tar.xz && \
+    curl --fail --silent --show-error --location "${SDK_URL}" -o sdk.tar.xz && \
     mkdir -p /opt/openwrt-sdk && \
     tar -C /opt/openwrt-sdk --strip-components=1 -xf sdk.tar.xz && \
     rm sdk.tar.xz
