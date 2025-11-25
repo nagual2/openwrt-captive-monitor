@@ -148,3 +148,188 @@ jobs:
         run: |
           set -euo pipefail
           df -h
+
+  cleanup-docker-images:
+    name: Cleanup Docker Images
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+      contents: read
+    env:
+      IMAGE_RETENTION_DAYS: 90
+      UNUSED_IMAGE_DAYS: 30
+      MAX_VERSIONS_PER_ARCH: 10
+    steps:
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          check-latest: true
+
+      - name: Cleanup old Docker images
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const retentionDays = Number.parseInt(process.env.IMAGE_RETENTION_DAYS ?? '90', 10);
+            const unusedDays = Number.parseInt(process.env.UNUSED_IMAGE_DAYS ?? '30', 10);
+            const maxVersions = Number.parseInt(process.env.MAX_VERSIONS_PER_ARCH ?? '10', 10);
+            
+            console.log(`Configuration:`);
+            console.log(`  - Retention days: ${retentionDays}`);
+            console.log(`  - Unused image days: ${unusedDays}`);
+            console.log(`  - Max versions per arch: ${maxVersions}`);
+            
+            const owner = context.repo.owner;
+            const packageType = 'container';
+            const packageName = 'openwrt-sdk';
+            
+            try {
+              // Get all versions of the package
+              const { data: versions } = await github.rest.packages.getAllPackageVersionsForPackageOwnedByUser({
+                package_type: packageType,
+                package_name: packageName,
+                username: owner,
+                per_page: 100,
+                state: 'active'
+              });
+              
+              console.log(`Found ${versions.length} image versions`);
+              
+              const now = new Date();
+              const imagesToDelete = [];
+              const imagesByArch = {};
+              
+              // Group images by architecture
+              for (const version of versions) {
+                const tags = version.metadata?.container?.tags || [];
+                
+                // Skip if no tags
+                if (tags.length === 0) {
+                  console.log(`Version ${version.id} has no tags, marking for deletion`);
+                  imagesToDelete.push({ id: version.id, reason: 'no tags', tags: [] });
+                  continue;
+                }
+                
+                // Check if this is a 'latest' tag (protected)
+                const hasLatestTag = tags.some(tag => tag.endsWith('-latest'));
+                if (hasLatestTag) {
+                  console.log(`Version ${version.id} has 'latest' tag, skipping: ${tags.join(', ')}`);
+                  continue;
+                }
+                
+                // Extract architecture from tag (e.g., "23.05.5-x86-64-abc12345" -> "x86-64")
+                const archMatch = tags[0]?.match(/\d+\.\d+\.\d+-([^-]+-[^-]+)-/);
+                const arch = archMatch ? archMatch[1] : 'unknown';
+                
+                if (!imagesByArch[arch]) {
+                  imagesByArch[arch] = [];
+                }
+                
+                imagesByArch[arch].push({
+                  id: version.id,
+                  tags: tags,
+                  created_at: new Date(version.created_at),
+                  updated_at: new Date(version.updated_at)
+                });
+              }
+              
+              // Process each architecture
+              for (const [arch, images] of Object.entries(imagesByArch)) {
+                console.log(`\nProcessing architecture: ${arch} (${images.length} images)`);
+                
+                // Sort by creation date (newest first)
+                images.sort((a, b) => b.created_at - a.created_at);
+                
+                for (let i = 0; i < images.length; i++) {
+                  const image = images[i];
+                  const ageInDays = (now - image.created_at) / (1000 * 60 * 60 * 24);
+                  const unusedInDays = (now - image.updated_at) / (1000 * 60 * 60 * 24);
+                  
+                  // Rule 1: Delete if older than retention days
+                  if (ageInDays > retentionDays) {
+                    console.log(`  Image ${image.id} is ${ageInDays.toFixed(1)} days old (> ${retentionDays})`);
+                    imagesToDelete.push({
+                      id: image.id,
+                      reason: `older than ${retentionDays} days`,
+                      tags: image.tags,
+                      arch: arch
+                    });
+                    continue;
+                  }
+                  
+                  // Rule 2: Delete if unused for too long
+                  if (unusedInDays > unusedDays) {
+                    console.log(`  Image ${image.id} unused for ${unusedInDays.toFixed(1)} days (> ${unusedDays})`);
+                    imagesToDelete.push({
+                      id: image.id,
+                      reason: `unused for ${unusedDays} days`,
+                      tags: image.tags,
+                      arch: arch
+                    });
+                    continue;
+                  }
+                  
+                  // Rule 3: Keep only last N versions per architecture
+                  if (i >= maxVersions) {
+                    console.log(`  Image ${image.id} exceeds max versions (position ${i + 1} > ${maxVersions})`);
+                    imagesToDelete.push({
+                      id: image.id,
+                      reason: `exceeds max ${maxVersions} versions`,
+                      tags: image.tags,
+                      arch: arch
+                    });
+                    continue;
+                  }
+                  
+                  console.log(`  Image ${image.id} kept (age: ${ageInDays.toFixed(1)}d, unused: ${unusedInDays.toFixed(1)}d, position: ${i + 1})`);
+                }
+              }
+              
+              // Delete marked images
+              console.log(`\n=== Deletion Summary ===`);
+              console.log(`Total images to delete: ${imagesToDelete.length}`);
+              
+              let deletedCount = 0;
+              let failedCount = 0;
+              
+              for (const image of imagesToDelete) {
+                try {
+                  await github.rest.packages.deletePackageVersionForUser({
+                    package_type: packageType,
+                    package_name: packageName,
+                    username: owner,
+                    package_version_id: image.id
+                  });
+                  
+                  console.log(`✓ Deleted image ${image.id} (${image.reason}): ${image.tags.join(', ')}`);
+                  deletedCount++;
+                } catch (error) {
+                  console.error(`✗ Failed to delete image ${image.id}: ${error.message}`);
+                  failedCount++;
+                }
+              }
+              
+              console.log(`\n=== Final Results ===`);
+              console.log(`Successfully deleted: ${deletedCount}`);
+              console.log(`Failed to delete: ${failedCount}`);
+              console.log(`Total processed: ${versions.length}`);
+              
+              // Create summary
+              core.summary
+                .addHeading('Docker Image Cleanup Summary')
+                .addTable([
+                  [{data: 'Metric', header: true}, {data: 'Value', header: true}],
+                  ['Total images found', versions.length.toString()],
+                  ['Images deleted', deletedCount.toString()],
+                  ['Images failed', failedCount.toString()],
+                  ['Retention days', retentionDays.toString()],
+                  ['Unused days threshold', unusedDays.toString()],
+                  ['Max versions per arch', maxVersions.toString()]
+                ])
+                .write();
+              
+            } catch (error) {
+              console.error(`Error during cleanup: ${error.message}`);
+              core.setFailed(`Cleanup failed: ${error.message}`);
+            }

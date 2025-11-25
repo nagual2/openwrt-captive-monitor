@@ -340,6 +340,23 @@ cat /tmp/dnsmasq.d/captive_intercept.conf
 
 ## 🧪 Development
 
+### Optimized Build System
+
+The project uses an optimized CI/CD build system with pre-built Docker SDK images:
+
+**Features:**
+- ⚡ **2-3 minutes faster** builds using Docker SDK images
+- 🐳 Pre-built images in GitHub Container Registry (GHCR)
+- 🔄 Automatic image updates and cleanup
+- 📦 Support for 8 OpenWrt architectures
+
+**Build times:**
+- With Docker SDK: ~1.5-2.5 minutes
+- Traditional SDK: ~3-5 minutes
+- **Savings: 40-60%**
+
+📖 See [Docker SDK Images Documentation](docs/docker-sdk-images.md) for details.
+
 ### Building
 
 ```bash
