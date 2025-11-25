@@ -181,10 +181,17 @@ fi
 echo ""
 echo "=== Package Metadata ==="
 if [ -n "$control_file" ] && [ -f "$control_file" ]; then
-    # Use while read to avoid potential issues with cat and pipefail
-    while IFS= read -r line || [ -n "$line" ]; do
-        printf '%s\n' "$line"
-    done < "$control_file"
+    # Temporarily disable pipefail for this output to avoid spurious failures
+    if (set +o pipefail) 2> /dev/null; then
+        # shellcheck disable=SC3040
+        set +o pipefail
+    fi
+    cat "$control_file"
+    # Re-enable pipefail if it was set
+    if (set -o pipefail) 2> /dev/null; then
+        # shellcheck disable=SC3040
+        set -o pipefail
+    fi
 else
     echo "warning: control metadata not found"
 fi
