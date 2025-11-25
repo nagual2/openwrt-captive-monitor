@@ -33,8 +33,8 @@ RUN /tmp/download-sdk.sh
 
 # Extract SDK
 RUN mkdir -p /opt/openwrt-sdk && \
-    tar -C /opt/openwrt-sdk --strip-components=1 -xf sdk.tar.xz && \
-    rm sdk.tar.xz sha256sums
+    tar -C /opt/openwrt-sdk --strip-components=1 -xf openwrt-sdk-*.tar.xz && \
+    rm -f openwrt-sdk-*.tar.xz sha256sums
 
 # Stage 2: Build final image with SDK and build dependencies
 FROM ubuntu:${UBUNTU_VERSION}
