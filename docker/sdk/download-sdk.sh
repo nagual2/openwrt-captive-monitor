@@ -27,10 +27,10 @@ echo "SDK URL: ${SDK_URL}"
 echo "Downloading SDK..."
 curl -fL --retry 15 --retry-delay 10 --retry-all-errors \
      --max-time 3600 --connect-timeout 60 --speed-limit 1000 --speed-time 30 \
-     -o sdk.tar.xz "${SDK_URL}"
+     -o "${SDK_FILE}" "${SDK_URL}"
 
 echo "SDK downloaded successfully"
-ls -lh sdk.tar.xz
+ls -lh "${SDK_FILE}"
 
 # Download checksums
 echo "Downloading checksums..."
