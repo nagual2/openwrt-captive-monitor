@@ -16,6 +16,14 @@ on:
 permissions:
   contents: read
 
+# Concurrency control: Never cancel SDK upload operations to ensure completion
+# - Group: Isolated per workflow and branch
+# - Cancel policy: false because SDK uploads are critical operations that modify
+#   release assets. Partial uploads could corrupt releases or leave incomplete artifacts.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 defaults:
   run:
     shell: bash

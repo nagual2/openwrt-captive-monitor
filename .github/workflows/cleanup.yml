@@ -13,6 +13,14 @@ on:
 permissions:
   contents: read
 
+# Concurrency control: Never cancel cleanup tasks to ensure they complete fully
+# - Group: Isolated per workflow and branch
+# - Cancel policy: false because cleanup operations must complete to free up storage
+#   and prevent resource accumulation. Partial cleanup could leave orphaned resources.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 defaults:
   run:
     shell: bash

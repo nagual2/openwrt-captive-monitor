@@ -14,6 +14,14 @@ on:
 permissions:
   contents: read
 
+# Concurrency control: Never cancel release builds to ensure all artifacts are created
+# - Group: Isolated per workflow and tag/branch
+# - Cancel policy: false because release builds triggered by tags are critical
+#   and must complete to create all necessary artifacts
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build Package
