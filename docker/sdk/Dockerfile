@@ -25,14 +25,19 @@ RUN apt-get update && \
 # hadolint ignore=DL3003,DL4006
 WORKDIR /tmp
 # Download from official OpenWrt HTTPS source with certificate verification
-# codeql[sh/potentially-unsafe-curl]: Official OpenWrt downloads over HTTPS with cert verification
+# Also download and verify SHA256 checksum for integrity validation
 RUN SDK_SLUG="${SDK_TARGET}-${SDK_SUBTARGET}" && \
     SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
+    SHA256_URL="${SDK_URL%/*}/sha256sums" && \
     echo "Downloading SDK from: ${SDK_URL}" && \
     curl --fail --silent --show-error --location "${SDK_URL}" -o sdk.tar.xz && \
+    echo "Downloading checksums from: ${SHA256_URL}" && \
+    curl --fail --silent --show-error --location "${SHA256_URL}" -o sha256sums && \
+    echo "Verifying checksum..." && \
+    grep "$(basename "${SDK_URL}")" sha256sums | sha256sum -c - && \
     mkdir -p /opt/openwrt-sdk && \
     tar -C /opt/openwrt-sdk --strip-components=1 -xf sdk.tar.xz && \
-    rm sdk.tar.xz
+    rm sdk.tar.xz sha256sums
 
 # Stage 2: Build final image with SDK and build dependencies
 FROM ubuntu:${UBUNTU_VERSION}
