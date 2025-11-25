@@ -24,29 +24,24 @@ RUN apt-get update && \
 # Download and extract OpenWrt SDK
 # hadolint ignore=DL3003,DL4006
 WORKDIR /tmp
-# Download from official OpenWrt HTTPS source with curl and retry logic
-# Also download and verify SHA256 checksum for integrity validation
-RUN set -x && \
-    SDK_SLUG="${SDK_TARGET}-${SDK_SUBTARGET}" && \
-    SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
-    SHA256_URL="${SDK_URL%/*}/sha256sums" && \
-    echo "=== Downloading SDK ===" && \
-    echo "URL: ${SDK_URL}" && \
-    echo "Target: ${SDK_TARGET}/${SDK_SUBTARGET}" && \
-    curl -v -L --retry 10 --retry-delay 5 --retry-all-errors --max-time 1800 \
-         --connect-timeout 30 -o sdk.tar.xz "${SDK_URL}" 2>&1 | tail -20 && \
-    echo "=== SDK downloaded, size: $(du -h sdk.tar.xz | cut -f1) ===" && \
-    echo "=== Downloading checksums ===" && \
-    curl -L --retry 5 --retry-delay 3 --max-time 60 \
-         -o sha256sums "${SHA256_URL}" && \
-    echo "=== Verifying checksum ===" && \
-    grep "$(basename "${SDK_URL}")" sha256sums | sha256sum -c - && \
-    echo "=== Extracting SDK ===" && \
-    mkdir -p /opt/openwrt-sdk && \
+# Download SDK with aggressive retry and error handling
+RUN SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
+    echo "Downloading SDK from: ${SDK_URL}" && \
+    curl -fL --retry 15 --retry-delay 10 --retry-all-errors \
+         --max-time 3600 --connect-timeout 60 --speed-limit 1000 --speed-time 30 \
+         -o sdk.tar.xz "${SDK_URL}" && \
+    ls -lh sdk.tar.xz
+
+# Download and verify checksums
+RUN SHA256_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/sha256sums" && \
+    curl -fL --retry 5 --retry-delay 5 -o sha256sums "${SHA256_URL}" && \
+    SDK_FILE="openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
+    grep "${SDK_FILE}" sha256sums | sha256sum -c -
+
+# Extract SDK
+RUN mkdir -p /opt/openwrt-sdk && \
     tar -C /opt/openwrt-sdk --strip-components=1 -xf sdk.tar.xz && \
-    echo "=== Cleanup ===" && \
-    rm sdk.tar.xz sha256sums && \
-    echo "=== SDK setup complete ==="
+    rm sdk.tar.xz sha256sums
 
 # Stage 2: Build final image with SDK and build dependencies
 FROM ubuntu:${UBUNTU_VERSION}
