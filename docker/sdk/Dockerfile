@@ -61,7 +61,7 @@ RUN apt-get update && \
         libncurses5-dev \
         libssl-dev \
         python3 \
-        python3-distutils \
+        python3-setuptools \
         rsync \
         unzip \
         wget \
