@@ -21,13 +21,23 @@ defaults:
 
 jobs:
   build-packages:
-    name: Build OpenWrt Packages
+    name: Build OpenWrt Packages (${{ matrix.sdk_target }})
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      packages: read
+    
+    # Use pre-built SDK Docker image from GHCR
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/openwrt-sdk:${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}-latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      options: --user root
 
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         include:
           # Supported OpenWrt SDK targets for release builds (must match CI matrix)
@@ -81,6 +91,37 @@ jobs:
             sdk_target: 'rockchip/armv8'
 
     steps:
+      - name: Retry pull SDK image if needed
+        if: failure()
+        run: |
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
+          
+          # Retry logic for pulling the SDK image (up to 3 attempts)
+          IMAGE="ghcr.io/${{ github.repository_owner }}/openwrt-sdk:${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}-latest"
+          MAX_RETRIES=3
+          RETRY_DELAY=10
+          
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Attempt $i of $MAX_RETRIES to pull image: $IMAGE"
+            if docker pull "$IMAGE"; then
+              echo "Successfully pulled image"
+              exit 0
+            fi
+            
+            if [ $i -lt $MAX_RETRIES ]; then
+              echo "Pull failed, waiting ${RETRY_DELAY}s before retry..."
+              sleep $RETRY_DELAY
+              RETRY_DELAY=$((RETRY_DELAY * 2))
+            fi
+          done
+          
+          echo "Failed to pull image after $MAX_RETRIES attempts"
+          exit 1
+
       - name: Check out repository
         uses: actions/checkout@v6
         with:
@@ -110,62 +151,49 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "Using BUILD_NAME=tag-${tag_name} (sha=${short_sha})"
 
-      - name: Prepare package structure for SDK
+      - name: Prepare package for SDK build
         run: |
           set -eu
           if (set -o pipefail) 2> /dev/null; then
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          # Create the expected package structure for the SDK action
-          mkdir -p feed/package
-          cp -r package/openwrt-captive-monitor feed/package/
+          
+          # SDK is already available in /opt/openwrt-sdk from the container
+          cd /opt/openwrt-sdk
+          
+          # Add our package as a local feed
+          echo "src-link local ${{ github.workspace }}/package" >> feeds.conf
+          
+          # Update feeds
+          ./scripts/feeds update -a
+          ./scripts/feeds install openwrt-captive-monitor
+          
+          # Configure build
+          make defconfig
+          
+          echo "SDK prepared for building"
+
+      - name: Build package with SDK
+        run: |
+          set -eu
+          if (set -o pipefail) 2> /dev/null; then
+            # shellcheck disable=SC3040
+            set -o pipefail
+          fi
+          
+          cd /opt/openwrt-sdk
+          
+          # Build the package with verbose output
+          make package/openwrt-captive-monitor/compile V=s BUILD_LOG=1
+          
           # Create artifacts directory
-          mkdir -p "artifacts/${BUILD_NAME}"
-
-          # Ensure a placeholder feeds.conf.default exists for the SDK action to patch
-          # The openwrt/gh-action-sdk action expects this file under FEED_DIR and will
-          # inject the local src-link feed path at runtime. Upstream feeds are not required
-          # for this package build.
-          if [ ! -f feed/feeds.conf.default ]; then
-            {
-              echo "# Placeholder feeds.conf.default for SDK action"
-              echo "# The action will inject: src-link ${FEEDNAME:-local} <resolved-path>"
-            } > feed/feeds.conf.default
-          fi
-
-          echo "Prepared package structure:"
-          find feed -type f -name "Makefile" | head -5
-
-      - name: Validate SDK image and target
-        run: |
-          set -eu
-          if (set -o pipefail) 2> /dev/null; then
-            # shellcheck disable=SC3040
-            set -o pipefail
-          fi
-          ./scripts/validate-sdk-image.sh \
-            "ghcr.io/openwrt/sdk:${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}" \
-            "${{ matrix.sdk_target }}" \
-            "${{ matrix.openwrt_version }}" \
-            "${{ matrix.sdk_slug }}"
-
-      - name: Build with OpenWrt SDK (${{ matrix.sdk_target }})
-        uses: openwrt/gh-action-sdk@v9
-        env:
-          # Use the official SDK container pinned to the OpenWrt version and target
-          # e.g., x86-64-23.05.5
-          ARCH: ${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}
-          # Package(s) to build inside the SDK
-          PACKAGES: openwrt-captive-monitor
-          BUILD_LOG: 1
-          V: s
-          # Feed configuration - use default feeds plus our local feed
-          FEEDNAME: local
-          # Mount points for the action
-          ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
-          FEED_DIR: ${{ github.workspace }}/feed
-          NO_SHFMT_CHECK: 1
+          mkdir -p "${{ github.workspace }}/artifacts/${BUILD_NAME}"
+          
+          # Copy built packages to artifacts directory
+          find bin/packages -name "openwrt-captive-monitor*.ipk" -exec cp -v {} "${{ github.workspace }}/artifacts/${BUILD_NAME}/" \;
+          
+          echo "Package built successfully"
 
       - name: List and validate produced artifacts
         run: |
@@ -174,7 +202,8 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          ART_DIR="${{ env.ARTIFACTS_DIR }}"
+          
+          ART_DIR="${{ github.workspace }}/artifacts/${BUILD_NAME}"
           echo "Artifacts directory: $ART_DIR"
 
           if [ ! -d "$ART_DIR" ]; then
@@ -195,7 +224,7 @@ jobs:
             IPK_COUNT=$((IPK_COUNT + 1))
           done
 
-          # One-level-deep .ipk files
+          # One-level-deep .ipk files (shouldn't be needed with new structure)
           for dir in "$ART_DIR"/*; do
             [ -e "$dir" ] || continue
             for f in "$dir"/*.ipk; do
@@ -211,25 +240,24 @@ jobs:
           fi
 
       - name: Setup opkg-utils
-        run: sh ./scripts/setup-opkg-utils.sh
-
-      - name: Install verification tools
-        uses: ./.github/actions/setup-system-packages
-        with:
-          packages: binutils tar
+        run: |
+          cd "${{ github.workspace }}"
+          sh ./scripts/setup-opkg-utils.sh
 
       - name: Verify package internals
-        env:
-          ARTIFACTS_DIR: ${{ github.workspace }}/artifacts/${{ env.BUILD_NAME }}
         run: |
           set -eu
           if (set -o pipefail) 2> /dev/null; then
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          # Robust IPK discovery with quoted paths and existence checks
+          
+          cd "${{ github.workspace }}"
+          ART_DIR="artifacts/${BUILD_NAME}"
+          
+          # Find .ipk file
           IPK_FILE=""
-          for ipk_pattern in "${{ env.ARTIFACTS_DIR }}"/openwrt-captive-monitor_*.ipk; do
+          for ipk_pattern in "$ART_DIR"/openwrt-captive-monitor_*.ipk; do
             if [ -e "$ipk_pattern" ]; then
               IPK_FILE="$ipk_pattern"
               break
@@ -240,6 +268,7 @@ jobs:
             echo "error: no openwrt-captive-monitor package found" >&2
             exit 1
           fi
+          
           echo "Verifying package: $IPK_FILE"
           ./scripts/verify_package.sh "$IPK_FILE"
 
@@ -250,8 +279,12 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
+          
+          cd "${{ github.workspace }}"
+          fi
+          
           echo "=== Validating Version field in .ipk control metadata ==="
-          for IPK_FILE in "${{ env.ARTIFACTS_DIR }}"/*.ipk; do
+          for IPK_FILE in artifacts/${BUILD_NAME}/*.ipk; do
             if [ ! -e "$IPK_FILE" ]; then
               echo "warning: no .ipk files found" >&2
               continue
@@ -270,7 +303,9 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          ./scripts/stage-package-artifacts.sh "${{ env.ARTIFACTS_DIR }}"
+          
+          cd "${{ github.workspace }}"
+          ./scripts/stage-package-artifacts.sh "artifacts/${BUILD_NAME}"
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v5
@@ -288,9 +323,13 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
+          
+          cd "${{ github.workspace }}"
           {
             echo "## 📦 Build Summary"
             echo ""
+            echo "**Build Method:** Docker SDK Image"
+            echo "**SDK Image:** ghcr.io/${{ github.repository_owner }}/openwrt-sdk:${{ matrix.openwrt_version }}-${{ matrix.sdk_slug }}-latest"
             echo "**Tag:** ${{ env.TAG_NAME }}"
             echo "**Target:** ${{ matrix.sdk_target }}"
             echo "**Architecture:** ${{ matrix.arch }}"
@@ -298,7 +337,7 @@ jobs:
             echo "**Short SHA:** ${{ env.SHORT_SHA }}"
             echo ""
             echo "### 📋 Generated Packages"
-            find "artifacts/${BUILD_NAME}" -name "*.ipk" -exec echo "- {}" \;
+            find "artifacts/${BUILD_NAME}" -name "*.ipk" -exec basename {} \; | sed 's/^/- /'
           } >> "$GITHUB_STEP_SUMMARY"
 
   publish-release:
