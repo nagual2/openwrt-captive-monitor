@@ -17,24 +17,25 @@ ARG SDK_SUBTARGET
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
-        wget \
+        curl \
         xz-utils && \
     rm -rf /var/lib/apt/lists/*
 
 # Download and extract OpenWrt SDK
 # hadolint ignore=DL3003,DL4006
 WORKDIR /tmp
-# Download from official OpenWrt HTTPS source with wget and retry logic
+# Download from official OpenWrt HTTPS source with curl and retry logic
 # Also download and verify SHA256 checksum for integrity validation
 RUN SDK_SLUG="${SDK_TARGET}-${SDK_SUBTARGET}" && \
     SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
     SHA256_URL="${SDK_URL%/*}/sha256sums" && \
     echo "Downloading SDK from: ${SDK_URL}" && \
-    wget --tries=5 --timeout=60 --waitretry=10 --retry-connrefused \
-         --progress=bar:force:noscroll -O sdk.tar.xz "${SDK_URL}" && \
+    curl -fSL --retry 5 --retry-delay 10 --retry-max-time 600 --connect-timeout 60 \
+         -o sdk.tar.xz "${SDK_URL}" && \
     echo "SDK downloaded successfully" && \
     echo "Downloading checksums from: ${SHA256_URL}" && \
-    wget --tries=3 --timeout=30 -O sha256sums "${SHA256_URL}" && \
+    curl -fSL --retry 3 --retry-delay 5 --connect-timeout 30 \
+         -o sha256sums "${SHA256_URL}" && \
     echo "Verifying checksum..." && \
     grep "$(basename "${SDK_URL}")" sha256sums | sha256sum -c - && \
     echo "Checksum verified successfully" && \
