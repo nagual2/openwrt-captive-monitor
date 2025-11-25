@@ -22,26 +22,14 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Download and extract OpenWrt SDK
-# hadolint ignore=DL3003,DL4006
 WORKDIR /tmp
-# Download SDK with aggressive retry and error handling
-# Note: Some architectures (ipq40xx, ipq806x) use _musl_eabi instead of _musl
-RUN MUSL_SUFFIX="_musl"; \
-    if [ "${SDK_TARGET}" = "ipq40xx" ] || [ "${SDK_TARGET}" = "ipq806x" ]; then \
-        MUSL_SUFFIX="_musl_eabi"; \
-    fi && \
-    SDK_FILE="openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0${MUSL_SUFFIX}.Linux-x86_64.tar.xz" && \
-    SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/${SDK_FILE}" && \
-    SHA256_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/sha256sums" && \
-    echo "Downloading SDK from: ${SDK_URL}" && \
-    curl -fL --retry 15 --retry-delay 10 --retry-all-errors \
-         --max-time 3600 --connect-timeout 60 --speed-limit 1000 --speed-time 30 \
-         -o sdk.tar.xz "${SDK_URL}" && \
-    echo "Downloading checksums from: ${SHA256_URL}" && \
-    curl -fL --retry 5 --retry-delay 5 -o sha256sums "${SHA256_URL}" && \
-    echo "Verifying checksum for: ${SDK_FILE}" && \
-    grep "${SDK_FILE}" sha256sums | sha256sum -c - && \
-    ls -lh sdk.tar.xz
+
+# Copy download script
+COPY docker/sdk/download-sdk.sh /tmp/download-sdk.sh
+RUN chmod +x /tmp/download-sdk.sh
+
+# Download SDK using script
+RUN /tmp/download-sdk.sh
 
 # Extract SDK
 RUN mkdir -p /opt/openwrt-sdk && \
