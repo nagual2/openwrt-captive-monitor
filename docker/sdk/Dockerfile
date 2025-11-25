@@ -30,9 +30,9 @@ RUN SDK_SLUG="${SDK_TARGET}-${SDK_SUBTARGET}" && \
     SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
     SHA256_URL="${SDK_URL%/*}/sha256sums" && \
     echo "Downloading SDK from: ${SDK_URL}" && \
-    axel -n 8 -a -o sdk.tar.xz "${SDK_URL}" && \
+    axel -n 8 -a -q -o sdk.tar.xz "${SDK_URL}" && \
     echo "Downloading checksums from: ${SHA256_URL}" && \
-    axel -n 4 -a -o sha256sums "${SHA256_URL}" && \
+    axel -n 4 -a -q -o sha256sums "${SHA256_URL}" && \
     echo "Verifying checksum..." && \
     grep "$(basename "${SDK_URL}")" sha256sums | sha256sum -c - && \
     mkdir -p /opt/openwrt-sdk && \
