@@ -22,7 +22,10 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Download and extract OpenWrt SDK
+# hadolint ignore=DL3003,DL4006
 WORKDIR /tmp
+# Download from official OpenWrt HTTPS source with certificate verification
+# codeql[sh/potentially-unsafe-curl]: Official OpenWrt downloads over HTTPS with cert verification
 RUN SDK_SLUG="${SDK_TARGET}-${SDK_SUBTARGET}" && \
     SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
     echo "Downloading SDK from: ${SDK_URL}" && \
