@@ -25,7 +25,9 @@ RUN apt-get update && \
 # hadolint ignore=DL3003,DL4006
 WORKDIR /tmp
 # Download SDK with aggressive retry and error handling
-RUN SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
+# Note: SDK filename format uses dashes between target/subtarget and gcc version
+RUN SDK_FILE="openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}-gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
+    SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/${SDK_FILE}" && \
     echo "Downloading SDK from: ${SDK_URL}" && \
     curl -fL --retry 15 --retry-delay 10 --retry-all-errors \
          --max-time 3600 --connect-timeout 60 --speed-limit 1000 --speed-time 30 \
@@ -33,9 +35,9 @@ RUN SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/$
     ls -lh sdk.tar.xz
 
 # Download and verify checksums
-RUN SHA256_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/sha256sums" && \
+RUN SDK_FILE="openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}-gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
+    SHA256_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/sha256sums" && \
     curl -fL --retry 5 --retry-delay 5 -o sha256sums "${SHA256_URL}" && \
-    SDK_FILE="openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
     grep "${SDK_FILE}" sha256sums | sha256sum -c -
 
 # Extract SDK
