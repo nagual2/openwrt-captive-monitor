@@ -17,22 +17,22 @@ ARG SDK_SUBTARGET
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
-        curl \
+        axel \
         xz-utils && \
     rm -rf /var/lib/apt/lists/*
 
 # Download and extract OpenWrt SDK
 # hadolint ignore=DL3003,DL4006
 WORKDIR /tmp
-# Download from official OpenWrt HTTPS source with certificate verification
+# Download from official OpenWrt HTTPS source with multi-threaded axel
 # Also download and verify SHA256 checksum for integrity validation
 RUN SDK_SLUG="${SDK_TARGET}-${SDK_SUBTARGET}" && \
     SDK_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${SDK_TARGET}/${SDK_SUBTARGET}/openwrt-sdk-${OPENWRT_VERSION}-${SDK_TARGET}-${SDK_SUBTARGET}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" && \
     SHA256_URL="${SDK_URL%/*}/sha256sums" && \
     echo "Downloading SDK from: ${SDK_URL}" && \
-    curl --fail --silent --show-error --location "${SDK_URL}" -o sdk.tar.xz && \
+    axel -n 8 -a -o sdk.tar.xz "${SDK_URL}" && \
     echo "Downloading checksums from: ${SHA256_URL}" && \
-    curl --fail --silent --show-error --location "${SHA256_URL}" -o sha256sums && \
+    axel -n 4 -a -o sha256sums "${SHA256_URL}" && \
     echo "Verifying checksum..." && \
     grep "$(basename "${SDK_URL}")" sha256sums | sha256sum -c - && \
     mkdir -p /opt/openwrt-sdk && \
@@ -57,7 +57,8 @@ LABEL openwrt.target="${SDK_TARGET}"
 LABEL openwrt.subtarget="${SDK_SUBTARGET}"
 
 # Install build dependencies
-RUN apt-get update && \
+RUN set -eux && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
         ca-certificates \
@@ -76,7 +77,12 @@ RUN apt-get update && \
         zlib1g-dev && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* && \
-    rm -rf /var/tmp/*
+    rm -rf /var/tmp/* && \
+    echo "Verifying build tools installation..." && \
+    make --version && \
+    gcc --version && \
+    git --version && \
+    python3 --version
 
 # Copy SDK from downloader stage
 COPY --from=sdk-downloader /opt/openwrt-sdk /opt/openwrt-sdk
