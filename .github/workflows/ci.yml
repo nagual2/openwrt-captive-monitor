@@ -239,9 +239,7 @@ jobs:
 
     # Use pre-built SDK Docker image from GHCR
     container:
-      image: >-
-        ghcr.io/${{ github.repository_owner }}/
-        openwrt-sdk:23.05.5-x86-64-latest
+      image: ghcr.io/${{ github.repository_owner }}/openwrt-sdk:23.05.5-x86-64-latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
