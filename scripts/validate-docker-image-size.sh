@@ -17,6 +17,7 @@ log_info() {
     echo -e "${GREEN}[INFO]${NC} $*"
 }
 
+# shellcheck disable=SC2317
 log_warn() {
     echo -e "${YELLOW}[WARN]${NC} $*"
 }
