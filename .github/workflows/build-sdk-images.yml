@@ -181,6 +181,8 @@ jobs:
           set -euo pipefail
           
           chmod +x scripts/validate-docker-image-size.sh
+          echo "Running validation with limit: 3072 MB"
+          echo "Image: ${{ steps.meta.outputs.tag_latest }}"
           ./scripts/validate-docker-image-size.sh "${{ steps.meta.outputs.tag_latest }}" 3072
 
       - name: Validate image contents
