@@ -68,7 +68,6 @@ RUN set -eux && \
         libssl-dev \
         python3 \
         python3-setuptools \
-        python3-distutils \
         rsync \
         unzip \
         wget \
@@ -89,7 +88,8 @@ COPY --from=sdk-downloader /opt/openwrt-sdk /opt/openwrt-sdk
 WORKDIR /opt/openwrt-sdk
 
 # Create a non-root user for building (optional but recommended)
-RUN useradd -m -u 1000 -s /bin/bash builder && \
+# Use dynamic UID to avoid conflicts
+RUN useradd -m -s /bin/bash builder && \
     chown -R builder:builder /opt/openwrt-sdk
 
 # Switch to non-root user
