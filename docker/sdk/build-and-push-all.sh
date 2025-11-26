@@ -144,19 +144,19 @@ declare -a FAILED_ARCHS=()
 
 for arch_spec in "${ARCHITECTURES[@]}"; do
     IFS=':' read -r TARGET SUBTARGET SLUG <<< "$arch_spec"
-    
+
     IMAGE_TAG="${REGISTRY}/${IMAGE_NAME}:${OPENWRT_VERSION}-${SLUG}-latest"
     IMAGE_TAG_SHA="${REGISTRY}/${IMAGE_NAME}:${OPENWRT_VERSION}-${SLUG}-${SHORT_SHA}"
-    
+
     log_header "================================================"
     log_header "Processing: ${TARGET}/${SUBTARGET} (${SLUG})"
     log_header "================================================"
-    
+
     if [[ $PUSH_ONLY == "false" ]] && [[ $SKIP_BUILD == "false" ]]; then
         log_info "Building image..."
-        
+
         BUILD_START=$(date +%s)
-        
+
         if docker build \
             --build-arg UBUNTU_VERSION=24.04 \
             --build-arg OPENWRT_VERSION="${OPENWRT_VERSION}" \
@@ -166,17 +166,17 @@ for arch_spec in "${ARCHITECTURES[@]}"; do
             --tag "${IMAGE_TAG_SHA}" \
             --file docker/sdk/Dockerfile \
             .; then
-            
+
             BUILD_END=$(date +%s)
             BUILD_DURATION=$((BUILD_END - BUILD_START))
             BUILD_MINUTES=$((BUILD_DURATION / 60))
-            
+
             log_info "Build completed in ${BUILD_MINUTES} minutes"
-            
+
             # Check image size
             IMAGE_SIZE=$(docker images "${IMAGE_TAG}" --format "{{.Size}}")
             log_info "Image size: ${IMAGE_SIZE}"
-            
+
             # Validate image
             log_info "Validating image..."
             if docker run --rm "${IMAGE_TAG}" test -d /opt/openwrt-sdk; then
@@ -192,7 +192,7 @@ for arch_spec in "${ARCHITECTURES[@]}"; do
         fi
     else
         log_info "Skipping build (using existing image)"
-        
+
         # Check if image exists
         if ! docker images "${IMAGE_TAG}" --format "{{.Repository}}:{{.Tag}}" | grep -q "${IMAGE_TAG}"; then
             log_warn "Image ${IMAGE_TAG} not found locally"
@@ -200,10 +200,10 @@ for arch_spec in "${ARCHITECTURES[@]}"; do
             continue
         fi
     fi
-    
+
     # Push image
     log_info "Pushing image to registry..."
-    
+
     if docker push "${IMAGE_TAG}" && docker push "${IMAGE_TAG_SHA}"; then
         log_info "Successfully pushed ${SLUG}"
         SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
@@ -212,7 +212,7 @@ for arch_spec in "${ARCHITECTURES[@]}"; do
         FAILED_COUNT=$((FAILED_COUNT + 1))
         FAILED_ARCHS+=("${SLUG}")
     fi
-    
+
     echo
 done
 
