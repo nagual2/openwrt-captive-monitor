@@ -20,12 +20,12 @@ echo "Subtarget: ${SDK_SUBTARGET}"
 # Returns: _musl, _musl_eabi, or empty string
 determine_musl_suffix() {
     local target="$1"
-    
+
     case "${target}" in
-        ipq40xx|ipq806x)
+        ipq40xx | ipq806x)
             echo "_musl_eabi"
             ;;
-        x86|ath79|ramips|mediatek|bcm27xx|rockchip)
+        x86 | ath79 | ramips | mediatek | bcm27xx | rockchip)
             echo "_musl"
             ;;
         *)
@@ -42,7 +42,7 @@ list_available_files() {
     echo ""
     echo "=== Available SDK files on server ==="
     echo "Fetching file list from: ${base_url}"
-    
+
     if curl -s "${base_url}" | grep -oP 'openwrt-sdk-[^"]+\.tar\.xz' | sort; then
         echo "=== End of available files ==="
     else
@@ -58,25 +58,25 @@ download_with_retry() {
     local output="$2"
     local max_attempts="${3:-15}"
     local attempt=1
-    
+
     echo "Downloading: ${url}"
     echo "Output file: ${output}"
-    
+
     while [ ${attempt} -le ${max_attempts} ]; do
         echo "Attempt ${attempt}/${max_attempts}..."
-        
+
         # Use -C - to continue interrupted downloads
         if curl -fL -C - --retry 3 --retry-delay 5 --retry-all-errors \
-                --max-time 3600 --connect-timeout 60 \
-                --speed-limit 1000 --speed-time 30 \
-                -o "${output}" "${url}"; then
+            --max-time 3600 --connect-timeout 60 \
+            --speed-limit 1000 --speed-time 30 \
+            -o "${output}" "${url}"; then
             echo "Download successful!"
             return 0
         fi
-        
+
         local exit_code=$?
         echo "Download failed with exit code: ${exit_code}"
-        
+
         if [ ${attempt} -lt ${max_attempts} ]; then
             # Exponential backoff: 2^attempt seconds
             local delay=1
@@ -95,10 +95,10 @@ download_with_retry() {
             echo "ERROR: All ${max_attempts} download attempts exhausted"
             return 1
         fi
-        
+
         attempt=$((attempt + 1))
     done
-    
+
     return 1
 }
 
@@ -107,23 +107,23 @@ download_with_retry() {
 verify_checksum() {
     local sdk_file="$1"
     local checksums_file="$2"
-    
+
     echo "Verifying checksum for: ${sdk_file}"
-    
+
     if ! grep "${sdk_file}" "${checksums_file}" > /dev/null 2>&1; then
         echo "ERROR: Checksum not found in ${checksums_file}"
         echo "Expected file: ${sdk_file}"
         return 1
     fi
-    
+
     local expected_sum
     local actual_sum
     expected_sum=$(grep "${sdk_file}" "${checksums_file}" | awk '{print $1}')
     actual_sum=$(sha256sum "${sdk_file}" | awk '{print $1}')
-    
+
     echo "Expected SHA256: ${expected_sum}"
     echo "Actual SHA256:   ${actual_sum}"
-    
+
     if [ "${expected_sum}" = "${actual_sum}" ]; then
         echo "Checksum verification: PASSED"
         return 0
@@ -155,10 +155,10 @@ if ! download_with_retry "${SDK_URL}" "${SDK_FILE}" 15; then
     echo ""
     echo "ERROR: Failed to download SDK after all retry attempts"
     echo "URL: ${SDK_URL}"
-    
+
     # Try to list available files for diagnostics
     list_available_files "${BASE_URL}/"
-    
+
     echo "Please verify:"
     echo "  1. OpenWrt version is correct: ${OPENWRT_VERSION}"
     echo "  2. Target architecture is correct: ${SDK_TARGET}/${SDK_SUBTARGET}"
