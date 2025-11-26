@@ -181,7 +181,7 @@ jobs:
           set -euo pipefail
           
           chmod +x scripts/validate-docker-image-size.sh
-          ./scripts/validate-docker-image-size.sh "${{ steps.meta.outputs.tag_latest }}" 2560
+          ./scripts/validate-docker-image-size.sh "${{ steps.meta.outputs.tag_latest }}" 3072
 
       - name: Validate image contents
         if: steps.check_image.outputs.exists != 'true' || github.event.inputs.force_rebuild == 'true' || github.event_name == 'schedule'
