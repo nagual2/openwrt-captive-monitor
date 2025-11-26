@@ -1,6 +1,8 @@
 # Implementation Plan
 
 - [ ] 1. Optimize Dockerfile to reduce image size
+
+
   - Combine RUN commands to reduce layer count
   - Ensure cleanup commands are in the same layer as operations that create temporary files
   - Verify --no-install-recommends is used for all apt-get install commands
