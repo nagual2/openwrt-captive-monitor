@@ -13,28 +13,33 @@ ARG OPENWRT_VERSION
 ARG SDK_TARGET
 ARG SDK_SUBTARGET
 
-# Install minimal dependencies for downloading and extracting
-RUN apt-get update && \
+# Install minimal dependencies, download, extract, and cleanup in single layer
+WORKDIR /tmp
+COPY docker/sdk/download-sdk.sh /tmp/download-sdk.sh
+
+RUN set -eux && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
         xz-utils && \
-    rm -rf /var/lib/apt/lists/*
-
-# Download and extract OpenWrt SDK
-WORKDIR /tmp
-
-# Copy download script
-COPY docker/sdk/download-sdk.sh /tmp/download-sdk.sh
-RUN chmod +x /tmp/download-sdk.sh
-
-# Download SDK using script
-RUN /tmp/download-sdk.sh
-
-# Extract SDK
-RUN mkdir -p /opt/openwrt-sdk && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* && \
+    chmod +x /tmp/download-sdk.sh && \
+    /tmp/download-sdk.sh && \
+    mkdir -p /opt/openwrt-sdk && \
     tar -C /opt/openwrt-sdk --strip-components=1 -xf openwrt-sdk-*.tar.xz && \
-    rm -f openwrt-sdk-*.tar.xz sha256sums
+    rm -rf /tmp/* /var/tmp/* && \
+    find /opt/openwrt-sdk -type f -name "*.o" -delete && \
+    find /opt/openwrt-sdk -type f -name "*.a" -delete && \
+    rm -rf /opt/openwrt-sdk/build_dir/target-*/linux-* && \
+    rm -rf /opt/openwrt-sdk/build_dir/target-*/root-* && \
+    rm -rf /opt/openwrt-sdk/dl/* && \
+    rm -rf /opt/openwrt-sdk/docs && \
+    rm -rf /opt/openwrt-sdk/examples && \
+    rm -rf /opt/openwrt-sdk/.git* && \
+    find /opt/openwrt-sdk -type f -name "*.md" -delete && \
+    find /opt/openwrt-sdk -type f -name "README*" -delete && \
+    find /opt/openwrt-sdk/staging_dir -type f -name "*.la" -delete
 
 # Stage 2: Build final image with SDK and build dependencies
 FROM ubuntu:${UBUNTU_VERSION}
@@ -53,13 +58,15 @@ LABEL openwrt.version="${OPENWRT_VERSION}"
 LABEL openwrt.target="${SDK_TARGET}"
 LABEL openwrt.subtarget="${SDK_SUBTARGET}"
 
-# Install build dependencies
+# Create non-root user first (before copying SDK to avoid chown layer duplication)
+RUN useradd -m -s /bin/bash builder
+
+# Install build dependencies and clean up in single layer
 RUN set -eux && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
         ca-certificates \
-        curl \
         file \
         gawk \
         gettext \
@@ -72,25 +79,16 @@ RUN set -eux && \
         unzip \
         wget \
         zlib1g-dev && \
-    rm -rf /var/lib/apt/lists/* && \
-    rm -rf /tmp/* && \
-    rm -rf /var/tmp/* && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/archives/* && \
+    apt-get clean && \
     echo "Verifying build tools installation..." && \
-    make --version && \
-    gcc --version && \
-    git --version && \
-    python3 --version
+    make --version && gcc --version && git --version && python3 --version
 
-# Copy SDK from downloader stage
-COPY --from=sdk-downloader /opt/openwrt-sdk /opt/openwrt-sdk
+# Copy SDK from downloader stage with correct ownership
+COPY --from=sdk-downloader --chown=builder:builder /opt/openwrt-sdk /opt/openwrt-sdk
 
 # Set working directory to SDK
 WORKDIR /opt/openwrt-sdk
-
-# Create a non-root user for building (optional but recommended)
-# Use dynamic UID to avoid conflicts
-RUN useradd -m -s /bin/bash builder && \
-    chown -R builder:builder /opt/openwrt-sdk
 
 # Switch to non-root user
 USER builder
