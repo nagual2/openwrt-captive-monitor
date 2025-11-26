@@ -20,6 +20,7 @@ COPY docker/sdk/download-sdk.sh /tmp/download-sdk.sh
 RUN set -eux && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
+        axel \
         ca-certificates \
         curl \
         xz-utils && \

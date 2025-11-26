@@ -52,6 +52,8 @@ list_available_files() {
 }
 
 # Function: Download file with retry and exponential backoff
+# Uses axel for multi-threaded downloads (16 connections) for speed
+# Falls back to curl if axel is not available
 # Parameters: $1 - URL, $2 - output file, $3 - max attempts
 download_with_retry() {
     local url="$1"
@@ -62,16 +64,36 @@ download_with_retry() {
     echo "Downloading: ${url}"
     echo "Output file: ${output}"
 
+    # Check if axel is available for multi-threaded download
+    local use_axel=false
+    if command -v axel > /dev/null 2>&1; then
+        use_axel=true
+        echo "Using axel for multi-threaded download (16 connections)"
+    else
+        echo "Using curl for download (axel not available)"
+    fi
+
     while [ ${attempt} -le ${max_attempts} ]; do
         echo "Attempt ${attempt}/${max_attempts}..."
 
-        # Use -C - to continue interrupted downloads
-        if curl -fL -C - --retry 3 --retry-delay 5 --retry-all-errors \
-            --max-time 3600 --connect-timeout 60 \
-            --speed-limit 1000 --speed-time 30 \
-            -o "${output}" "${url}"; then
-            echo "Download successful!"
-            return 0
+        if [ "${use_axel}" = "true" ]; then
+            # Use axel with 16 connections for faster download
+            # -n 16: 16 connections
+            # -a: more concise progress indicator
+            # -o: output file
+            if axel -n 16 -a -o "${output}" "${url}"; then
+                echo "Download successful!"
+                return 0
+            fi
+        else
+            # Fallback to curl with resume support
+            if curl -fL -C - --retry 3 --retry-delay 5 --retry-all-errors \
+                --max-time 3600 --connect-timeout 60 \
+                --speed-limit 1000 --speed-time 30 \
+                -o "${output}" "${url}"; then
+                echo "Download successful!"
+                return 0
+            fi
         fi
 
         local exit_code=$?
