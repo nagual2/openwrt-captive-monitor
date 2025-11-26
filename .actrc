@@ -1,0 +1,15 @@
+# act configuration file
+# Use GitHub's ubuntu-latest runner image
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+-P ubuntu-24.04=catthehacker/ubuntu:act-24.04
+-P ubuntu-22.04=catthehacker/ubuntu:act-22.04
+-P ubuntu-20.04=catthehacker/ubuntu:act-20.04
+
+# Use smaller images for faster startup
+--container-architecture linux/amd64
+
+# Reuse containers for faster subsequent runs
+--reuse
+
+# Verbose output for debugging
+--verbose
