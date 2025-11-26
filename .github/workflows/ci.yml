@@ -65,7 +65,9 @@ jobs:
             ~/.cache/shfmt
             ~/.cache/shellcheck
             ~/.cache/actionlint
-          key: ${{ runner.os }}-lint-tools-${{ matrix.linter }}-${{ hashFiles('.github/workflows/ci.yml') }}
+          key: >-
+            ${{ runner.os }}-lint-tools-${{ matrix.linter }}-
+            ${{ hashFiles('.github/workflows/ci.yml') }}
           restore-keys: |
             ${{ runner.os }}-lint-tools-${{ matrix.linter }}-
             ${{ runner.os }}-lint-tools-
@@ -115,8 +117,8 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          # Exclude init.d scripts as they use tabs and OpenWrt-specific functions
-          # Skip temporary and build directories to avoid formatting generated files
+          # Exclude init.d scripts (tabs and OpenWrt-specific functions)
+          # Skip temporary and build directories
           find . \( -name '*.sh' -o -type f -executable \) \
             -not -path '*/.git/*' \
             -not -path '*/tmp/*' \
@@ -135,7 +137,8 @@ jobs:
             set -o pipefail
           fi
           # Exclude .git and init.d scripts
-          find . \( -path './.git' -o -path './package/*/files/etc/init.d' \) -prune -o \
+          find . \( -path './.git' \
+            -o -path './package/*/files/etc/init.d' \) -prune -o \
             -type f -name "*.sh" -print | \
             xargs -r shellcheck
           shellcheck openwrt_captive_monitor.sh
@@ -155,14 +158,15 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          # Download a pinned version of actionlint into the runner temp directory
+          # Download actionlint into the runner temp directory
           ACTIONLINT_VERSION="1.7.1"
           ACTIONLINT_DIR="${RUNNER_TEMP:-/tmp}/actionlint"
           mkdir -p "$ACTIONLINT_DIR"
-          curl -sSfL \
-            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
-            | tar -xz -C "$ACTIONLINT_DIR"
-          # Expose the actionlint binary path to subsequent steps via GITHUB_ENV
+          URL="https://github.com/rhysd/actionlint/releases/download"
+          URL="${URL}/v${ACTIONLINT_VERSION}"
+          URL="${URL}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -sSfL "$URL" | tar -xz -C "$ACTIONLINT_DIR"
+          # Expose actionlint binary path via GITHUB_ENV
           echo "ACTIONLINT_BIN=${ACTIONLINT_DIR}/actionlint" >> "$GITHUB_ENV"
 
       - name: Run actionlint
@@ -173,8 +177,8 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          # Lint only workflow YAML files and respect ignore rules for temporary/build directories
-          # The .actionlintignore file and -ignore patterns ensure tmp/ and build/ trees are skipped.
+          # Lint workflow YAML files, ignore temp/build directories
+          # .actionlintignore and -ignore patterns skip tmp/build trees
           "${ACTIONLINT_BIN}" -color -shellcheck= -pyflakes= \
             -ignore '.*\/tmp\/.*' \
             -ignore '.*\/\.tmp\/.*' \
@@ -235,7 +239,9 @@ jobs:
 
     # Use pre-built SDK Docker image from GHCR
     container:
-      image: ghcr.io/${{ github.repository_owner }}/openwrt-sdk:23.05.5-x86-64-latest
+      image: >-
+        ghcr.io/${{ github.repository_owner }}/
+        openwrt-sdk:23.05.5-x86-64-latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -245,7 +251,7 @@ jobs:
       fail-fast: false
       matrix:
         # Build once for arch-independent package (PKG_ARCH:=all)
-        # This package contains only shell scripts and configs, no compiled binaries
+        # Package contains only shell scripts and configs
         include:
           - openwrt_version: '23.05.5'
             target: 'x86'
@@ -264,8 +270,9 @@ jobs:
             set -o pipefail
           fi
 
-          # Retry logic for pulling the SDK image (up to 3 attempts)
-          IMAGE="ghcr.io/${{ github.repository_owner }}/openwrt-sdk:23.05.5-x86-64-latest"
+          # Retry logic for pulling SDK image (up to 3 attempts)
+          OWNER="${{ github.repository_owner }}"
+          IMAGE="ghcr.io/${OWNER}/openwrt-sdk:23.05.5-x86-64-latest"
           MAX_RETRIES=3
           RETRY_DELAY=10
 
@@ -297,9 +304,13 @@ jobs:
           path: |
             /opt/openwrt-sdk/feeds
             /opt/openwrt-sdk/dl
-          key: ${{ runner.os }}-openwrt-feeds-${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}-${{ hashFiles('package/openwrt-captive-monitor/Makefile') }}
+          key: >-
+            ${{ runner.os }}-openwrt-feeds-${{ matrix.sdk_slug }}-
+            ${{ matrix.openwrt_version }}-
+            ${{ hashFiles('package/openwrt-captive-monitor/Makefile') }}
           restore-keys: |
-            ${{ runner.os }}-openwrt-feeds-${{ matrix.sdk_slug }}-${{ matrix.openwrt_version }}-
+            ${{ runner.os }}-openwrt-feeds-${{ matrix.sdk_slug }}-
+            ${{ matrix.openwrt_version }}-
             ${{ runner.os }}-openwrt-feeds-${{ matrix.sdk_slug }}-
 
       - name: Set build environment
@@ -310,7 +321,7 @@ jobs:
             # shellcheck disable=SC3040
             set -o pipefail
           fi
-          # Prefer an 8-character short SHA for artifact naming consistency
+          # Use 8-character short SHA for artifact naming
           resolved_sha="${GITHUB_SHA:-}"
           if [ -z "$resolved_sha" ]; then
             resolved_sha=$(git rev-parse HEAD 2> /dev/null || echo nogit)
@@ -325,7 +336,7 @@ jobs:
             echo "BUILD_NAME=${build_name}"
             echo "SHORT_SHA=${short_sha}"
           } >> "$GITHUB_ENV"
-          echo "Using BUILD_NAME=${build_name} (artifact suffix: +${short_sha})"
+          echo "BUILD_NAME=${build_name} (suffix: +${short_sha})"
 
       - name: Prepare package for SDK build
         run: |
@@ -367,7 +378,9 @@ jobs:
           mkdir -p "${{ github.workspace }}/artifacts/${BUILD_NAME}"
 
           # Copy built packages to artifacts directory
-          find bin/packages -name "openwrt-captive-monitor*.ipk" -exec cp -v {} "${{ github.workspace }}/artifacts/${BUILD_NAME}/" \;
+          DEST="${{ github.workspace }}/artifacts/${BUILD_NAME}/"
+          find bin/packages -name "openwrt-captive-monitor*.ipk" \
+            -exec cp -v {} "$DEST" \;
 
           echo "Package built successfully"
 
@@ -407,14 +420,16 @@ jobs:
           fi
 
           # Find .ipk file in artifacts directory
-          echo "Searching for openwrt-captive-monitor package in artifacts/${BUILD_NAME}"
-          find "${{ github.workspace }}/artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f
-          IPK_FILE=$(find "${{ github.workspace }}/artifacts/${BUILD_NAME}" -name "openwrt-captive-monitor_*.ipk" -type f | head -1)
+          ART_PATH="${{ github.workspace }}/artifacts/${BUILD_NAME}"
+          echo "Searching for package in artifacts/${BUILD_NAME}"
+          find "$ART_PATH" -name "openwrt-captive-monitor_*.ipk" -type f
+          IPK_FILE=$(find "$ART_PATH" \
+            -name "openwrt-captive-monitor_*.ipk" -type f | head -1)
 
           if [ -z "$IPK_FILE" ]; then
             echo "error: no openwrt-captive-monitor package found" >&2
             echo "Available .ipk files:"
-            find "${{ github.workspace }}/artifacts/${BUILD_NAME}" -name "*.ipk" -type f | head -20
+            find "$ART_PATH" -name "*.ipk" -type f | head -20
             exit 1
           fi
 
@@ -431,7 +446,7 @@ jobs:
           fi
 
           cd "${{ github.workspace }}"
-          echo "=== Validating Version field in .ipk control metadata ==="
+          echo "=== Validating Version field in .ipk metadata ==="
 
           for IPK_FILE in artifacts/${BUILD_NAME}/*.ipk; do
             if [ ! -e "$IPK_FILE" ]; then
@@ -440,8 +455,9 @@ jobs:
             fi
             echo ""
             echo "Validating: $(basename "$IPK_FILE")"
-            # Validate Version field (no dev/release suffix rules for CI builds)
-            ./scripts/validate-ipk-version.sh "$IPK_FILE" "${{ github.event_name }}"
+            # Validate Version field (no suffix rules for CI builds)
+            EVENT="${{ github.event_name }}"
+            ./scripts/validate-ipk-version.sh "$IPK_FILE" "$EVENT"
           done
           echo ""
           echo "All packages validated successfully"
@@ -460,7 +476,9 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: captive-monitor-${{ matrix.sdk_target }}-${{ env.BUILD_NAME }}+${{ env.SHORT_SHA }}
+          name: >-
+            captive-monitor-${{ matrix.sdk_target }}-
+            ${{ env.BUILD_NAME }}+${{ env.SHORT_SHA }}
           path: package
           retention-days: 7
           if-no-files-found: error
@@ -479,12 +497,15 @@ jobs:
             echo "## 📦 Build Summary"
             echo ""
             echo "**Build Method:** Docker SDK Image"
-            echo "**SDK Image:** ghcr.io/${{ github.repository_owner }}/openwrt-sdk:23.05.5-x86-64-latest"
+            OWNER="${{ github.repository_owner }}"
+            SDK_IMAGE="ghcr.io/${OWNER}/openwrt-sdk:23.05.5-x86-64-latest"
+            echo "**SDK Image:** ${SDK_IMAGE}"
             echo "**Target:** ${{ matrix.sdk_target }}"
             echo "**Architecture:** ${{ matrix.arch }}"
             echo "**OpenWrt Version:** ${{ matrix.openwrt_version }}"
             echo "**Short SHA:** ${{ env.SHORT_SHA }}"
             echo ""
             echo "### 📋 Generated Packages"
-            find "artifacts/${BUILD_NAME}" -name "*.ipk" -exec basename {} \; | sed 's/^/- /'
+            find "artifacts/${BUILD_NAME}" -name "*.ipk" \
+              -exec basename {} \; | sed 's/^/- /'
           } >> "$GITHUB_STEP_SUMMARY"
