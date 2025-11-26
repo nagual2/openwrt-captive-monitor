@@ -1,6 +1,8 @@
 # Implementation Plan
 
-- [ ] 1. Optimize Dockerfile to reduce image size
+- [x] 1. Optimize Dockerfile to reduce image size
+
+
 
 
   - Combine RUN commands to reduce layer count
