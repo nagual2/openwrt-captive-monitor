@@ -68,6 +68,7 @@ RUN set -eux && \
         libssl-dev \
         python3 \
         python3-setuptools \
+        python3-distutils \
         rsync \
         unzip \
         wget \
@@ -86,6 +87,13 @@ COPY --from=sdk-downloader /opt/openwrt-sdk /opt/openwrt-sdk
 
 # Set working directory to SDK
 WORKDIR /opt/openwrt-sdk
+
+# Create a non-root user for building (optional but recommended)
+RUN useradd -m -u 1000 -s /bin/bash builder && \
+    chown -R builder:builder /opt/openwrt-sdk
+
+# Switch to non-root user
+USER builder
 
 # Set environment variables
 ENV PATH="/opt/openwrt-sdk/staging_dir/host/bin:${PATH}"
