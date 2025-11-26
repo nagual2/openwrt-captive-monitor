@@ -63,7 +63,7 @@ mb_to_bytes() {
 # Convert bytes to human-readable format
 bytes_to_human() {
     local bytes=$1
-    
+
     if [[ $bytes -lt 1024 ]]; then
         echo "${bytes}B"
     elif [[ $bytes -lt $((1024 * 1024)) ]]; then
@@ -79,21 +79,21 @@ bytes_to_human() {
 validate_image_size() {
     local image_name="$1"
     local max_size_mb="${2:-2048}"
-    
+
     # Convert max size to bytes if not already set via environment
-    if [[ -z "${MAX_SIZE_BYTES:-}" ]]; then
+    if [[ -z ${MAX_SIZE_BYTES:-} ]]; then
         MAX_SIZE_BYTES=$(mb_to_bytes "$max_size_mb")
     fi
-    
+
     log_info "Validating image: $image_name"
     log_info "Maximum allowed size: $(bytes_to_human "$MAX_SIZE_BYTES")"
-    
+
     # Check if Docker is available
     if ! command -v docker &> /dev/null; then
         log_error "Docker not found. Please install Docker."
         return 1
     fi
-    
+
     # Check if image exists locally, if not try to pull
     if ! docker image inspect "$image_name" &> /dev/null; then
         log_info "Image not found locally, attempting to pull..."
@@ -102,18 +102,18 @@ validate_image_size() {
             return 1
         fi
     fi
-    
+
     # Get image size
     local image_size
-    image_size=$(docker image inspect "$image_name" --format='{{.Size}}' 2>/dev/null)
-    
-    if [[ -z "$image_size" ]]; then
+    image_size=$(docker image inspect "$image_name" --format='{{.Size}}' 2> /dev/null)
+
+    if [[ -z $image_size ]]; then
         log_error "Failed to get image size for: $image_name"
         return 1
     fi
-    
+
     log_info "Image size: $(bytes_to_human "$image_size")"
-    
+
     # Compare sizes
     if [[ $image_size -gt $MAX_SIZE_BYTES ]]; then
         local excess=$((image_size - MAX_SIZE_BYTES))
@@ -123,14 +123,14 @@ validate_image_size() {
         log_error "  Excess: $(bytes_to_human "$excess")"
         return 1
     fi
-    
+
     local remaining=$((MAX_SIZE_BYTES - image_size))
     local percentage=$((image_size * 100 / MAX_SIZE_BYTES))
-    
+
     log_info "✓ Image size is within limits"
     log_info "  Used: $(bytes_to_human "$image_size") (${percentage}%)"
     log_info "  Remaining: $(bytes_to_human "$remaining")"
-    
+
     return 0
 }
 
