@@ -3,7 +3,7 @@
 
 VERSION="23.05.5"
 REGISTRY="ghcr.io/nagual2"
-SHORT_SHA=$(git rev-parse --short=8 HEAD 2>/dev/null || echo "local")
+SHORT_SHA=$(git rev-parse --short=8 HEAD 2> /dev/null || echo "local")
 
 echo "=== Starting parallel builds in screen ==="
 echo "Version: $VERSION"
