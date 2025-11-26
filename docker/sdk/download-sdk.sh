@@ -68,7 +68,7 @@ download_with_retry() {
     local use_axel=false
     if command -v axel > /dev/null 2>&1; then
         use_axel=true
-        echo "Using axel for multi-threaded download (16 connections)"
+        echo "Using axel for multi-threaded download (32 connections)"
     else
         echo "Using curl for download (axel not available)"
     fi
@@ -77,11 +77,11 @@ download_with_retry() {
         echo "Attempt ${attempt}/${max_attempts}..."
 
         if [ "${use_axel}" = "true" ]; then
-            # Use axel with 16 connections for faster download
-            # -n 16: 16 connections
+            # Use axel with 32 connections for faster download
+            # -n 32: 32 connections
             # -a: more concise progress indicator
             # -o: output file
-            if axel -n 16 -a -o "${output}" "${url}"; then
+            if axel -n 32 -a -o "${output}" "${url}"; then
                 echo "Download successful!"
                 return 0
             fi
