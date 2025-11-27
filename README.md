@@ -451,11 +451,11 @@ The workflow will automatically:
 
 **Workflow parameters:**
 
-| Parameter | Description | Required | Default |
-|-----------|-------------|----------|---------|
-| `version` | Custom version (e.g., `2025.11.27.1`) | No | Auto-generated from current date |
-| `release_notes` | Custom release notes | No | Auto-generated from git commits |
-| `prerelease` | Mark as pre-release | No | `false` |
+| Parameter       | Description                            | Required | Default                              |
+| --------------- | -------------------------------------- | -------- | ------------------------------------ |
+| `version`       | Custom version (e.g., `2025.11.27.1`)  | No       | Auto-generated from current date     |
+| `release_notes` | Custom release notes                   | No       | Auto-generated from git commits      |
+| `prerelease`    | Mark as pre-release                    | No       | `false`                              |
 
 For detailed information about the release process, see:
 - [Manual Release Workflow](.github/workflows/manual-release.yml)
