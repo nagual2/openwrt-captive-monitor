@@ -1,0 +1,377 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Custom version (e.g., 2025.11.27.1). Leave empty for auto-generation based on current date.'
+        required: false
+        type: string
+      release_notes:
+        description: 'Release notes (optional). If empty, automatic notes will be generated.'
+        required: false
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  manual-release:
+    name: Create Manual Release
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine version
+        id: version
+        run: |
+          set -euo pipefail
+
+          git fetch --tags --force
+
+          CUSTOM_VERSION="${{ github.event.inputs.version }}"
+
+          if [ -n "$CUSTOM_VERSION" ]; then
+            # Use custom version from input
+            CLEAN_VERSION="$CUSTOM_VERSION"
+            NEW_TAG="v${CLEAN_VERSION}"
+            echo "Using custom version: $NEW_TAG"
+          else
+            # Auto-generate version based on current date
+            YEAR=$(date -u +%Y)
+            MONTH=$(date -u +%-m)
+            DAY=$(date -u +%-d)
+            DATE_PREFIX="v${YEAR}.${MONTH}.${DAY}"
+
+            # Find the last sequence number for today
+            LAST_SEQUENCE=$(git tag --list "${DATE_PREFIX}.*" | sed -nE "s/^${DATE_PREFIX}\.([0-9]+)$/\1/p" | sort -n | tail -n1)
+            if [ -z "$LAST_SEQUENCE" ]; then
+              NEXT_SEQUENCE=1
+            else
+              NEXT_SEQUENCE=$((LAST_SEQUENCE + 1))
+            fi
+
+            NEW_TAG="${DATE_PREFIX}.${NEXT_SEQUENCE}"
+            CLEAN_VERSION="${NEW_TAG#v}"
+            echo "Auto-generated version: $NEW_TAG"
+          fi
+
+          # Check if tag already exists
+          if git rev-parse -q --verify "refs/tags/$NEW_TAG" >/dev/null; then
+            echo "ERROR: Tag $NEW_TAG already exists"
+            exit 1
+          fi
+
+          # Find previous release tag for release notes
+          PREVIOUS_TAG=$(git tag --list 'v[0-9][0-9][0-9][0-9].[0-9]*.[0-9]*.[0-9]*' --sort=-creatordate | head -n1 || true)
+
+          echo "New tag: $NEW_TAG"
+          echo "Clean version: $CLEAN_VERSION"
+          echo "Previous tag: ${PREVIOUS_TAG:-<none>}"
+
+          {
+            echo "version=$NEW_TAG"
+            echo "clean_version=$CLEAN_VERSION"
+            echo "previous_tag=$PREVIOUS_TAG"
+          } >> "$GITHUB_OUTPUT"
+
+
+      - name: Update version metadata
+        id: update-metadata
+        run: |
+          set -euo pipefail
+
+          NEW_TAG="${{ steps.version.outputs.version }}"
+          CLEAN_VERSION="${{ steps.version.outputs.clean_version }}"
+
+          echo "Updating VERSION and Makefile to $CLEAN_VERSION"
+
+          # Update VERSION and PKG_VERSION metadata
+          ./scripts/update-version-metadata.sh "$CLEAN_VERSION"
+
+          # Verify changes were made
+          if git diff --quiet --exit-code VERSION package/openwrt-captive-monitor/Makefile; then
+            echo "WARNING: No metadata changes detected"
+          else
+            echo "Metadata updated successfully"
+          fi
+
+          echo "Updated VERSION file:"
+          cat VERSION
+
+          echo "Updated Makefile PKG_VERSION:"
+          grep "^PKG_VERSION" package/openwrt-captive-monitor/Makefile
+
+          echo "commit_message=chore: bump version to $CLEAN_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit version changes
+        id: commit
+        run: |
+          set -euo pipefail
+
+          NEW_TAG="${{ steps.version.outputs.version }}"
+          COMMIT_MESSAGE="${{ steps.update-metadata.outputs.commit_message }}"
+
+          # Stage changes
+          git add VERSION package/openwrt-captive-monitor/Makefile
+
+          # Create commit
+          git commit -m "$COMMIT_MESSAGE"
+
+          # Get commit SHA
+          COMMIT_SHA=$(git rev-parse HEAD)
+          echo "Version bump commit SHA: $COMMIT_SHA"
+
+          echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Push commit and create tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          NEW_TAG="${{ steps.version.outputs.version }}"
+          COMMIT_SHA="${{ steps.commit.outputs.commit_sha }}"
+
+          # Push commit to main
+          echo "Pushing commit to main..."
+          git push origin HEAD:main
+
+          # Create and push tag
+          echo "Creating tag $NEW_TAG on commit $COMMIT_SHA"
+          git tag -a "$NEW_TAG" -m "Release $NEW_TAG" "$COMMIT_SHA"
+          git push origin "$NEW_TAG"
+
+          echo "Tag $NEW_TAG created and pushed successfully"
+
+      - name: Set build environment
+        run: |
+          set -euo pipefail
+          
+          NEW_TAG="${{ steps.version.outputs.version }}"
+          COMMIT_SHA="${{ steps.commit.outputs.commit_sha }}"
+          SHORT_SHA=$(echo "$COMMIT_SHA" | cut -c1-8)
+          
+          {
+            echo "BUILD_NAME=release-${NEW_TAG}"
+            echo "SHORT_SHA=${SHORT_SHA}"
+            echo "TAG_NAME=${NEW_TAG}"
+          } >> "$GITHUB_ENV"
+          
+          echo "Using BUILD_NAME=release-${NEW_TAG} (sha=${SHORT_SHA})"
+
+      - name: Setup opkg-utils
+        run: |
+          sh ./scripts/setup-opkg-utils.sh
+
+      - name: Build package
+        run: |
+          chmod +x ./scripts/build_ipk.sh
+          ./scripts/build_ipk.sh --arch all
+
+      - name: Validate artifacts
+        run: |
+          set -euo pipefail
+          ART_DIR="artifacts/${BUILD_NAME}"
+          
+          if [ ! -d "$ART_DIR" ]; then
+            echo "ERROR: Artifact directory not found: $ART_DIR"
+            exit 1
+          fi
+          
+          ls -la "$ART_DIR"
+          
+          IPK_COUNT=0
+          for ipk in "$ART_DIR"/*.ipk; do
+            [ -e "$ipk" ] || continue
+            echo "Found: $(basename "$ipk")"
+            IPK_COUNT=$((IPK_COUNT + 1))
+          done
+          
+          if [ "$IPK_COUNT" -eq 0 ]; then
+            echo "ERROR: no .ipk files found"
+            exit 1
+          fi
+
+      - name: Verify package
+        run: |
+          set -euo pipefail
+          IPK_FILE=$(find artifacts/${BUILD_NAME} -name "openwrt-captive-monitor_*.ipk" | head -1)
+          if [ -z "$IPK_FILE" ]; then
+            echo "ERROR: no package found"
+            exit 1
+          fi
+          echo "Verifying: $IPK_FILE"
+          ./scripts/verify_package.sh "$IPK_FILE"
+
+      - name: Validate version
+        run: |
+          set -euo pipefail
+          IPK_FILE=$(find artifacts/${BUILD_NAME} -name "openwrt-captive-monitor_*.ipk" | head -1)
+          ./scripts/validate-ipk-version.sh "$IPK_FILE" "release"
+
+      - name: Stage artifacts
+        run: |
+          set -euo pipefail
+          ./scripts/stage-package-artifacts.sh "artifacts/${BUILD_NAME}"
+
+      - name: Prepare release artifacts
+        run: |
+          set -euo pipefail
+          
+          mkdir -p package
+          
+          # Copy IPK files
+          for ipk in artifacts/${BUILD_NAME}/*.ipk; do
+            [ -f "$ipk" ] || continue
+            cp -v "$ipk" package/
+          done
+          
+          # Generate SHA256SUMS
+          cd package
+          if command -v sha256sum > /dev/null 2>&1; then
+            sha256sum ./*.ipk > SHA256SUMS
+          elif command -v shasum > /dev/null 2>&1; then
+            shasum -a 256 ./*.ipk > SHA256SUMS
+          fi
+          
+          echo "Package contents:"
+          ls -la
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          set -euo pipefail
+
+          NEW_TAG="${{ steps.version.outputs.version }}"
+          PREVIOUS_TAG="${{ steps.version.outputs.previous_tag }}"
+          CUSTOM_NOTES="${{ github.event.inputs.release_notes }}"
+
+          NOTES_FILE="release-notes-${NEW_TAG}.md"
+
+          if [ -n "$CUSTOM_NOTES" ]; then
+            # Use custom release notes
+            echo "$CUSTOM_NOTES" > "$NOTES_FILE"
+            echo "Using custom release notes"
+          else
+            # Generate automatic release notes
+            {
+              echo "## Release $NEW_TAG"
+              echo ""
+              echo "Generated on $(date -u '+%Y-%m-%d %H:%M:%S %Z')"
+              echo ""
+            } > "$NOTES_FILE"
+
+            if [ -n "$PREVIOUS_TAG" ]; then
+              RANGE="${PREVIOUS_TAG}..HEAD"
+              echo "Changes since $PREVIOUS_TAG:" >> "$NOTES_FILE"
+            else
+              RANGE="HEAD"
+              echo "Changes since repository inception:" >> "$NOTES_FILE"
+            fi
+
+            echo "" >> "$NOTES_FILE"
+
+            COMMITS=$(git log "$RANGE" --pretty=format:'- %s' --reverse || true)
+            if [ -z "$COMMITS" ]; then
+              echo "- No new commits found." >> "$NOTES_FILE"
+            else
+              printf '%s\n' "$COMMITS" >> "$NOTES_FILE"
+            fi
+
+            echo "" >> "$NOTES_FILE"
+            echo "Using auto-generated release notes"
+          fi
+
+          echo "=== Release notes ==="
+          cat "$NOTES_FILE"
+          echo "====================="
+
+          echo "file=$NOTES_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          
+          NEW_TAG="${{ steps.version.outputs.version }}"
+          NOTES_FILE="${{ steps.notes.outputs.file }}"
+          PRERELEASE="${{ github.event.inputs.prerelease }}"
+          
+          if ! ls package/*.ipk > /dev/null 2>&1; then
+            echo "ERROR: No .ipk files found"
+            exit 1
+          fi
+          
+          # Create release
+          echo "Creating release for $NEW_TAG"
+          
+          RELEASE_ARGS=(
+            "$NEW_TAG"
+            --title "$NEW_TAG"
+            --notes-file "$NOTES_FILE"
+          )
+          
+          if [ "$PRERELEASE" = "true" ]; then
+            RELEASE_ARGS+=(--prerelease)
+            echo "Marking as pre-release"
+          else
+            RELEASE_ARGS+=(--latest)
+            echo "Marking as latest release"
+          fi
+          
+          gh release create "${RELEASE_ARGS[@]}"
+          
+          # Upload assets
+          echo "Uploading assets"
+          files=(package/*.ipk)
+          if [ -f package/SHA256SUMS ]; then
+            files+=(package/SHA256SUMS)
+          fi
+          gh release upload "$NEW_TAG" "${files[@]}" --clobber
+          
+          echo "Release published: $NEW_TAG"
+
+      - name: Summarize release
+        run: |
+          NEW_TAG="${{ steps.version.outputs.version }}"
+          CLEAN_VERSION="${{ steps.version.outputs.clean_version }}"
+          PREVIOUS_TAG="${{ steps.version.outputs.previous_tag }}"
+          PRERELEASE="${{ github.event.inputs.prerelease }}"
+          CUSTOM_VERSION="${{ github.event.inputs.version }}"
+
+          {
+            echo "## Manual Release Summary"
+            echo ""
+            echo "- Version: $NEW_TAG"
+            echo "- Clean version: $CLEAN_VERSION"
+            echo "- Previous tag: ${PREVIOUS_TAG:-N/A}"
+            echo "- Pre-release: $PRERELEASE"
+            echo "- Custom version used: ${CUSTOM_VERSION:-No (auto-generated)}"
+            echo ""
+            echo "### Release URL"
+            echo "https://github.com/${{ github.repository }}/releases/tag/$NEW_TAG"
+          } >> "$GITHUB_STEP_SUMMARY"

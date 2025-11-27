@@ -13,7 +13,8 @@ This section contains documentation related to the release process, versioning, 
 ## 📋 Core Documentation
 
 ### Release Process
-- [**Auto Version Tag (Active)**](AUTO_VERSION_TAG.md) - Date-based automatic versioning (vYYYY.M.D.N)
+- [**Manual Release Workflow**](MANUAL_RELEASE.md) - Manual release creation with full control
+- [Auto Version Tag (Deprecated)](AUTO_VERSION_TAG.md) - Date-based automatic versioning (vYYYY.M.D.N)
 - [Release Process (Legacy)](RELEASE_PROCESS.md) - Historical semantic versioning documentation
 - [Changelog](CHANGELOG.md) - Version history and release notes
 
@@ -197,7 +198,8 @@ Earlier releases used [Semantic Versioning 2.0.0](https://semver.org/) with tags
 ## 📋 Основная документация
 
 ### Процесс релизов
-- [**Auto Version Tag (активный)**](AUTO_VERSION_TAG.md) — Датированное автоматическое версионирование (vYYYY.M.D.N)
+- [**Manual Release Workflow**](MANUAL_RELEASE.md) — Ручное создание релизов с полным контролем
+- [Auto Version Tag (устарел)](AUTO_VERSION_TAG.md) — Датированное автоматическое версионирование (vYYYY.M.D.N)
 - [Процесс релизов (устаревший)](RELEASE_PROCESS.md) — Историческая документация по семантическому версионированию
 - [Журнал изменений](CHANGELOG.md) — История версий и примечания к релизам
 
