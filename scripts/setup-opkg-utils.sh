@@ -211,21 +211,13 @@ main() {
 
     # Preferred path: download and unpack tarball from git.openwrt.org (no git required)
     if ! fetch_opkg_utils_tarball; then
-        warn "tarball fetch for opkg-utils failed, falling back to raw script download"
-        if ! fetch_opkg_utils_raw; then
-            warn "raw script download for opkg-utils failed"
-
-            # Last resort for local environments that explicitly allow git
-            if [ "${OPKG_UTILS_ALLOW_GIT:-0}" = "1" ]; then
-                warn "attempting git-based opkg-utils fetch from $OPKG_UTILS_REPO because OPKG_UTILS_ALLOW_GIT=1"
-                if ! fetch_opkg_utils_git; then
-                    err "failed to fetch opkg-utils via tarball, raw download, or git; aborting"
-                    exit 1
-                fi
-            else
-                err "failed to fetch opkg-utils via tarball or raw download from git.openwrt.org; set OPKG_UTILS_ALLOW_GIT=1 to enable git-based fallback from $OPKG_UTILS_REPO"
-                exit 1
-            fi
+        warn "tarball fetch for opkg-utils failed, falling back to git clone"
+        # Raw download is broken on git.openwrt.org, skip it and go straight to git
+        # Enable git clone by default since raw download doesn't work
+        export OPKG_UTILS_ALLOW_GIT=1
+        if ! fetch_opkg_utils_git; then
+            err "failed to fetch opkg-utils via tarball or git clone; aborting"
+            exit 1
         fi
     fi
 

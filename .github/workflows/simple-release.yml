@@ -1,5 +1,9 @@
 name: Simple Release Build
 
+# This workflow builds and publishes releases for version tags
+# It replaces the old tag-build-release.yml workflow that used SDK with errors
+# Uses simple build without SDK for universal packages (arch: all)
+
 on:
   push:
     tags:
@@ -49,14 +53,10 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "Using BUILD_NAME=tag-${tag_name} (sha=${short_sha})"
 
-      - name: Setup opkg-utils
-        run: |
-          sh ./scripts/setup-opkg-utils.sh
-
       - name: Build package
         run: |
-          chmod +x ./scripts/build_ipk.sh
-          ./scripts/build_ipk.sh --arch all
+          chmod +x ./scripts/build_ipk_simple.sh
+          ./scripts/build_ipk_simple.sh all
 
       - name: Validate artifacts
         run: |
