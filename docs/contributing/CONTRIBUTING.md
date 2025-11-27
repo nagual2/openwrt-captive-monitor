@@ -154,21 +154,67 @@ These branch protection rules are codified in [`.github/settings.yml`](./.github
 
 ## 6. Releases
 
-1. Update `CHANGELOG.md`, `docs/releases/`, and any other relevant docs.
-2. Assemble a local `.ipk` and feed for validation:
+Releases are created manually by maintainers using the **Manual Release** GitHub Actions workflow.
+
+### Creating a Release
+
+1. Ensure all changes are merged to `main` and all CI checks pass
+2. Go to **Actions** → **Manual Release** in the GitHub repository
+3. Click **"Run workflow"** and configure:
+   - **Custom version** (optional): Specify version like `2025.11.27.1`, or leave empty for auto-generation
+   - **Release notes** (optional): Provide custom notes, or leave empty for automatic generation
+   - **Pre-release** (optional): Check to mark as pre-release
+4. Click **"Run workflow"** to start the release
+
+### What the Workflow Does
+
+The Manual Release workflow automatically:
+- Generates or uses the specified version tag (`vYYYY.M.D.N`)
+- Updates `VERSION` file and `PKG_VERSION` in Makefile
+- Creates a commit with version changes
+- Creates and pushes a git tag
+- Builds the universal package (`arch=all`)
+- Validates the package
+- Creates a GitHub Release with artifacts attached
+
+### Manual Release (Advanced)
+
+If you need to create a release manually without the workflow:
+
+1. Update `CHANGELOG.md`, `docs/releases/`, and any other relevant docs
+2. Assemble a local `.ipk` for validation:
    ```bash
    scripts/build_ipk.sh --arch all
    ```
-   Swap `all` for a target-specific architecture if you maintain per-target feeds.
-3. Tag and push the release from `main`:
+3. Update version metadata:
    ```bash
-   git tag -a v1.0.1 -m "openwrt-captive-monitor v1.0.1"
-   git push origin v1.0.1
+   ./scripts/update-version-metadata.sh "2025.11.27.1"
+   ```
+4. Commit, tag, and push:
+   ```bash
+   git add VERSION package/openwrt-captive-monitor/Makefile
+   git commit -m "chore: bump version to 2025.11.27.1"
+   git push origin main
+   git tag -a v2025.11.27.1 -m "Release v2025.11.27.1"
+   git push origin v2025.11.27.1
+   ```
+5. Create the GitHub Release and upload artifacts manually
 
-   Replace `v1.0.1` with the new tag when cutting subsequent releases.
-4. Publish the generated `.ipk` artifacts and update the GitHub Release notes.
+### Hotfixes
 
-If a regression requires a hotfix, branch from the affected tag, apply the fix, build/test, release, and cherry-pick the change back into `main` immediately.
+If a regression requires a hotfix:
+1. Branch from the affected tag
+2. Apply the fix
+3. Build and test locally
+4. Use the Manual Release workflow to create a hotfix release
+5. Cherry-pick the change back into `main` immediately
+
+### Important Notes
+
+- **Do not create tags manually** - use the Manual Release workflow
+- **Version format**: `vYYYY.M.D.N` (e.g., `v2025.11.27.1`)
+- **PKG_RELEASE**: Always `1` for official releases
+- **Automatic releases disabled**: The auto-version workflow is disabled to prevent unintended releases
 
 ---
 
@@ -339,22 +385,67 @@ GitFlow вводит долгоживущие ветки `develop` и выпус
 
 ## 6. Выпуски
 
-1. Обновите `CHANGELOG.md`, `docs/releases/` и любую другую релевантную документацию.
-2. Соберите локальный `.ipk` и feed для валидации:
-    ```bash
-    scripts/build_ipk.sh --arch all
-    ```
-    Замените `all` на специфичную для цели архитектуру, если вы поддерживаете feed'ы для каждой цели.
-3. Тегируйте и отправьте выпуск из `main`:
-    ```bash
-    git tag -a v1.0.1 -m "openwrt-captive-monitor v1.0.1"
-    git push origin v1.0.1
+Релизы создаются вручную мейнтейнерами с помощью workflow **Manual Release** в GitHub Actions.
 
-    Замените `v1.0.1` на новый тег при создании последующих выпусков.
-    ```
-4. Опубликуйте сгенерированные артефакты `.ipk` и обновите примечания к выпуску GitHub.
+### Создание релиза
 
-Если регрессия требует hotfix, создайте ветку от затронутого тега, примените исправление, соберите/протестируйте, выпустите и немедленно перенесите изменения обратно в `main`.
+1. Убедитесь, что все изменения слиты в `main` и все проверки CI прошли успешно
+2. Перейдите в **Actions** → **Manual Release** в репозитории GitHub
+3. Нажмите **"Run workflow"** и настройте:
+   - **Custom version** (опционально): Укажите версию вроде `2025.11.27.1`, или оставьте пустым для автогенерации
+   - **Release notes** (опционально): Укажите пользовательские примечания, или оставьте пустым для автогенерации
+   - **Pre-release** (опционально): Отметьте, чтобы пометить как предварительный релиз
+4. Нажмите **"Run workflow"** для запуска процесса релиза
+
+### Что делает workflow
+
+Workflow Manual Release автоматически:
+- Генерирует или использует указанный тег версии (`vYYYY.M.D.N`)
+- Обновляет файл `VERSION` и `PKG_VERSION` в Makefile
+- Создает коммит с изменениями версии
+- Создает и отправляет git тег
+- Собирает универсальный пакет (`arch=all`)
+- Валидирует пакет
+- Создает GitHub Release с прикрепленными артефактами
+
+### Ручной релиз (Продвинутый)
+
+Если вам нужно создать релиз вручную без workflow:
+
+1. Обновите `CHANGELOG.md`, `docs/releases/` и любую другую релевантную документацию
+2. Соберите локальный `.ipk` для валидации:
+   ```bash
+   scripts/build_ipk.sh --arch all
+   ```
+3. Обновите метаданные версии:
+   ```bash
+   ./scripts/update-version-metadata.sh "2025.11.27.1"
+   ```
+4. Закоммитьте, создайте тег и отправьте:
+   ```bash
+   git add VERSION package/openwrt-captive-monitor/Makefile
+   git commit -m "chore: bump version to 2025.11.27.1"
+   git push origin main
+   git tag -a v2025.11.27.1 -m "Release v2025.11.27.1"
+   git push origin v2025.11.27.1
+   ```
+5. Создайте GitHub Release и загрузите артефакты вручную
+
+### Hotfix'ы
+
+Если регрессия требует hotfix:
+1. Создайте ветку от затронутого тега
+2. Примените исправление
+3. Соберите и протестируйте локально
+4. Используйте workflow Manual Release для создания hotfix релиза
+5. Немедленно перенесите изменения обратно в `main`
+
+### Важные замечания
+
+- **Не создавайте теги вручную** - используйте workflow Manual Release
+- **Формат версии**: `vYYYY.M.D.N` (например, `v2025.11.27.1`)
+- **PKG_RELEASE**: Всегда `1` для официальных релизов
+- **Автоматические релизы отключены**: Workflow auto-version отключен для предотвращения непреднамеренных релизов
 
 ---
 
