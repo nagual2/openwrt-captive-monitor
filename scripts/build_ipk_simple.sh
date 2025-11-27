@@ -33,7 +33,7 @@ output_dir="$repo_root/dist/opkg/$pkg_arch"
 mkdir -p "$output_dir"
 
 build_dir=$(mktemp -d)
-trap "rm -rf '$build_dir'" EXIT
+trap 'rm -rf "$build_dir"' EXIT
 
 # Parse more metadata
 parse_package_field() {
