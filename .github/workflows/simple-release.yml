@@ -1,0 +1,192 @@
+name: Simple Release Build
+
+on:
+  push:
+    tags:
+      - 'v[0-9][0-9][0-9][0-9].[0-9]*.[0-9]*.[0-9]*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-package:
+    name: Build Universal Package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set build environment
+        run: |
+          set -euo pipefail
+          resolved_sha="${GITHUB_SHA:-}"
+          if [ -z "$resolved_sha" ]; then
+            resolved_sha=$(git rev-parse HEAD 2> /dev/null || echo nogit)
+          fi
+          short_sha=$(echo "$resolved_sha" | cut -c1-8)
+          tag_name="${GITHUB_REF_NAME:-}"
+          if [ -z "$tag_name" ]; then
+            tag_name=$(git describe --tags --exact-match 2> /dev/null || echo "untagged")
+          fi
+          {
+            echo "BUILD_NAME=tag-${tag_name}"
+            echo "SHORT_SHA=${short_sha}"
+            echo "TAG_NAME=${tag_name}"
+          } >> "$GITHUB_ENV"
+          echo "Using BUILD_NAME=tag-${tag_name} (sha=${short_sha})"
+
+      - name: Setup opkg-utils
+        run: |
+          sh ./scripts/setup-opkg-utils.sh
+
+      - name: Build package
+        run: |
+          chmod +x ./scripts/build_ipk.sh
+          ./scripts/build_ipk.sh --arch all
+
+      - name: Validate artifacts
+        run: |
+          set -euo pipefail
+          ART_DIR="artifacts/${BUILD_NAME}"
+          
+          if [ ! -d "$ART_DIR" ]; then
+            echo "ERROR: Artifact directory not found: $ART_DIR"
+            exit 1
+          fi
+          
+          ls -la "$ART_DIR"
+          
+          IPK_COUNT=0
+          for ipk in "$ART_DIR"/*.ipk; do
+            [ -e "$ipk" ] || continue
+            echo "Found: $(basename "$ipk")"
+            IPK_COUNT=$((IPK_COUNT + 1))
+          done
+          
+          if [ "$IPK_COUNT" -eq 0 ]; then
+            echo "ERROR: no .ipk files found"
+            exit 1
+          fi
+
+      - name: Verify package
+        run: |
+          set -euo pipefail
+          IPK_FILE=$(find artifacts/${BUILD_NAME} -name "openwrt-captive-monitor_*.ipk" | head -1)
+          if [ -z "$IPK_FILE" ]; then
+            echo "ERROR: no package found"
+            exit 1
+          fi
+          echo "Verifying: $IPK_FILE"
+          ./scripts/verify_package.sh "$IPK_FILE"
+
+      - name: Validate version
+        run: |
+          set -euo pipefail
+          IPK_FILE=$(find artifacts/${BUILD_NAME} -name "openwrt-captive-monitor_*.ipk" | head -1)
+          ./scripts/validate-ipk-version.sh "$IPK_FILE" "release"
+
+      - name: Stage artifacts
+        run: |
+          set -euo pipefail
+          ./scripts/stage-package-artifacts.sh "artifacts/${BUILD_NAME}"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: captive-monitor-all+${{ env.SHORT_SHA }}
+          path: package
+          retention-days: 30
+          if-no-files-found: error
+          compression-level: 6
+
+  publish-release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-24.04
+    needs: build-package
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: artifacts
+
+      - name: Prepare package directory
+        run: |
+          set -euo pipefail
+          mkdir -p package
+          
+          for dir in artifacts/*; do
+            [ -d "$dir" ] || continue
+            echo "Processing: $dir"
+            for ipk in "$dir"/*.ipk; do
+              [ -f "$ipk" ] || continue
+              cp -v "$ipk" package/
+            done
+          done
+          
+          cd package
+          if command -v sha256sum > /dev/null 2>&1; then
+            sha256sum ./*.ipk > SHA256SUMS
+          elif command -v shasum > /dev/null 2>&1; then
+            shasum -a 256 ./*.ipk > SHA256SUMS
+          fi
+          
+          echo "Package contents:"
+          ls -la
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME:-}"
+          
+          if [ -z "$TAG" ]; then
+            echo "ERROR: Unable to determine tag name"
+            exit 1
+          fi
+          
+          if ! ls package/*.ipk > /dev/null 2>&1; then
+            echo "ERROR: No .ipk files found"
+            exit 1
+          fi
+          
+          # Create release if it doesn't exist
+          RELEASE_ID=$(gh release view "$TAG" --json id --jq '.id' 2> /dev/null || echo "")
+          if [ -z "$RELEASE_ID" ]; then
+            echo "Creating release for $TAG"
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes "Automated release for $TAG" \
+              --latest
+          else
+            echo "Release $TAG already exists"
+          fi
+          
+          echo "Uploading assets"
+          files=(package/*.ipk)
+          if [ -f package/SHA256SUMS ]; then
+            files+=(package/SHA256SUMS)
+          fi
+          gh release upload "$TAG" "${files[@]}" --clobber
+          
+          echo "Release published: $TAG"
