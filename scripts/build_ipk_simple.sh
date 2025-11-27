@@ -60,7 +60,7 @@ pkg_depends=$(parse_package_field "DEPENDS")
 pkg_depends=$(echo "$pkg_depends" | sed 's/[+]//g; s/[[:space:]]\+/ /g; s/^ //; s/ $//; s/ /, /g')
 
 # Calculate installed size
-installed_size=$(du -sk "$files_dir" 2>/dev/null | awk '{print $1}' || echo "100")
+installed_size=$(du -sk "$files_dir" 2> /dev/null | awk '{print $1}' || echo "100")
 
 # Create control file
 control_dir="$build_dir/control"
