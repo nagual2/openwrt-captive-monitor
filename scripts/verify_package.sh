@@ -119,7 +119,7 @@ cleanup() {
     rm -rf "$temp_dir"
     [ -f "$package_path.decompressed" ] && rm -f "$package_path.decompressed"
     [ -d "$package_path.extracted" ] && rm -rf "$package_path.extracted"
-    true  # Ensure cleanup always returns 0
+    true # Ensure cleanup always returns 0
 }
 trap cleanup EXIT INT TERM HUP
 
