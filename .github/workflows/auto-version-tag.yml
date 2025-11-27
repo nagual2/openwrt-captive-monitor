@@ -245,6 +245,23 @@ jobs:
             --title "$NEW_TAG" \
             --notes-file "$NOTES_FILE"
 
+      - name: Trigger Tag Build Release workflow
+        if: >-
+          steps.auto-version-skip.outputs.skip != 'true' &&
+          steps.tag-check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          NEW_TAG="${{ steps.version.outputs.version }}"
+
+          echo "Triggering Tag Build Release workflow for $NEW_TAG"
+
+          # Trigger workflow_dispatch for tag-build-release
+          gh workflow run tag-build-release.yml \
+            --ref "$NEW_TAG" || echo "Failed to trigger, continuing..."
+
       - name: Summarize run
         if: steps.auto-version-skip.outputs.skip != 'true'
         run: |
