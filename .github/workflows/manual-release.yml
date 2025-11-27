@@ -1,5 +1,10 @@
 name: Manual Release
 
+# This is the primary workflow for creating releases manually
+# It replaces the automatic release process (auto-version-tag.yml + tag-build-release.yml)
+# Provides full control over versioning, release notes, and timing
+# Uses simple build without SDK for universal packages (arch: all)
+
 on:
   workflow_dispatch:
     inputs:
@@ -188,8 +193,14 @@ jobs:
 
       - name: Build package
         run: |
+          set -x
+          echo "Checking opkg-utils installation..."
+          which opkg-build || echo "opkg-build not in PATH"
+          which opkg-make-index || echo "opkg-make-index not in PATH"
+          ls -la /usr/local/bin/opkg-* || echo "No opkg-* in /usr/local/bin"
+          echo "PATH=$PATH"
           chmod +x ./scripts/build_ipk.sh
-          ./scripts/build_ipk.sh --arch all
+          bash -x ./scripts/build_ipk.sh --arch all
 
       - name: Validate artifacts
         run: |
