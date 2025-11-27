@@ -127,9 +127,9 @@ mkdir -p "$data_dir"
 cp -a "$files_dir/." "$data_dir/"
 
 # Set permissions
-chmod 0755 "$data_dir/usr/sbin/openwrt_captive_monitor" 2>/dev/null || true
-chmod 0755 "$data_dir/etc/init.d/captive-monitor" 2>/dev/null || true
-chmod 0755 "$data_dir/etc/uci-defaults/99-captive-monitor" 2>/dev/null || true
+chmod 0755 "$data_dir/usr/sbin/openwrt_captive_monitor" 2> /dev/null || true
+chmod 0755 "$data_dir/etc/init.d/captive-monitor" 2> /dev/null || true
+chmod 0755 "$data_dir/etc/uci-defaults/99-captive-monitor" 2> /dev/null || true
 
 # Create control.tar.gz with all control files
 (cd "$control_dir" && tar czf "$build_dir/control.tar.gz" .)
