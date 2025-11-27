@@ -1,9 +1,13 @@
 name: Auto Version Tag and Release
 
 on:
-  push:
-    branches:
-      - main
+  # DISABLED: Automatic releases on push to main have been disabled in favor of manual releases
+  # Use the manual-release.yml workflow to create releases with better control over versioning
+  # This workflow is kept for reference and can be manually triggered if needed
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:  # Keep for manual testing if needed
 
 permissions:
   contents: read

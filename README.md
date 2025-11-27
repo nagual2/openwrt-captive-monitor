@@ -410,38 +410,57 @@ The project includes a comprehensive VM-based testing system that automates end-
 
 See [Virtualization Guide](docs/guides/virtualization.md) for detailed VM testing documentation.
 
-### Release Process
+### Creating a Release
 
-This project uses a **date-based automatic release workflow** driven by GitHub Actions. Every push to `main` can produce a new release tag of the form `vYYYY.M.D.N` (for example, `v2025.11.20.2`).
+This project uses a **manual release workflow** for creating new releases. Maintainers can trigger releases on-demand through GitHub Actions.
 
-**Canonical invariants for a tagged release:**
-- **Tag:** `vYYYY.M.D.N` (e.g., `v2025.11.20.2`)
+**To create a new release:**
+
+1. Go to **Actions** → **Manual Release** in the GitHub repository
+2. Click **"Run workflow"**
+3. Configure the release (all fields are optional):
+   - **Custom version**: Specify a version like `2025.11.27.1`, or leave empty for auto-generation based on current date
+   - **Release notes**: Provide custom release notes, or leave empty for automatic generation
+   - **Pre-release**: Check this box to mark the release as a pre-release
+4. Click **"Run workflow"** to start the release process
+
+**What happens during the release:**
+
+The workflow will automatically:
+- Generate or use the specified version tag (`vYYYY.M.D.N`)
+- Update `VERSION` file and `PKG_VERSION` in Makefile
+- Create a commit with version changes
+- Create and push a git tag
+- Build the universal package (`arch=all`)
+- Validate the package
+- Create a GitHub Release with the package attached
+- Upload the `.ipk` file and `SHA256SUMS` to the release
+
+**Version format:**
+- **Tag:** `vYYYY.M.D.N` (e.g., `v2025.11.27.1`)
 - **VERSION file:** `YYYY.M.D.N` (no leading `v`)
-- **PKG_VERSION** in `package/openwrt-captive-monitor/Makefile`: `YYYY.M.D.N`
-- **PKG_RELEASE:** always `1` for official tagged releases
+- **PKG_VERSION** in Makefile: `YYYY.M.D.N`
+- **PKG_RELEASE:** always `1` for official releases
 
 > **Example:**
-> - Tag: `v2025.11.20.2`
-> - `VERSION` file: `2025.11.20.2`
+> - Tag: `v2025.11.27.1`
+> - `VERSION` file: `2025.11.27.1`
 > - `package/openwrt-captive-monitor/Makefile`:
->   - `PKG_VERSION:=2025.11.20.2`
+>   - `PKG_VERSION:=2025.11.27.1`
 >   - `PKG_RELEASE:=1`
-> **Historical tags:** Older semantic-version tags like `v1.0.6` remain available on GitHub for historical reference, but **new releases use only date-based tags**.
 
-**How it works (2025+ workflow):**
-1. Push or merge a PR to `main` (all CI checks must pass).
-2. The **Auto Version Tag and Release** workflow:
-   - Calculates the next date-based tag (`vYYYY.M.D.N`).
-   - Updates version metadata via a helper script (see `docs/AUTO_VERSION_MIGRATION.md`).
-   - Creates the annotated tag and a GitHub Release with notes.
-3. The **tagged build** workflow (`tag-build-release.yml`) runs for that tag:
-   - Verifies that **tag**, `VERSION`, and `PKG_VERSION` all match.
-   - Enforces `PKG_RELEASE:=1` for the release.
-   - Builds, signs, and publishes IPK artifacts.
+**Workflow parameters:**
 
-For a step-by-step description of this process and how to validate a release before cutting it, see:
+| Parameter | Description | Required | Default |
+|-----------|-------------|----------|---------|
+| `version` | Custom version (e.g., `2025.11.27.1`) | No | Auto-generated from current date |
+| `release_notes` | Custom release notes | No | Auto-generated from git commits |
+| `prerelease` | Mark as pre-release | No | `false` |
+
+For detailed information about the release process, see:
+- [Manual Release Workflow](.github/workflows/manual-release.yml)
 - [Auto Version Tag Guide](docs/release/AUTO_VERSION_TAG.md)
-- [Release Process (historical, semantic versioning)](docs/release/RELEASE_PROCESS.md)
+- [Release Process Documentation](docs/release/RELEASE_PROCESS.md)
 
 ### Contributing
 
