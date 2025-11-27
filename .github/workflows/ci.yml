@@ -357,18 +357,14 @@ jobs:
           # Find package directory
           # (may be in different location in container)
           WS="${{ github.workspace }}"
-          PKG1="$WS/package/openwrt-captive-monitor"
-          PKG2="/__w/openwrt-captive-monitor"
-          PKG2="$PKG2/openwrt-captive-monitor"
-          PKG2="$PKG2/package/openwrt-captive-monitor"
-          if [ -d "$PKG1" ]; then
-            PKG_SRC="$PKG1"
-          elif [ -d "$PKG2" ]; then
-            PKG_SRC="$PKG2"
+          PKG_NAME="openwrt-captive-monitor"
+          if [ -d "$WS/package/$PKG_NAME" ]; then
+            PKG_SRC="$WS/package/$PKG_NAME"
+          elif [ -d "/__w/$PKG_NAME/$PKG_NAME/package/$PKG_NAME" ]; then
+            PKG_SRC="/__w/$PKG_NAME/$PKG_NAME/package/$PKG_NAME"
           else
             echo "ERROR: Cannot find package source"
-            find / -name "openwrt-captive-monitor" -type d \
-              2>/dev/null | head -10
+            find / -name "$PKG_NAME" -type d 2>/dev/null | head -10
             exit 1
           fi
 
