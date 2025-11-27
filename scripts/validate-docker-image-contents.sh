@@ -125,7 +125,7 @@ check_build_tools() {
     )
 
     for tool in "${required_tools[@]}"; do
-        if docker run --rm "$image_name" command -v "$tool" &> /dev/null; then
+        if docker run --rm "$image_name" bash -c "command -v $tool" &> /dev/null; then
             log_debug "✓ Found: $tool"
         else
             log_error "✗ Missing: $tool"

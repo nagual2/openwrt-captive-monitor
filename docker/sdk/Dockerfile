@@ -67,13 +67,16 @@ RUN set -eux && \
 apt-get update && \
 apt-get install -y --no-install-recommends \
 build-essential \
+bzip2 \
 ca-certificates \
 file \
+findutils \
 gawk \
 gettext \
 git \
 libncurses5-dev \
 libssl-dev \
+patch \
 python3 \
 python3-setuptools \
 rsync \
@@ -83,7 +86,8 @@ zlib1g-dev && \
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/archives/* && \
 apt-get clean && \
 echo "Verifying build tools installation..." && \
-make --version && gcc --version && git --version && python3 --version
+make --version && gcc --version && git --version && python3 --version && \
+xargs --version && patch --version && bzip2 --version
 
 # Copy SDK from downloader stage with correct ownership
 COPY --from=sdk-downloader --chown=builder:builder /opt/openwrt-sdk /opt/openwrt-sdk
@@ -95,7 +99,8 @@ WORKDIR /opt/openwrt-sdk
 USER builder
 
 # Set environment variables
-ENV PATH="/opt/openwrt-sdk/staging_dir/host/bin:${PATH}"
+# Note: System binaries come first to ensure prereq checks work correctly
+ENV PATH="${PATH}:/opt/openwrt-sdk/staging_dir/host/bin"
 ENV OPENWRT_VERSION="${OPENWRT_VERSION}"
 ENV SDK_TARGET="${SDK_TARGET}"
 ENV SDK_SUBTARGET="${SDK_SUBTARGET}"
