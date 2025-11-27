@@ -161,17 +161,26 @@ jobs:
           
           # SDK is already available in /opt/openwrt-sdk from the container
           cd /opt/openwrt-sdk
-          
-          # Add our package as a local feed
-          echo "src-link local ${{ github.workspace }}/package" >> feeds.conf
-          
-          # Update feeds
-          ./scripts/feeds update -a
-          ./scripts/feeds install openwrt-captive-monitor
-          
+
+          # Find and copy package directory
+          WS="${{ github.workspace }}"
+          PKG_NAME="openwrt-captive-monitor"
+          if [ -d "$WS/package/$PKG_NAME" ]; then
+            PKG_SRC="$WS/package/$PKG_NAME"
+          elif [ -d "/__w/$PKG_NAME/$PKG_NAME/package/$PKG_NAME" ]; then
+            PKG_SRC="/__w/$PKG_NAME/$PKG_NAME/package/$PKG_NAME"
+          else
+            echo "ERROR: Cannot find package source"
+            find / -name "$PKG_NAME" -type d 2>/dev/null | head -10
+            exit 1
+          fi
+
+          echo "Copying package from: $PKG_SRC"
+          cp -r "$PKG_SRC" package/
+
           # Configure build
           make defconfig
-          
+
           echo "SDK prepared for building"
 
       - name: Build package with SDK
