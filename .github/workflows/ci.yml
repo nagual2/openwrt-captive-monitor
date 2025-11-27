@@ -239,7 +239,9 @@ jobs:
 
     # Use pre-built SDK Docker image from GHCR
     container:
-      image: ghcr.io/${{ github.repository_owner }}/openwrt-sdk:23.05.5-x86-64-latest
+      image: >-
+        ghcr.io/${{ github.repository_owner }}/openwrt-sdk:
+        23.05.5-x86-64-latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -355,16 +357,18 @@ jobs:
           # Find package directory
           # (may be in different location in container)
           WS="${{ github.workspace }}"
-          if [ -d "$WS/package/openwrt-captive-monitor" ]; then
-            PKG_SRC="$WS/package/openwrt-captive-monitor"
-          elif [ -d "/__w/openwrt-captive-monitor/\
-openwrt-captive-monitor/package/openwrt-captive-monitor" ]; then
-            PKG_SRC="/__w/openwrt-captive-monitor/\
-openwrt-captive-monitor/package/openwrt-captive-monitor"
+          PKG1="$WS/package/openwrt-captive-monitor"
+          PKG2="/__w/openwrt-captive-monitor"
+          PKG2="$PKG2/openwrt-captive-monitor"
+          PKG2="$PKG2/package/openwrt-captive-monitor"
+          if [ -d "$PKG1" ]; then
+            PKG_SRC="$PKG1"
+          elif [ -d "$PKG2" ]; then
+            PKG_SRC="$PKG2"
           else
             echo "ERROR: Cannot find package source"
-            find / -name "openwrt-captive-monitor" \
-              -type d 2>/dev/null | head -10
+            find / -name "openwrt-captive-monitor" -type d \
+              2>/dev/null | head -10
             exit 1
           fi
 
