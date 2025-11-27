@@ -347,8 +347,24 @@ jobs:
           # SDK is already available in /opt/openwrt-sdk from the container
           cd /opt/openwrt-sdk
 
+          # Debug: check workspace location
+          echo "Workspace: ${{ github.workspace }}"
+          ls -la "${{ github.workspace }}" || echo "Workspace not found at expected location"
+          
+          # Find package directory (may be in different location in container)
+          if [ -d "${{ github.workspace }}/package/openwrt-captive-monitor" ]; then
+            PKG_SRC="${{ github.workspace }}/package/openwrt-captive-monitor"
+          elif [ -d "/__w/openwrt-captive-monitor/openwrt-captive-monitor/package/openwrt-captive-monitor" ]; then
+            PKG_SRC="/__w/openwrt-captive-monitor/openwrt-captive-monitor/package/openwrt-captive-monitor"
+          else
+            echo "ERROR: Cannot find package source"
+            find / -name "openwrt-captive-monitor" -type d 2>/dev/null | head -10
+            exit 1
+          fi
+
           # Copy package directly to SDK package directory
-          cp -r "${{ github.workspace }}/package/openwrt-captive-monitor" package/
+          echo "Copying package from: $PKG_SRC"
+          cp -r "$PKG_SRC" package/
 
           # Configure build
           make defconfig
