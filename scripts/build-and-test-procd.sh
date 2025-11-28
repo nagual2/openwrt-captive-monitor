@@ -38,7 +38,8 @@ echo
 
 # Шаг 5: Установка новой версии
 echo "=== Step 5: Installing new version ==="
-ssh root@"$ROUTER_IP" "opkg install /tmp/$(basename "$PACKAGE_FILE")"
+PACKAGE_NAME=$(basename "$PACKAGE_FILE")
+ssh root@"$ROUTER_IP" "opkg install /tmp/$PACKAGE_NAME"
 echo
 
 # Шаг 6: Проверка установки
