@@ -25,13 +25,24 @@ This directory contains Python utilities for analyzing CI/CD logs and debugging 
 - **print_tail.py** - Prints the tail of log files
 - **print_tail_utf8.py** - UTF-8 version of tail printer
 
+### CI Usage Analysis
+
+- **count_ghcr_openwrt_sdk_usage.py** - Uses the GitHub REST API and the local
+  git history to count how often the upstream OpenWrt SDK image
+  `ghcr.io/openwrt/sdk` was used in GitHub Actions jobs and workflow runs.
+
 ## Usage
 
-Most tools accept a log file as input:
+Most tools accept a log file or repository directory as input:
 
 ```bash
 python tools/analysis/analyze_failed_job.py <log-file>
 python tools/analysis/find_make_error.py <log-file>
+
+# From the repository root, count GHCR OpenWrt SDK usage in Actions
+GITHUB_TOKEN=<token> python tools/analysis/count_ghcr_openwrt_sdk_usage.py \
+  --repo nagual2/openwrt-captive-monitor \
+  --output docs/ci/GHCR_OPENWRT_SDK_USAGE.md
 ```
 
 ## Requirements
