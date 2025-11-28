@@ -4,7 +4,9 @@
 # shellcheck disable=SC2039 # In POSIX sh, 'local' is undefined
 # shellcheck shell=ash
 # shellcheck disable=SC2039 # In POSIX sh, 'local' is undefined
-set -eu
+
+# Note: set -e removed to prevent premature exit in monitor mode
+# Errors are handled explicitly where needed
 
 if (set -o pipefail) 2> /dev/null; then
     # shellcheck disable=SC3040
