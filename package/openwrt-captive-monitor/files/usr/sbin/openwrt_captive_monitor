@@ -748,8 +748,6 @@ ensure_lan_ip() {
     fi
 }
 
-
-
 get_upstream_dns() {
     local resolv="/tmp/resolv.conf.d/resolv.conf.auto"
     if [ -f "$resolv" ]; then
@@ -791,8 +789,6 @@ resolve_portal_ipv4() {
 
     return 1
 }
-
-
 
 # ============================================================================
 # ПОИСК CAPTIVE-ПОРТАЛА
