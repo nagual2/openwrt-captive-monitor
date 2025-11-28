@@ -4,9 +4,10 @@ name: Tag Build Release
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'v[0-9][0-9][0-9][0-9].[0-9]*.[0-9]*.[0-9]*'
+  # Disabled: Use Simple Release Build instead for universal packages
+  # push:
+  #   tags:
+  #     - 'v[0-9][0-9][0-9][0-9].[0-9]*.[0-9]*.[0-9]*'
 
 permissions:
   contents: read
