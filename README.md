@@ -479,6 +479,8 @@ See [CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md) for detailed guidelines
 - [Configuration Reference](docs/configuration/reference.md) - All configuration options
 - [Troubleshooting Guide](docs/guides/troubleshooting.md) - Common issues and solutions
 - [Architecture Overview](docs/guides/architecture.md) - System design and components
+- [Release Process](docs/release/RELEASE_PROCESS.md) - Release workflow and versioning
+- [Release Restoration](docs/release/RELEASE_RESTORATION.md) - Restore missing releases
 
 ## 🤝 Community
 

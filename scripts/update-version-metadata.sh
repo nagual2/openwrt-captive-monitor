@@ -119,7 +119,8 @@ if command -v git > /dev/null 2>&1; then
     printf '%sMetadata diff (git):%s\n' "$CYAN" "$NC"
     (
         cd "$repo_root"
-        git diff -- VERSION package/openwrt-captive-monitor/Makefile || true
+        # Disable pager to prevent hanging
+        GIT_PAGER=cat git --no-pager diff -- VERSION package/openwrt-captive-monitor/Makefile || true
     )
 else
     printf '%snote:%s git not found in PATH; skipping diff output\n' "$YELLOW" "$NC"

@@ -70,12 +70,93 @@
 
 ## Git Workflow
 
-- Always work in feature branches, never commit directly to main
-- Create a new branch for each feature or fix
-- Make commits with clear, descriptive messages in English
-- Create pull requests (PR) for code review
-- Merge to main branch only upon user's explicit request
-- Keep branches up to date with main before merging
+### Основной процесс
+
+1. **Always work in feature branches** - never commit directly to main
+2. **Create a new branch** for each feature or fix
+3. **Make commits** with clear, descriptive messages in English
+4. **Create Pull Request (PR)** for code review
+5. **Check GitHub Actions** after PR creation:
+   - If actions failed → fix issues and push fixes
+   - If actions passed → proceed to merge
+6. **Merge to main** (only after actions pass)
+7. **Check GitHub Actions** after merge to main:
+   - If actions failed → fix issues immediately
+   - If actions passed → proceed to cleanup
+8. **Delete feature branch** after successful merge
+
+### Детальный workflow
+
+```bash
+# 1. Создать feature branch
+git checkout -b feature/my-feature
+
+# 2. Сделать изменения и коммиты
+git add .
+git commit -m "feat: add new feature"
+
+# 3. Push ветки
+git push origin feature/my-feature
+
+# 4. Создать PR
+gh pr create --title "feat: add new feature" --body "Description"
+
+# 5. Проверить статус Actions
+gh run list --branch feature/my-feature --limit 5
+
+# 6. Если Actions упали - исправить
+git add .
+git commit -m "fix: resolve CI issues"
+git push
+
+# 7. Когда Actions прошли - мержить
+gh pr merge --squash
+
+# 8. Проверить статус Actions на main
+gh run list --branch main --limit 5
+
+# 9. Если Actions на main прошли - удалить ветку
+git branch -d feature/my-feature
+git push origin --delete feature/my-feature
+
+# 10. Создать релиз (автоматически через auto-version-tag.yml)
+# Релиз создастся автоматически при push в main
+# Или запустить вручную:
+gh workflow run "Auto Version Tag" --ref main
+
+# 11. Проверить создание релиза
+gh release list --limit 5
+```
+
+### Правила
+
+- **Никогда не мержить** если Actions не прошли
+- **Всегда проверять Actions** после merge в main
+- **Немедленно исправлять** если Actions упали на main
+- **Удалять feature branch** только после успешного merge и прохождения Actions
+- **Создавать релиз** после успешного merge в main
+- **Keep branches up to date** with main before merging
+
+### Автоматическое создание релизов
+
+После merge в main автоматически:
+1. Запускается `auto-version-tag.yml`
+2. Создаётся новый тег в формате `vYYYY.M.D.N`
+3. Обновляются VERSION и PKG_VERSION
+4. Создаётся GitHub Release
+5. Запускается `tag-build-release.yml` для сборки артефактов
+
+**Проверка релиза:**
+```bash
+# Посмотреть последние релизы
+gh release list --limit 5
+
+# Посмотреть детали последнего релиза
+gh release view --web
+
+# Проверить артефакты релиза
+gh release view <tag> --json assets
+```
 
 ## Git Access
 

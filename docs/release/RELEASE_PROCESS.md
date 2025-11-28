@@ -622,6 +622,97 @@ To modify release behavior, edit `.release-please-config.json`:
 }
 ```
 
+## Release Restoration
+
+### Overview
+
+The project includes automated scripts for restoring missing releases. This is useful when:
+- Historical releases were accidentally deleted
+- Migrating from one versioning scheme to another
+- Recovering from repository issues
+
+### Restoration Scripts
+
+The following scripts are available for release restoration:
+
+1. **scripts/restore-semantic-releases.sh** - Restore historical semantic releases (v0.1.x, v1.0.x)
+2. **scripts/restore-dated-releases.sh** - Restore dated releases (vYYYY.M.D.N)
+3. **scripts/restore-releases.sh** - Main orchestration script (runs both above)
+4. **scripts/validate-releases.sh** - Validate release integrity
+
+### Restoring Missing Releases
+
+To restore all missing releases:
+
+```bash
+# Run the main restoration script
+bash scripts/restore-releases.sh
+
+# Validate that all releases are present
+bash scripts/validate-releases.sh
+```
+
+### Validation
+
+The validation script checks:
+- All semantic releases from CHANGELOG.md are present
+- All dated tags have corresponding releases
+- Generates a comprehensive integrity report
+
+Example output:
+```
+Release Statistics:
+  Semantic releases: 5
+  Dated releases: 17
+  Total releases: 23
+
+Validation Results:
+  Semantic releases: ✅ PASS
+  Dated releases: ✅ PASS
+
+✅ All releases present - Integrity check PASSED
+```
+
+### Restoration Process
+
+The restoration process follows these phases:
+
+**Phase 1: Semantic Releases**
+1. Parse CHANGELOG.md for version information
+2. Locate commits for each version
+3. Create git tags
+4. Generate GitHub releases with historical markers
+
+**Phase 2: Dated Releases**
+1. Retrieve all dated tags from repository
+2. Identify tags without releases
+3. Generate changelogs from git history
+4. Create releases with proper formatting
+
+**Phase 3: Validation**
+1. Fetch all releases from GitHub
+2. Validate presence of all expected releases
+3. Generate integrity report
+
+### Release Markers
+
+Restored releases are marked for identification:
+
+- **Semantic releases:** Include "Historical Release - Restored from CHANGELOG"
+- **Dated releases:** Include "Restored Release"
+
+### Idempotency
+
+All restoration scripts are idempotent - they can be run multiple times safely without creating duplicates or errors.
+
+### Requirements
+
+- GitHub CLI (gh) installed and authenticated
+- Git repository with full history
+- Write access to the repository
+
+For detailed information about the restoration process, see [RELEASE_RESTORATION_REPORT.md](../../RELEASE_RESTORATION_REPORT.md).
+
 ## Support
 
 For issues or questions about the release process:
@@ -633,5 +724,5 @@ For issues or questions about the release process:
 
 ---
 
-**Last Updated:** November 2024
-**Release Process Version:** 2.0 (Semantic Versioning + Automated)
+**Last Updated:** November 2025
+**Release Process Version:** 3.0 (Date-Based Versioning + Automated + Restoration)
