@@ -45,6 +45,7 @@ This section contains various reports, analyses, and documentation generated dur
 - [Tag Build Completion Report](TAG_BUILD_RELEASE_COMPLETION_REPORT.md) - Tag build completion
 - [Tag Build Diagnostic Report](TAG_BUILD_RELEASE_DIAGNOSTIC_REPORT.md) - Tag build diagnostics
 - [Tag Build Fix Summary](TAG_BUILD_RELEASE_FIX_SUMMARY.md) - Tag build fixes
+- [Historical Tags & Releases Restoration](../release/HISTORICAL_TAGS_RESTORATION.md) - Inventory of legacy semantic tags and restoration plan
 
 ### 🛠️ Task and Workflow Reports
 - [Task Completion Report](TASK_COMPLETION_REPORT.md) - General task completion summary

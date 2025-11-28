@@ -504,7 +504,8 @@ See [CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md) for detailed guidelines
 
 ### Latest Release
 
-- **Version**: v1.0.6 (See [releases page](https://github.com/nagual2/openwrt-captive-monitor/releases) for details)
+- **Current date-based version**: see [`VERSION`](VERSION) (for example `2025.11.28.3`) and the [Releases page](https://github.com/nagual2/openwrt-captive-monitor/releases) for the latest `vYYYY.M.D.N` tag.
+- **Historical semantic releases**: versions such as `v0.1.0`, `v0.1.1`, `v0.1.2`, `v1.0.1`, `v1.0.3`, `v1.0.6`, and `v1.0.8` are treated as archival snapshots. If some of these tags or releases are missing (for example after repository history cleanup), they can be restored using the [Historical Tags and Releases Restoration guide](docs/release/HISTORICAL_TAGS_RESTORATION.md).
 - **License**: [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 - **Platform**: [![OpenWrt](https://img.shields.io/badge/OpenWrt-21.02%2B-blue.svg)](https://openwrt.org/)
 
