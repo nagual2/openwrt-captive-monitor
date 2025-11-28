@@ -10,6 +10,7 @@ echo
 
 # Функция для выполнения команды на роутере
 run_on_router() {
+    # shellcheck disable=SC2029 # Intentionally expand on client side
     ssh root@"$ROUTER_IP" "$@"
 }
 
