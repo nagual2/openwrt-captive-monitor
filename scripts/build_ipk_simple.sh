@@ -140,9 +140,10 @@ chmod 0755 "$data_dir/etc/uci-defaults/99-captive-monitor" 2> /dev/null || true
 # Create debian-binary
 echo "2.0" > "$build_dir/debian-binary"
 
-# Create final .ipk (which is an ar archive)
+# Create final .ipk (which is a tar.gz archive containing debian-binary, data.tar.gz, control.tar.gz)
+# OpenWrt 23.05+ uses tar.gz format instead of ar format
 output_ipk="$output_dir/${pkg_name}_${full_version}_${pkg_arch}.ipk"
-(cd "$build_dir" && ar r "$output_ipk" debian-binary control.tar.gz data.tar.gz)
+(cd "$build_dir" && tar czf "$output_ipk" ./debian-binary ./data.tar.gz ./control.tar.gz)
 
 echo "Created: $output_ipk"
 ls -lh "$output_ipk"
