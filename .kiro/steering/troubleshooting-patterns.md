@@ -1201,3 +1201,218 @@ echo "✅ Version matches"
 cd -
 rm -rf "$TEMP_DIR"
 ```
+
+
+## Глобальное решение для зависающих команд
+
+### Проблема: Любая команда может зависнуть
+
+Команды могут зависать по разным причинам:
+- Ожидание интерактивного ввода
+- Пейджер (less, more)
+- Сетевые таймауты
+- Бесконечные циклы
+
+### Решение 1: Использовать timeout в executePwsh
+
+```typescript
+// В Kiro всегда используй timeout для команд
+executePwsh({
+  command: "wsl bash scripts/update-version-metadata.sh 2025.11.28.3",
+  timeout: 30000  // 30 секунд в миллисекундах
+})
+```
+
+**Преимущества:**
+- Команда автоматически прервется через 30 секунд
+- Получишь последний вывод команды
+- Можешь продолжить работу
+
+### Решение 2: Wrapper функция для bash команд
+
+Создай файл `scripts/lib/timeout-wrapper.sh`:
+
+```bash
+#!/bin/bash
+# Wrapper для выполнения команд с таймаутом
+
+set -euo pipefail
+
+TIMEOUT=${TIMEOUT:-30}  # По умолчанию 30 секунд
+
+# Отключить все интерактивные элементы
+export GIT_PAGER=cat
+export PAGER=cat
+export EDITOR=cat
+export VISUAL=cat
+export DEBIAN_FRONTEND=noninteractive
+
+# Выполнить команду с таймаутом
+timeout "$TIMEOUT" "$@"
+```
+
+**Использование:**
+```bash
+# Вместо
+wsl bash scripts/update-version-metadata.sh 2025.11.28.3
+
+# Используй
+wsl bash scripts/lib/timeout-wrapper.sh bash scripts/update-version-metadata.sh 2025.11.28.3
+
+# Или с кастомным таймаутом
+TIMEOUT=60 wsl bash scripts/lib/timeout-wrapper.sh bash scripts/update-version-metadata.sh 2025.11.28.3
+```
+
+### Решение 3: Глобальные переменные окружения
+
+Добавь в начало всех bash скриптов:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# Отключить интерактивность глобально
+export GIT_PAGER=cat
+export PAGER=cat
+export EDITOR=cat
+export VISUAL=cat
+export DEBIAN_FRONTEND=noninteractive
+export TERM=dumb  # Отключить цветной вывод если вызывает проблемы
+
+# Остальной код скрипта
+```
+
+### Решение 4: PowerShell wrapper с таймаутом
+
+Создай `scripts/Run-WithTimeout.ps1`:
+
+```powershell
+# Run-WithTimeout.ps1
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$Command,
+    
+    [int]$TimeoutSeconds = 30
+)
+
+$job = Start-Job -ScriptBlock {
+    param($cmd)
+    Invoke-Expression $cmd
+} -ArgumentList $Command
+
+$completed = Wait-Job -Job $job -Timeout $TimeoutSeconds
+
+if ($completed) {
+    Receive-Job -Job $job
+    Remove-Job -Job $job
+    exit $job.State -eq 'Completed' ? 0 : 1
+} else {
+    Write-Host "Command timed out after $TimeoutSeconds seconds" -ForegroundColor Red
+    Stop-Job -Job $job
+    Remove-Job -Job $job
+    exit 124  # Timeout exit code
+}
+```
+
+**Использование:**
+```powershell
+.\scripts\Run-WithTimeout.ps1 -Command "wsl bash scripts/update-version-metadata.sh 2025.11.28.3" -TimeoutSeconds 30
+```
+
+### Решение 5: Использовать timeout команду в WSL
+
+```bash
+# В WSL есть встроенная команда timeout
+wsl timeout 30s bash scripts/update-version-metadata.sh 2025.11.28.3
+
+# С сигналом KILL если не завершилась
+wsl timeout --kill-after=5s 30s bash scripts/update-version-metadata.sh 2025.11.28.3
+```
+
+### Решение 6: Исправить все git команды в проекте
+
+Найди и исправь все git команды:
+
+```bash
+# Найти все git команды без --no-pager
+wsl grep -r "git diff\|git log\|git show" scripts/ --include="*.sh"
+
+# Исправить автоматически
+wsl find scripts/ -name "*.sh" -exec sed -i 's/git diff/git --no-pager diff/g' {} \;
+wsl find scripts/ -name "*.sh" -exec sed -i 's/git log/git --no-pager log/g' {} \;
+wsl find scripts/ -name "*.sh" -exec sed -i 's/git show/git --no-pager show/g' {} \;
+```
+
+### Рекомендуемый подход для Kiro
+
+**Всегда используй timeout в executePwsh:**
+
+```typescript
+// ❌ Плохо - может зависнуть навсегда
+executePwsh({
+  command: "wsl bash scripts/some-script.sh"
+})
+
+// ✅ Хорошо - прервется через 30 секунд
+executePwsh({
+  command: "wsl bash scripts/some-script.sh",
+  timeout: 30000  // 30 секунд
+})
+
+// ✅ Еще лучше - с отключением пейджера
+executePwsh({
+  command: "wsl bash -c 'export GIT_PAGER=cat; bash scripts/some-script.sh'",
+  timeout: 30000
+})
+```
+
+### Проверка и тестирование
+
+После исправлений проверь:
+
+```bash
+# Тест 1: Команда завершается быстро
+time wsl bash scripts/update-version-metadata.sh 2025.11.28.3
+
+# Тест 2: Git команды не открывают пейджер
+wsl bash -c "cd $(pwd) && GIT_PAGER=cat git --no-pager diff"
+
+# Тест 3: Timeout работает
+wsl timeout 5s sleep 10  # Должно прерваться через 5 секунд
+```
+
+### Добавить в common-commands.md
+
+```powershell
+# Безопасное выполнение bash скриптов с таймаутом
+function Run-BashSafe {
+    param(
+        [string]$Script,
+        [int]$Timeout = 30
+    )
+    
+    $env:GIT_PAGER = "cat"
+    $env:PAGER = "cat"
+    
+    $command = "wsl bash -c 'export GIT_PAGER=cat; export PAGER=cat; bash $Script'"
+    
+    $job = Start-Job -ScriptBlock {
+        param($cmd)
+        Invoke-Expression $cmd
+    } -ArgumentList $command
+    
+    $completed = Wait-Job -Job $job -Timeout $Timeout
+    
+    if ($completed) {
+        Receive-Job -Job $job
+        Remove-Job -Job $job
+    } else {
+        Write-Host "⚠️  Command timed out after $Timeout seconds" -ForegroundColor Yellow
+        Stop-Job -Job $job
+        Remove-Job -Job $job
+    }
+}
+
+# Использование
+Run-BashSafe -Script "scripts/update-version-metadata.sh 2025.11.28.3" -Timeout 30
+```
