@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openwrt-captive-monitor
 # Date-based package version aligned with the latest vYYYY.MM.DD.N git tag and root VERSION file.
-PKG_VERSION:=2025.11.28.5
+PKG_VERSION:=2025.11.28.6
 # PKG_RELEASE must remain a small integer; do not encode dates here to avoid double-encoding
 # the date component (PKG_VERSION already carries the YYYY.M.D.N value).
 PKG_RELEASE:=1
@@ -49,6 +49,8 @@ define Package/openwrt-captive-monitor/install
 	$(INSTALL_BIN) ./files/usr/sbin/openwrt_captive_monitor $(1)/usr/sbin/openwrt_captive_monitor
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/etc/init.d/captive-monitor $(1)/etc/init.d/captive-monitor
+	# Optional: Install minimal test init script for debugging
+	# $(INSTALL_BIN) ./files/etc/init.d/captive-monitor-minimal $(1)/etc/init.d/captive-monitor-minimal
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/etc/config/captive-monitor $(1)/etc/config/captive-monitor
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
