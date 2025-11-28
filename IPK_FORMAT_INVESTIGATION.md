@@ -47,7 +47,7 @@ $ tar -tzf curl_8.7.1-r1_x86_64.ipk
 ### 3. Ключевое различие
 
 | Формат | Наш пакет (старый) | Официальный OpenWrt |
-|--------|-------------------|---------------------|
+|--------|---------------------|---------------------|
 | Тип архива | **ar** (Debian format) | **tar.gz** |
 | Команда создания | `ar r package.ipk debian-binary control.tar.gz data.tar.gz` | `tar czf package.ipk ./debian-binary ./data.tar.gz ./control.tar.gz` |
 | Распознавание file | "Debian binary package" | "gzip compressed data" |
@@ -153,7 +153,7 @@ ls: /etc/init.d/captive-monitor: No such file or directory
 ### Поддерживаемые версии OpenWrt
 
 | Версия | Формат IPK | Статус |
-|--------|-----------|--------|
+|--------|------------|--------|
 | 19.07 и старше | ar | ⚠️ Не поддерживается новым форматом |
 | 21.02 | ar → tar.gz (переходный) | ⚠️ Требует тестирования |
 | 22.03 | tar.gz | ✅ Поддерживается |
