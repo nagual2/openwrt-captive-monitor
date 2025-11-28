@@ -138,12 +138,21 @@ jobs:
           
           mkdir -p package
           
-          # Copy IPK files from downloaded artifacts
+          # Copy IPK files from artifacts directory (can be flat or nested)
           ipk_count=0
+          
+          # First, try to find IPK files directly in artifacts/
+          for ipk in artifacts/*.ipk; do
+            [ -f "$ipk" ] || continue
+            echo "Copying: $ipk"
+            cp -v "$ipk" package/
+            ipk_count=$((ipk_count + 1))
+          done
+          
+          # Then, check subdirectories
           for dir in artifacts/*; do
             [ -d "$dir" ] || continue
-            echo "Processing: $dir"
-            ls -la "$dir" || true
+            echo "Processing subdirectory: $dir"
             
             for ipk in "$dir"/*.ipk; do
               [ -f "$ipk" ] || continue
