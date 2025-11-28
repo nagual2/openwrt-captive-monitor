@@ -209,15 +209,17 @@ verify_install() {
 main() {
     install_deps
 
-    # Preferred path: download and unpack tarball from git.openwrt.org (no git required)
+    # Try tarball first, but enable git clone automatically on failure
     if ! fetch_opkg_utils_tarball; then
         warn "tarball fetch for opkg-utils failed, falling back to git clone"
-        # Raw download is broken on git.openwrt.org, skip it and go straight to git
-        # Enable git clone by default since raw download doesn't work
+        # Automatically enable git clone when tarball fails
         export OPKG_UTILS_ALLOW_GIT=1
         if ! fetch_opkg_utils_git; then
-            err "failed to fetch opkg-utils via tarball or git clone; aborting"
-            exit 1
+            warn "git clone failed, trying raw download as last resort"
+            if ! fetch_opkg_utils_raw; then
+                err "failed to fetch opkg-utils via tarball, git, or raw download; aborting"
+                exit 1
+            fi
         fi
     fi
 

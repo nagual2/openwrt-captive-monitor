@@ -38,17 +38,7 @@ jobs:
       - name: Set up environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev libncurses5-dev unzip
-          
-      - name: Setup opkg-utils and host packaging dependencies
-        run: |
-          # Install host deps and opkg-utils from OpenWrt upstream
-          sh ./scripts/setup-opkg-utils.sh
-
-      - name: Validate opkg-utils availability
-        run: |
-          opkg-build -h
-          opkg-make-index -h
+          sudo apt-get install -y gawk tar gzip xz-utils
           
       - name: Compute BUILD_NAME and SHORT_SHA
         run: |
@@ -69,10 +59,10 @@ jobs:
           echo "Using SHORT_SHA=$(grep -m1 '^SHORT_SHA=' "$GITHUB_ENV" | cut -d= -f2)"
 
       - name: Make build script executable
-        run: chmod +x ./scripts/build_ipk.sh
+        run: chmod +x ./scripts/build_ipk_simple.sh
 
       - name: Build package
-        run: ./scripts/build_ipk.sh
+        run: ./scripts/build_ipk_simple.sh all
 
       - name: Validate and discover artifacts
         run: |
