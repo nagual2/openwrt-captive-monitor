@@ -21,7 +21,6 @@ load_config() {
 	monitor_interval=""
 	lan_interface=""
 	lan_ip=""
-	lan_ipv6=""
 	firewall_backend=""
 	ping_servers=""
 	captive_check_urls=""
@@ -35,7 +34,7 @@ load_config() {
 	config_get monitor_interval config monitor_interval ""
 	config_get lan_interface config lan_interface ""
 	config_get lan_ip config lan_ip ""
-	config_get lan_ipv6 config lan_ipv6 ""
+	# Note: lan_ipv6 option is ignored (IPv4 only supported)
 	config_get firewall_backend config firewall_backend ""
 	config_get ping_servers config ping_servers ""
 	config_get captive_check_urls config captive_check_urls ""
@@ -83,7 +82,7 @@ start_service() {
 	[ -n "$monitor_interval" ] && procd_set_param env MONITOR_INTERVAL="$monitor_interval"
 	[ -n "$lan_interface" ] && procd_set_param env LAN_INTERFACE="$lan_interface"
 	[ -n "$lan_ip" ] && procd_set_param env LAN_IP="$lan_ip"
-	[ -n "$lan_ipv6" ] && procd_set_param env LAN_IPV6="$lan_ipv6"
+	# Note: LAN_IPV6 environment variable removed (IPv4 only supported)
 	[ -n "$ping_servers" ] && procd_set_param env PING_SERVERS="$ping_servers"
 	[ -n "$captive_check_urls" ] && procd_set_param env CAPTIVE_CHECK_URLS="$captive_check_urls"
 	[ -n "$firewall_backend" ] && procd_set_param env REQUESTED_FIREWALL_BACKEND="$firewall_backend"

@@ -494,7 +494,6 @@ New → Triage → In Progress → In Review → Fixed → Verified
 ```
 Q1 2024:
 ├─ v1.0.0 Release
-├─ IPv6 improvements
 ├─ Enhanced logging
 └─ Documentation overhaul
 

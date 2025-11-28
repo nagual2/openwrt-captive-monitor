@@ -577,7 +577,6 @@ Based on usage patterns and community feedback:
    - Advanced logging
 
 2. **Common Issues**
-   - IPv6 compatibility
    - Firewall backend detection
    - Configuration complexity
 

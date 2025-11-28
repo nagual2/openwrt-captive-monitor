@@ -8,6 +8,23 @@
 
 ---
 
+## [2025.11.27.13] - 2025-11-27
+
+### Removed
+
+- **BREAKING CHANGE**: Removed IPv6 support from captive monitor
+  - Removed `LAN_IPV6` and `HTTPD_IPV6_READY` variables
+  - Removed `ensure_lan_ipv6()`, `resolve_portal_ipv6()`, and `is_ipv6()` functions
+  - Removed ip6tables rules configuration for HTTP and DNS interception
+  - Removed IPv6 addresses from dnsmasq configuration
+  - System now operates in IPv4-only mode
+  - Legacy `lan_ipv6` configuration parameter is silently ignored if present in existing configurations
+  - **Important**: Router system IPv6 settings (network.lan.ip6addr, DHCPv6, routing) remain unchanged and unaffected
+  - Other services and applications can continue using IPv6 normally
+
+### Rationale
+
+This change simplifies the codebase by removing unused IPv6 functionality. The application now focuses exclusively on IPv4 captive portal detection and handling, which covers the vast majority of deployment scenarios.
 
 ## [1.0.3](https://github.com/nagual2/openwrt-captive-monitor/compare/v1.0.1...v1.0.3)
 
@@ -74,7 +91,7 @@
   NAT rules, and temporary HTTP server assets.
 
 ### Networking & Compatibility
-- Support for both `iptables` and `nftables` firewalls, including IPv4/IPv6 NAT
+- Support for both `iptables` and `nftables` firewalls, including IPv4 NAT
   redirect rules and safe teardown.
 - WiFi recovery helpers that recycle the logical or physical STA interface when
   captive checks repeatedly fail.

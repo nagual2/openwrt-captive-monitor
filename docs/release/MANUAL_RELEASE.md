@@ -68,7 +68,7 @@ The Manual Release workflow accepts three optional parameters:
 ## What's New
 
 - Added support for nftables backend
-- Fixed captive portal detection on IPv6 networks
+- Improved captive portal detection
 - Improved error handling in monitor mode
 
 ## Bug Fixes
@@ -185,7 +185,7 @@ Where:
 4. Enter custom release notes:
    ```
    ## New Features
-   - Added IPv6 support
+   - Added nftables support
    - Improved captive portal detection
    
    ## Bug Fixes
@@ -385,7 +385,7 @@ Workflow Manual Release принимает три опциональных па�
 ## Что нового
 
 - Добавлена поддержка nftables backend
-- Исправлено обнаружение captive portal в IPv6 сетях
+- Улучшено обнаружение captive portal
 - Улучшена обработка ошибок в режиме монитора
 
 ## Исправления ошибок
@@ -502,7 +502,7 @@ Workflow Manual Release принимает три опциональных па�
 4. Введите пользовательские примечания:
    ```
    ## Новые функции
-   - Добавлена поддержка IPv6
+   - Добавлена поддержка nftables
    - Улучшено обнаружение captive portal
    
    ## Исправления ошибок

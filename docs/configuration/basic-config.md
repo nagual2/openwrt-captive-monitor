@@ -151,9 +151,10 @@ export MONITOR_INTERVAL=30
 
 The service automatically detects:
 - LAN interface (usually `br-lan`)
-- LAN IP address
-- IPv6 support
+- LAN IP address (IPv4 only)
 - Firewall backend (iptables/nftables)
+
+**Note:** Only IPv4 is supported. IPv6 is not supported.
 
 ### Manual Interface Specification
 
@@ -163,7 +164,6 @@ If automatic detection fails, you can specify interfaces manually:
 config captive_monitor 'config'
     option lan_interface 'br-lan'        # LAN bridge interface
     option lan_ip '192.168.1.1'          # LAN IP address
-    option lan_ipv6 'fd00::1'           # LAN IPv6 address (optional)
     option firewall_backend 'iptables'   # Force specific backend
 ```
 
@@ -485,9 +485,10 @@ export MONITOR_INTERVAL=30
 
 Сервис автоматически определяет:
 - LAN интерфейс (обычно `br-lan`)
-- IP адрес LAN
-- Поддержку IPv6
+- IP адрес LAN (только IPv4)
 - Бэкэнд файервола (iptables/nftables)
+
+**Примечание:** Поддерживается только IPv4. IPv6 не поддерживается.
 
 ### Ручное указание интерфейса
 
@@ -497,7 +498,6 @@ export MONITOR_INTERVAL=30
 config captive_monitor 'config'
     option lan_interface 'br-lan'        # LAN bridge интерфейс
     option lan_ip '192.168.1.1'          # IP адрес LAN
-    option lan_ipv6 'fd00::1'           # IPv6 адрес LAN (опционально)
     option firewall_backend 'iptables'   # Принудительно указать бэкэнд
 ```
 
