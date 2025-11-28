@@ -25,7 +25,8 @@
 - **🛡️ Security-First** - HTTPS traffic never intercepted, preserves privacy
 - **🔧 Flexible Configuration** - UCI, environment variables, and CLI options
 - **📊 Robust Monitoring** - Multiple detection methods and fallbacks
-- **🌍 IPv6 Support** - Full dual-stack network support
+
+> **Note**: IPv6 is not supported. The service operates in IPv4-only mode.
 
 ## 🏗️ Architecture Overview
 
@@ -216,7 +217,6 @@ config captive_monitor 'config'
 config captive_monitor 'config'
     # Network settings
     option lan_interface 'br-lan'           # LAN interface (auto-detect)
-    option lan_ipv6 'fd00::1'              # IPv6 address
     option firewall_backend 'auto'            # iptables/nftables/auto
     
     # Timing settings
@@ -570,7 +570,8 @@ Made with ❤️ for the OpenWrt community
 - **🛡️ Безопасность в приоритете** - HTTPS трафик никогда не перехватывается, приватность сохраняется
 - **🔧 Гибкая конфигурация** - UCI, переменные окружения и опции командной строки
 - **📊 Надежный мониторинг** - Множество методов обнаружения и резервных вариантов
-- **🌍 Поддержка IPv6** - Полная поддержка двойного стека сетей
+
+> **Примечание**: IPv6 не поддерживается. Сервис работает только в режиме IPv4.
 
 ## 🏗️ Обзор архитектуры
 
@@ -759,7 +760,6 @@ config captive_monitor 'config'
 config captive_monitor 'config'
     # Сетевые настройки
     option lan_interface 'br-lan'           # LAN интерфейс (автоопределение)
-    option lan_ipv6 'fd00::1'              # IPv6 адрес
     option firewall_backend 'auto'            # iptables/nftables/auto
     
     # Настройки времени

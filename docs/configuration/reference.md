@@ -37,7 +37,6 @@ config captive_monitor 'config'
     # Network settings
     option lan_interface ''               # LAN interface (auto-detect)
     option lan_ip ''                      # LAN IP address (auto-detect)
-    option lan_ipv6 ''                    # LAN IPv6 address (auto-detect)
     option firewall_backend 'auto'        # Firewall backend
     
     # Connectivity checks
@@ -70,9 +69,10 @@ config captive_monitor 'config'
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `lan_interface` | string | `auto` | LAN interface name (empty = auto-detect) |
-| `lan_ip` | string | `auto` | LAN IPv4 address (empty = auto-detect) |
-| `lan_ipv6` | string | `auto` | LAN IPv6 address (empty = auto-detect) |
+| `lan_ip` | string | `auto` | LAN IPv4 address (empty = auto-detect). **Only IPv4 is supported.** |
 | `firewall_backend` | string | `auto` | Firewall backend: `auto`, `iptables`, or `nftables` |
+
+**Note:** This service operates in IPv4-only mode. IPv6 is not supported.
 
 ### Connectivity Checks
 
@@ -125,8 +125,7 @@ export MONITOR_INTERVAL="60"                  # Monitoring interval
 
 ## Network settings
 export LAN_INTERFACE="br-lan"                 # LAN interface
-export LAN_IP="192.168.1.1"                   # LAN IPv4 address
-export LAN_IPV6="fd00::1"                     # LAN IPv6 address
+export LAN_IP="192.168.1.1"                   # LAN IPv4 address (IPv4 only)
 export REQUESTED_FIREWALL_BACKEND="iptables"  # Firewall backend
 
 ## Connectivity checks
@@ -350,7 +349,6 @@ config captive_monitor 'config'
     # === Network Settings ===
     option lan_interface ''               # LAN interface (auto if empty)
     option lan_ip ''                      # LAN IPv4 (auto if empty)
-    option lan_ipv6 ''                    # LAN IPv6 (auto if empty)
     option firewall_backend 'auto'        # auto | iptables | nftables
     
     # === Connectivity Checks ===

@@ -26,7 +26,7 @@ Feature roadmap and development priorities for **openwrt-captive-monitor**.
 
 | Issue | Description | Estimate | Assignee | Status |
 |-------|-------------|-----------|----------|--------|
-| [#001](https://github.com/nagual2/openwrt-captive-monitor/issues/1) | Fix IPv6 DNS interception on dual-stack networks | 2d | @developer | In Progress |
+
 | [#002](https://github.com/nagual2/openwrt-captive-monitor/issues/2) | Resolve firewall backend detection on OpenWrt 23.05+ | 1d | @developer | Ready |
 | [#003](https://github.com/nagual2/openwrt-captive-monitor/issues/3) | Fix memory leak in long-running monitor mode | 3d | @developer | Blocked |
 
@@ -289,7 +289,7 @@ Week 8: Testing and documentation
 | ID | Severity | Description | Impact | Fix Version |
 |-----|----------|-------------|---------|-------------|
 | BUG-001 | Medium | Memory leak in monitor mode after 48+ hours | Service crash | 1.0.1 |
-| BUG-002 | High | IPv6 DNS not intercepted on dual-stack networks | Feature not working | 1.1.0 |
+
 | BUG-003 | Low | Log rotation not working correctly | Disk space | 1.0.2 |
 | BUG-004 | Medium | Service fails to start on certain OpenWrt versions | Installation failure | 1.0.1 |
 

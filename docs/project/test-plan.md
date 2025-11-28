@@ -95,7 +95,6 @@ Ensure the service:
 @test "Network configuration detection" {
     # Test LAN interface detection
     # Test IP address discovery
-    # Test IPv6 support detection
 }
 ```
 
@@ -392,7 +391,6 @@ iptables -L -n -v  # Verify rule scope
 - No gateway available
 - DNS server unavailable
 - Interface with no IP address
-- IPv6-only networks
 
 ### 3. System Edge Cases
 

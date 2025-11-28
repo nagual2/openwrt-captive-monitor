@@ -79,8 +79,8 @@ Third triage pass focuses on the three remaining failing CI/release PRs (#6, #11
   - Service cleanup depended on manual kills; procd never terminated the monitor, leaving nft/iptables rules behind.
 - Fixes applied in the replacement branch (`triage-2-prs-rebase-ci-fixes-openwrt24` → PR #21):
   - Rebased functionality onto the packaging-first layout already on `main` (thin launchers + `/usr/sbin/openwrt_captive_monitor`).
-  - Replaced BusyBox-incompatible `resolveip -s` calls with portable `nslookup` fallbacks, keeping IPv4/IPv6 detection intact.
-  - Extended the procd init script to export LAN IPv6, DNS/captive lists, and firewall backend hints so the intercept logic receives the expected configuration.
+  - Replaced BusyBox-incompatible `resolveip -s` calls with portable `nslookup` fallbacks, keeping IPv4 detection intact (IPv6 support was later removed).
+  - Extended the procd init script to export LAN configuration, DNS/captive lists, and firewall backend hints so the intercept logic receives the expected configuration.
   - Added deterministic shutdown (`procd_kill`) and reload triggers for `firewall`/`dnsmasq` to guarantee nft/iptables cleanup during service stops or firewall reloads.
 - Outcome: logic now runs on OpenWrt 24.x with fw4/nftables, passes lint, and supersedes the legacy PR.
 
@@ -90,7 +90,7 @@ Third triage pass focuses on the three remaining failing CI/release PRs (#6, #11
   - Branch was missing the reconstructed package skeleton and CI metadata that landed after the audit.
   - UCI schema did not expose the LAN/firewall knobs required by the service, so defaults could not be overridden without editing the script by hand.
 - Fixes applied in the replacement branch (`triage-2-prs-rebase-ci-fixes-openwrt24` → PR #21):
-  - Preserved the audited packaging layout while wiring the missing `lan_interface`, `lan_ip`, `lan_ipv6`, and `firewall_backend` options into both `/etc/config/captive-monitor` and the `uci-defaults` seed.
+  - Preserved the audited packaging layout while wiring the missing `lan_interface`, `lan_ip`, `lan_ipv6` (deprecated, removed in later versions), and `firewall_backend` options into both `/etc/config/captive-monitor` and the `uci-defaults` seed.
   - Ensured these options propagate to the runtime via procd environment variables, matching the behaviour the PR attempted to implement.
   - Updated the user-facing README snippet so downstream operators see the new knobs immediately after installing the package.
 - Outcome: packaging and configuration changes are synced with current `main`, linted, and ready for downstream consumption.

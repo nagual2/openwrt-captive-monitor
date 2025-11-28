@@ -22,14 +22,7 @@ config captive_monitor 'config'
     option firewall_backend 'iptables'    # Force iptables backend
 ```
 
-### IPv6-Specific Configuration
 
-```uci
-config captive_monitor 'config'
-    option lan_ipv6 'fd00::1'             # Manual IPv6 assignment
-    option enable_ipv6 '1'                # Enable IPv6 support
-    option ipv6_dns_redirect '1'          # Redirect IPv6 DNS queries
-```
 
 ### Custom HTTP Server Settings
 
@@ -60,9 +53,10 @@ config captive_monitor 'config'
 ```bash
 ## Force specific network configuration
 export LAN_INTERFACE="br-lan"
-export LAN_IP="192.168.1.1"
-export LAN_IPV6="fd00::1"
+export LAN_IP="192.168.1.1"                   # IPv4 only
 export REQUESTED_FIREWALL_BACKEND="nftables"
+
+## Note: Only IPv4 is supported. IPv6 is not supported.
 
 ## Custom timing
 export MONITOR_INTERVAL="30"

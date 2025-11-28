@@ -141,7 +141,7 @@ Versions are automatically determined based on conventional commit messages:
 git commit -m "fix: resolve captive portal detection issue"
 
 # Minor release (1.0.0 -> 1.1.0)
-git commit -m "feat: add IPv6 support for portal detection"
+git commit -m "feat: add nftables support for portal detection"
 
 # Major release (1.0.0 -> 2.0.0)
 git commit -m "feat!: rewrite core detection engine

@@ -50,7 +50,7 @@ All mock implementations are in `tests/mocks/`:
 
 - **Core Utilities**: `busybox`, `sleep`, `logger`, `id`, `uci`, `ubus`
 - **Network Tools**: `curl`, `ping`, `host`, `nslookup`, `ip`, `route`
-- **Firewall**: `iptables`, `ip6tables`, `_iptables_mock.sh`
+- **Firewall**: `iptables`, `_iptables_mock.sh`
 - **Services**: `dnsmasq`, `wifi`, `ifup`, `ifdown`
 - **Build Tools**: `opkg-build`, `opkg-make-index`
 - **Helpers**: `_lib.sh` - Common mock utilities
@@ -274,7 +274,7 @@ busybox ash tests/run.sh
 
 - **Основные утилиты**: `busybox`, `sleep`, `logger`, `id`, `uci`, `ubus`
 - **Сетевые инструменты**: `curl`, `ping`, `host`, `nslookup`, `ip`, `route`
-- **Файервол**: `iptables`, `ip6tables`, `_iptables_mock.sh`
+- **Файервол**: `iptables`, `_iptables_mock.sh`
 - **Сервисы**: `dnsmasq`, `wifi`, `ifup`, `ifdown`
 - **Инструменты сборки**: `opkg-build`, `opkg-make-index`
 - **Помощники**: `_lib.sh` - Общие утилиты mock

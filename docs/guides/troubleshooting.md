@@ -496,26 +496,7 @@ sleep 5
 ifup wwan
 ```
 
-### IPv6 Issues
 
-#### Diagnosis
-```bash
-## Check IPv6 configuration
-ip -6 addr show
-ip -6 route show
-
-## Test IPv6 connectivity
-ping6 -c 2 2001:4860:4860::8888
-```
-
-#### Solutions
-```bash
-## Enable IPv6 support
-uci set captive-monitor.config.enable_ipv6='1'
-uci set captive-monitor.config.lan_ipv6='fd00::1'
-uci commit captive-monitor
-/etc/init.d/captive-monitor restart
-```
 
 ---
 

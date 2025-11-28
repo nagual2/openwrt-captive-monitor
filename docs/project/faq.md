@@ -84,7 +84,7 @@ uci commit captive-monitor
 
 ### Q: Does this work with IPv6?
 
-**A:** Yes, the service supports IPv6 networks. It can intercept IPv6 DNS queries and handle dual-stack configurations. IPv6 support can be enabled in the configuration.
+**A:** No, IPv6 is not supported. The service operates in IPv4-only mode.
 
 ### Q: Which firewall backend does it use?
 

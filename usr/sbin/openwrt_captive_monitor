@@ -164,9 +164,6 @@ load_uci_config() {
     value=$(uci_safe_get "${section}.lan_ip")
     [ -n "$value" ] && LAN_IP="$value"
 
-    value=$(uci_safe_get "${section}.lan_ipv6")
-    [ -n "$value" ] && LAN_IPV6="$value"
-
     value=$(uci_safe_get "${section}.firewall_backend")
     [ -n "$value" ] && REQUESTED_FIREWALL_BACKEND="$value"
 
@@ -994,27 +991,6 @@ start_captive_httpd() {
 </html>
 EOF_HTML
 
-    busybox httpd -f -p "0.0.0.0:$HTTPD_PORT" -p "[::]:$HTTPD_PORT" -h "$HTTPD_ROOT" > /dev/null 2>&1 &
-    pid=$!
-    started=0
-    for attempt in 1 2 3; do
-        if kill -0 "$pid" 2> /dev/null; then
-            started=1
-            break
-        fi
-        sleep 1
-    done
-
-    if [ "$started" = "1" ]; then
-        HTTPD_IPV6_READY=1
-        echo "$pid" > "$HTTPD_PIDFILE"
-        log_info "Запущен busybox httpd (PID $pid) для редиректа (IPv4/IPv6)"
-        return 0
-    fi
-
-    wait "$pid" 2> /dev/null || true
-    log_warn "Не удалось запустить busybox httpd с IPv6, пробуем только IPv4"
-
     busybox httpd -f -p "0.0.0.0:$HTTPD_PORT" -h "$HTTPD_ROOT" > /dev/null 2>&1 &
     pid=$!
     started=0
@@ -1027,9 +1003,8 @@ EOF_HTML
     done
 
     if [ "$started" = "1" ]; then
-        HTTPD_IPV6_READY=0
         echo "$pid" > "$HTTPD_PIDFILE"
-        log_info "Запущен busybox httpd (PID $pid) для редиректа (IPv4)"
+        log_info "Запущен busybox httpd (PID $pid) для редиректа"
         return 0
     fi
 
@@ -1185,81 +1160,6 @@ setup_firewall_redirects_iptables() {
         iptables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" -m comment --comment "captive-dns-intercept-tcp-v4"
     fi
 
-    if [ "$HTTPD_IPV6_READY" = "1" ]; then
-        if command -v ip6tables > /dev/null 2>&1; then
-            if ensure_lan_ipv6; then
-                local ipv6_chain_ready=1
-                if ip6tables -t nat -L "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1; then
-                    ip6tables -t nat -F "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1 || true
-                elif ip6tables -t nat -N "$CAPTIVE_NAT_CHAIN" > /dev/null 2>&1; then
-                    :
-                else
-                    ipv6_chain_ready=0
-                    log_warn "ip6tables nat недоступен, пропускаем IPv6 HTTP перехват"
-                fi
-
-                if [ "$ipv6_chain_ready" = "1" ]; then
-                    if [ -n "$portal_ip6" ]; then
-                        if ! ip6tables -t nat -A "$CAPTIVE_NAT_CHAIN" -d "$portal_ip6" -p tcp --dport 80 -j RETURN -m comment --comment "captive-http-bypass-v6"; then
-                            log_warn "Не удалось добавить IPv6 правило обхода портала в ip6tables"
-                        fi
-                    fi
-
-                    local lan_ipv6_target="[$LAN_IPV6]:$HTTPD_PORT"
-                    if ! ip6tables -t nat -A "$CAPTIVE_NAT_CHAIN" -p tcp --dport 80 -j DNAT --to-destination "$lan_ipv6_target" -m comment --comment "captive-http-redirect-v6"; then
-                        log_warn "Не удалось добавить IPv6 HTTP DNAT в ip6tables"
-                    fi
-
-                    if ! ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2> /dev/null; then
-                        if ! ip6tables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" -m comment --comment "captive-http-intercept-v6"; then
-                            log_warn "Не удалось добавить IPv6 правило перехвата HTTP в ip6tables"
-                        fi
-                    fi
-                fi
-
-                local ipv6_dns_chain_ready=1
-                if ip6tables -t nat -L "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1; then
-                    ip6tables -t nat -F "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1 || true
-                elif ip6tables -t nat -N "$CAPTIVE_DNS_CHAIN" > /dev/null 2>&1; then
-                    :
-                else
-                    ipv6_dns_chain_ready=0
-                    log_warn "ip6tables nat недоступен, пропускаем IPv6 DNS перехват"
-                fi
-
-                if [ "$ipv6_dns_chain_ready" = "1" ]; then
-                    local lan_ipv6_dns="[$LAN_IPV6]"
-                    if ! ip6tables -t nat -A "$CAPTIVE_DNS_CHAIN" -p udp --dport 53 -j DNAT --to-destination "$lan_ipv6_dns" -m comment --comment "captive-dns-redirect-udp-v6"; then
-                        log_warn "Не удалось добавить IPv6 UDP DNS DNAT в ip6tables"
-                    fi
-                    if ! ip6tables -t nat -A "$CAPTIVE_DNS_CHAIN" -p tcp --dport 53 -j DNAT --to-destination "$lan_ipv6_dns" -m comment --comment "captive-dns-redirect-tcp-v6"; then
-                        log_warn "Не удалось добавить IPv6 TCP DNS DNAT в ip6tables"
-                    fi
-
-                    if ! ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; then
-                        if ! ip6tables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" -m comment --comment "captive-dns-intercept-udp-v6"; then
-                            log_warn "Не удалось добавить IPv6 правило перехвата UDP DNS в ip6tables"
-                        fi
-                    fi
-
-                    if ! ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; then
-                        if ! ip6tables -t nat -I PREROUTING 1 -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" -m comment --comment "captive-dns-intercept-tcp-v6"; then
-                            log_warn "Не удалось добавить IPv6 правило перехвата TCP DNS в ip6tables"
-                        fi
-                    fi
-                fi
-            else
-                log_warn "IPv6 адрес LAN не найден, пропускаем настройки ip6tables"
-            fi
-        else
-            log_warn "ip6tables не найден, пропускаем IPv6 редирект"
-        fi
-    else
-        if [ -n "$LAN_IPV6" ] || [ -n "$portal_ip6" ]; then
-            log_warn "HTTP сервер не слушает IPv6, пропускаем настройки ip6tables"
-        fi
-    fi
-
     log_info "iptables настроен для перехвата HTTP и DNS на интерфейсе $LAN_INTERFACE"
     return 0
 }
@@ -1283,21 +1183,7 @@ cleanup_firewall_redirects_iptables() {
         iptables -t nat -X "$CAPTIVE_DNS_CHAIN" 2> /dev/null || true
     fi
 
-    if command -v ip6tables > /dev/null 2>&1; then
-        while ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" 2> /dev/null; do
-            ip6tables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 80 -j "$CAPTIVE_NAT_CHAIN" || true
-        done
-        while ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; do
-            ip6tables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p udp --dport 53 -j "$CAPTIVE_DNS_CHAIN" || true
-        done
-        while ip6tables -t nat -C PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" 2> /dev/null; do
-            ip6tables -t nat -D PREROUTING -i "$LAN_INTERFACE" -p tcp --dport 53 -j "$CAPTIVE_DNS_CHAIN" || true
-        done
-        ip6tables -t nat -F "$CAPTIVE_NAT_CHAIN" 2> /dev/null || true
-        ip6tables -t nat -X "$CAPTIVE_NAT_CHAIN" 2> /dev/null || true
-        ip6tables -t nat -F "$CAPTIVE_DNS_CHAIN" 2> /dev/null || true
-        ip6tables -t nat -X "$CAPTIVE_DNS_CHAIN" 2> /dev/null || true
-    fi
+
 }
 
 setup_firewall_redirects_nft() {

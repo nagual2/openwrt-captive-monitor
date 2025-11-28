@@ -455,3 +455,460 @@ echo "Requirement references found"
 - Рутинных задач (форматирование, линтинг)
 - Промежуточных шагов в процессе решения
 - Вопросов, на которые можно найти ответ в документации
+
+
+### 8. Команда зависает в ожидании ввода
+
+**Симптомы:**
+- Команда типа `git show 9724d68 --stat` зависает
+- Нет вывода, нет ошибки, просто ожидание
+- Невозможно прервать команду через Ctrl+C
+- Процесс висит неизвестно долго
+
+**Причина:**
+- Команда ожидает интерактивного ввода (например, пейджер `less`)
+- Вывод команды слишком большой и автоматически открывается в пейджере
+- В неинтерактивном окружении (CI, скрипт) пейджер не может работать
+
+**Диагностика:**
+```bash
+# Проверить, запущен ли процесс
+ps aux | grep git
+
+# Проверить переменную окружения пейджера
+echo $GIT_PAGER
+echo $PAGER
+```
+
+**Решение:**
+
+**Вариант 1: Отключить пейджер для конкретной команды**
+```bash
+# Использовать --no-pager
+git --no-pager show 9724d68 --stat
+
+# Или установить PAGER в cat
+GIT_PAGER=cat git show 9724d68 --stat
+
+# Или использовать переменную окружения
+PAGER=cat git show 9724d68 --stat
+```
+
+**Вариант 2: Отключить пейджер глобально**
+```bash
+# Для текущей сессии
+export GIT_PAGER=cat
+
+# Для всех сессий (в ~/.bashrc или ~/.zshrc)
+echo 'export GIT_PAGER=cat' >> ~/.bashrc
+
+# Или через git config
+git config --global core.pager cat
+```
+
+**Вариант 3: Использовать less с правильными опциями**
+```bash
+# -F: выйти если вывод помещается на один экран
+# -R: разрешить ANSI цвета
+# -X: не очищать экран при выходе
+export GIT_PAGER="less -FRX"
+```
+
+**Для скриптов и CI:**
+```bash
+#!/bin/bash
+# Всегда отключать пейджер в скриптах
+export GIT_PAGER=cat
+export PAGER=cat
+
+# Или использовать --no-pager для каждой команды
+git --no-pager log --oneline
+git --no-pager show HEAD --stat
+git --no-pager diff
+```
+
+**Для Kiro/автоматизации:**
+```bash
+# В начале скрипта или перед git командами
+export GIT_PAGER=cat
+
+# Или использовать флаг
+git --no-pager <command>
+```
+
+### 9. WSL и Docker продолжают работать после использования
+
+**Симптомы:**
+- WSL процессы продолжают работать в фоне
+- Docker Desktop потребляет ресурсы после завершения работы
+- Высокое использование CPU/RAM даже когда не работаешь с проектом
+- Медленная работа системы
+
+**Причина:**
+- WSL дистрибутивы не останавливаются автоматически
+- Docker Desktop продолжает работать в фоне
+- Контейнеры могут продолжать работать
+- WSL2 VM не освобождает память автоматически
+
+**Диагностика:**
+```powershell
+# Проверить запущенные WSL дистрибутивы
+wsl --list --running
+
+# Проверить статус Docker
+docker ps
+
+# Проверить использование ресурсов WSL
+wsl --list --verbose
+
+# Проверить процессы Docker Desktop
+Get-Process | Where-Object {$_.ProcessName -like "*docker*"}
+```
+
+**Решение:**
+
+**Остановка WSL:**
+```powershell
+# Остановить конкретный дистрибутив
+wsl --terminate Ubuntu
+
+# Остановить все WSL дистрибутивы
+wsl --shutdown
+
+# Проверить что все остановлено
+wsl --list --running
+```
+
+**Остановка Docker:**
+```powershell
+# Остановить все контейнеры
+docker stop $(docker ps -q)
+
+# Или остановить Docker Desktop полностью
+# Через GUI: System Tray -> Docker Desktop -> Quit Docker Desktop
+
+# Или через PowerShell
+Stop-Process -Name "Docker Desktop" -Force
+
+# Проверить что Docker остановлен
+docker ps  # Должна быть ошибка подключения
+```
+
+**Автоматизация очистки:**
+```powershell
+# Скрипт для полной остановки WSL и Docker
+# cleanup-wsl-docker.ps1
+
+Write-Host "Stopping Docker containers..."
+docker stop $(docker ps -q) 2>$null
+
+Write-Host "Stopping Docker Desktop..."
+Stop-Process -Name "Docker Desktop" -ErrorAction SilentlyContinue
+
+Write-Host "Shutting down WSL..."
+wsl --shutdown
+
+Write-Host "Waiting for shutdown..."
+Start-Sleep -Seconds 3
+
+Write-Host "Checking status..."
+wsl --list --running
+
+Write-Host "✅ Cleanup complete"
+```
+
+**Добавить в common-commands.md:**
+```powershell
+# Быстрая очистка после работы
+function cleanup-dev {
+    docker stop $(docker ps -q) 2>$null
+    wsl --shutdown
+    Write-Host "✅ WSL and Docker stopped"
+}
+
+# Добавить в $PROFILE для использования в любой сессии
+```
+
+**Освобождение памяти WSL2:**
+```powershell
+# WSL2 не освобождает память автоматически
+# Нужно остановить и запустить заново
+
+# Остановить WSL
+wsl --shutdown
+
+# Подождать несколько секунд
+Start-Sleep -Seconds 5
+
+# Запустить снова (автоматически при первой команде)
+wsl echo "WSL restarted"
+```
+
+**Настройка автоматической остановки Docker:**
+```powershell
+# В Docker Desktop Settings:
+# General -> Start Docker Desktop when you log in (отключить)
+# Resources -> Advanced -> Disk image location (проверить размер)
+
+# Ограничить ресурсы WSL2 через .wslconfig
+# Создать файл C:\Users\<User>\.wslconfig
+
+[wsl2]
+memory=4GB
+processors=2
+swap=2GB
+```
+
+**Пример .wslconfig:**
+```ini
+# C:\Users\<User>\.wslconfig
+
+[wsl2]
+# Ограничить память (по умолчанию 50% RAM)
+memory=4GB
+
+# Ограничить процессоры (по умолчанию все)
+processors=2
+
+# Ограничить swap
+swap=2GB
+
+# Освобождать память при простое
+# (экспериментальная функция)
+autoMemoryReclaim=gradual
+```
+
+**Мониторинг ресурсов:**
+```powershell
+# Проверить использование памяти WSL
+wsl --list --verbose
+
+# Проверить размер виртуального диска WSL
+Get-ChildItem "$env:LOCALAPPDATA\Docker\wsl\data" -Recurse | 
+    Measure-Object -Property Length -Sum | 
+    Select-Object @{Name="Size(GB)";Expression={[math]::Round($_.Sum/1GB,2)}}
+
+# Проверить использование Docker
+docker system df
+```
+
+**Регулярная очистка:**
+```powershell
+# Очистка Docker (освобождает место)
+docker system prune -a --volumes
+
+# Очистка WSL кэша
+wsl --shutdown
+# Удалить временные файлы в WSL
+wsl rm -rf /tmp/*
+wsl rm -rf ~/.cache/*
+```
+
+### 10. Переполнение логов Docker при использовании axel
+
+**Симптомы:**
+- `[output clipped, log limit 2MiB reached]`
+- Сборка зависает на определенном проценте загрузки
+- Невозможно увидеть полный вывод Docker build
+
+**Причина:**
+- axel выводит слишком подробный прогресс
+- Docker ограничивает размер логов до 2MB
+- Каждое обновление прогресса создает новую строку в логах
+
+**Диагностика:**
+```bash
+# Проверить размер логов контейнера
+docker inspect <container-id> --format='{{.LogPath}}' | xargs ls -lh
+
+# Посмотреть последние строки логов
+docker logs <container-id> --tail 100
+```
+
+**Решение:**
+
+**Вариант 1: Использовать --progress=plain**
+```bash
+# При сборке Docker образа
+docker build --progress=plain -t image:tag .
+
+# Это упрощает вывод и уменьшает размер логов
+```
+
+**Вариант 2: Использовать компактный вывод axel**
+```bash
+# В скрипте загрузки
+axel -n 32 -a -o "$output" "$url"
+
+# Опция -a делает прогресс-бар более компактным
+```
+
+**Вариант 3: Перенаправить вывод axel**
+```bash
+# Скрыть прогресс-бар полностью
+axel -n 32 -q -o "$output" "$url"
+
+# Или перенаправить в файл
+axel -n 32 -o "$output" "$url" 2>&1 | tee /tmp/download.log
+```
+
+**Для CI/CD:**
+```yaml
+# В GitHub Actions
+- name: Build Docker image
+  run: |
+    docker build --progress=plain -t image:tag .
+```
+
+### 11. Параллельные сборки не показывают вывод
+
+**Симптомы:**
+- PowerShell jobs запущены, но нет вывода
+- Невозможно отследить прогресс сборки
+- Не видно ошибок при падении сборки
+
+**Причина:**
+- Фоновые PowerShell jobs подавляют stdout
+- Start-Job не показывает вывод в реальном времени
+- Вывод буферизуется и доступен только после завершения
+
+**Диагностика:**
+```powershell
+# Проверить запущенные jobs
+Get-Job
+
+# Получить вывод завершенного job
+Receive-Job -Id 1
+
+# Проверить статус
+Get-Job | Format-Table Id, State, HasMoreData
+```
+
+**Решение:**
+
+**Использовать controlPwshProcess вместо Start-Job:**
+```powershell
+# ❌ Плохо - нет вывода в реальном времени
+Start-Job -ScriptBlock {
+    docker build -t image:tag .
+}
+
+# ✅ Хорошо - вывод доступен через getProcessOutput
+kiro controlPwshProcess --action start `
+  --command "docker build -t image:tag ." `
+  --path "docker/sdk"
+
+# Мониторить вывод
+kiro getProcessOutput --processId <id> --lines 20
+```
+
+**Или использовать Start-Process с перенаправлением:**
+```powershell
+# Перенаправить вывод в файл
+Start-Process -FilePath "docker" `
+  -ArgumentList "build -t image:tag ." `
+  -RedirectStandardOutput "build.log" `
+  -RedirectStandardError "build.err.log" `
+  -NoNewWindow
+
+# Мониторить файл
+Get-Content build.log -Wait -Tail 20
+```
+
+### 12. Формат IPK пакета не распознаётся
+
+**Симптомы:**
+- `tar: This does not look like a tar archive`
+- Ошибка при извлечении control.tar.gz
+- Валидация пакета падает
+
+**Причина:**
+- Новые версии OpenWrt используют ar archive формат
+- Старый скрипт ожидает tar.gz формат
+- Разные версии OpenWrt используют разные форматы
+
+**Диагностика:**
+```bash
+# Определить формат файла
+file openwrt-captive-monitor_*.ipk
+
+# Вывод для ar archive:
+# openwrt-captive-monitor_1.0.0_all.ipk: Debian binary package (format 2.0)
+
+# Вывод для tar.gz:
+# openwrt-captive-monitor_1.0.0_all.ipk: gzip compressed data
+```
+
+**Решение:**
+```bash
+#!/bin/bash
+# Универсальный скрипт извлечения IPK
+
+IPK_FILE=$1
+
+# Определить формат
+if file "$IPK_FILE" | grep -q "Debian binary package"; then
+    echo "Detected ar archive format"
+    
+    # Новый формат - использовать ar
+    ar x "$IPK_FILE" control.tar.gz
+    tar -xzf control.tar.gz ./control
+    
+elif file "$IPK_FILE" | grep -q "gzip compressed"; then
+    echo "Detected tar.gz format"
+    
+    # Старый формат - использовать tar
+    tar -xzOf "$IPK_FILE" control.tar.gz | tar -xzO ./control
+    
+else
+    echo "ERROR: Unknown IPK format"
+    file "$IPK_FILE"
+    exit 1
+fi
+
+# Теперь можно работать с файлом control
+cat control
+```
+
+**Для валидации версии:**
+```bash
+#!/bin/bash
+# validate-ipk-version.sh
+
+set -euo pipefail
+
+IPK_FILE=$(find dist -name "*.ipk" | head -1)
+VERSION=$(cat VERSION)
+
+echo "Validating IPK version..."
+echo "Expected version: $VERSION"
+echo "IPK file: $IPK_FILE"
+
+# Создать временную директорию
+TEMP_DIR=$(mktemp -d)
+cd "$TEMP_DIR"
+
+# Извлечь control файл (универсально)
+if file "$IPK_FILE" | grep -q "Debian binary"; then
+    ar x "$IPK_FILE" control.tar.gz
+    tar -xzf control.tar.gz ./control
+else
+    tar -xzOf "$IPK_FILE" control.tar.gz | tar -xzO ./control > control
+fi
+
+# Проверить версию
+IPK_VERSION=$(grep "^Version:" control | cut -d' ' -f2)
+
+echo "IPK version: $IPK_VERSION"
+
+if [ "$IPK_VERSION" != "$VERSION" ]; then
+    echo "❌ ERROR: Version mismatch"
+    exit 1
+fi
+
+echo "✅ Version matches"
+
+# Очистка
+cd -
+rm -rf "$TEMP_DIR"
+```

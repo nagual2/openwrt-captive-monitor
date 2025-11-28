@@ -181,7 +181,6 @@ CAPTIVE_ACTIVE=0
 ACTIVE_PORTAL_URL=""
 ACTIVE_PORTAL_HOST=""
 ACTIVE_PORTAL_IP=""
-ACTIVE_PORTAL_IP6=""
 
 # Результаты HTTP-проверок
 HTTP_PROBE_RESULT_URL=""
@@ -1055,16 +1054,15 @@ detect_firewall_backend() {
 
 setup_firewall_redirects() {
     local portal_ip4="$1"
-    local portal_ip6="$2"
 
     detect_firewall_backend
 
     case "$FIREWALL_BACKEND" in
         nftables)
-            setup_firewall_redirects_nft "$portal_ip4" "$portal_ip6"
+            setup_firewall_redirects_nft "$portal_ip4"
             ;;
         *)
-            setup_firewall_redirects_iptables "$portal_ip4" "$portal_ip6"
+            setup_firewall_redirects_iptables "$portal_ip4"
             ;;
     esac
 }
@@ -1088,7 +1086,6 @@ cleanup_firewall_redirects() {
 
 setup_firewall_redirects_iptables() {
     local portal_ip4="$1"
-    local portal_ip6="$2"
 
     ensure_lan_interface
     ensure_lan_ip
@@ -1179,7 +1176,6 @@ cleanup_firewall_redirects_iptables() {
 
 setup_firewall_redirects_nft() {
     local portal_ip4="$1"
-    local portal_ip6="$2"
 
     ensure_lan_interface
     ensure_lan_ip
@@ -1212,25 +1208,9 @@ setup_firewall_redirects_nft() {
         nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip daddr "$portal_ip4" tcp dport 80 return comment "captive-http-bypass-v4" > /dev/null 2>&1 || log_warn "Не удалось добавить правило обхода IPv4 портала в nftables"
     fi
 
-    if [ "$nft_ipv6_enabled" = "1" ] && [ -n "$portal_ip6" ]; then
-        nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip6 daddr "$portal_ip6" tcp dport 80 return comment "captive-http-bypass-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило обхода IPv6 портала в nftables"
-    elif [ -n "$portal_ip6" ] && [ "$HTTPD_IPV6_READY" != "1" ]; then
-        log_warn "HTTP сервер не слушает IPv6, пропускаем правило обхода портала в nftables"
-    fi
-
     if ! nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv4 tcp dport 80 dnat to "$LAN_IP:$HTTPD_PORT" comment "captive-http-redirect-v4" > /dev/null 2>&1; then
         log_error "Не удалось добавить правило IPv4 HTTP DNAT в nftables"
         return 1
-    fi
-
-    if [ "$nft_ipv6_enabled" = "1" ]; then
-        nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv6 tcp dport 80 dnat to "[$LAN_IPV6]:$HTTPD_PORT" comment "captive-http-redirect-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило IPv6 HTTP DNAT в nftables"
-    else
-        if [ "$HTTPD_IPV6_READY" = "1" ] && [ -z "$LAN_IPV6" ]; then
-            log_warn "IPv6 адрес LAN не найден, пропускаем IPv6 HTTP DNAT в nftables"
-        elif [ "$HTTPD_IPV6_READY" != "1" ] && [ -n "$LAN_IPV6" ]; then
-            log_warn "HTTP сервер не слушает IPv6, пропускаем IPv6 HTTP DNAT в nftables"
-        fi
     fi
 
     if ! nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv4 udp dport 53 dnat to "$LAN_IP" comment "captive-dns-redirect-udp-v4" > /dev/null 2>&1; then
@@ -1241,17 +1221,6 @@ setup_firewall_redirects_nft() {
     if ! nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv4 tcp dport 53 dnat to "$LAN_IP" comment "captive-dns-redirect-tcp-v4" > /dev/null 2>&1; then
         log_error "Не удалось добавить правило IPv4 TCP DNS DNAT в nftables"
         return 1
-    fi
-
-    if [ "$nft_ipv6_enabled" = "1" ]; then
-        nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv6 udp dport 53 dnat to "[$LAN_IPV6]" comment "captive-dns-redirect-udp-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило IPv6 UDP DNS DNAT в nftables"
-        nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv6 tcp dport 53 dnat to "[$LAN_IPV6]" comment "captive-dns-redirect-tcp-v6" > /dev/null 2>&1 || log_warn "Не удалось добавить правило IPv6 TCP DNS DNAT в nftables"
-    else
-        if [ "$HTTPD_IPV6_READY" = "1" ] && [ -z "$LAN_IPV6" ]; then
-            log_warn "IPv6 адрес LAN не найден, пропускаем IPv6 DNS DNAT в nftables"
-        elif [ "$HTTPD_IPV6_READY" != "1" ] && [ -n "$LAN_IPV6" ]; then
-            log_warn "HTTP сервер не слушает IPv6, пропускаем IPv6 DNS DNAT в nftables"
-        fi
     fi
 
     log_info "nftables настроен для перехвата HTTP и DNS на интерфейсе $LAN_INTERFACE"
@@ -1276,7 +1245,6 @@ setup_captive_intercept() {
     local portal_url="$1"
     local portal_host="$2"
     local portal_ip4="$3"
-    local portal_ip6="$4"
 
     ensure_lan_ip
 
@@ -1296,7 +1264,7 @@ setup_captive_intercept() {
 
     write_dnsmasq_intercept "$portal_host" "$portal_ip4"
 
-    if ! setup_firewall_redirects "$portal_ip4" "$portal_ip6"; then
+    if ! setup_firewall_redirects "$portal_ip4"; then
         cleanup_firewall_redirects
         stop_captive_httpd
         remove_dns_intercept
@@ -1307,7 +1275,6 @@ setup_captive_intercept() {
     ACTIVE_PORTAL_URL="$portal_url"
     ACTIVE_PORTAL_HOST="$portal_host"
     ACTIVE_PORTAL_IP="$portal_ip4"
-    ACTIVE_PORTAL_IP6="$portal_ip6"
 
     log_info "Перехват captive-портала включен"
     return 0
@@ -1316,7 +1283,7 @@ setup_captive_intercept() {
 cleanup_captive_intercept() {
     if [ "$CAPTIVE_ACTIVE" = "1" ] || [ -f "$DNSMASQ_CAPTIVE_CONF" ] || [ -f "$HTTPD_PIDFILE" ]; then
         if [ -n "$ACTIVE_PORTAL_URL" ]; then
-            log_info "Очистка перехвата captive-портала для $ACTIVE_PORTAL_URL (host: ${ACTIVE_PORTAL_HOST:--}, ipv4: ${ACTIVE_PORTAL_IP:--}, ipv6: ${ACTIVE_PORTAL_IP6:--})"
+            log_info "Очистка перехвата captive-портала для $ACTIVE_PORTAL_URL (host: ${ACTIVE_PORTAL_HOST:--}, ipv4: ${ACTIVE_PORTAL_IP:--})"
         else
             log_info "Очистка перехвата captive-портала"
         fi
@@ -1330,7 +1297,6 @@ cleanup_captive_intercept() {
     ACTIVE_PORTAL_URL=""
     ACTIVE_PORTAL_HOST=""
     ACTIVE_PORTAL_IP=""
-    ACTIVE_PORTAL_IP6=""
 }
 
 # ============================================================================
@@ -1371,7 +1337,6 @@ check_and_fix_connection() {
 
     if detect_captive_portal; then
         local portal_ip4=""
-        local portal_ip6=""
         if [ -n "$CAPTIVE_PORTAL_HOST" ]; then
             if portal_ip4=$(resolve_portal_ipv4 "$CAPTIVE_PORTAL_HOST"); then
                 if [ -n "$portal_ip4" ]; then
@@ -1380,15 +1345,8 @@ check_and_fix_connection() {
             else
                 portal_ip4=""
             fi
-            if portal_ip6=$(resolve_portal_ipv6 "$CAPTIVE_PORTAL_HOST"); then
-                if [ -n "$portal_ip6" ]; then
-                    log_info "IPv6 адрес портала: $portal_ip6"
-                fi
-            else
-                portal_ip6=""
-            fi
         fi
-        if setup_captive_intercept "$CAPTIVE_PORTAL_URL" "$CAPTIVE_PORTAL_HOST" "$portal_ip4" "$portal_ip6"; then
+        if setup_captive_intercept "$CAPTIVE_PORTAL_URL" "$CAPTIVE_PORTAL_HOST" "$portal_ip4"; then
             if wait_for_internet_after_intercept; then
                 return 0
             fi

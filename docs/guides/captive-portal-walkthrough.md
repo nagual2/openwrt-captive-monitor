@@ -352,21 +352,7 @@ logread | grep captive-monitor
 ## captive-monitor: Selected portal URL: http://portal1.example.com/login
 ```
 
-### IPv6 Captive Portals
 
-For networks with IPv6 captive portals:
-
-```bash
-## Enable IPv6 support
-uci set captive-monitor.config.lan_ipv6='fd00::1'
-uci set captive-monitor.config.enable_ipv6='1'
-
-## Monitor IPv6 traffic
-tcpdump -i br-lan ip6 -n
-
-## Check IPv6 firewall rules
-ip6tables -t nat -L CAPTIVE_HTTP_REDIRECT -n -v 2>/dev/null
-```
 
 ### Custom Portal Handling
 

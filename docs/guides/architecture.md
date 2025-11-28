@@ -471,7 +471,6 @@ Scalability Design
 │  Network Scaling:                                           │
 │  ├─ Multiple interfaces: Supported (per-interface config)    │
 │  ├─ VLAN support: Works with tagged interfaces             │
-│  ├─ IPv6 dual-stack: Full support                          │
 │  └─ Multiple gateways: Primary interface focus              │
 │                                                             │
 │  Performance Tuning:                                        │
