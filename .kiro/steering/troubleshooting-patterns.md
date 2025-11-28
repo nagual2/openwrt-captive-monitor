@@ -12,6 +12,295 @@
 6. **Валидация** - проверка, что проблема решена
 7. **Документация** - обновление docs/troubleshooting
 
+## Команды, требующие интерактивного ввода
+
+### Общая проблема: Команды зависают в ожидании ввода
+
+Многие команды могут зависать, ожидая интерактивного ввода с клавиатуры. Это особенно проблематично в:
+- Автоматизированных скриптах
+- CI/CD pipeline
+- Фоновых процессах
+- При работе через Kiro
+
+**Типичные признаки:**
+- Команда не выводит ничего и не завершается
+- Невозможно прервать через Ctrl+C
+- Процесс висит неопределенно долго
+- Нет сообщений об ошибках
+
+### Команды с пейджерами (less, more)
+
+**Проблемные команды:**
+```bash
+git show <commit>           # Открывает less
+git log                     # Открывает less
+git diff                    # Открывает less
+man <command>               # Открывает less/man pager
+less file.txt               # Интерактивный пейджер
+more file.txt               # Интерактивный пейджер
+```
+
+**Решение - отключить пейджер:**
+```bash
+# Git команды - использовать --no-pager
+git --no-pager show 9724d68
+git --no-pager show 9724d68 --stat
+git --no-pager log --oneline
+git --no-pager diff HEAD~1
+
+# Или установить переменную окружения
+export GIT_PAGER=cat
+git show 9724d68
+
+# Для конкретной команды
+GIT_PAGER=cat git show 9724d68
+
+# Глобально для всех git команд
+git config --global core.pager cat
+
+# Или использовать less с автовыходом
+git config --global core.pager "less -FRX"
+# -F: выйти если вывод помещается на экран
+# -R: разрешить ANSI цвета
+# -X: не очищать экран при выходе
+
+# Для man страниц
+export PAGER=cat
+man git
+
+# Для других команд с less/more
+cat file.txt | cat  # Вместо less
+```
+
+**Для скриптов и автоматизации:**
+```bash
+#!/bin/bash
+# Всегда отключать пейджеры в начале скрипта
+export GIT_PAGER=cat
+export PAGER=cat
+
+# Теперь все git команды работают без зависания
+git show HEAD
+git log --oneline -10
+git diff
+```
+
+### Интерактивные редакторы
+
+**Проблемные команды:**
+```bash
+git commit                  # Открывает vim/nano
+git rebase -i               # Открывает vim/nano
+git config --global --edit  # Открывает vim/nano
+crontab -e                  # Открывает vim/nano
+vim file.txt                # Интерактивный редактор
+nano file.txt               # Интерактивный редактор
+```
+
+**Решение - использовать флаги или переменные:**
+```bash
+# Git commit - использовать -m для сообщения
+git commit -m "commit message"  # Вместо просто git commit
+
+# Git rebase - избегать интерактивного режима
+git rebase main  # Вместо git rebase -i
+
+# Установить редактор по умолчанию
+export EDITOR=nano  # Или cat для неинтерактивного
+export VISUAL=nano
+
+# Для git
+git config --global core.editor nano
+
+# Для полностью неинтерактивного режима
+export EDITOR=cat
+export VISUAL=cat
+git config --global core.editor cat
+```
+
+### Команды с подтверждением (yes/no)
+
+**Проблемные команды:**
+```bash
+rm -i file.txt              # Спрашивает подтверждение
+cp -i src dst               # Спрашивает при перезаписи
+mv -i src dst               # Спрашивает при перезаписи
+apt-get install pkg         # Спрашивает Y/n
+yum install pkg             # Спрашивает y/N
+```
+
+**Решение - использовать флаги автоподтверждения:**
+```bash
+# Удаление без подтверждения
+rm -f file.txt              # Вместо rm -i
+
+# Копирование без подтверждения
+cp -f src dst               # Вместо cp -i
+
+# Перемещение без подтверждения
+mv -f src dst               # Вместо mv -i
+
+# apt-get с автоподтверждением
+apt-get install -y pkg      # -y отвечает yes на все вопросы
+apt-get upgrade -y
+
+# yum с автоподтверждением
+yum install -y pkg
+
+# Или использовать yes команду
+yes | apt-get install pkg
+yes | rm -i file.txt
+```
+
+### Docker интерактивные команды
+
+**Проблемные команды:**
+```bash
+docker exec -it container bash    # Интерактивный терминал
+docker run -it image bash         # Интерактивный терминал
+docker attach container           # Подключение к терминалу
+```
+
+**Решение - использовать неинтерактивный режим:**
+```bash
+# Выполнить команду без интерактивного режима
+docker exec container bash -c "ls -la"  # Без -it
+
+# Запустить контейнер с командой
+docker run --rm image bash -c "echo hello"  # Без -it
+
+# Получить логи вместо attach
+docker logs container
+docker logs -f container  # Follow режим
+```
+
+### SSH команды
+
+**Проблемные команды:**
+```bash
+ssh user@host                     # Может спросить пароль
+ssh user@host "command"           # Может спросить пароль
+scp file user@host:/path          # Может спросить пароль
+```
+
+**Решение - использовать ключи или флаги:**
+```bash
+# Использовать SSH ключи (без пароля)
+ssh-keygen -t ed25519
+ssh-copy-id user@host
+
+# Отключить интерактивные запросы
+ssh -o BatchMode=yes user@host
+ssh -o StrictHostKeyChecking=no user@host  # Не спрашивать про known_hosts
+
+# Для scp
+scp -o BatchMode=yes file user@host:/path
+
+# Использовать sshpass для автоматического ввода пароля (не рекомендуется)
+sshpass -p 'password' ssh user@host
+```
+
+### Команды с прогресс-барами
+
+**Проблемные команды:**
+```bash
+wget url                    # Показывает прогресс
+curl url                    # Может показывать прогресс
+rsync -av src dst           # Показывает прогресс
+```
+
+**Решение - использовать тихий режим:**
+```bash
+# wget в тихом режиме
+wget -q url                 # Quiet mode
+wget -nv url                # Non-verbose mode
+
+# curl в тихом режиме
+curl -s url                 # Silent mode
+curl -sS url                # Silent но показывать ошибки
+
+# rsync без прогресса
+rsync -a src dst            # Без -v (verbose)
+rsync -aq src dst           # Quiet mode
+```
+
+### Команды с пагинацией вывода
+
+**Проблемные команды:**
+```bash
+systemctl status service    # Может открыть less
+journalctl                  # Открывает less
+kubectl logs pod            # Может открыть less
+```
+
+**Решение - отключить пагинацию:**
+```bash
+# systemctl без пейджера
+systemctl --no-pager status service
+export SYSTEMD_PAGER=cat
+
+# journalctl без пейджера
+journalctl --no-pager
+export SYSTEMD_PAGER=cat
+
+# kubectl без пейджера
+kubectl logs pod --tail=100  # Ограничить вывод
+```
+
+### Универсальное решение для скриптов
+
+**Добавь в начало каждого bash скрипта:**
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# Отключить все интерактивные режимы
+export GIT_PAGER=cat
+export PAGER=cat
+export SYSTEMD_PAGER=cat
+export EDITOR=cat
+export VISUAL=cat
+export DEBIAN_FRONTEND=noninteractive  # Для apt-get
+
+# Теперь все команды работают неинтерактивно
+```
+
+### Проверка зависших процессов
+
+**Диагностика:**
+```bash
+# Найти зависший процесс
+ps aux | grep -E "git|less|vim|nano"
+
+# Проверить что процесс ждет ввода
+lsof -p <pid> | grep -E "stdin|tty"
+
+# Убить зависший процесс
+kill -9 <pid>
+
+# Или найти и убить все git процессы
+pkill -9 git
+```
+
+### Чеклист перед запуском команды
+
+Перед запуском команды в скрипте/автоматизации проверь:
+
+1. ✅ Команда не открывает пейджер (less, more)?
+   - Используй `--no-pager` или `export PAGER=cat`
+
+2. ✅ Команда не открывает редактор (vim, nano)?
+   - Используй флаги `-m` или `export EDITOR=cat`
+
+3. ✅ Команда не спрашивает подтверждение (y/n)?
+   - Используй флаги `-y`, `-f`, `--yes`
+
+4. ✅ Команда не требует интерактивного терминала?
+   - Убери флаги `-it` для docker
+
+5. ✅ Команда не спрашивает пароль?
+   - Используй SSH ключи или `-o BatchMode=yes`
+
 ## Типичные проблемы и решения
 
 ### 1. Docker образ превышает 2GB
