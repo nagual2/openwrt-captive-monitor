@@ -39,6 +39,7 @@ echo
 # Шаг 5: Установка новой версии
 echo "=== Step 5: Installing new version ==="
 PACKAGE_NAME=$(basename "$PACKAGE_FILE")
+# shellcheck disable=SC2029 # Variable intentionally expands on client side
 ssh root@"$ROUTER_IP" "opkg install /tmp/$PACKAGE_NAME"
 echo
 
