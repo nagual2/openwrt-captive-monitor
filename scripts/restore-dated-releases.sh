@@ -56,7 +56,8 @@ log_warn() {
 }
 
 log_error() {
-  local msg="[ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $*"
+  local msg
+  msg="[ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $*"
   echo "$msg" >&2
   echo "$msg" >> "$LOG_FILE"
   ERRORS+=("$msg")
