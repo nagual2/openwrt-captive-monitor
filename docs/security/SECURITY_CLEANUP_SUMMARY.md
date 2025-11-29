@@ -15,7 +15,7 @@
 
 The following GitHub Personal Access Token was exposed and has been removed from the repository configuration:
 
-**Token**: `ghs_s1O4XcIZEDFDK8rKZfqk7vr8gO77B21FGnNJ`
+**Token**: `<redacted GitHub PAT value>`
 
 **Action Required**: 
 1. Immediately revoke this token at: https://github.com/settings/tokens
@@ -133,7 +133,7 @@ Created `.env.example` with documentation for required environment variables.
 ## 🚀 Next Steps
 
 ### Immediate (Within 1 Hour)
-1. **REVOKE** the GitHub token: `ghs_s1O4XcIZEDFDK8rKZfqk7vr8gO77B21FGnNJ`
+1. **REVOKE** the GitHub token: `<redacted GitHub PAT value>`
 2. **REVIEW** GitHub access logs for unauthorized usage
 3. **ENABLE** GitHub secret scanning in repository settings
 
