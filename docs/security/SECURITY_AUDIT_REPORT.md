@@ -47,7 +47,7 @@
 
 **Details**:
 ```
-url = https://nagual2:ghs_FmX1AjSwh8C7jy581Ja2jgCA3qLfrP1D7foC@github.com/nagual2/openwrt-captive-monitor.git
+url = https://nagual2:<GITHUB_PAT_REDACTED>@github.com/nagual2/openwrt-captive-monitor.git
 ```
 
 **Impact**:
@@ -444,7 +444,7 @@ The `.git/config` file contains a GitHub Personal Access Token. While this file 
 
 1. **🔴 CRITICAL: Revoke GitHub PAT**
    - Go to https://github.com/settings/tokens
-   - Find and revoke token: `ghs_FmX1AjSwh8C7jy581Ja2jgCA3qLfrP1D7foC`
+   - Find and revoke token: `<GITHUB_PAT_REDACTED>`
    - Update git remote configuration to use HTTPS without token or use SSH
    - Command: `git remote set-url origin https://github.com/nagual2/openwrt-captive-monitor.git`
 
