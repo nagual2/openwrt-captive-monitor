@@ -36,7 +36,7 @@
 
 ### 1. [CRITICAL] GitHub Personal Access Token in `.git/config:7`
    - **What**: GitHub Personal Access Token (PAT) exposed in git remote URL
-   - **Value**: `ghs_s1O4XcIZEDFDK8rKZfqk7vr8gO77B21FGnNJ`
+   - **Value**: `<redacted GitHub PAT value>` (actual token removed from documentation)
    - **Removed**: YES ✅
    - **Rotated**: N/A (Local config only, not in git history)
    - **Action**: Replaced with clean HTTPS URL without token
@@ -219,7 +219,7 @@ id_rsa*
 ## Credential Rotation Status
 
 ### Critical - IMMEDIATE ACTION REQUIRED
-- **GitHub PAT**: `ghs_s1O4XcIZEDFDK8rKZfqk7vr8gO77B21FGnNJ`
+- **GitHub PAT**: `<redacted GitHub PAT value>`
   - **Status**: ⚠️ **NEEDS IMMEDIATE REVOCATION**
   - **Action**: Revoke at https://github.com/settings/tokens
   - **Impact**: Was only in local git config, not committed
