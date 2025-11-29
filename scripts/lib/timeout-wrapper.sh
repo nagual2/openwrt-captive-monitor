@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-TIMEOUT=${TIMEOUT:-30}  # По умолчанию 30 секунд
+TIMEOUT=${TIMEOUT:-30} # По умолчанию 30 секунд
 
 # Отключить все интерактивные элементы
 export GIT_PAGER=cat

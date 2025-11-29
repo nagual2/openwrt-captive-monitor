@@ -25,12 +25,12 @@ set -eu
 
 # Enable pipefail where supported
 if (set -o pipefail) 2> /dev/null; then
-  # shellcheck disable=SC3040
-  set -o pipefail
+    # shellcheck disable=SC3040
+    set -o pipefail
 fi
 
 if [ "${TRACE:-0}" = "1" ]; then
-  set -x
+    set -x
 fi
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
@@ -40,7 +40,7 @@ script_dir=$(cd "$(dirname "$0")" && pwd)
 . "$script_dir/lib/colors.sh"
 
 print_usage() {
-  cat << 'EOF'
+    cat << 'EOF'
 Usage: validate-ipk-version.sh <ipk_file> [context]
 
 Validate that an .ipk archive contains control metadata with a non-empty
@@ -58,11 +58,11 @@ EOF
 }
 
 require_command() {
-  cmd="$1"
-  if ! command -v "$cmd" > /dev/null 2>&1; then
-    printf "%serror:%s required command '%s' not found in PATH\n" "$RED" "$NC" "$cmd" >&2
-    exit 1
-  fi
+    cmd="$1"
+    if ! command -v "$cmd" > /dev/null 2>&1; then
+        printf "%serror:%s required command '%s' not found in PATH\n" "$RED" "$NC" "$cmd" >&2
+        exit 1
+    fi
 }
 
 # We only need a very small set of tools
@@ -72,22 +72,22 @@ require_command grep
 require_command mktemp
 
 if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-  print_usage >&2
-  exit 1
+    print_usage >&2
+    exit 1
 fi
 
 ipk_file="$1"
 context="${2:-}"
 
 if [ ! -f "$ipk_file" ]; then
-  printf "%serror:%s IPK file not found: %s\n" "$RED" "$NC" "$ipk_file" >&2
-  exit 1
+    printf "%serror:%s IPK file not found: %s\n" "$RED" "$NC" "$ipk_file" >&2
+    exit 1
 fi
 
 printf "%s=== Validating IPK Version metadata ===%s\n" "$CYAN" "$NC"
 printf "Package: %s\n" "$ipk_file"
 if [ -n "$context" ]; then
-  printf "Context: %s\n" "$context"
+    printf "Context: %s\n" "$context"
 fi
 printf "\n"
 
@@ -96,9 +96,9 @@ temp_dir=""
 
 # shellcheck disable=SC2317  # cleanup is invoked via trap
 cleanup() {
-  if [ -n "$temp_dir" ] && [ -d "$temp_dir" ]; then
-    rm -rf "$temp_dir"
-  fi
+    if [ -n "$temp_dir" ] && [ -d "$temp_dir" ]; then
+        rm -rf "$temp_dir"
+    fi
 }
 
 trap 'cleanup' EXIT INT TERM
@@ -111,47 +111,47 @@ mkdir -p "$work_dir"
 
 # Resolve IPK path to an absolute path so extraction works from any CWD
 case "$ipk_file" in
-  /*) ipk_path="$ipk_file" ;;
-  *) ipk_path="$(pwd)/$ipk_file" ;;
+    /*) ipk_path="$ipk_file" ;;
+    *) ipk_path="$(pwd)/$ipk_file" ;;
 esac
 
 # Extract .ipk archive (try tar.gz first, then ar for legacy format)
 if ! tar -xzf "$ipk_path" -C "$work_dir" 2> /dev/null; then
-  # Fall back to ar extraction for legacy format
-  (
-    cd "$work_dir"
-    ar x "$ipk_path" 2> /dev/null
-  ) || {
-    printf "%serror:%s failed to extract IPK archive\n" "$RED" "$NC" >&2
-    exit 1
-  }
+    # Fall back to ar extraction for legacy format
+    (
+        cd "$work_dir"
+        ar x "$ipk_path" 2> /dev/null
+    ) || {
+        printf "%serror:%s failed to extract IPK archive\n" "$RED" "$NC" >&2
+        exit 1
+    }
 fi
 
 # Check for control archive
 if [ ! -f "$work_dir/control.tar.gz" ]; then
-  printf "%serror:%s control.tar.gz not found in IPK\n" "$RED" "$NC" >&2
-  exit 1
+    printf "%serror:%s control.tar.gz not found in IPK\n" "$RED" "$NC" >&2
+    exit 1
 fi
 
 # Extract control archive
 control_dir="$temp_dir/control"
 mkdir -p "$control_dir"
 if ! tar -xzf "$work_dir/control.tar.gz" -C "$control_dir" 2> /dev/null; then
-  printf "%serror:%s failed to extract control archive\n" "$RED" "$NC" >&2
-  exit 1
+    printf "%serror:%s failed to extract control archive\n" "$RED" "$NC" >&2
+    exit 1
 fi
 
 # Find control file
 control_file=""
 if [ -f "$control_dir/control" ]; then
-  control_file="$control_dir/control"
+    control_file="$control_dir/control"
 else
-  control_file=$(find "$control_dir" -type f -name control 2> /dev/null | head -n 1 || true)
+    control_file=$(find "$control_dir" -type f -name control 2> /dev/null | head -n 1 || true)
 fi
 
 if [ -z "$control_file" ] || [ ! -f "$control_file" ]; then
-  printf "%serror:%s control file not found in package\n" "$RED" "$NC" >&2
-  exit 1
+    printf "%serror:%s control file not found in package\n" "$RED" "$NC" >&2
+    exit 1
 fi
 
 printf "%sControl metadata:%s\n" "$BLUE" "$NC"
@@ -162,8 +162,8 @@ printf "\n"
 version=$(grep '^Version:' "$control_file" | head -n 1 | sed 's/^Version:[[:space:]]*//' || true)
 
 if [ -z "$version" ]; then
-  printf "%serror:%s Version field not found or empty in control file\n" "$RED" "$NC" >&2
-  exit 1
+    printf "%serror:%s Version field not found or empty in control file\n" "$RED" "$NC" >&2
+    exit 1
 fi
 
 printf "%sExtracted Version:%s %s\n" "$YELLOW" "$NC" "$version"

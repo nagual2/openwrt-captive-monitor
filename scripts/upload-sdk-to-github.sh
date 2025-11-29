@@ -15,13 +15,13 @@ echo "✓ SDK downloaded: $SHA256"
 # Create GitHub Release
 echo "📤 Uploading to GitHub Release..."
 gh release create "sdk-${SDK_VERSION}" "$SDK_FILE" \
-  --title "OpenWrt SDK ${SDK_VERSION} Mirror" \
-  --notes "SDK mirror for fast CI/CD builds. Checksum: $SHA256" \
-  --repo "$REPO" ||
-  echo "Release already exists, updating..."
+    --title "OpenWrt SDK ${SDK_VERSION} Mirror" \
+    --notes "SDK mirror for fast CI/CD builds. Checksum: $SHA256" \
+    --repo "$REPO" ||
+    echo "Release already exists, updating..."
 # Update/create checksum file
 echo "$SHA256  $SDK_FILE" > sdk-checksum.txt
 gh release upload "sdk-${SDK_VERSION}" sdk-checksum.txt \
-  --repo "$REPO" \
-  --clobber || true
+    --repo "$REPO" \
+    --clobber || true
 echo "✅ SDK uploaded to: https://github.com/$REPO/releases/download/sdk-${SDK_VERSION}/$SDK_FILE"
