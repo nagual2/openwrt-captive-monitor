@@ -62,11 +62,11 @@ ssh root@$ROUTER_IP "
 echo ""
 echo "Step 5: Checking opkg database..."
 if ssh root@$ROUTER_IP "opkg list-installed | grep -q captive-monitor"; then
-    echo "⚠️  Package still in opkg database"
-    echo ""
-    echo "Try running: opkg remove openwrt-captive-monitor --force-remove"
+  echo "⚠️  Package still in opkg database"
+  echo ""
+  echo "Try running: opkg remove openwrt-captive-monitor --force-remove"
 else
-    echo "✅ Package not in opkg database"
+  echo "✅ Package not in opkg database"
 fi
 
 echo ""

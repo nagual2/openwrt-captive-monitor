@@ -7,8 +7,8 @@ ROUTER_IP="192.168.35.127"
 PACKAGE_FILE="${1:-dist/opkg/all/openwrt-captive-monitor_2025.11.28.3-1_all.ipk}"
 
 if [ ! -f "$PACKAGE_FILE" ]; then
-    echo "ERROR: Package file not found: $PACKAGE_FILE"
-    exit 1
+  echo "ERROR: Package file not found: $PACKAGE_FILE"
+  exit 1
 fi
 
 echo "=== Testing OpenWrt Captive Monitor Package ==="
@@ -18,52 +18,52 @@ echo ""
 
 # Функция для проверки установки
 check_installed() {
-    if ssh root@$ROUTER_IP "opkg list-installed | grep -q captive-monitor"; then
-        return 0
-    else
-        return 1
-    fi
+  if ssh root@$ROUTER_IP "opkg list-installed | grep -q captive-monitor"; then
+    return 0
+  else
+    return 1
+  fi
 }
 
 # Шаг 1: Проверка текущего состояния
 echo "=== Step 1: Checking current state ==="
 if check_installed; then
-    echo "⚠️  Package is already installed"
-    echo ""
-    echo "Please remove it manually:"
-    echo "  ssh root@$ROUTER_IP"
-    echo "  /etc/init.d/captive-monitor stop"
-    echo "  /etc/init.d/captive-monitor disable"
-    echo "  opkg remove openwrt-captive-monitor"
-    echo ""
-    echo "Or remove files manually if opkg fails:"
-    echo "  rm -f /usr/sbin/openwrt_captive_monitor"
-    echo "  rm -f /etc/init.d/captive-monitor"
-    echo "  rm -f /etc/config/captive-monitor"
-    echo "  rm -rf /usr/lib/opkg/info/openwrt-captive-monitor.*"
-    exit 1
+  echo "⚠️  Package is already installed"
+  echo ""
+  echo "Please remove it manually:"
+  echo "  ssh root@$ROUTER_IP"
+  echo "  /etc/init.d/captive-monitor stop"
+  echo "  /etc/init.d/captive-monitor disable"
+  echo "  opkg remove openwrt-captive-monitor"
+  echo ""
+  echo "Or remove files manually if opkg fails:"
+  echo "  rm -f /usr/sbin/openwrt_captive_monitor"
+  echo "  rm -f /etc/init.d/captive-monitor"
+  echo "  rm -f /etc/config/captive-monitor"
+  echo "  rm -rf /usr/lib/opkg/info/openwrt-captive-monitor.*"
+  exit 1
 else
-    echo "✅ Package is not installed"
+  echo "✅ Package is not installed"
 fi
 
 # Шаг 2: Копирование пакета
 echo ""
 echo "=== Step 2: Copying package to router ==="
 if scp "$PACKAGE_FILE" root@$ROUTER_IP:/tmp/; then
-    echo "✅ Package copied successfully"
+  echo "✅ Package copied successfully"
 else
-    echo "❌ Failed to copy package"
-    exit 1
+  echo "❌ Failed to copy package"
+  exit 1
 fi
 
 # Шаг 3: Установка пакета
 echo ""
 echo "=== Step 3: Installing package ==="
 if ssh root@$ROUTER_IP "opkg install /tmp/$(basename $PACKAGE_FILE)"; then
-    echo "✅ Package installed successfully"
+  echo "✅ Package installed successfully"
 else
-    echo "❌ Failed to install package"
-    exit 1
+  echo "❌ Failed to install package"
+  exit 1
 fi
 
 # Шаг 4: Проверка установленных файлов
@@ -72,23 +72,23 @@ echo "=== Step 4: Verifying installed files ==="
 
 echo "Checking main script..."
 if ssh root@$ROUTER_IP "test -f /usr/sbin/openwrt_captive_monitor"; then
-    echo "✅ /usr/sbin/openwrt_captive_monitor exists"
+  echo "✅ /usr/sbin/openwrt_captive_monitor exists"
 else
-    echo "❌ /usr/sbin/openwrt_captive_monitor missing"
+  echo "❌ /usr/sbin/openwrt_captive_monitor missing"
 fi
 
 echo "Checking init script..."
 if ssh root@$ROUTER_IP "test -f /etc/init.d/captive-monitor"; then
-    echo "✅ /etc/init.d/captive-monitor exists"
+  echo "✅ /etc/init.d/captive-monitor exists"
 else
-    echo "❌ /etc/init.d/captive-monitor missing"
+  echo "❌ /etc/init.d/captive-monitor missing"
 fi
 
 echo "Checking config file..."
 if ssh root@$ROUTER_IP "test -f /etc/config/captive-monitor"; then
-    echo "✅ /etc/config/captive-monitor exists"
+  echo "✅ /etc/config/captive-monitor exists"
 else
-    echo "❌ /etc/config/captive-monitor missing"
+  echo "❌ /etc/config/captive-monitor missing"
 fi
 
 # Шаг 5: Проверка конфигурации
@@ -115,9 +115,9 @@ ssh root@$ROUTER_IP "uci show captive-monitor"
 echo ""
 echo "=== Step 7: Starting service ==="
 if ssh root@$ROUTER_IP "/etc/init.d/captive-monitor start"; then
-    echo "✅ Service started"
+  echo "✅ Service started"
 else
-    echo "❌ Failed to start service"
+  echo "❌ Failed to start service"
 fi
 
 # Подождать 3 секунды
@@ -137,9 +137,9 @@ ssh root@$ROUTER_IP "logread | grep captive-monitor | tail -20" || echo "No logs
 echo ""
 echo "=== Step 10: Enabling autostart ==="
 if ssh root@$ROUTER_IP "/etc/init.d/captive-monitor enable"; then
-    echo "✅ Autostart enabled"
+  echo "✅ Autostart enabled"
 else
-    echo "❌ Failed to enable autostart"
+  echo "❌ Failed to enable autostart"
 fi
 
 echo ""
@@ -177,17 +177,17 @@ echo "✅ Autostart disabled"
 echo ""
 echo "=== Step 15: Removing package ==="
 if ssh root@$ROUTER_IP "opkg remove openwrt-captive-monitor"; then
-    echo "✅ Package removed successfully"
+  echo "✅ Package removed successfully"
 else
-    echo "❌ Failed to remove package"
-    echo ""
-    echo "Try manual removal:"
-    echo "  ssh root@$ROUTER_IP"
-    echo "  rm -f /usr/sbin/openwrt_captive_monitor"
-    echo "  rm -f /etc/init.d/captive-monitor"
-    echo "  rm -f /etc/config/captive-monitor"
-    echo "  rm -rf /usr/lib/opkg/info/openwrt-captive-monitor.*"
-    exit 1
+  echo "❌ Failed to remove package"
+  echo ""
+  echo "Try manual removal:"
+  echo "  ssh root@$ROUTER_IP"
+  echo "  rm -f /usr/sbin/openwrt_captive_monitor"
+  echo "  rm -f /etc/init.d/captive-monitor"
+  echo "  rm -f /etc/config/captive-monitor"
+  echo "  rm -rf /usr/lib/opkg/info/openwrt-captive-monitor.*"
+  exit 1
 fi
 
 # Шаг 16: Проверка удаления
@@ -195,9 +195,9 @@ echo ""
 echo "=== Step 16: Verifying removal ==="
 
 if check_installed; then
-    echo "❌ Package still appears in opkg list"
+  echo "❌ Package still appears in opkg list"
 else
-    echo "✅ Package removed from opkg list"
+  echo "✅ Package removed from opkg list"
 fi
 
 echo ""

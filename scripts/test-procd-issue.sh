@@ -10,26 +10,26 @@ echo
 
 # Функция для выполнения команды на роутере
 run_on_router() {
-    # shellcheck disable=SC2029 # Intentionally expand on client side
-    ssh root@"$ROUTER_IP" "$@"
+  # shellcheck disable=SC2029 # Intentionally expand on client side
+  ssh root@"$ROUTER_IP" "$@"
 }
 
 # Функция для проверки логов
 check_logs() {
-    echo "=== Checking logs ==="
-    run_on_router "logread | grep -E 'captive-monitor|procd' | tail -20"
+  echo "=== Checking logs ==="
+  run_on_router "logread | grep -E 'captive-monitor|procd' | tail -20"
 }
 
 # Функция для проверки процессов
 check_processes() {
-    echo "=== Checking processes ==="
-    run_on_router "ps | grep -E 'openwrt_captive|captive-monitor' || echo 'No processes found'"
+  echo "=== Checking processes ==="
+  run_on_router "ps | grep -E 'openwrt_captive|captive-monitor' || echo 'No processes found'"
 }
 
 # Функция для проверки procd сервисов
 check_procd_services() {
-    echo "=== Checking procd services ==="
-    run_on_router "ubus call service list | grep -A 10 captive || echo 'Service not found in procd'"
+  echo "=== Checking procd services ==="
+  run_on_router "ubus call service list | grep -A 10 captive || echo 'Service not found in procd'"
 }
 
 # Тест 1: Проверка текущего состояния
@@ -74,19 +74,19 @@ echo
 
 # Тест 8: Тест минимального init скрипта (если установлен)
 if run_on_router "test -f /etc/init.d/captive-monitor-minimal"; then
-    echo "=== Test 8: Testing minimal init script ==="
-    run_on_router "/etc/init.d/captive-monitor-minimal stop" || true
-    sleep 2
-    run_on_router "logread -c" || true
-    run_on_router "/etc/init.d/captive-monitor-minimal start"
-    sleep 3
-    echo "Minimal script logs:"
-    run_on_router "logread | grep captive-monitor-minimal | tail -10"
-    echo "Minimal script processes:"
-    check_processes
-    echo "Minimal script procd:"
-    check_procd_services
-    echo
+  echo "=== Test 8: Testing minimal init script ==="
+  run_on_router "/etc/init.d/captive-monitor-minimal stop" || true
+  sleep 2
+  run_on_router "logread -c" || true
+  run_on_router "/etc/init.d/captive-monitor-minimal start"
+  sleep 3
+  echo "Minimal script logs:"
+  run_on_router "logread | grep captive-monitor-minimal | tail -10"
+  echo "Minimal script processes:"
+  check_processes
+  echo "Minimal script procd:"
+  check_procd_services
+  echo
 fi
 
 # Тест 9: Ручной запуск для сравнения
