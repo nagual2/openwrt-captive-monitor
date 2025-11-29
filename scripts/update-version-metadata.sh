@@ -120,7 +120,8 @@ if command -v git > /dev/null 2>&1; then
     (
         cd "$repo_root"
         # Disable pager to prevent hanging
-        GIT_PAGER=cat git --no-pager diff -- VERSION package/openwrt-captive-monitor/Makefile || true
+        export GIT_PAGER=cat
+        git --no-pager diff -- VERSION package/openwrt-captive-monitor/Makefile || true
     )
 else
     printf '%snote:%s git not found in PATH; skipping diff output\n' "$YELLOW" "$NC"
