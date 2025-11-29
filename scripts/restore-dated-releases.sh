@@ -134,7 +134,7 @@ format_date_from_tag() {
     tag="${tag#v}"
 
     # Extract YYYY.M.D.N
-    if [[ "$tag" =~ ^([0-9]{4})\.([0-9]{1,2})\.([0-9]{1,2})\.[0-9]+$ ]]; then
+    if [[ $tag =~ ^([0-9]{4})\.([0-9]{1,2})\.([0-9]{1,2})\.[0-9]+$ ]]; then
         local year="${BASH_REMATCH[1]}"
         local month="${BASH_REMATCH[2]}"
         local day="${BASH_REMATCH[3]}"

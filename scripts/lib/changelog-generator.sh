@@ -127,13 +127,13 @@ format_changelog_markdown() {
         local short_sha="${sha:0:7}"
 
         # Categorize by conventional commit type
-        if [[ "$subject" =~ ^feat:.*$ ]] || [[ "$subject" =~ ^feat\(.*\):.*$ ]]; then
+        if [[ $subject =~ ^feat:.*$ ]] || [[ $subject =~ ^feat\(.*\):.*$ ]]; then
             feat_commits="${feat_commits}- ${subject#feat:} (${short_sha})"$'\n'
-        elif [[ "$subject" =~ ^fix:.*$ ]] || [[ "$subject" =~ ^fix\(.*\):.*$ ]]; then
+        elif [[ $subject =~ ^fix:.*$ ]] || [[ $subject =~ ^fix\(.*\):.*$ ]]; then
             fix_commits="${fix_commits}- ${subject#fix:} (${short_sha})"$'\n'
-        elif [[ "$subject" =~ ^docs:.*$ ]] || [[ "$subject" =~ ^docs\(.*\):.*$ ]]; then
+        elif [[ $subject =~ ^docs:.*$ ]] || [[ $subject =~ ^docs\(.*\):.*$ ]]; then
             docs_commits="${docs_commits}- ${subject#docs:} (${short_sha})"$'\n'
-        elif [[ "$subject" =~ ^ci:.*$ ]] || [[ "$subject" =~ ^ci\(.*\):.*$ ]]; then
+        elif [[ $subject =~ ^ci:.*$ ]] || [[ $subject =~ ^ci\(.*\):.*$ ]]; then
             ci_commits="${ci_commits}- ${subject#ci:} (${short_sha})"$'\n'
         else
             other_commits="${other_commits}- ${subject} (${short_sha})"$'\n'
@@ -218,7 +218,7 @@ extract_date_from_tag() {
     tag="${tag#v}"
 
     # Extract YYYY.M.D.N
-    if [[ "$tag" =~ ^([0-9]{4})\.([0-9]{1,2})\.([0-9]{1,2})\.[0-9]+$ ]]; then
+    if [[ $tag =~ ^([0-9]{4})\.([0-9]{1,2})\.([0-9]{1,2})\.[0-9]+$ ]]; then
         local year="${BASH_REMATCH[1]}"
         local month="${BASH_REMATCH[2]}"
         local day="${BASH_REMATCH[3]}"
