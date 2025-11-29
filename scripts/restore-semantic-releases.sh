@@ -23,7 +23,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Source utility libraries
+# shellcheck source=lib/changelog-parser.sh
 source "${SCRIPT_DIR}/lib/changelog-parser.sh"
+# shellcheck source=lib/commit-finder.sh
 source "${SCRIPT_DIR}/lib/commit-finder.sh"
 
 # Configuration

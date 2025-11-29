@@ -23,6 +23,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Source utility libraries
+# shellcheck source=lib/changelog-generator.sh
 source "${SCRIPT_DIR}/lib/changelog-generator.sh"
 
 # Configuration

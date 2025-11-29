@@ -59,6 +59,7 @@ fi
 # Шаг 3: Установка пакета
 echo ""
 echo "=== Step 3: Installing package ==="
+# shellcheck disable=SC2029
 if ssh root@$ROUTER_IP "opkg install /tmp/$(basename $PACKAGE_FILE)"; then
     echo "✅ Package installed successfully"
 else
@@ -225,6 +226,7 @@ ssh root@$ROUTER_IP "
 # Очистка временных файлов
 echo ""
 echo "=== Step 17: Cleanup ==="
+# shellcheck disable=SC2029
 ssh root@$ROUTER_IP "rm -f /tmp/$(basename $PACKAGE_FILE)"
 echo "✅ Temporary files removed"
 
