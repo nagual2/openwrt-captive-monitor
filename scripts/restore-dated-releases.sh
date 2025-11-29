@@ -38,19 +38,22 @@ declare -a MISSING_TAGS=()
 
 # Logging functions
 log_info() {
-  local msg="[INFO] $(date '+%Y-%m-%d %H:%M:%S') - $*"
+  local msg
+  msg="[INFO] $(date '+%Y-%m-%d %H:%M:%S') - $*"
   echo "$msg"
   echo "$msg" >> "$LOG_FILE"
 }
 
 log_success() {
-  local msg="[SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') - $*"
+  local msg
+  msg="[SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') - $*"
   echo "$msg"
   echo "$msg" >> "$LOG_FILE"
 }
 
 log_warn() {
-  local msg="[WARNING] $(date '+%Y-%m-%d %H:%M:%S') - $*"
+  local msg
+  msg="[WARNING] $(date '+%Y-%m-%d %H:%M:%S') - $*"
   echo "$msg" >&2
   echo "$msg" >> "$LOG_FILE"
 }
