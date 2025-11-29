@@ -12,8 +12,8 @@ files_dir="$pkg_root/files"
 
 # Parse Makefile variables
 parse_make_var() {
-    key="$1"
-    awk -F':=' -v key="$key" '
+  key="$1"
+  awk -F':=' -v key="$key" '
         $1 == key {
             gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
             gsub(/\r/, "", $2)
@@ -37,8 +37,8 @@ trap 'rm -rf "$build_dir"' EXIT
 
 # Parse more metadata
 parse_package_field() {
-    local field="$1"
-    awk -v field="$field" '
+  local field="$1"
+  awk -v field="$field" '
         /^define Package\/openwrt-captive-monitor$/ {inside=1; next}
         inside && /^endef$/ {inside=0}
         inside {

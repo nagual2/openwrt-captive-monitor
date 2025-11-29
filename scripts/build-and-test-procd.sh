@@ -17,8 +17,8 @@ echo
 echo "=== Step 2: Copying package to router ==="
 PACKAGE_FILE=$(find dist -name "openwrt-captive-monitor_*.ipk" | head -1)
 if [ -z "$PACKAGE_FILE" ]; then
-    echo "ERROR: Package file not found"
-    exit 1
+  echo "ERROR: Package file not found"
+  exit 1
 fi
 echo "Package: $PACKAGE_FILE"
 scp "$PACKAGE_FILE" root@"$ROUTER_IP":/tmp/
