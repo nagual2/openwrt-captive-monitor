@@ -14,15 +14,15 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 log_info() {
-  echo -e "${BLUE}INFO:${NC} $*"
+    echo -e "${BLUE}INFO:${NC} $*"
 }
 
 log_success() {
-  echo -e "${GREEN}SUCCESS:${NC} $*"
+    echo -e "${GREEN}SUCCESS:${NC} $*"
 }
 
 log_error() {
-  echo -e "${RED}ERROR:${NC} $*" >&2
+    echo -e "${RED}ERROR:${NC} $*" >&2
 }
 
 # Source the libraries
@@ -57,11 +57,11 @@ log_info "Test 3: Finding commit for existing tag v2025.11.27.13"
 echo ""
 commit=$(find_commit_for_version "v2025.11.27.13")
 if [ -n "$commit" ]; then
-  echo "Found commit: $commit"
-  git --no-pager log -1 --oneline "$commit"
-  log_success "Test 3 passed"
+    echo "Found commit: $commit"
+    git --no-pager log -1 --oneline "$commit"
+    log_success "Test 3 passed"
 else
-  log_error "Test 3 failed - commit not found"
+    log_error "Test 3 failed - commit not found"
 fi
 echo ""
 

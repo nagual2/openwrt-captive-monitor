@@ -15,17 +15,17 @@ set -euo pipefail
 # Output format: VERSION|DATE|FIRST_LINE
 # Example: v1.0.3|2025-11-XX|### Changed
 parse_changelog_versions() {
-  local changelog_file="${1:-docs/release/CHANGELOG.md}"
-  
-  if [ ! -f "$changelog_file" ]; then
-    echo "ERROR: CHANGELOG file not found: $changelog_file" >&2
-    return 1
-  fi
-  
-  # Extract semantic versions (v0.1.x, v1.0.x format)
-  # Match patterns like: ## [1.0.3](...) or ## v0.1.1
-  # Exclude dated versions (vYYYY.M.D.N format)
-  awk '
+    local changelog_file="${1:-docs/release/CHANGELOG.md}"
+
+    if [ ! -f "$changelog_file" ]; then
+        echo "ERROR: CHANGELOG file not found: $changelog_file" >&2
+        return 1
+    fi
+
+    # Extract semantic versions (v0.1.x, v1.0.x format)
+    # Match patterns like: ## [1.0.3](...) or ## v0.1.1
+    # Exclude dated versions (vYYYY.M.D.N format)
+    awk '
     /^## \[?[0-9]+\.[0-9]+\.[0-9]+\]?/ {
       # Skip if this looks like a dated version (year 2000+)
       if (match($0, /\[?20[0-9]{2}\.[0-9]+\.[0-9]+/)) {
@@ -74,24 +74,24 @@ parse_changelog_versions() {
 #   $1 - version (e.g., "v1.0.3" or "1.0.3")
 # Output: Full changelog text for that version
 get_changelog_for_version() {
-  local version=$1
-  local changelog_file="${2:-docs/release/CHANGELOG.md}"
-  
-  # Normalize version (ensure v prefix)
-  if [[ ! "$version" =~ ^v ]]; then
-    version="v${version}"
-  fi
-  
-  # Remove v prefix for matching
-  local version_number="${version#v}"
-  
-  if [ ! -f "$changelog_file" ]; then
-    echo "ERROR: CHANGELOG file not found: $changelog_file" >&2
-    return 1
-  fi
-  
-  # Extract content between version header and next version header
-  awk -v ver="$version_number" '
+    local version=$1
+    local changelog_file="${2:-docs/release/CHANGELOG.md}"
+
+    # Normalize version (ensure v prefix)
+    if [[ ! "$version" =~ ^v ]]; then
+        version="v${version}"
+    fi
+
+    # Remove v prefix for matching
+    local version_number="${version#v}"
+
+    if [ ! -f "$changelog_file" ]; then
+        echo "ERROR: CHANGELOG file not found: $changelog_file" >&2
+        return 1
+    fi
+
+    # Extract content between version header and next version header
+    awk -v ver="$version_number" '
     BEGIN { found = 0; printing = 0 }
     
     # Match version header (with or without v prefix, with or without brackets)
@@ -127,9 +127,9 @@ get_changelog_for_version() {
 # List all semantic versions found in CHANGELOG
 # Output: One version per line (e.g., v1.0.3)
 list_semantic_versions() {
-  local changelog_file="${1:-docs/release/CHANGELOG.md}"
-  
-  parse_changelog_versions "$changelog_file" | cut -d'|' -f1
+    local changelog_file="${1:-docs/release/CHANGELOG.md}"
+
+    parse_changelog_versions "$changelog_file" | cut -d'|' -f1
 }
 
 # Check if a version exists in CHANGELOG
@@ -137,15 +137,15 @@ list_semantic_versions() {
 #   $1 - version to check (e.g., "v1.0.3" or "1.0.3")
 # Returns: 0 if exists, 1 if not
 version_exists_in_changelog() {
-  local version=$1
-  local changelog_file="${2:-docs/release/CHANGELOG.md}"
-  
-  # Normalize version
-  if [[ ! "$version" =~ ^v ]]; then
-    version="v${version}"
-  fi
-  
-  list_semantic_versions "$changelog_file" | grep -q "^${version}$"
+    local version=$1
+    local changelog_file="${2:-docs/release/CHANGELOG.md}"
+
+    # Normalize version
+    if [[ ! "$version" =~ ^v ]]; then
+        version="v${version}"
+    fi
+
+    list_semantic_versions "$changelog_file" | grep -q "^${version}$"
 }
 
 # Get date for a version from CHANGELOG
@@ -153,13 +153,13 @@ version_exists_in_changelog() {
 #   $1 - version (e.g., "v1.0.3")
 # Output: Date string or empty if not found
 get_version_date() {
-  local version=$1
-  local changelog_file="${2:-docs/release/CHANGELOG.md}"
-  
-  # Normalize version
-  if [[ ! "$version" =~ ^v ]]; then
-    version="v${version}"
-  fi
-  
-  parse_changelog_versions "$changelog_file" | grep "^${version}|" | cut -d'|' -f2
+    local version=$1
+    local changelog_file="${2:-docs/release/CHANGELOG.md}"
+
+    # Normalize version
+    if [[ ! "$version" =~ ^v ]]; then
+        version="v${version}"
+    fi
+
+    parse_changelog_versions "$changelog_file" | grep "^${version}|" | cut -d'|' -f2
 }

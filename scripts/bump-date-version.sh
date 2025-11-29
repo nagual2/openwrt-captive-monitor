@@ -32,12 +32,12 @@ set -eu
 
 # Enable pipefail where supported (BusyBox ash compatible)
 if (set -o pipefail) 2> /dev/null; then
-  # shellcheck disable=SC3040
-  set -o pipefail
+    # shellcheck disable=SC3040
+    set -o pipefail
 fi
 
 if [ "${TRACE:-0}" = "1" ]; then
-  set -x
+    set -x
 fi
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
@@ -47,7 +47,7 @@ repo_root=$(cd "$script_dir/.." && pwd)
 . "$script_dir/lib/colors.sh"
 
 print_usage() {
-  cat << 'EOF'
+    cat << 'EOF'
 Usage: scripts/bump-date-version.sh [YYYY.M.D.N]
 
 Bump date-based version metadata before creating a release tag.
@@ -79,55 +79,55 @@ EOF
 }
 
 if [ "$#" -gt 1 ]; then
-  printf '%serror:%s expected at most one argument (YYYY.M.D.N)\n' "$RED" "$NC" >&2
-  print_usage >&2
-  exit 1
+    printf '%serror:%s expected at most one argument (YYYY.M.D.N)\n' "$RED" "$NC" >&2
+    print_usage >&2
+    exit 1
 fi
 
 new_version=""
 
 if [ "$#" -eq 1 ]; then
-  # Allow either clean version (YYYY.M.D.N) or v-prefixed tag
-  raw_version=$1
-  # Strip a single leading 'v' for convenience
-  case "$raw_version" in
-    v*) new_version=${raw_version#v} ;;
-    *) new_version=$raw_version ;;
-  esac
+    # Allow either clean version (YYYY.M.D.N) or v-prefixed tag
+    raw_version=$1
+    # Strip a single leading 'v' for convenience
+    case "$raw_version" in
+        v*) new_version=${raw_version#v} ;;
+        *) new_version=$raw_version ;;
+    esac
 else
-  # No explicit version provided: compute the next version for today
-  if ! command -v git > /dev/null 2>&1; then
-    printf '%serror:%s git is required to compute the next version automatically\n' "$RED" "$NC" >&2
-    printf 'Hint: either install git or provide an explicit version: YYYY.M.D.N\n' >&2
-    exit 1
-  fi
-
-  {
-    cd "$repo_root"
-
-    YEAR=$(date -u +%Y)
-    MONTH=$(date -u +%-m)
-    DAY=$(date -u +%-d)
-    DATE_PREFIX="v${YEAR}.${MONTH}.${DAY}"
-
-    # Fetch tags if possible, but don't fail hard if network is unavailable
-    if git rev-parse --git-dir > /dev/null 2>&1; then
-      git fetch --tags --force > /dev/null 2>&1 || true
+    # No explicit version provided: compute the next version for today
+    if ! command -v git > /dev/null 2>&1; then
+        printf '%serror:%s git is required to compute the next version automatically\n' "$RED" "$NC" >&2
+        printf 'Hint: either install git or provide an explicit version: YYYY.M.D.N\n' >&2
+        exit 1
     fi
 
-    LAST_SEQUENCE=$(git tag --list "${DATE_PREFIX}.*" |
-      sed -nE "s/^${DATE_PREFIX}\.([0-9]+)$/\\1/p" |
-      sort -n |
-      tail -n1)
+    {
+        cd "$repo_root"
 
-    if [ -z "$LAST_SEQUENCE" ]; then
-      NEXT_SEQUENCE=1
-    else
-      NEXT_SEQUENCE=$((LAST_SEQUENCE + 1))
-    fi
+        YEAR=$(date -u +%Y)
+        MONTH=$(date -u +%-m)
+        DAY=$(date -u +%-d)
+        DATE_PREFIX="v${YEAR}.${MONTH}.${DAY}"
 
-    new_version="${YEAR}.${MONTH}.${DAY}.${NEXT_SEQUENCE}"
-  }
+        # Fetch tags if possible, but don't fail hard if network is unavailable
+        if git rev-parse --git-dir > /dev/null 2>&1; then
+            git fetch --tags --force > /dev/null 2>&1 || true
+        fi
+
+        LAST_SEQUENCE=$(git tag --list "${DATE_PREFIX}.*" |
+            sed -nE "s/^${DATE_PREFIX}\.([0-9]+)$/\\1/p" |
+            sort -n |
+            tail -n1)
+
+        if [ -z "$LAST_SEQUENCE" ]; then
+            NEXT_SEQUENCE=1
+        else
+            NEXT_SEQUENCE=$((LAST_SEQUENCE + 1))
+        fi
+
+        new_version="${YEAR}.${MONTH}.${DAY}.${NEXT_SEQUENCE}"
+    }
 fi
 
 # Delegate validation and metadata updates to the canonical helper.
@@ -137,4 +137,4 @@ printf '%sinfo:%s updating version metadata to %s\n' "$BLUE" "$NC" "$new_version
 
 printf '%sNew date-based version:%s %s\n' "$GREEN" "$NC" "$new_version"
 printf 'Create a matching tag (example): git tag -a "v%s" -m "Release v%s" && git push origin "v%s"\n' \
-  "$new_version" "$new_version" "$new_version"
+    "$new_version" "$new_version" "$new_version"
