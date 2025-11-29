@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC1091
 # restore-semantic-releases.sh - Restore historical semantic version releases
 #
 # This script restores missing semantic version releases (v0.1.x, v1.0.x)

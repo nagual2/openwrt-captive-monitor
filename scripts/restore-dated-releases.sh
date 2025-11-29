@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC1091
 # restore-dated-releases.sh - Restore missing dated version releases
 #
 # This script restores missing dated version releases (vYYYY.M.D.N)
