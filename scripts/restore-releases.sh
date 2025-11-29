@@ -119,7 +119,7 @@ parse_stat_from_log() {
     value=$(grep "$pattern" "$log_file" | tail -1 | sed -E 's/.*: ([0-9]+).*/\1/' || echo "0")
 
     # Validate it's a number
-    if ! [[ "$value" =~ ^[0-9]+$ ]]; then
+    if ! [[ $value =~ ^[0-9]+$ ]]; then
         value="0"
     fi
 

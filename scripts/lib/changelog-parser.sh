@@ -78,7 +78,7 @@ get_changelog_for_version() {
     local changelog_file="${2:-docs/release/CHANGELOG.md}"
 
     # Normalize version (ensure v prefix)
-    if [[ ! "$version" =~ ^v ]]; then
+    if [[ ! $version =~ ^v ]]; then
         version="v${version}"
     fi
 
@@ -141,7 +141,7 @@ version_exists_in_changelog() {
     local changelog_file="${2:-docs/release/CHANGELOG.md}"
 
     # Normalize version
-    if [[ ! "$version" =~ ^v ]]; then
+    if [[ ! $version =~ ^v ]]; then
         version="v${version}"
     fi
 
@@ -157,7 +157,7 @@ get_version_date() {
     local changelog_file="${2:-docs/release/CHANGELOG.md}"
 
     # Normalize version
-    if [[ ! "$version" =~ ^v ]]; then
+    if [[ ! $version =~ ^v ]]; then
         version="v${version}"
     fi
 

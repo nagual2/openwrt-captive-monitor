@@ -23,7 +23,7 @@ find_commit_for_version() {
     local date_hint="${2:-}"
 
     # Normalize version (ensure v prefix)
-    if [[ ! "$version" =~ ^v ]]; then
+    if [[ ! $version =~ ^v ]]; then
         version="v${version}"
     fi
 
@@ -151,7 +151,7 @@ find_by_date() {
     fi
 
     # If date has XX, try to find commits in that month
-    if [[ "$date_hint" =~ ([0-9]{4})-([0-9]{2})-XX ]]; then
+    if [[ $date_hint =~ ([0-9]{4})-([0-9]{2})-XX ]]; then
         local year="${BASH_REMATCH[1]}"
         local month="${BASH_REMATCH[2]}"
 
@@ -167,7 +167,7 @@ find_by_date() {
             echo "$commit"
             return 0
         fi
-    elif [[ "$date_hint" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    elif [[ $date_hint =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
         # Exact date provided
         # Find commits on or near that date (within 7 days)
         local commit
