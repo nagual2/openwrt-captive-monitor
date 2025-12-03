@@ -1,0 +1,74 @@
+{
+  "models": [
+    {
+      "title": "Grok 4.1 Fast (Free)",
+      "provider": "openai",
+      "model": "x-ai/grok-4.1-fast:free",
+      "apiBase": "https://openrouter.ai/api/v1",
+      "apiKey": "YOUR_OPENROUTER_API_KEY_REDACTED",
+      "contextLength": 8192,
+      "requestOptions": {
+        "headers": {
+          "HTTP-Referer": "https://localhost",
+          "X-Title": "OpenWrt Captive Monitor"
+        }
+      }
+    },
+    {
+      "title": "KAT-Coder-Pro (Free)",
+      "provider": "openai",
+      "model": "kwaipilot/kat-coder-pro:free",
+      "apiBase": "https://openrouter.ai/api/v1",
+      "apiKey": "YOUR_OPENROUTER_API_KEY_REDACTED",
+      "contextLength": 16384,
+      "requestOptions": {
+        "headers": {
+          "HTTP-Referer": "https://localhost",
+          "X-Title": "OpenWrt Captive Monitor"
+        }
+      }
+    },
+    {
+      "title": "Olmo 3 32B Think (Free)",
+      "provider": "openai",
+      "model": "allenai/olmo-3-32b-think:free",
+      "apiBase": "https://openrouter.ai/api/v1",
+      "apiKey": "YOUR_OPENROUTER_API_KEY_REDACTED",
+      "contextLength": 32768,
+      "requestOptions": {
+        "headers": {
+          "HTTP-Referer": "https://localhost",
+          "X-Title": "OpenWrt Captive Monitor"
+        }
+      }
+    }
+  ],
+  "tabAutocompleteModel": {
+    "title": "Trinity Mini (Free)",
+    "provider": "openai",
+    "model": "arcee-ai/trinity-mini:free",
+    "apiBase": "https://openrouter.ai/api/v1",
+    "apiKey": "YOUR_OPENROUTER_API_KEY_REDACTED",
+    "requestOptions": {
+      "headers": {
+        "HTTP-Referer": "https://localhost",
+        "X-Title": "OpenWrt Captive Monitor"
+      }
+    }
+  },
+  "customCommands": [
+    {
+      "name": "test",
+      "prompt": "Напиши unit тесты для этого кода:\n\n{{{ input }}}"
+    },
+    {
+      "name": "explain",
+      "prompt": "Объясни этот код на русском:\n\n{{{ input }}}"
+    },
+    {
+      "name": "fix",
+      "prompt": "Найди и исправь ошибки в этом коде:\n\n{{{ input }}}"
+    }
+  ],
+  "allowAnonymousTelemetry": false
+}

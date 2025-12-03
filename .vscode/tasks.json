@@ -1,0 +1,103 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Git: Status",
+      "type": "shell",
+      "command": "git status",
+      "problemMatcher": [],
+      "group": "none"
+    },
+    {
+      "label": "Git: Create Feature Branch",
+      "type": "shell",
+      "command": "git checkout -b feature/${input:branchName}",
+      "problemMatcher": [],
+      "group": "none"
+    },
+    {
+      "label": "GitHub: List Workflows",
+      "type": "shell",
+      "command": "gh workflow list",
+      "problemMatcher": [],
+      "group": "none"
+    },
+    {
+      "label": "GitHub: List Recent Runs",
+      "type": "shell",
+      "command": "gh run list --limit 10",
+      "problemMatcher": [],
+      "group": "none"
+    },
+    {
+      "label": "GitHub: PR Status",
+      "type": "shell",
+      "command": "gh pr status",
+      "problemMatcher": [],
+      "group": "none"
+    },
+    {
+      "label": "Docker: List Images",
+      "type": "shell",
+      "command": "docker images",
+      "problemMatcher": [],
+      "group": "none"
+    },
+    {
+      "label": "Docker: System Info",
+      "type": "shell",
+      "command": "docker info",
+      "problemMatcher": [],
+      "group": "none"
+    },
+    {
+      "label": "OpenWrt: Connect to Test Router",
+      "type": "shell",
+      "command": "ssh root@192.168.35.127",
+      "problemMatcher": [],
+      "group": "none"
+    },
+    {
+      "label": "OpenWrt: Check Router Status",
+      "type": "shell",
+      "command": "ssh root@192.168.35.127 'uname -a && uptime'",
+      "problemMatcher": [],
+      "group": "none"
+    },
+    {
+      "label": "Tests: Run Unit Tests",
+      "type": "shell",
+      "command": "wsl bash tests/run.sh",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Lint: ShellCheck",
+      "type": "shell",
+      "command": "wsl shellcheck openwrt_captive_monitor.sh",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Act: List Workflows",
+      "type": "shell",
+      "command": "act --list",
+      "problemMatcher": [],
+      "group": "none"
+    },
+    {
+      "label": "Project: Show Version",
+      "type": "shell",
+      "command": "Get-Content VERSION",
+      "problemMatcher": [],
+      "group": "none"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "branchName",
+      "type": "promptString",
+      "description": "Enter feature branch name (without 'feature/' prefix)"
+    }
+  ]
+}
