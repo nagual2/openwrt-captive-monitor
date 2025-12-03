@@ -1,4 +1,4 @@
-            "apiKey": "YOUR_OPENROUTER_API_KEY_REDACTED",
+            "apiKey": "YOUR_OPENROUTER_API_KEY_HERE",
             "models": [
                 "google/gemma-7b-it"
             ]
@@ -145,7 +145,7 @@
         "$settingsPath *",
         "npx *",
         "$env:GEMINI_API_KEY *",
-        "$env:GEMINI_API_KEY=\"YOUR_GEMINI_API_KEY_REDACTED\"; *",
+        "$env:GEMINI_API_KEY=\"YOUR_GEMINI_API_KEY_HERE\"; *",
         "[System.Environment]::SetEnvironmentVariable('GEMINI_API_KEY', *",
         "[System.Environment]::GetEnvironmentVariable('GEMINI_API_KEY', *",
         "$apiKey *",
@@ -175,3 +175,4 @@
     "remote.SSH.enableDynamicForwarding": false,
     "remote.SSH.connectTimeout": 30
 }
+
