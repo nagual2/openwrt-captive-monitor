@@ -1,0 +1,27 @@
+{
+  "recommendations": [
+    // AI & Code Completion
+    "anthropic.claude-for-vscode",
+    "github.copilot",
+    // Git & GitHub
+    "github.vscode-pull-request-github",
+    "eamodio.gitlens",
+    // Docker
+    "ms-azuretools.vscode-docker",
+    // Shell & Bash
+    "timonwong.shellcheck",
+    "foxundermoon.shell-format",
+    // YAML
+    "redhat.vscode-yaml",
+    // Markdown
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+    // Remote Development
+    "ms-vscode-remote.remote-ssh",
+    "ms-vscode-remote.remote-ssh-edit",
+    // Utilities
+    "editorconfig.editorconfig",
+    "streetsidesoftware.code-spell-checker",
+    "streetsidesoftware.code-spell-checker-russian"
+  ]
+}
