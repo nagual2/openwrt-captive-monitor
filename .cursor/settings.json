@@ -1,0 +1,154 @@
+{
+  // ============================================
+  // НАСТРОЙКИ ИНТЕРФЕЙСА
+  // ============================================
+  
+  // Расположение боковых панелей
+  "workbench.sideBar.location": "left",
+  
+  // Показывать боковую панель по умолчанию
+  "workbench.startupEditor": "welcomePage",
+  
+  // Расположение панели внизу (терминал, проблемы и т.д.)
+  "workbench.panel.defaultLocation": "bottom",
+  
+  // Показывать вторичную боковую панель справа (для чата и других панелей)
+  "workbench.activityBar.visible": true,
+  
+  // Настройки редактора
+  "editor.minimap.enabled": true,
+  "editor.minimap.side": "right",
+  
+  // Настройки файлового проводника
+  "explorer.confirmDelete": true,
+  "explorer.confirmDragAndDrop": true,
+  
+  // Автоматическое сохранение
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  
+  // Форматирование при сохранении
+  "editor.formatOnSave": true,
+  
+  // Настройки для работы с проектом
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true
+  },
+  
+  // Настройки поиска
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/artifacts": true,
+    "**/.git": true
+  },
+  
+  // ============================================
+  // НАСТРОЙКИ ПРОЕКТА (из Kiro)
+  // ============================================
+  
+  // Docker Desktop путь (для GitHub Actions локального тестирования)
+  "githubLocalActions.dockerDesktopPath": "C:/Program Files/Docker/Docker/Docker Desktop.exe",
+  
+  // ============================================
+  // НАСТРОЙКИ ТЕРМИНАЛА
+  // ============================================
+  
+  // Профили терминала для Windows
+  "terminal.integrated.profiles.windows": {
+    "PowerShell Core (pwsh)": {
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
+    },
+    "WSL": {
+      "path": "C:\\Windows\\System32\\wsl.exe"
+    }
+  },
+  
+  // Терминал по умолчанию
+  "terminal.integrated.defaultProfile.windows": "PowerShell Core (pwsh)",
+  
+  // ============================================
+  // НАСТРОЙКИ PYTHON
+  // ============================================
+  
+  // Путь к интерпретатору Python
+  "python.defaultInterpreterPath": "./.venv/bin/python",
+  
+  // ============================================
+  // НАСТРОЙКИ SSH (Remote-SSH)
+  // ============================================
+  
+  // Путь к SSH config файлу
+  "remote.SSH.configFile": "~/.ssh/config",
+  
+  // Показывать терминал при подключении
+  "remote.SSH.showLoginTerminal": true,
+  
+  // Платформы для удаленных хостов
+  "remote.SSH.remotePlatform": {
+    "openwrt-test": "linux",
+    "openwrt": "linux"
+  },
+  
+  // Отключить динамический проброс портов
+  "remote.SSH.enableDynamicForwarding": false,
+  
+  // Таймаут подключения SSH
+  "remote.SSH.connectTimeout": 30,
+  
+  // ============================================
+  // ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ ДЛЯ ПРОЕКТА
+  // ============================================
+  
+  // Настройки для файлов проекта
+  "files.associations": {
+    "*.sh": "shellscript",
+    "*.ps1": "powershell",
+    "Makefile": "makefile"
+  },
+  
+  // Настройки для bash скриптов
+  "[shellscript]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.trimAutoWhitespace": true
+  },
+  
+  // Настройки для PowerShell
+  "[powershell]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  
+  // Настройки для YAML (GitHub Actions)
+  "[yaml]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  
+  // Настройки для Markdown
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    }
+  },
+  
+  // Настройки для JSON
+  "[json]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true
+  },
+  
+  // Настройки для Makefile
+  "[makefile]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": false
+  }
+}
+

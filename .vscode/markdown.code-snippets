@@ -1,0 +1,49 @@
+{
+  "EARS Requirement": {
+    "prefix": "ears",
+    "body": [
+      "### ${1:Requirement Title}",
+      "",
+      "${2|THE,WHEN,WHILE,IF,WHERE|} ${3:condition}, THE ${4:system} SHALL ${5:response}",
+      "",
+      "**Acceptance Criteria:**",
+      "- ${6:criteria}",
+      ""
+    ],
+    "description": "EARS format requirement"
+  },
+  "Correctness Property": {
+    "prefix": "property",
+    "body": [
+      "**Property ${1:N}: ${2:Property Name}**",
+      "",
+      "*For any* ${3:input}, ${4:property description}",
+      "",
+      "**Validates: Requirements ${5:X.Y}**",
+      ""
+    ],
+    "description": "Correctness property for design.md"
+  },
+  "Task Item": {
+    "prefix": "task",
+    "body": [
+      "- [ ] **Task ${1:N}**: ${2:Task description}",
+      "  - **Implements**: ${3:Property/Requirement reference}",
+      "  - **Files**: ${4:file paths}",
+      "  - **Estimated effort**: ${5|Small,Medium,Large|}",
+      ""
+    ],
+    "description": "Task item for tasks.md"
+  },
+  "Conventional Commit": {
+    "prefix": "commit",
+    "body": [
+      "${1|feat,fix,docs,ci,refactor,test,chore,perf,style|}: ${2:description}",
+      "",
+      "${3:detailed description}",
+      "",
+      "${4:BREAKING CHANGE: }${5:breaking change description}"
+    ],
+    "description": "Conventional commit message"
+  }
+}
