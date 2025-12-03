@@ -59,7 +59,7 @@ Show-FreeModels
 # ~/.continue/config.yaml
 
 # Gemini API ключ:
-AIzaSyBq0VIHMZVtFsVxzZyKVxe60r2kFxgslhA
+YOUR_GEMINI_API_KEY_HERE
 ```
 
 **Использование:**

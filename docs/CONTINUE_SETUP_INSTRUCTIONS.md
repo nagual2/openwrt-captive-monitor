@@ -19,7 +19,7 @@ Continue установлен, но нужно правильно настрои
    - Для каждой модели замените `"apiKey": ""` на ваш ключ:
 
    ```json
-   "apiKey": "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"
+   "apiKey": "YOUR_OPENROUTER_API_KEY_HERE"
    ```
 
 4. **Сохраните файл**
@@ -109,7 +109,8 @@ Test-Coder "напиши код"
 
 **Ваш API ключ OpenRouter:**
 ```
-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
+YOUR_OPENROUTER_API_KEY_HERE
 ```
 
 Скопируйте его и вставьте в настройки Continue.
+
