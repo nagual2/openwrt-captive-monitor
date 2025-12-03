@@ -265,9 +265,9 @@ $architectures = @(
 foreach ($arch in $architectures) {
     $target = $arch.target
     $subtarget = $arch.subtarget
-    
+
     Write-Host "Starting build for $target-$subtarget"
-    
+
     # Запуск через Kiro controlPwshProcess
     kiro controlPwshProcess --action start `
         --command "docker build --build-arg SDK_TARGET=$target --build-arg SDK_SUBTARGET=$subtarget -t sdk:$target-$subtarget ." `
@@ -334,9 +334,9 @@ jobs:
           - {target: ramips, subtarget: mt76x8}
       max-parallel: 4
       fail-fast: false
-    
+
     runs-on: ubuntu-24.04
-    
+
     steps:
       - name: Build for ${{ matrix.arch.target }}-${{ matrix.arch.subtarget }}
         run: |
@@ -445,20 +445,20 @@ retry_with_backoff() {
     local max_retries=15
     local retry_count=0
     local wait_time=1
-    
+
     while [ $retry_count -lt $max_retries ]; do
         if "$@"; then
             return 0
         fi
-        
+
         retry_count=$((retry_count + 1))
         wait_time=$((2 ** retry_count))
         [ $wait_time -gt 60 ] && wait_time=60  # Max 60 секунд
-        
+
         echo "Retry $retry_count/$max_retries after ${wait_time}s..."
         sleep $wait_time
     done
-    
+
     echo "ERROR: Failed after $max_retries attempts"
     return 1
 }
@@ -677,8 +677,8 @@ Property 1: Image size compliance
 
 ### OpenWrt Test Environment
 
-**Хост:** `root@192.168.35.127`  
-**Доступ:** SSH по ключу (без пароля)  
+**Хост:** `root@192.168.35.127`
+**Доступ:** SSH по ключу (без пароля)
 **Назначение:** Тестирование пакетов OpenWrt, интеграционные тесты
 
 **Характеристики системы:**
@@ -740,7 +740,7 @@ echo "✅ Test completed successfully"
 
 ### SSH Config файлы
 
-**Windows:** `C:\Users\Администратор\.ssh\config`  
+**Windows:** `C:\Users\Администратор\.ssh\config`
 **WSL:** `~/.ssh/config`
 
 ### Настроенные хосты
@@ -948,3 +948,179 @@ gh run list --limit 5
 - Рутинных задач (форматирование, линтинг)
 - Промежуточных шагов в процессе решения
 - Вопросов, на которые можно найти ответ в документации
+## G
+it History Cleanup
+
+### git-filter-repo
+
+**Назначение:** Переписывание истории Git для удаления секретов, больших файлов или проблемных путей.
+
+**Установка:**
+```powershell
+# Windows
+pip install git-filter-repo
+
+# WSL/Linux
+pip3 install git-filter-repo
+```
+
+**Проверка установки:**
+```powershell
+# Windows
+python -m git_filter_repo --version
+
+# WSL
+wsl python3 -m git_filter_repo --version
+```
+
+### Использование git-filter-repo
+
+**⚠️ ВНИМАНИЕ:** git-filter-repo переписывает историю Git. Это необратимая операция!
+
+**Перед использованием:**
+1. Создать backup репозитория
+2. Убедиться что все изменения закоммичены
+3. Уведомить команду о предстоящем rebase
+
+### Проблемы с Windows и невалидными путями
+
+**Проблема:** Windows не поддерживает файлы с некоторыми спецсимволами в путях:
+- Запятые в начале имени: `, 1):`
+- Кавычки в имени: `"sarif_file: results\")"`
+- Другие спецсимволы: `<>:|?*`
+
+**Симптомы:**
+```
+fatal: invalid path ', 1):'
+OSError: [Errno 22] Invalid argument
+```
+
+**Решение:** Использовать WSL для работы с такими файлами:
+
+```powershell
+# 1. Клонировать репозиторий в WSL
+wsl bash -c "cd /tmp && git clone https://github.com/user/repo.git repo-clean"
+
+# 2. Найти проблемные файлы
+wsl bash -c 'cd /tmp/repo-clean && git log --all --name-only --pretty=format: | sort -u | grep -E "(^,|\")" > /tmp/paths-to-remove.txt'
+
+# 3. Удалить проблемные файлы из истории
+wsl bash -c 'cd /tmp/repo-clean && git remote remove origin && python3 -m git_filter_repo --invert-paths --paths-from-file /tmp/paths-to-remove.txt --force'
+
+# 4. Создать файл с секретами для замены
+wsl bash -c "cat > /tmp/replace-secrets.txt << 'EOF'
+SECRET_KEY_1==>REDACTED
+SECRET_KEY_2==>REDACTED
+EOF"
+
+# 5. Заменить секреты в истории
+wsl bash -c 'cd /tmp/repo-clean && python3 -m git_filter_repo --replace-text /tmp/replace-secrets.txt --force'
+
+# 6. Скопировать обратно в Windows
+wsl bash -c "cd /tmp && tar -czf repo-clean.tar.gz repo-clean"
+wsl bash -c "cp /tmp/repo-clean.tar.gz /mnt/c/git/"
+cd C:\git
+tar -xzf repo-clean.tar.gz
+
+# 7. Push из Windows
+cd repo-clean
+git remote add origin https://github.com/user/repo.git
+git push origin --force --all
+git push origin --force --tags
+
+# 8. Заменить основной репозиторий
+cd C:\git
+Remove-Item openwrt-captive-monitor -Recurse -Force
+Rename-Item repo-clean openwrt-captive-monitor
+
+# 9. Очистить WSL
+wsl bash -c "rm -rf /tmp/repo-clean /tmp/replace-secrets.txt /tmp/paths-to-remove.txt /tmp/repo-clean.tar.gz"
+```
+
+### Проверка результатов
+
+**Проверить что секреты удалены:**
+```bash
+# Поиск секрета в истории
+git log --all -S "SECRET_KEY" --oneline
+# Должно быть пусто
+
+# Поиск в содержимом всех коммитов
+git rev-list --all | xargs git grep "SECRET_KEY"
+# Должно быть пусто
+```
+
+**Проверить что файлы удалены:**
+```bash
+# Список всех файлов в истории
+git log --all --name-only --pretty=format: | sort -u | grep "problematic-file"
+# Должно быть пусто
+```
+
+### После force push
+
+**Команда должна:**
+1. Переклонировать репозиторий
+2. Обновить все локальные ветки
+3. Проверить что CI/CD работает
+
+**Уведомление команды:**
+```
+⚠️ История Git была переписана для удаления секретов/проблемных файлов.
+
+Действия:
+1. Удалите старый клон: rm -rf old-repo
+2. Клонируйте заново: git clone https://github.com/user/repo.git
+3. Проверьте что все работает
+
+Изменения:
+- Хеши всех коммитов изменились
+- Старые ссылки на коммиты недействительны
+- Теги обновлены
+```
+
+### Best Practices
+
+1. **Всегда создавай backup** перед переписыванием истории
+2. **Используй WSL** для работы с проблемными путями на Windows
+3. **Проверяй результат** перед force push
+4. **Уведоми команду** о предстоящем rebase
+5. **Отзови секреты** даже после удаления из истории
+6. **Обнови .gitignore** чтобы предотвратить повторное добавление
+7. **Проверь CI/CD** после force push
+8. **Организуй бакапы** в отдельную папку (например `C:\git\backups\`)
+
+### Troubleshooting
+
+**Ошибка: "Refusing to destructively overwrite repo history"**
+```bash
+# Решение: добавить --force
+python3 -m git_filter_repo --replace-text secrets.txt --force
+```
+
+**Ошибка: "fatal: invalid path"**
+```bash
+# Решение: использовать WSL
+wsl python3 -m git_filter_repo --invert-paths --paths-from-file paths.txt --force
+```
+
+**Ошибка: "OSError: [Errno 22] Invalid argument"**
+```bash
+# Решение: в истории есть файлы с невалидными путями для Windows
+# Используй WSL для очистки (см. раздел выше)
+```
+
+**Папка не удаляется на Windows:**
+```powershell
+# Проверить текущую директорию
+Get-Location
+
+# Если находишься в удаляемой папке - выйти
+Set-Location C:\git
+
+# Удалить через robocopy
+New-Item -ItemType Directory -Path C:\git\empty -Force | Out-Null
+robocopy C:\git\empty C:\git\old-repo /MIR /R:0 /W:0
+Remove-Item C:\git\old-repo -Force
+Remove-Item C:\git\empty -Force
+```
