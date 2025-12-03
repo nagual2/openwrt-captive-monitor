@@ -36,12 +36,64 @@ WSL добавляет overhead на запуск Linux окружения. Ис
 
 | Задача | Причина |
 |--------|---------|
-| `wsl ssh host` | SSH клиент в Windows может не быть настроен |
+| `wsl ssh host` | Только если используются PuTTY ключи (.ppk) без конвертации в OpenSSH формат |
 | `wsl bash script.sh` | Bash скрипты требуют Linux окружение |
 | `wsl grep pattern file` | Нет прямого аналога в PowerShell |
 | `wsl sed 's/old/new/' file` | Нет прямого аналога в PowerShell |
 | `wsl awk '{print $1}' file` | Нет прямого аналога в PowerShell |
 | `wsl make` | Makefile требует Linux окружение |
+
+### SSH на Windows
+
+**Нативный Windows SSH работает!** Используй его вместо WSL:
+
+```powershell
+# ✅ Нативный Windows SSH
+ssh root@192.168.35.1 "uname -a"
+ssh root@192.168.35.127 "ps w"
+
+# ✅ Через SSH config алиасы
+ssh openwrt-prod "uname -a"
+ssh openwrt-test "ps w"
+
+# ❌ Не используй WSL без необходимости
+wsl ssh root@192.168.35.1 "uname -a"
+```
+
+**SSH Config ($env:USERPROFILE\.ssh\config):**
+```
+# OpenWrt Production Environment
+Host openwrt-prod
+    HostName 192.168.35.1
+    User root
+    IdentityFile ~/.ssh/id_rsa
+
+# OpenWrt Test Environment 1
+Host openwrt-test
+    HostName 192.168.35.127
+    User root
+    IdentityFile ~/.ssh/id_ed25519_openwrt
+```
+
+**Генерация нового SSH ключа:**
+```powershell
+# Генерировать ed25519 ключ БЕЗ пароля
+ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\id_ed25519_openwrt" -N "" -C "openwrt-test"
+
+# Установить публичный ключ на роутер (одноразово через WSL если нет другого доступа)
+$pubKey = Get-Content "$env:USERPROFILE\.ssh\id_ed25519_openwrt.pub"
+wsl ssh root@192.168.35.127 "echo '$pubKey' >> /etc/dropbear/authorized_keys"
+
+# Проверить
+ssh -i "$env:USERPROFILE\.ssh\id_ed25519_openwrt" root@192.168.35.127 "uname -a"
+```
+
+**Добавление хостов в known_hosts:**
+```powershell
+# Автоматически добавить хост
+ssh-keyscan -H 192.168.35.1 >> $env:USERPROFILE\.ssh\known_hosts
+ssh-keyscan -H 192.168.35.127 >> $env:USERPROFILE\.ssh\known_hosts
+```
 
 ## Контекст проекта
 
