@@ -139,7 +139,7 @@ models:
 
 **У вас уже есть ключ:**
 ```
-YOUR_GEMINI_API_KEY_REDACTED
+YOUR_GEMINI_API_KEY_HERE
 ```
 
 ---
@@ -217,7 +217,7 @@ models:
   - name: Gemini Pro
     provider: gemini
     model: gemini-pro
-    apiKey: YOUR_GEMINI_API_KEY_REDACTED
+    apiKey: YOUR_GEMINI_API_KEY_HERE
     roles:
       - chat
       - edit
@@ -268,7 +268,7 @@ models:
   - name: Gemini Pro
     provider: gemini
     model: gemini-pro
-    apiKey: YOUR_GEMINI_API_KEY_REDACTED
+    apiKey: YOUR_GEMINI_API_KEY_HERE
     roles:
       - chat
       - edit
@@ -315,7 +315,7 @@ models:
   - name: Gemini Pro
     provider: gemini
     model: gemini-pro
-    apiKey: YOUR_GEMINI_API_KEY_REDACTED
+    apiKey: YOUR_GEMINI_API_KEY_HERE
     roles:
       - chat
       - edit
@@ -372,3 +372,4 @@ Set-Content "$env:USERPROFILE\.continue\config.yaml" -Value $config
 
 **Дата:** 2025-12-02
 **Статус:** ✅ Проверено и работает
+

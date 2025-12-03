@@ -5,7 +5,7 @@
       "provider": "openai",
       "model": "x-ai/grok-4.1-fast:free",
       "apiBase": "https://openrouter.ai/api/v1",
-      "apiKey": "YOUR_OPENROUTER_API_KEY_REDACTED",
+      "apiKey": "YOUR_OPENROUTER_API_KEY_HERE",
       "contextLength": 8192,
       "requestOptions": {
         "headers": {
@@ -19,7 +19,7 @@
       "provider": "openai",
       "model": "kwaipilot/kat-coder-pro:free",
       "apiBase": "https://openrouter.ai/api/v1",
-      "apiKey": "YOUR_OPENROUTER_API_KEY_REDACTED",
+      "apiKey": "YOUR_OPENROUTER_API_KEY_HERE",
       "contextLength": 16384,
       "requestOptions": {
         "headers": {
@@ -33,7 +33,7 @@
       "provider": "openai",
       "model": "allenai/olmo-3-32b-think:free",
       "apiBase": "https://openrouter.ai/api/v1",
-      "apiKey": "YOUR_OPENROUTER_API_KEY_REDACTED",
+      "apiKey": "YOUR_OPENROUTER_API_KEY_HERE",
       "contextLength": 32768,
       "requestOptions": {
         "headers": {
@@ -48,7 +48,7 @@
     "provider": "openai",
     "model": "arcee-ai/trinity-mini:free",
     "apiBase": "https://openrouter.ai/api/v1",
-    "apiKey": "YOUR_OPENROUTER_API_KEY_REDACTED",
+    "apiKey": "YOUR_OPENROUTER_API_KEY_HERE",
     "requestOptions": {
       "headers": {
         "HTTP-Referer": "https://localhost",
@@ -72,3 +72,4 @@
   ],
   "allowAnonymousTelemetry": false
 }
+
