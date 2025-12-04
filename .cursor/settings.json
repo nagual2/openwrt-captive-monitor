@@ -310,6 +310,212 @@
   // Act (GitHub Actions локальное тестирование)
   "act.enable": true,
 
+  // ============================================
+  // CURSOR COMMAND ALLOWLIST (Auto-Run Mode)
+  // ============================================
+  // Список команд, которые могут выполняться автоматически без подтверждения
+  // Собрано из всех конфигураций проекта (Kiro, VS Code, tasks.json, scripts)
+
+  "cursor.commandAllowlist": [
+    // Git команды (wildcard для всех git команд)
+    "git",
+    "git *",
+
+    // GitHub CLI команды (wildcard для всех gh команд)
+    "gh",
+    "gh *",
+
+    // Docker команды (wildcard для всех docker команд)
+    "docker",
+    "docker *",
+    "docker-compose",
+    "docker-compose *",
+
+    // PowerShell команды
+    "powershell",
+    "pwsh",
+    "Get-Command",
+    "Get-ChildItem",
+    "Get-Content",
+    "Set-Content",
+    "Copy-Item",
+    "Move-Item",
+    "Remove-Item",
+    "New-Item",
+    "Test-Path",
+    "Select-Object",
+    "Where-Object",
+    "Sort-Object",
+    "Format-Table",
+    "Format-List",
+    "Write-Host",
+    "Write-Output",
+    "Write-Error",
+    "Write-Warning",
+    "Select-String",
+    "Out-Null",
+    "Start-Sleep",
+    "Test-Connection",
+    "Invoke-WebRequest",
+    "Invoke-RestMethod",
+    "$env:",
+    "$tools",
+    "$tool",
+    "$found",
+    "$additionalTools",
+    "$oldReports",
+    "$report",
+    "$archived",
+    "$reportsArchived",
+    "$newReports",
+    "foreach",
+    ".Count",
+
+    // WSL команды (wildcard для всех команд через WSL)
+    "wsl",
+    "wsl *",
+
+    // Bash/Shell команды
+    "bash",
+    "sh",
+    "cat",
+    "ls",
+    "cd",
+    "pwd",
+    "mkdir",
+    "rm",
+    "cp",
+    "mv",
+    "grep",
+    "sed",
+    "awk",
+    "find",
+    "xargs",
+    "head",
+    "tail",
+    "sort",
+    "uniq",
+    "wc",
+    "echo",
+    "printf",
+    "test",
+    "[",
+    "set",
+    "export",
+    "unset",
+
+    // Python команды
+    "python",
+    "python3",
+    "pip",
+    "pip3",
+
+    // Node.js команды
+    "node",
+    "npm",
+    "npx",
+    "yarn",
+
+    // Утилиты обработки данных
+    "jq",
+    "yq",
+
+    // Архивация
+    "tar",
+    "gzip",
+    "gunzip",
+    "zip",
+    "unzip",
+    "7z",
+
+    // Сетевые утилиты
+    "curl",
+    "wget",
+    "ssh",
+    "scp",
+    "rsync",
+    "ping",
+
+    // Системные утилиты
+    "make",
+    "cmake",
+    "chmod",
+    "chown",
+    "sudo",
+
+    // Редакторы
+    "code",
+    "vim",
+    "nano",
+    "notepad",
+
+    // Kubernetes
+    "kubectl",
+    "helm",
+
+    // Infrastructure as Code
+    "terraform",
+    "ansible",
+    "vagrant",
+    "packer",
+
+    // Менеджеры пакетов
+    "choco",
+    "scoop",
+    "nvm",
+
+    // Другие утилиты
+    "gpg",
+    "gpg2",
+    "yamllint",
+    "shfmt",
+    "shellcheck",
+
+    // Скрипты проекта
+    "scripts/build_ipk.sh",
+    "scripts/build_ipk_simple.sh",
+    "scripts/validate_ipk.sh",
+    "scripts/update-version-metadata.sh",
+    "scripts/test-package-on-openwrt.sh",
+    "scripts/validate-docker-image-size.sh",
+    "scripts/ci-helper.sh",
+    "scripts/diagnose-actions.sh",
+    "scripts/diagnose-github-actions.sh",
+    "scripts/git-wsl.sh",
+    "scripts/manual-cleanup-openwrt.sh",
+    "scripts/upload-sdk-to-github.sh",
+    "scripts/verify_package.sh",
+    "tests/run.sh",
+
+    // Строковые литералы (для PowerShell переменных)
+    "'git'",
+    "'node'",
+    "'npm'",
+    "'yarn'",
+    "'jq'",
+    "'yq'",
+    "'kubectl'",
+    "'helm'",
+    "'terraform'",
+    "'ansible'",
+    "'vagrant'",
+    "'packer'",
+    "'7z'",
+    "'tar'",
+    "'gzip'",
+    "'zip'",
+    "'unzip'",
+    "'gpg'",
+    "'gpg2'",
+    "'code'",
+    "'notepad'",
+    "'vim'",
+    "'nano'",
+    "'nvm'",
+    "'choco'",
+    "'scoop'"
+  ],
+
   // jq (JSON processor) - используется через терминал
 
   // kubectl - настройки через расширения если нужно
