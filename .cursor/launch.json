@@ -1,0 +1,58 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Bash Script",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/.cursor/debug-bash.sh",
+      "args": ["${file}"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Run Bash Script (WSL)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "wsl",
+      "runtimeArgs": ["bash", "${file}"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Run PowerShell Script",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${file}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Test Package on OpenWrt",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${workspaceFolder}/scripts/test-package-on-openwrt.sh",
+      "args": ["${input:packagePath}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Validate IPK Package",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${workspaceFolder}/scripts/validate_ipk.sh",
+      "args": ["${input:packagePath}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "packagePath",
+      "description": "Path to IPK package",
+      "default": "dist/opkg/all/*.ipk",
+      "type": "promptString"
+    }
+  ]
+}
+

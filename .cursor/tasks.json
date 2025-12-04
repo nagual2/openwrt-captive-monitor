@@ -1,0 +1,192 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build IPK Package",
+      "type": "shell",
+      "command": "scripts/build_ipk.sh",
+      "args": ["--arch", "all"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build IPK Package (Simple)",
+      "type": "shell",
+      "command": "scripts/build_ipk_simple.sh",
+      "args": ["--arch", "all"],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Tests",
+      "type": "shell",
+      "command": "wsl",
+      "args": ["bash", "tests/run.sh"],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate IPK Package",
+      "type": "shell",
+      "command": "scripts/validate_ipk.sh",
+      "args": ["${input:packagePath}"],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Format Bash Scripts",
+      "type": "shell",
+      "command": "wsl",
+      "args": ["shfmt", "-i", "2", "-ci", "-sr", "-w", "${file}"],
+      "group": "build",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint Bash Script (ShellCheck)",
+      "type": "shell",
+      "command": "wsl",
+      "args": ["shellcheck", "${file}"],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": {
+        "owner": "shellcheck",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.+):(\\d+):(\\d+):\\s+(warning|error|info):\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    },
+    {
+      "label": "Lint YAML Files",
+      "type": "shell",
+      "command": "yamllint",
+      "args": ["${file}"],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Update Version Metadata",
+      "type": "shell",
+      "command": "scripts/update-version-metadata.sh",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate Docker Image Size",
+      "type": "shell",
+      "command": "wsl",
+      "args": ["bash", "scripts/validate-docker-image-size.sh", "${input:dockerImage}"],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Clean Build Artifacts",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "Remove-Item -Path dist,artifacts -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Cleaned build artifacts'"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Git Status",
+      "type": "shell",
+      "command": "git",
+      "args": ["status"],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "GitHub Actions: List Workflows",
+      "type": "shell",
+      "command": "gh",
+      "args": ["workflow", "list"],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "GitHub Actions: List Recent Runs",
+      "type": "shell",
+      "command": "gh",
+      "args": ["run", "list", "--limit", "10"],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "packagePath",
+      "description": "Path to IPK package",
+      "default": "dist/opkg/all/*.ipk",
+      "type": "promptString"
+    },
+    {
+      "id": "dockerImage",
+      "description": "Docker image name",
+      "default": "openwrt-sdk:local",
+      "type": "promptString"
+    }
+  ]
+}
+
