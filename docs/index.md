@@ -1,125 +1,139 @@
-# openwrt-captive-monitor Documentation
+# Индекс документации проекта OpenWrt Captive Monitor
+
+## 📚 Навигация по документации
+
+### 🚀 Быстрый старт
+- [README.md](../README.md) - Основная документация проекта
+- [Quick Start Guide](usage/quick-start.md) - Быстрый старт для пользователей
+- [Installation Guide](usage/installation.md) - Инструкции по установке
+
+### 🏗️ Архитектура и разработка
+- [Architecture Guide](guides/architecture.md) - Архитектура системы
+- [SDK Build Workflow](guides/sdk-build-workflow.md) - Процесс сборки через SDK
+- [Captive Portal Walkthrough](guides/captive-portal-walkthrough.md) - Как работает обнаружение captive portal
+- [Troubleshooting Guide](guides/troubleshooting.md) - Решение проблем
+
+### ⚙️ Конфигурация
+- [Configuration Reference](configuration/reference.md) - Полный справочник конфигурации
+- [Basic Configuration](configuration/basic-config.md) - Базовая настройка
+- [Advanced Configuration](configuration/advanced-config.md) - Продвинутые настройки
+
+### 📦 Пакетирование и сборка
+- [Package Build Process](PACKAGE_BUILD_PROCESS_AND_MANIFEST.md) - Процесс сборки пакетов
+- [Package Build Quick Summary](PACKAGE_BUILD_QUICK_SUMMARY.md) - Краткое описание сборки
+- [Packages Documentation](PACKAGES.md) - Документация по пакетам
+- [Packaging Guide](packaging.md) - Руководство по упаковке
+
+### 🔄 Релизы
+- [Release Process](release/RELEASE_PROCESS.md) - Процесс создания релизов
+- [Release Checklist](RELEASE_CHECKLIST.md) - Чеклист для релизов
+- [Manual Release](release/MANUAL_RELEASE.md) - Ручной релиз
+- [Auto Version Tag](release/AUTO_VERSION_TAG.md) - Автоматическое версионирование
+- [Changelog](release/CHANGELOG.md) - История изменений
+
+### 🧪 Тестирование
+- [Test Plan](TEST_PLAN.md) - План тестирования
+- [Virtualized Testing](guides/virtualized-testing.md) - Тестирование в виртуальной среде
+- [One-shot Recovery](guides/oneshot-recovery.md) - Восстановление в режиме oneshot
+
+### 🔧 CI/CD и разработка
+- [CI Workflow Simplified](ci/CI_WORKFLOW_SIMPLIFIED.md) - Упрощенный CI workflow
+- [GitHub Actions Workflows Audit](ci/GITHUB_ACTIONS_WORKFLOWS_AUDIT.md) - Аудит workflows
+- [Docker SDK Images](docker-sdk-images.md) - Docker образы для SDK
+- [Act Local Testing](act-local-testing.md) - Локальное тестирование GitHub Actions
+
+### 🔒 Безопасность
+- [Security Scanning](SECURITY_SCANNING.md) - Сканирование безопасности
+- [Security Audit Report](security/SECURITY_AUDIT_REPORT.md) - Отчет аудита безопасности
+- [Security Scanning Implementation](security/SECURITY_SCANNING_IMPLEMENTATION.md) - Реализация сканирования
+
+### 📝 Участие в разработке
+- [Contributing Guide](contributing/CONTRIBUTING.md) - Руководство для контрибьюторов
+- [Code of Conduct](contributing/CODE_OF_CONDUCT.md) - Кодекс поведения
+- [PR Triage](project/PR_TRIAGE.md) - Триаж Pull Request
+
+### 🐛 Известные проблемы
+- [Known Issues](KNOWN_ISSUES.md) - Список известных проблем
+- [PROCD Investigation](PROCD_INVESTIGATION.md) - Исследование проблем с procd
+
+### 📊 Отчеты и аналитика
+- [Reports Index](reports/README.md) - Индекс всех отчетов
+- [Diagnostics Index](reports/DIAGNOSTICS_INDEX.md) - Индекс диагностики
+- [Analysis Index](reports/ANALYSIS_INDEX.md) - Индекс аналитики
+
+### 🔍 Специфичные темы
+- [Docker SDK Optimization](ci/docker-sdk-optimization.md) - Оптимизация Docker SDK
+- [IPK Format Investigation](IPK_FORMAT_INVESTIGATION.md) - Исследование формата IPK
+- [Git WSL Workflow](git-wsl-workflow.md) - Работа с Git через WSL
+- [Workflow Diagnostics](WORKFLOW_DIAGNOSTICS.md) - Диагностика workflows
+
+### 📋 Проектная документация
+- [Project Management](project/management.md) - Управление проектом
+- [Backlog](BACKLOG.md) - Бэклог проекта
+- [Branch Protection Setup](project/BRANCH_PROTECTION_SETUP.md) - Настройка защиты веток
+- [Branches and Merge Policy](project/BRANCHES_AND_MERGE_POLICY.md) - Политика веток и мержа
+
+### 🛠️ Настройка и установка
+- [Setup Guide](setup/README.md) - Руководство по настройке
+- [CI Modernization 2025](setup/CI_MODERNIZATION_2025.md) - Модернизация CI в 2025
+- [Toolchain Initialization Fix](setup/TOOLCHAIN_INITIALIZATION_FIX.md) - Исправление инициализации toolchain
+
+### 📈 Оптимизация
+- [Optimization Recommendations](OPTIMIZATION_RECOMMENDATIONS.md) - Рекомендации по оптимизации
+- [Documentation Cleanup Summary](DOCUMENTATION_CLEANUP_SUMMARY.md) - Отчет об очистке документации
 
 ---
 
-## 🌐 Language / Язык
+## 📂 Структура документации
 
-**English** | [Русский](#русский)
-
----
-
-Welcome to the comprehensive documentation for **openwrt-captive-monitor**, a lightweight OpenWrt helper that monitors WAN connectivity, detects captive portals, and temporarily intercepts LAN DNS/HTTP traffic to facilitate client authentication.
-
-## 📚 Documentation Structure
-
-### 🚀 Getting Started
-- [Quick Start Guide](usage/quick-start.md) - Get up and running in minutes
-- [Installation Guide](usage/installation.md) - Prebuilt packages vs SDK builds
-- [Basic Configuration](configuration/basic-config.md) - Essential UCI settings
-
-### 📖 User Guides
-- [Captive Portal Walkthrough](guides/captive-portal-walkthrough.md) - End-to-end example
-- [Oneshot Recovery Mode](guides/oneshot-recovery.md) - Manual connectivity recovery
-- [Advanced Configuration](configuration/advanced-config.md) - Environment variables and CLI flags
-- [Troubleshooting](guides/troubleshooting.md) - Common issues and solutions
-
-### ⚙️ Reference
-- [Configuration Reference](configuration/reference.md) - Complete UCI options, environment variables, and CLI flags
-- [FAQ](project/faq.md) - Frequently asked questions
-- [Architecture Overview](guides/architecture.md) - System design and components
-
-### 🏗️ Project
-- [Project Management](project/management.md) - Date-based versioning strategy (with legacy semantic context), release cadence, and project boards
-- [Contributing](contributing/CONTRIBUTING.md) - Development guidelines and pull request process
-- [Security](../.github/SECURITY.md) - Security policy and vulnerability reporting
-- [Security Scanning](SECURITY_SCANNING.md) - Automated security scanning infrastructure
-- [Support](../.github/SUPPORT.md) - Get help and community resources
-
-### 📋 Development
-- [Release Checklist](project/release-checklist.md) - Step-by-step release process
-- [Test Plan](project/test-plan.md) - Testing procedures and validation
-- [Virtualization Guide](guides/virtualization.md) - VM-based end-to-end testing
-- [Virtualized Testing Guide](guides/virtualized-testing.md) - VM-based testing strategy and automation
-- [SDK Build Workflow](guides/sdk-build-workflow.md) - OpenWrt SDK-based CI/CD pipeline
-- [Build System Root Causes and Target Flow](BUILD_SYSTEM_ROOT_CAUSES_AND_TARGET_FLOW.md) - Historical failures, root causes, and future workflow
-- [Backlog](project/backlog.md) - Feature roadmap and priorities
-- [Package Management](project/packages.md) - Build and distribution details
-- [Packaging and Distribution](packaging.md) - Complete packaging workflow and automation
-
-## 🔗 Quick Links
-
-- **Latest Release**: [GitHub Releases](https://github.com/nagual2/openwrt-captive-monitor/releases)
-- **Package Repository**: [OpenWrt Feed](https://github.com/nagual2/openwrt-captive-monitor/releases)
-- **Issue Tracker**: [GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/nagual2/openwrt-captive-monitor/discussions)
-
-## 📖 About This Documentation
-
-This documentation is organized to serve both end-users who want to deploy and configure the captive monitor, as well as developers who want to contribute to the project. The markdown files can be viewed directly on GitHub or any markdown viewer.
-
-For the most up-to-date information, always refer to the [main repository](https://github.com/nagual2/openwrt-captive-monitor).
+```
+docs/
+├── INDEX.md (этот файл)
+├── README.md - Главная документация
+├── configuration/ - Конфигурация
+├── contributing/ - Участие в разработке
+├── guides/ - Руководства
+├── release/ - Релизы
+├── reports/ - Отчеты
+│   └── archive/ - Архив старых отчетов
+├── security/ - Безопасность
+├── setup/ - Настройка
+├── usage/ - Использование
+├── project/ - Проектная документация
+├── ci/ - CI/CD документация
+└── triage/ - Триаж issues/PR
+```
 
 ---
 
-# Русский
+## 🔍 Поиск по категориям
+
+### Для пользователей
+- Установка: [Installation Guide](usage/installation.md)
+- Быстрый старт: [Quick Start](usage/quick-start.md)
+- Конфигурация: [Configuration Reference](configuration/reference.md)
+- Решение проблем: [Troubleshooting](guides/troubleshooting.md)
+
+### Для разработчиков
+- Архитектура: [Architecture Guide](guides/architecture.md)
+- Процесс сборки: [Package Build Process](PACKAGE_BUILD_PROCESS_AND_MANIFEST.md)
+- Тестирование: [Test Plan](TEST_PLAN.md)
+- Участие: [Contributing Guide](contributing/CONTRIBUTING.md)
+
+### Для DevOps
+- CI/CD: [CI Workflow](ci/CI_WORKFLOW_SIMPLIFIED.md)
+- Docker: [Docker SDK Images](docker-sdk-images.md)
+- Релизы: [Release Process](release/RELEASE_PROCESS.md)
 
 ---
 
-## 🌐 Язык
+## 📝 Примечания
 
-[English](#openwrt-captive-monitor-documentation) | **Русский**
+- Все документы обновляются регулярно
+- Устаревшие документы перемещаются в `archive/`
+- Актуальная версия всегда в корне соответствующих папок
+- Для предложений по улучшению документации создавайте issue
 
 ---
 
-# Документация openwrt-captive-monitor
-
-Добро пожаловать в подробную документацию по **openwrt-captive-monitor**, легкого помощника OpenWrt, который контролирует подключение WAN, обнаруживает портали аутентификации и временно перехватывает трафик DNS/HTTP на локальной сети для облегчения аутентификации клиентов.
-
-## 📚 Структура документации
-
-### 🚀 Начало работы
-- [Руководство быстрого старта](usage/quick-start.md) - Начните работу за несколько минут
-- [Руководство по установке](usage/installation.md) - Готовые пакеты в сравнении со сборками SDK
-- [Базовая конфигурация](configuration/basic-config.md) - Основные параметры UCI
-
-### 📖 Руководства пользователя
-- [Пошаговый обход портала аутентификации](guides/captive-portal-walkthrough.md) - Комплексный пример
-- [Режим восстановления Oneshot](guides/oneshot-recovery.md) - Ручное восстановление подключения
-- [Продвинутая конфигурация](configuration/advanced-config.md) - Переменные окружения и флаги CLI
-- [Решение проблем](guides/troubleshooting.md) - Частые проблемы и решения
-
-### ⚙️ Справочник
-- [Справочник конфигурации](configuration/reference.md) - Полные опции UCI, переменные окружения и флаги CLI
-- [Часто задаваемые вопросы](project/faq.md) - Ответы на частые вопросы
-- [Обзор архитектуры](guides/architecture.md) - Проектирование системы и компоненты
-
-### 🏗️ Проект
-- [Управление проектом](project/management.md) - Схема датированного версионирования (с историческим описанием SemVer), период выпуска и доски проектов
-- [Вклад](contributing/CONTRIBUTING.md) - Рекомендации по разработке и процесс pull request
-- [Безопасность](../.github/SECURITY.md) - Политика безопасности и отчет об уязвимостях
-- [Сканирование безопасности](SECURITY_SCANNING.md) - Инфраструктура автоматизированного сканирования безопасности
-- [Поддержка](../.github/SUPPORT.md) - Получение помощи и ресурсы сообщества
-
-### 📋 Разработка
-- [Чеклист выпуска](project/release-checklist.md) - Пошаговый процесс выпуска
-- [План тестирования](project/test-plan.md) - Процедуры тестирования и валидация
-- [Руководство виртуализации](guides/virtualization.md) - Тестирование сквозного потока на основе ВМ
-- [Руководство виртуализированного тестирования](guides/virtualized-testing.md) - Стратегия и автоматизация тестирования на основе ВМ
-- [Рабочий процесс сборки SDK](guides/sdk-build-workflow.md) - Конвейер CI/CD на основе OpenWrt SDK
-- [Основные причины системы сборки и целевой поток](BUILD_SYSTEM_ROOT_CAUSES_AND_TARGET_FLOW.md) - Исторические сбои, коренные причины и будущий рабочий процесс
-- [Невыполненные задачи](project/backlog.md) - Дорожная карта функций и приоритеты
-- [Управление пакетами](project/packages.md) - Детали сборки и распространения
-- [Упаковка и распространение](packaging.md) - Полный рабочий процесс упаковки и автоматизация
-
-## 🔗 Быстрые ссылки
-
-- **Последний выпуск**: [GitHub Выпуски](https://github.com/nagual2/openwrt-captive-monitor/releases)
-- **Репозиторий пакетов**: [OpenWrt Feed](https://github.com/nagual2/openwrt-captive-monitor/releases)
-- **Отслеживание проблем**: [GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)
-- **Обсуждения**: [GitHub Обсуждения](https://github.com/nagual2/openwrt-captive-monitor/discussions)
-
-## 📖 О документации
-
-Эта документация организована для обслуживания как конечных пользователей, которые хотят развернуть и настроить монитор портала аутентификации, так и разработчиков, которые хотят внести вклад в проект. Файлы markdown можно просматривать непосредственно на GitHub или в любом средстве просмотра markdown.
-
-Для самой актуальной информации всегда обратитесь к [основному репозиторию](https://github.com/nagual2/openwrt-captive-monitor).
+*Последнее обновление: 2025-12-03*

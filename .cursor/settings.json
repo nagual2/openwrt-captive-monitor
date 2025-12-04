@@ -2,132 +2,104 @@
   // ============================================
   // НАСТРОЙКИ ИНТЕРФЕЙСА
   // ============================================
-  
+
   // Расположение боковых панелей
   "workbench.sideBar.location": "left",
-  
+
   // Показывать боковую панель по умолчанию
   "workbench.startupEditor": "welcomePage",
-  
+
   // Расположение панели внизу (терминал, проблемы и т.д.)
   "workbench.panel.defaultLocation": "bottom",
-  
+
   // Показывать вторичную боковую панель справа (для чата и других панелей)
   "workbench.activityBar.visible": true,
-  
+
   // Настройки редактора
   "editor.minimap.enabled": true,
   "editor.minimap.side": "right",
-  
+
   // Настройки файлового проводника
   "explorer.confirmDelete": true,
   "explorer.confirmDragAndDrop": true,
-  
-  // Автоматическое сохранение
-  "files.autoSave": "afterDelay",
-  "files.autoSaveDelay": 1000,
-  
+
   // Форматирование при сохранении
   "editor.formatOnSave": true,
-  
+
   // Настройки для работы с проектом
   "files.exclude": {
     "**/.git": true,
     "**/.DS_Store": true,
     "**/node_modules": true
   },
-  
-  // Настройки поиска
-  "search.exclude": {
-    "**/node_modules": true,
-    "**/dist": true,
-    "**/artifacts": true,
-    "**/.git": true
-  },
-  
+
+
   // ============================================
   // НАСТРОЙКИ ПРОЕКТА (из Kiro)
   // ============================================
-  
+
   // Docker Desktop путь (для GitHub Actions локального тестирования)
   "githubLocalActions.dockerDesktopPath": "C:/Program Files/Docker/Docker/Docker Desktop.exe",
-  
+
   // ============================================
   // НАСТРОЙКИ ТЕРМИНАЛА
   // ============================================
-  
-  // Профили терминала для Windows
-  "terminal.integrated.profiles.windows": {
-    "PowerShell Core (pwsh)": {
-      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
-    },
-    "WSL": {
-      "path": "C:\\Windows\\System32\\wsl.exe"
-    }
-  },
-  
+
   // Терминал по умолчанию
   "terminal.integrated.defaultProfile.windows": "PowerShell Core (pwsh)",
-  
+
   // ============================================
   // НАСТРОЙКИ PYTHON
   // ============================================
-  
+
   // Путь к интерпретатору Python
   "python.defaultInterpreterPath": "./.venv/bin/python",
-  
+
   // ============================================
   // НАСТРОЙКИ SSH (Remote-SSH)
   // ============================================
-  
+
   // Путь к SSH config файлу
   "remote.SSH.configFile": "~/.ssh/config",
-  
+
   // Показывать терминал при подключении
   "remote.SSH.showLoginTerminal": true,
-  
+
   // Платформы для удаленных хостов
   "remote.SSH.remotePlatform": {
-    "openwrt-test": "linux",
-    "openwrt": "linux"
+    "openwrt-prod": "linux",
+    "openwrt-test": "linux"
   },
-  
+
   // Отключить динамический проброс портов
   "remote.SSH.enableDynamicForwarding": false,
-  
+
   // Таймаут подключения SSH
   "remote.SSH.connectTimeout": 30,
-  
+
   // ============================================
   // ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ ДЛЯ ПРОЕКТА
   // ============================================
-  
+
   // Настройки для файлов проекта
   "files.associations": {
     "*.sh": "shellscript",
     "*.ps1": "powershell",
     "Makefile": "makefile"
   },
-  
-  // Настройки для bash скриптов
-  "[shellscript]": {
-    "editor.tabSize": 2,
-    "editor.insertSpaces": true,
-    "editor.trimAutoWhitespace": true
-  },
-  
+
   // Настройки для PowerShell
   "[powershell]": {
     "editor.tabSize": 4,
     "editor.insertSpaces": true
   },
-  
+
   // Настройки для YAML (GitHub Actions)
   "[yaml]": {
     "editor.tabSize": 2,
     "editor.insertSpaces": true
   },
-  
+
   // Настройки для Markdown
   "[markdown]": {
     "editor.wordWrap": "on",
@@ -137,18 +109,250 @@
       "other": "off"
     }
   },
-  
+
   // Настройки для JSON
   "[json]": {
     "editor.tabSize": 2,
     "editor.insertSpaces": true,
     "editor.formatOnSave": true
   },
-  
+
   // Настройки для Makefile
   "[makefile]": {
     "editor.tabSize": 4,
     "editor.insertSpaces": false
-  }
+  },
+
+  // ============================================
+  // НАСТРОЙКИ ИНСТРУМЕНТОВ РАЗРАБОТКИ
+  // ============================================
+
+  // Git настройки
+  "git.path": "git",
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "git.suggestSmartCommit": true,
+
+  // GitHub настройки
+  "github.gitProtocol": "https",
+
+  // Docker настройки
+  "docker.showStartPage": false,
+
+  // Python настройки (дополнительные)
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": false,
+
+  // ============================================
+  // НАСТРОЙКИ ФОРМАТИРОВАНИЯ И ЛИНТИНГА
+  // ============================================
+
+  // ShellCheck (через WSL)
+  "shellcheck.enable": true,
+  "shellcheck.executablePath": "wsl",
+  "shellcheck.run": "onSave",
+
+  // shfmt (через WSL)
+  "shfmt.path": "wsl",
+  "shfmt.args": ["shfmt"],
+
+  // YAML Lint
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
+  },
+  "yaml.customTags": [
+    "!And",
+    "!If",
+    "!Not",
+    "!Equals",
+    "!Or",
+    "!FindInMap sequence",
+    "!Base64",
+    "!Cidr",
+    "!Ref",
+    "!Sub",
+    "!GetAtt",
+    "!GetAZs",
+    "!ImportValue",
+    "!Select",
+    "!Split",
+    "!Join sequence"
+  ],
+
+  // JSON настройки
+  "json.schemas": [],
+  "json.format.enable": true,
+
+  // ============================================
+  // НАСТРОЙКИ ТЕРМИНАЛА (расширенные)
+  // ============================================
+
+  // Переменные окружения для терминала
+  "terminal.integrated.env.windows": {
+    "GIT_PAGER": "cat",
+    "PAGER": "cat",
+    "PATH": "${env:PATH};C:\\Program Files\\Git\\bin;C:\\Program Files\\GitHub CLI;C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Users\\${env:USERNAME}\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Users\\${env:USERNAME}\\AppData\\Local\\Programs\\Python\\Python312\\Scripts"
+  },
+
+  // Автоматическое определение оболочки
+  "terminal.integrated.automationProfile.windows": {
+    "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
+  },
+
+  // Настройки для работы с WSL
+  "terminal.integrated.profiles.windows": {
+    "PowerShell Core (pwsh)": {
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "args": [],
+      "icon": "terminal-powershell"
+    },
+    "WSL": {
+      "path": "C:\\Windows\\System32\\wsl.exe",
+      "args": [],
+      "icon": "terminal-linux"
+    },
+    "Command Prompt": {
+      "path": [
+        "${env:windir}\\System32\\cmd.exe"
+      ],
+      "args": [],
+      "icon": "terminal-cmd"
+    }
+  },
+
+  // ============================================
+  // НАСТРОЙКИ ДЛЯ РАБОТЫ С ФАЙЛАМИ
+  // ============================================
+
+  // Исключения из файлового проводника
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/artifacts/**": true,
+    "**/.venv/**": true,
+    "**/__pycache__/**": true
+  },
+
+  // Кодировка файлов
+  "files.encoding": "utf8",
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+
+  // ============================================
+  // НАСТРОЙКИ ДЛЯ РАЗЛИЧНЫХ ТИПОВ ФАЙЛОВ
+  // ============================================
+
+  // Dockerfile
+  "[dockerfile]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true
+  },
+
+  // Docker Compose
+  "[dockercompose]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+
+  // Shell Script (дополнительные настройки)
+  "[shellscript]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.trimAutoWhitespace": true,
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit"
+    }
+  },
+
+  // Python (дополнительные настройки)
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-python.python"
+  },
+
+  // ============================================
+  // НАСТРОЙКИ ПОИСКА
+  // ============================================
+
+  // Исключения из поиска
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/artifacts": true,
+    "**/.git": true,
+    "**/.venv": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/build": true,
+    "**/.pytest_cache": true
+  },
+
+  // Настройки поиска
+  "search.useIgnoreFiles": true,
+  "search.useGlobalIgnoreFiles": true,
+  "search.followSymlinks": false,
+
+  // ============================================
+  // НАСТРОЙКИ ДЛЯ ИНСТРУМЕНТОВ
+  // ============================================
+
+  // Act (GitHub Actions локальное тестирование)
+  "act.enable": true,
+
+  // jq (JSON processor) - используется через терминал
+
+  // kubectl - настройки через расширения если нужно
+
+  // ============================================
+  // НАСТРОЙКИ РЕДАКТОРА (расширенные)
+  // ============================================
+
+  // Автодополнение
+  "editor.quickSuggestions": {
+    "other": "on",
+    "comments": "off",
+    "strings": "on"
+  },
+  "editor.suggestSelection": "first",
+  "editor.wordBasedSuggestions": "matchingDocuments",
+
+  // Настройки курсора
+  "editor.cursorBlinking": "smooth",
+  "editor.cursorSmoothCaretAnimation": "on",
+
+  // Настройки скролла
+  "editor.smoothScrolling": true,
+  "editor.cursorSurroundingLines": 3,
+
+  // ============================================
+  // НАСТРОЙКИ РАБОЧЕГО ПРОСТРАНСТВА
+  // ============================================
+
+  // Автоматическое сохранение
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+
+  // Настройки уведомлений
+  "files.watcherInclude": [
+    "**/*.sh",
+    "**/*.ps1",
+    "**/*.yml",
+    "**/*.yaml",
+    "**/*.json",
+    "**/*.md",
+    "**/Makefile",
+    "**/Dockerfile"
+  ]
 }
 

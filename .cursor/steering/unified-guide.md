@@ -41,7 +41,7 @@ WSL добавляет overhead на запуск Linux окружения. Ис
 
 | Задача | Причина |
 |--------|---------|
-| `wsl ssh host` | SSH клиент в Windows может не быть настроен |
+| `wsl ssh host` | Только если используются PuTTY ключи (.ppk) без конвертации в OpenSSH формат |
 | `wsl bash script.sh` | Bash скрипты требуют Linux окружение |
 | `wsl grep pattern file` | Нет прямого аналога в PowerShell |
 | `wsl sed 's/old/new/' file` | Нет прямого аналога в PowerShell |
@@ -51,6 +51,58 @@ WSL добавляет overhead на запуск Linux окружения. Ис
 | `wsl shfmt script.sh` | shfmt доступен только через WSL |
 | `wsl python3 script.py` | python3 доступен через WSL (в Windows есть только python) |
 | `wsl npx command` | npx (Node.js) доступен через WSL |
+
+### SSH на Windows
+
+**Нативный Windows SSH работает!** Используй его вместо WSL:
+
+```powershell
+# ✅ Нативный Windows SSH
+ssh root@192.168.35.1 "uname -a"
+ssh root@192.168.35.127 "ps w"
+
+# ✅ Через SSH config алиасы
+ssh openwrt-prod "uname -a"
+ssh openwrt-test "ps w"
+
+# ❌ Не используй WSL без необходимости
+wsl ssh root@192.168.35.1 "uname -a"
+```
+
+**SSH Config ($env:USERPROFILE\.ssh\config):**
+```
+# OpenWrt Production Environment
+Host openwrt-prod
+    HostName 192.168.35.1
+    User root
+    IdentityFile ~/.ssh/id_rsa
+
+# OpenWrt Test Environment 1
+Host openwrt-test
+    HostName 192.168.35.127
+    User root
+    IdentityFile ~/.ssh/id_ed25519_openwrt
+```
+
+**Генерация нового SSH ключа:**
+```powershell
+# Генерировать ed25519 ключ БЕЗ пароля
+ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\id_ed25519_openwrt" -N "" -C "openwrt-test"
+
+# Установить публичный ключ на роутер (одноразово через WSL если нет другого доступа)
+$pubKey = Get-Content "$env:USERPROFILE\.ssh\id_ed25519_openwrt.pub"
+wsl ssh root@192.168.35.127 "echo '$pubKey' >> /etc/dropbear/authorized_keys"
+
+# Проверить
+ssh -i "$env:USERPROFILE\.ssh\id_ed25519_openwrt" root@192.168.35.127 "uname -a"
+```
+
+**Добавление хостов в known_hosts:**
+```powershell
+# Автоматически добавить хост
+ssh-keyscan -H 192.168.35.1 >> $env:USERPROFILE\.ssh\known_hosts
+ssh-keyscan -H 192.168.35.127 >> $env:USERPROFILE\.ssh\known_hosts
+```
 
 ## Контекст проекта
 
@@ -276,9 +328,9 @@ $architectures = @(
 foreach ($arch in $architectures) {
     $target = $arch.target
     $subtarget = $arch.subtarget
-    
+
     Write-Host "Starting build for $target-$subtarget"
-    
+
     # Запуск в фоновом процессе
     Start-Job -ScriptBlock {
         param($target, $subtarget)
@@ -351,9 +403,9 @@ jobs:
           - {target: ramips, subtarget: mt76x8}
       max-parallel: 4
       fail-fast: false
-    
+
     runs-on: ubuntu-24.04
-    
+
     steps:
       - name: Build for ${{ matrix.arch.target }}-${{ matrix.arch.subtarget }}
         run: |
@@ -463,20 +515,20 @@ retry_with_backoff() {
     local max_retries=15
     local retry_count=0
     local wait_time=1
-    
+
     while [ $retry_count -lt $max_retries ]; do
         if "$@"; then
             return 0
         fi
-        
+
         retry_count=$((retry_count + 1))
         wait_time=$((2 ** retry_count))
         [ $wait_time -gt 60 ] && wait_time=60  # Max 60 секунд
-        
+
         echo "Retry $retry_count/$max_retries after ${wait_time}s..."
         sleep $wait_time
     done
-    
+
     echo "ERROR: Failed after $max_retries attempts"
     return 1
 }
@@ -679,8 +731,8 @@ Property 1: Image size compliance
 
 ### OpenWrt Test Environment
 
-**Хост:** `root@192.168.35.127`  
-**Доступ:** SSH по ключу (без пароля)  
+**Хост:** `root@192.168.35.127`
+**Доступ:** SSH по ключу (без пароля)
 **Назначение:** Тестирование пакетов OpenWrt, интеграционные тесты
 
 **Характеристики системы:**
@@ -692,8 +744,17 @@ Property 1: Image size compliance
 Диск: 2.0 GB (1.1 GB свободно)
 ```
 
-### Подключение к тестовой среде
+### OpenWrt Production Environment
 
+**Хост:** `root@192.168.35.1`
+**Доступ:** SSH по ключу (без пароля)
+**Назначение:** Продакшен среда, финальное тестирование перед релизом, проверка в реальных условиях
+
+**⚠️ ВНИМАНИЕ:** Это продакшен роутер! Будь осторожен с изменениями.
+
+### Подключение к тестовым средам
+
+**Test Environment (192.168.35.127):**
 ```powershell
 # Простое подключение
 ssh root@192.168.35.127
@@ -703,6 +764,18 @@ ssh root@192.168.35.127 "uname -a"
 
 # Проверка доступности
 Test-Connection -ComputerName 192.168.35.127 -Count 2
+```
+
+**Production Environment (192.168.35.1):**
+```powershell
+# Простое подключение
+ssh root@192.168.35.1
+
+# Выполнить команду
+ssh root@192.168.35.1 "uname -a"
+
+# Проверка доступности
+Test-Connection -ComputerName 192.168.35.1 -Count 2
 ```
 
 ### Типичные сценарии тестирования
@@ -742,15 +815,23 @@ echo "✅ Test completed successfully"
 
 ### SSH Config файлы
 
-**Windows:** `C:\Users\Администратор\.ssh\config`  
+**Windows:** `C:\Users\Администратор\.ssh\config`
 **WSL:** `~/.ssh/config`
 
 ### Настроенные хосты
 
 ```
+# OpenWrt Production Environment
+Host openwrt-prod
+    HostName 192.168.35.1
+    User root
+    IdentityFile ~/.ssh/id_rsa
+
+# OpenWrt Test Environment
 Host openwrt-test
     HostName 192.168.35.127
     User root
+    IdentityFile ~/.ssh/id_ed25519_openwrt
     Port 22
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
@@ -1120,31 +1201,33 @@ scp root@192.168.35.127:/tmp/file.txt ./
 **Файл:** `C:\Users\Администратор\.ssh\config`
 
 ```
+# OpenWrt Production Environment
+Host openwrt-prod
+    HostName 192.168.35.1
+    User root
+    IdentityFile ~/.ssh/id_rsa
+
+# OpenWrt Test Environment
 Host openwrt-test
     HostName 192.168.35.127
     User root
+    IdentityFile ~/.ssh/id_ed25519_openwrt
     Port 22
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
     ServerAliveInterval 60
     ServerAliveCountMax 3
-
-Host openwrt
-    HostName 192.168.35.127
-    User root
-    Port 22
-    StrictHostKeyChecking no
-    UserKnownHostsFile /dev/null
 ```
 
 **Использование с алиасами:**
 ```powershell
 # Подключение через алиас
+ssh openwrt-prod
 ssh openwrt-test
-ssh openwrt
 
 # Копирование через алиас
 scp package.ipk openwrt-test:/tmp/
+scp package.ipk openwrt-prod:/tmp/
 ```
 
 ### Когда использовать WSL SSH vs нативный SSH
@@ -1283,6 +1366,182 @@ curl -X POST https://api.example.com/endpoint `
 
 # С авторизацией
 curl -H "Authorization: Bearer $token" https://api.example.com/endpoint
+```
+
+## Git History Cleanup
+
+### git-filter-repo
+
+**Назначение:** Переписывание истории Git для удаления секретов, больших файлов или проблемных путей.
+
+**Установка:**
+```powershell
+# Windows
+pip install git-filter-repo
+
+# WSL/Linux
+pip3 install git-filter-repo
+```
+
+**Проверка установки:**
+```powershell
+# Windows
+python -m git_filter_repo --version
+
+# WSL
+wsl python3 -m git_filter_repo --version
+```
+
+### Использование git-filter-repo
+
+**⚠️ ВНИМАНИЕ:** git-filter-repo переписывает историю Git. Это необратимая операция!
+
+**Перед использованием:**
+1. Создать backup репозитория
+2. Убедиться что все изменения закоммичены
+3. Уведомить команду о предстоящем rebase
+
+### Проблемы с Windows и невалидными путями
+
+**Проблема:** Windows не поддерживает файлы с некоторыми спецсимволами в путях:
+- Запятые в начале имени: `, 1):`
+- Кавычки в имени: `"sarif_file: results\")"`
+- Другие спецсимволы: `<>:|?*`
+
+**Симптомы:**
+```
+fatal: invalid path ', 1):'
+OSError: [Errno 22] Invalid argument
+```
+
+**Решение:** Использовать WSL для работы с такими файлами:
+
+```powershell
+# 1. Клонировать репозиторий в WSL
+wsl bash -c "cd /tmp && git clone https://github.com/user/repo.git repo-clean"
+
+# 2. Найти проблемные файлы
+wsl bash -c 'cd /tmp/repo-clean && git log --all --name-only --pretty=format: | sort -u | grep -E "(^,|\")" > /tmp/paths-to-remove.txt'
+
+# 3. Удалить проблемные файлы из истории
+wsl bash -c 'cd /tmp/repo-clean && git remote remove origin && python3 -m git_filter_repo --invert-paths --paths-from-file /tmp/paths-to-remove.txt --force'
+
+# 4. Создать файл с секретами для замены
+wsl bash -c "cat > /tmp/replace-secrets.txt << 'EOF'
+SECRET_KEY_1==>REDACTED
+SECRET_KEY_2==>REDACTED
+EOF"
+
+# 5. Заменить секреты в истории
+wsl bash -c 'cd /tmp/repo-clean && python3 -m git_filter_repo --replace-text /tmp/replace-secrets.txt --force'
+
+# 6. Скопировать обратно в Windows
+wsl bash -c "cd /tmp && tar -czf repo-clean.tar.gz repo-clean"
+wsl bash -c "cp /tmp/repo-clean.tar.gz /mnt/c/git/"
+cd C:\git
+tar -xzf repo-clean.tar.gz
+
+# 7. Push из Windows
+cd repo-clean
+git remote add origin https://github.com/user/repo.git
+git push origin --force --all
+git push origin --force --tags
+
+# 8. Заменить основной репозиторий
+cd C:\git
+Remove-Item openwrt-captive-monitor -Recurse -Force
+Rename-Item repo-clean openwrt-captive-monitor
+
+# 9. Очистить WSL
+wsl bash -c "rm -rf /tmp/repo-clean /tmp/replace-secrets.txt /tmp/paths-to-remove.txt /tmp/repo-clean.tar.gz"
+```
+
+### Проверка результатов
+
+**Проверить что секреты удалены:**
+```bash
+# Поиск секрета в истории
+git log --all -S "SECRET_KEY" --oneline
+# Должно быть пусто
+
+# Поиск в содержимом всех коммитов
+git rev-list --all | xargs git grep "SECRET_KEY"
+# Должно быть пусто
+```
+
+**Проверить что файлы удалены:**
+```bash
+# Список всех файлов в истории
+git log --all --name-only --pretty=format: | sort -u | grep "problematic-file"
+# Должно быть пусто
+```
+
+### После force push
+
+**Команда должна:**
+1. Переклонировать репозиторий
+2. Обновить все локальные ветки
+3. Проверить что CI/CD работает
+
+**Уведомление команды:**
+```
+⚠️ История Git была переписана для удаления секретов/проблемных файлов.
+
+Действия:
+1. Удалите старый клон: rm -rf old-repo
+2. Клонируйте заново: git clone https://github.com/user/repo.git
+3. Проверьте что все работает
+
+Изменения:
+- Хеши всех коммитов изменились
+- Старые ссылки на коммиты недействительны
+- Теги обновлены
+```
+
+### Best Practices
+
+1. **Всегда создавай backup** перед переписыванием истории
+2. **Используй WSL** для работы с проблемными путями на Windows
+3. **Проверяй результат** перед force push
+4. **Уведоми команду** о предстоящем rebase
+5. **Отзови секреты** даже после удаления из истории
+6. **Обнови .gitignore** чтобы предотвратить повторное добавление
+7. **Проверь CI/CD** после force push
+8. **Организуй бакапы** в отдельную папку (например `C:\git\backups\`)
+
+### Troubleshooting
+
+**Ошибка: "Refusing to destructively overwrite repo history"**
+```bash
+# Решение: добавить --force
+python3 -m git_filter_repo --replace-text secrets.txt --force
+```
+
+**Ошибка: "fatal: invalid path"**
+```bash
+# Решение: использовать WSL
+wsl python3 -m git_filter_repo --invert-paths --paths-from-file paths.txt --force
+```
+
+**Ошибка: "OSError: [Errno 22] Invalid argument"**
+```bash
+# Решение: в истории есть файлы с невалидными путями для Windows
+# Используй WSL для очистки (см. раздел выше)
+```
+
+**Папка не удаляется на Windows:**
+```powershell
+# Проверить текущую директорию
+Get-Location
+
+# Если находишься в удаляемой папке - выйти
+Set-Location C:\git
+
+# Удалить через robocopy
+New-Item -ItemType Directory -Path C:\git\empty -Force | Out-Null
+robocopy C:\git\empty C:\git\old-repo /MIR /R:0 /W:0
+Remove-Item C:\git\old-repo -Force
+Remove-Item C:\git\empty -Force
 ```
 
 ## Cursor специфичные настройки

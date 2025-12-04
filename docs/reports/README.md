@@ -2,6 +2,16 @@
 
 This section contains various reports, analyses, and documentation generated during project development and maintenance.
 
+## 📊 Активные отчеты
+
+### 📈 Объединенные отчеты (новые)
+- [Build History](BUILD_HISTORY.md) - История сборок Docker SDK образов и проверок релизов
+- [Release History](RELEASE_HISTORY.md) - История всех релизов проекта
+- [Final Status](FINAL_STATUS.md) - Финальный статус проекта и компонентов
+
+### 📁 Архив
+Старые отчеты перемещены в [archive/](archive/) для сохранения истории, но не для активного использования.
+
 ## 📊 Categories
 
 ### 🔍 Analysis Reports
@@ -41,17 +51,14 @@ This section contains various reports, analyses, and documentation generated dur
 - [Security Contact Email Investigation Report](SECURITY_EMAIL_INVESTIGATION_REPORT.md) - Investigation of the `security@nagual2.com` contact address
 
 ### 🏷️ Release and Tag Reports
+- [Release History](RELEASE_HISTORY.md) - **Объединенная история всех релизов** ⭐
 - [Release Summary v1.0.3](RELEASE_SUMMARY_v1.0.3.md) - Release v1.0.3 summary
-- [Tag Build Completion Report](TAG_BUILD_RELEASE_COMPLETION_REPORT.md) - Tag build completion
-- [Tag Build Diagnostic Report](TAG_BUILD_RELEASE_DIAGNOSTIC_REPORT.md) - Tag build diagnostics
-- [Tag Build Fix Summary](TAG_BUILD_RELEASE_FIX_SUMMARY.md) - Tag build fixes
+- *Старые отчеты о tag build перемещены в [archive/](archive/)*
 
 ### 🛠️ Task and Workflow Reports
-- [Task Completion Report](TASK_COMPLETION_REPORT.md) - General task completion summary
-- [Ticket Resolution](TICKET_RESOLUTION.md) - Ticket resolution documentation
-- [Toolchain Initialization Fix](TOOLCHAIN_INITIALIZATION_FIX.md) - *Moved to setup folder*
 - [Workflow Fixes Summary](WORKFLOW_FIXES_SUMMARY.md) - Workflow fixes and improvements
 - [Workflow Refactor Summary](WORKFLOW_REFACTOR_SUMMARY.md) - Workflow refactoring documentation
+- *Старые task/ticket отчеты перемещены в [archive/](archive/)*
 
 ### 📝 Change and Investigation Reports
 - [Changes Summary](CHANGES_SUMMARY.md) - Summary of project changes
@@ -66,6 +73,18 @@ This section contains various reports, analyses, and documentation generated dur
 
 ---
 
-**Note:** Some documents have been moved to more appropriate folders as part of the documentation restructure. See the specific folders for the most up-to-date versions.
+## 📦 Архив
 
-**Last updated:** 2025-11-14
+Старые отчеты, которые больше не актуальны, но сохранены для истории, находятся в [archive/](archive/):
+- Старые build отчеты
+- Старые release отчеты
+- Завершенные task/ticket отчеты
+- Устаревшие диагностические отчеты
+
+## 📝 Примечания
+
+- **Объединенные отчеты** (⭐) содержат актуальную информацию из нескольких старых отчетов
+- Старые отчеты перемещены в архив для сохранения истории
+- Для актуальной информации используйте объединенные отчеты или соответствующие разделы документации
+
+**Last updated:** 2025-12-03
