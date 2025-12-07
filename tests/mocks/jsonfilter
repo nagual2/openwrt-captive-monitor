@@ -1,0 +1,21 @@
+#!/bin/sh
+# Mock for jsonfilter command
+
+# Read JSON from stdin
+json=$(cat)
+
+# Parse the expression
+expr="$2"
+
+# Simple JSON parser for @.up field
+if [ "$expr" = "@.up" ]; then
+    # Extract "up" field value
+    echo "$json" | grep -o '"up"[[:space:]]*:[[:space:]]*[a-z]*' | sed 's/.*:[[:space:]]*//'
+elif [ "$expr" = "@.pending" ]; then
+    echo "$json" | grep -o '"pending"[[:space:]]*:[[:space:]]*[a-z]*' | sed 's/.*:[[:space:]]*//'
+elif [ "$expr" = "@.available" ]; then
+    echo "$json" | grep -o '"available"[[:space:]]*:[[:space:]]*[a-z]*' | sed 's/.*:[[:space:]]*//'
+else
+    # Default: return empty
+    echo ""
+fi

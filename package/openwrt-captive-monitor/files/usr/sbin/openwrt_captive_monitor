@@ -125,7 +125,7 @@ DEFAULT_LOG_TAG="captive-monitor"
 DEFAULT_ENABLE_SYSLOG=1
 
 # Lock file to prevent multiple instances
-LOCK_FILE="/var/run/openwrt_captive_monitor.lock"
+LOCK_FILE="${LOCK_FILE:-/var/run/openwrt_captive_monitor.lock}"
 
 # Connectivity check domains that should bypass DNS intercept
 CONNECTIVITY_CHECK_DOMAINS="connectivitycheck.gstatic.com detectportal.firefox.com msftconnecttest.com www.msftconnecttest.com"
