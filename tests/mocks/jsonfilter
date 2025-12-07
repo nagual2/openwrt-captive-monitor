@@ -9,12 +9,42 @@ expr="$2"
 
 # Simple JSON parser for @.up field
 if [ "$expr" = "@.up" ]; then
-    # Extract "up" field value
-    echo "$json" | grep -o '"up"[[:space:]]*:[[:space:]]*[a-z]*' | sed 's/.*:[[:space:]]*//'
+    # Extract "up" field value - simpler approach
+    case "$json" in
+        *'"up": true'*|*'"up":true'*)
+            echo "true"
+            ;;
+        *'"up": false'*|*'"up":false'*)
+            echo "false"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
 elif [ "$expr" = "@.pending" ]; then
-    echo "$json" | grep -o '"pending"[[:space:]]*:[[:space:]]*[a-z]*' | sed 's/.*:[[:space:]]*//'
+    case "$json" in
+        *'"pending": true'*|*'"pending":true'*)
+            echo "true"
+            ;;
+        *'"pending": false'*|*'"pending":false'*)
+            echo "false"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
 elif [ "$expr" = "@.available" ]; then
-    echo "$json" | grep -o '"available"[[:space:]]*:[[:space:]]*[a-z]*' | sed 's/.*:[[:space:]]*//'
+    case "$json" in
+        *'"available": true'*|*'"available":true'*)
+            echo "true"
+            ;;
+        *'"available": false'*|*'"available":false'*)
+            echo "false"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
 else
     # Default: return empty
     echo ""
