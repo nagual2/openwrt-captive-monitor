@@ -1202,6 +1202,11 @@ setup_firewall_redirects_nft() {
         return 1
     fi
 
+    # Bypass router's own IP to allow access to LuCI and other local services
+    if ! nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip daddr "$LAN_IP" tcp dport 80 return comment "captive-http-bypass-router" > /dev/null 2>&1; then
+        log_warn "Не удалось добавить правило обхода локального IP роутера в nftables"
+    fi
+
     if [ -n "$portal_ip4" ]; then
         nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip daddr "$portal_ip4" tcp dport 80 return comment "captive-http-bypass-v4" > /dev/null 2>&1 || log_warn "Не удалось добавить правило обхода IPv4 портала в nftables"
     fi
