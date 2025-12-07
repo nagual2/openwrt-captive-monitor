@@ -1360,7 +1360,7 @@ wait_for_internet_after_intercept() {
 check_wan_interface() {
     local wan_iface="${WIFI_LOGICAL:-wan}"
 
-    if ! command -v ifstatus > /dev/null 2>&1; then
+    if ! which ifstatus > /dev/null 2>&1 && ! type ifstatus > /dev/null 2>&1; then
         return 0
     fi
 
