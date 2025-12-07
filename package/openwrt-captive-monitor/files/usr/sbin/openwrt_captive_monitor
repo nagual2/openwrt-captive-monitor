@@ -1347,10 +1347,45 @@ wait_for_internet_after_intercept() {
     return 1
 }
 
+check_wan_interface() {
+    local wan_iface="${WIFI_LOGICAL:-wan}"
+
+    if ! command -v ifstatus > /dev/null 2>&1; then
+        return 0
+    fi
+
+    local status
+    status=$(ifstatus "$wan_iface" 2> /dev/null)
+
+    if [ -z "$status" ]; then
+        log_warn "Не удалось получить статус WAN интерфейса $wan_iface"
+        return 1
+    fi
+
+    local up
+    up=$(echo "$status" | jsonfilter -e '@.up' 2> /dev/null)
+
+    if [ "$up" != "true" ]; then
+        log_warn "WAN интерфейс $wan_iface не активен (up=$up)"
+        return 1
+    fi
+
+    return 0
+}
+
 check_and_fix_connection() {
     log_info "=== Проверка подключения ==="
 
     ensure_lan_ip
+
+    # Check WAN interface status first
+    if ! check_wan_interface; then
+        log_warn "WAN интерфейс недоступен, отключаем перехват"
+        if [ "$CAPTIVE_ACTIVE" = "1" ]; then
+            cleanup_captive_intercept
+        fi
+        return 1
+    fi
 
     if check_internet; then
         if [ "$CAPTIVE_ACTIVE" = "1" ]; then
