@@ -124,6 +124,12 @@ DEFAULT_NFT_CHAIN_NAME="prerouting"
 DEFAULT_LOG_TAG="captive-monitor"
 DEFAULT_ENABLE_SYSLOG=1
 
+# Lock file to prevent multiple instances
+LOCK_FILE="/var/run/openwrt_captive_monitor.lock"
+
+# Connectivity check domains that should bypass DNS intercept
+CONNECTIVITY_CHECK_DOMAINS="connectivitycheck.gstatic.com detectportal.firefox.com msftconnecttest.com www.msftconnecttest.com"
+
 # Сетевые интерфейсы
 WIFI_INTERFACE="${WIFI_INTERFACE:-$DEFAULT_WIFI_INTERFACE}"
 WIFI_LOGICAL="${WIFI_LOGICAL:-$DEFAULT_WIFI_LOGICAL}"
@@ -931,6 +937,12 @@ write_dnsmasq_intercept() {
         echo "min-cache-ttl=0"
         echo "max-cache-ttl=0"
         echo "no-negcache"
+
+        # Allow connectivity check domains to resolve normally
+        for domain in $CONNECTIVITY_CHECK_DOMAINS; do
+            echo "server=/$domain/#"
+        done
+
         if [ -n "$portal_host" ] && [ -n "$portal_ip4" ]; then
             echo "address=/$portal_host/$portal_ip4"
         fi
@@ -1207,8 +1219,19 @@ setup_firewall_redirects_nft() {
         log_warn "Не удалось добавить правило обхода локального IP роутера в nftables"
     fi
 
+    # Bypass connectivity check domains to allow them to work normally
+    for domain in $CONNECTIVITY_CHECK_DOMAINS; do
+        local domain_ip
+        domain_ip=$(nslookup "$domain" 2> /dev/null | grep -A1 "Name:" | grep "Address" | awk '{print $3}' | head -n1)
+        if [ -n "$domain_ip" ] && [ "$domain_ip" != "$LAN_IP" ]; then
+            nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip daddr "$domain_ip" tcp dport 80 return comment "captive-http-bypass-$domain" > /dev/null 2>&1 || true
+            nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip daddr "$domain_ip" tcp dport 443 return comment "captive-https-bypass-$domain" > /dev/null 2>&1 || true
+        fi
+    done
+
     if [ -n "$portal_ip4" ]; then
         nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip daddr "$portal_ip4" tcp dport 80 return comment "captive-http-bypass-v4" > /dev/null 2>&1 || log_warn "Не удалось добавить правило обхода IPv4 портала в nftables"
+        nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" ip daddr "$portal_ip4" tcp dport 443 return comment "captive-https-bypass-v4" > /dev/null 2>&1 || log_warn "Не удалось добавить правило обхода HTTPS портала в nftables"
     fi
 
     if ! nft add rule inet "$NFT_TABLE_NAME" "$NFT_CHAIN_NAME" iifname "$LAN_INTERFACE" meta nfproto ipv4 tcp dport 80 dnat to "$LAN_IP:$HTTPD_PORT" comment "captive-http-redirect-v4" > /dev/null 2>&1; then
@@ -1371,7 +1394,33 @@ check_and_fix_connection() {
     return 1
 }
 
+acquire_lock() {
+    if [ -f "$LOCK_FILE" ]; then
+        local pid
+        pid=$(cat "$LOCK_FILE" 2> /dev/null)
+        if [ -n "$pid" ] && kill -0 "$pid" 2> /dev/null; then
+            log_error "Другой экземпляр уже запущен (PID: $pid)"
+            return 1
+        fi
+        log_warn "Найден устаревший lock file, удаляем"
+        rm -f "$LOCK_FILE"
+    fi
+
+    echo $$ > "$LOCK_FILE"
+    return 0
+}
+
+release_lock() {
+    rm -f "$LOCK_FILE"
+}
+
 monitor_mode() {
+    if ! acquire_lock; then
+        exit 1
+    fi
+
+    trap 'release_lock; cleanup_captive_intercept; exit' INT TERM EXIT
+
     log_info "Запуск в режиме мониторинга (интервал: ${MONITOR_INTERVAL}с)"
     while true; do
         if ! check_and_fix_connection; then
@@ -1383,10 +1432,18 @@ monitor_mode() {
 }
 
 oneshot_mode() {
+    if ! acquire_lock; then
+        exit 1
+    fi
+
+    trap 'release_lock; cleanup_captive_intercept; exit' INT TERM EXIT
+
     log_info "Запуск в режиме однократной проверки"
     if check_and_fix_connection; then
+        release_lock
         exit 0
     fi
+    release_lock
     exit 1
 }
 

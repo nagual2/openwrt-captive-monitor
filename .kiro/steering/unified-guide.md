@@ -730,7 +730,8 @@ Property 1: Image size compliance
 
 ### OpenWrt Test Environment
 
-**Хост:** `root@192.168.35.127`
+**Хост:** `root@2a11:6c7:1101:4f00:20c:29ff:fe15:16bb` (временный IPv6 адрес)
+**Старый адрес:** `root@192.168.35.127` (недоступен)
 **Доступ:** SSH по ключу (без пароля)
 **Назначение:** Тестирование пакетов OpenWrt, интеграционные тесты
 
@@ -753,16 +754,16 @@ Property 1: Image size compliance
 
 ### Подключение к тестовым средам
 
-**Test Environment (192.168.35.127):**
+**Test Environment (IPv6):**
 ```powershell
 # Простое подключение
-wsl ssh root@192.168.35.127
+wsl ssh root@2a11:6c7:1101:4f00:20c:29ff:fe15:16bb
 
 # Выполнить команду
-wsl ssh root@192.168.35.127 "uname -a"
+wsl ssh root@2a11:6c7:1101:4f00:20c:29ff:fe15:16bb "uname -a"
 
-# Проверка доступности
-Test-Connection -ComputerName 192.168.35.127 -Count 2
+# Проверка доступности (IPv6)
+Test-Connection -ComputerName 2a11:6c7:1101:4f00:20c:29ff:fe15:16bb -Count 2
 ```
 
 **Production Environment (192.168.35.1):**
@@ -781,11 +782,11 @@ Test-Connection -ComputerName 192.168.35.1 -Count 2
 
 **1. Установка и тестирование пакета**
 ```bash
-# Скопировать пакет на роутер
-scp dist/openwrt-captive-monitor_*.ipk root@192.168.35.127:/tmp/
+# Скопировать пакет на роутер (IPv6)
+scp dist/openwrt-captive-monitor_*.ipk root@2a11:6c7:1101:4f00:20c:29ff:fe15:16bb:/tmp/
 
 # Подключиться к роутеру и установить
-ssh root@192.168.35.127 "
+ssh root@2a11:6c7:1101:4f00:20c:29ff:fe15:16bb "
   opkg install /tmp/openwrt-captive-monitor_*.ipk &&
   /etc/init.d/captive-monitor start &&
   /etc/init.d/captive-monitor status
@@ -799,7 +800,7 @@ ssh root@192.168.35.127 "
 
 set -euo pipefail
 
-ROUTER_IP="192.168.35.127"
+ROUTER_IP="2a11:6c7:1101:4f00:20c:29ff:fe15:16bb"
 PACKAGE_FILE=$1
 
 echo "=== Testing package on OpenWrt ==="
@@ -821,7 +822,7 @@ echo "✅ Test completed successfully"
 
 ```
 Host openwrt-test
-    HostName 192.168.35.127
+    HostName 2a11:6c7:1101:4f00:20c:29ff:fe15:16bb
     User root
     Port 22
     StrictHostKeyChecking no
@@ -1199,3 +1200,351 @@ robocopy C:\git\empty C:\git\old-repo /MIR /R:0 /W:0
 Remove-Item C:\git\old-repo -Force
 Remove-Item C:\git\empty -Force
 ```
+
+
+## Анализ кода через ultrascript-tools
+
+### Установка и настройка
+
+**Репозиторий:** `C:\git\ultrascript-tools-mcp`
+
+**Установка:**
+```powershell
+# Клонировать репозиторий
+git clone https://github.com/faxenoff/ultrascript-tools-mcp.git C:\git\ultrascript-tools-mcp
+
+# Установить зависимости
+cd C:\git\ultrascript-tools-mcp
+bun install
+
+# Собрать проект
+bun run build
+
+# Запустить интерактивный setup
+bun C:\git\ultrascript-tools-mcp\dist\index.js setup
+```
+
+**MCP конфигурация (`.kiro/settings/mcp.json`):**
+```json
+{
+  "mcpServers": {
+    "ultrascript-tools": {
+      "command": "C:\\Users\\Администратор\\.bun\\bin\\bun.exe",
+      "args": [
+        "C:\\git\\ultrascript-tools-mcp\\dist\\index.js",
+        "C:\\git\\openwrt-captive-monitor"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "index",
+        "get_graph_stats",
+        "get_version",
+        "list_file_entities",
+        "semantic_search",
+        "query"
+      ]
+    }
+  }
+}
+```
+
+### База данных графа кода
+
+**Расположение:** `C:\Users\Администратор\AppData\Local\UltraScriptTools\projects\9ef9lt\graph.db`
+
+**Структура:**
+- `entities` - сущности кода (функции, классы, переменные)
+- `relationships` - связи между сущностями (imports, references)
+- `files` - индексированные файлы
+- `entities_fts` - Full-Text Search индекс для быстрого поиска
+- `embeddings` - векторные представления для семантического поиска
+
+### Прямой доступ к базе через query-graph.js
+
+**Скрипт:** `tools/query-graph.js`
+
+**Использование:**
+```powershell
+# Статистика базы данных
+bun tools/query-graph.js stats
+
+# Список таблиц
+bun tools/query-graph.js tables
+
+# Схема таблицы
+bun tools/query-graph.js schema entities
+
+# Типы сущностей с количеством
+bun tools/query-graph.js types
+
+# Получить сущности по типу
+bun tools/query-graph.js by-type function 20
+bun tools/query-graph.js by-type class 10
+bun tools/query-graph.js by-type variable 50
+
+# Поиск по имени
+bun tools/query-graph.js search "captive"
+
+# Список файлов
+bun tools/query-graph.js files 20
+
+# Все сущности (с лимитом)
+bun tools/query-graph.js entities 10
+```
+
+### Типы сущностей
+
+- `function` - функции
+- `class` - классы
+- `variable` - переменные
+- `constant` - константы
+- `import` - импорты
+- `module` - модули
+- `type` - типы (TypeScript/Python)
+- `dataclass` - dataclass (Python)
+- `magic_method` - магические методы (Python)
+
+### Проблемы и решения
+
+**Проблема:** MCP инструменты не работают в Kiro из-за несовместимости JSON Schema draft 2020-12
+
+**Решение:** Использовать прямой доступ к SQLite базе через `tools/query-graph.js`
+
+**Проблема:** Индексация зависает или не завершается
+
+**Решение:** Запустить индексацию в фоновом режиме:
+```powershell
+# Запустить MCP сервер с автоматической индексацией
+controlPwshProcess --action start `
+  --command "C:\Users\Администратор\.bun\bin\bun.exe C:\git\ultrascript-tools-mcp\dist\index.js C:\git\openwrt-captive-monitor"
+
+# Проверить вывод
+getProcessOutput --processId <id> --lines 50
+
+# Остановить после завершения индексации
+controlPwshProcess --action stop --processId <id>
+```
+
+### Примеры анализа
+
+**Найти все функции в проекте:**
+```powershell
+bun tools/query-graph.js by-type function 100 | ConvertFrom-Json | Select-Object name, file_path | Format-Table
+```
+
+**Статистика по типам:**
+```powershell
+bun tools/query-graph.js types | ConvertFrom-Json | Format-Table
+```
+
+**Поиск конкретной функции:**
+```powershell
+bun tools/query-graph.js search "main" | ConvertFrom-Json | Where-Object { $_.type -eq "function" }
+```
+
+
+## Команды, вызывающие зависание в Kiro
+
+### Проблема
+
+Kiro регулярно зависает при выполнении команд, ожидающих интерактивного ввода или открывающих пейджеры (less, more).
+
+### Проблемные команды
+
+**Git команды с пейджером:**
+```bash
+git show <commit>           # Открывает less
+git log                     # Открывает less
+git diff                    # Открывает less
+git blame <file>            # Открывает less
+git commit                  # Открывает vim/nano
+```
+
+**Другие команды:**
+```bash
+docker exec -it container bash    # Интерактивный терминал
+ssh user@host                     # Может спросить пароль
+vim file.txt                      # Интерактивный редактор
+nano file.txt                     # Интерактивный редактор
+less file.txt                     # Пейджер
+more file.txt                     # Пейджер
+```
+
+### Решения для Git команд
+
+**Использовать --no-pager:**
+```powershell
+# ✅ Правильно - без пейджера
+git --no-pager show 9724d68
+git --no-pager log --oneline -10
+git --no-pager diff HEAD~1
+git --no-pager blame file.txt
+
+# ❌ Неправильно - зависнет
+git show 9724d68
+git log
+git diff
+```
+
+**Установить переменную окружения:**
+```powershell
+# Глобально для сессии
+$env:GIT_PAGER = "cat"
+
+# Или в команде
+$env:GIT_PAGER="cat"; git show 9724d68
+```
+
+**Git commit - использовать -m:**
+```powershell
+# ✅ Правильно
+git commit -m "feat: add new feature"
+
+# ❌ Неправильно - откроет редактор
+git commit
+```
+
+### Решения для других команд
+
+**Docker - без интерактивного режима:**
+```powershell
+# ✅ Правильно - без -it
+docker exec container bash -c "ls -la"
+
+# ❌ Неправильно - интерактивный режим
+docker exec -it container bash
+```
+
+**SSH - использовать ключи:**
+```powershell
+# ✅ Правильно - с ключом
+ssh -i ~/.ssh/id_rsa user@host "command"
+
+# ✅ Правильно - BatchMode
+ssh -o BatchMode=yes user@host "command"
+
+# ❌ Неправильно - может спросить пароль
+ssh user@host
+```
+
+**Чтение файлов - использовать Get-Content:**
+```powershell
+# ✅ Правильно
+Get-Content file.txt
+Get-Content file.txt | Select-Object -First 20
+
+# ❌ Неправильно - откроет пейджер
+less file.txt
+more file.txt
+```
+
+### Универсальное решение для bash скриптов
+
+**Добавить в начало каждого bash скрипта:**
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# Отключить все интерактивные режимы
+export GIT_PAGER=cat
+export PAGER=cat
+export SYSTEMD_PAGER=cat
+export EDITOR=cat
+export VISUAL=cat
+export DEBIAN_FRONTEND=noninteractive
+```
+
+### Универсальное решение для PowerShell
+
+**В Kiro ВСЕГДА использовать --no-pager для git команд:**
+```powershell
+# ✅ Правильно - используй --no-pager
+git --no-pager show abc123
+git --no-pager log --oneline -10
+git --no-pager diff HEAD~1
+git --no-pager blame file.txt
+
+# ❌ Неправильно - зависнет в Kiro
+git show abc123
+git log
+git diff
+```
+
+**Для PowerShell профиля ($PROFILE) - создать обёртки:**
+```powershell
+# Добавить в Microsoft.PowerShell_profile.ps1
+
+# Git обёртки без пейджера
+function git-show { git --no-pager show @args }
+function git-log { git --no-pager log @args }
+function git-diff { git --no-pager diff @args }
+function git-blame { git --no-pager blame @args }
+
+# Алиасы для удобства
+Set-Alias -Name gshow -Value git-show
+Set-Alias -Name glog -Value git-log
+Set-Alias -Name gdiff -Value git-diff
+
+# Теперь можно использовать:
+# gshow abc123
+# glog --oneline -10
+# gdiff HEAD~1
+```
+
+**Для Kiro executePwsh - ОБЯЗАТЕЛЬНО использовать --no-pager:**
+```typescript
+// ✅ Правильно
+executePwsh({
+  command: "git --no-pager show abc123",
+  timeout: 30000
+})
+
+// ❌ Неправильно - зависнет
+executePwsh({
+  command: "git show abc123"
+})
+```
+
+**Правило для Kiro:** Никогда не вызывай git команды без --no-pager в executePwsh!
+
+### Использование timeout в Kiro
+
+**Всегда указывай timeout для потенциально зависающих команд:**
+```typescript
+// ✅ Хорошо - прервется через 30 секунд
+executePwsh({
+  command: "git log --oneline",
+  timeout: 30000  // 30 секунд
+})
+
+// ✅ Еще лучше - с отключением пейджера
+executePwsh({
+  command: "$env:GIT_PAGER='cat'; git log --oneline",
+  timeout: 30000
+})
+```
+
+### Чеклист перед выполнением команды
+
+Перед выполнением команды в Kiro проверь:
+
+1. ✅ Команда не открывает интерактивный редактор (vim, nano)
+2. ✅ Команда не открывает пейджер (less, more)
+3. ✅ Git команды используют --no-pager или $env:GIT_PAGER="cat"
+4. ✅ Docker команды не используют -it флаг
+5. ✅ SSH команды используют ключи или BatchMode
+6. ✅ Указан timeout для потенциально долгих операций
+7. ✅ Bash скрипты экспортируют PAGER=cat и EDITOR=cat
+
+### Быстрые замены
+
+| ❌ Зависнет | ✅ Используй вместо |
+|------------|---------------------|
+| `git show abc123` | `git --no-pager show abc123` |
+| `git log` | `git --no-pager log --oneline -20` |
+| `git diff` | `git --no-pager diff` |
+| `git commit` | `git commit -m "message"` |
+| `docker exec -it c bash` | `docker exec c bash -c "command"` |
+| `less file.txt` | `Get-Content file.txt` |
+| `ssh user@host` | `ssh -o BatchMode=yes user@host "cmd"` |
+| `vim file.txt` | `code file.txt` или `notepad file.txt` |
