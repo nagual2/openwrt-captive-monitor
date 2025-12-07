@@ -11,39 +11,39 @@ expr="$2"
 if [ "$expr" = "@.up" ]; then
     # Extract "up" field value - simpler approach
     case "$json" in
-        *'"up": true'*|*'"up":true'*)
-            echo "true"
-            ;;
-        *'"up": false'*|*'"up":false'*)
-            echo "false"
-            ;;
-        *)
-            echo ""
-            ;;
+    *'"up": true'* | *'"up":true'*)
+        echo "true"
+        ;;
+    *'"up": false'* | *'"up":false'*)
+        echo "false"
+        ;;
+    *)
+        echo ""
+        ;;
     esac
 elif [ "$expr" = "@.pending" ]; then
     case "$json" in
-        *'"pending": true'*|*'"pending":true'*)
-            echo "true"
-            ;;
-        *'"pending": false'*|*'"pending":false'*)
-            echo "false"
-            ;;
-        *)
-            echo ""
-            ;;
+    *'"pending": true'* | *'"pending":true'*)
+        echo "true"
+        ;;
+    *'"pending": false'* | *'"pending":false'*)
+        echo "false"
+        ;;
+    *)
+        echo ""
+        ;;
     esac
 elif [ "$expr" = "@.available" ]; then
     case "$json" in
-        *'"available": true'*|*'"available":true'*)
-            echo "true"
-            ;;
-        *'"available": false'*|*'"available":false'*)
-            echo "false"
-            ;;
-        *)
-            echo ""
-            ;;
+    *'"available": true'* | *'"available":true'*)
+        echo "true"
+        ;;
+    *'"available": false'* | *'"available":false'*)
+        echo "false"
+        ;;
+    *)
+        echo ""
+        ;;
     esac
 else
     # Default: return empty
