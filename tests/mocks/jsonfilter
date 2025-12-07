@@ -1,0 +1,51 @@
+#!/bin/sh
+# Mock for jsonfilter command
+
+# Read JSON from stdin
+json=$(cat)
+
+# Parse the expression
+expr="$2"
+
+# Simple JSON parser for @.up field
+if [ "$expr" = "@.up" ]; then
+    # Extract "up" field value - simpler approach
+    case "$json" in
+        *'"up": true'* | *'"up":true'*)
+            echo "true"
+            ;;
+        *'"up": false'* | *'"up":false'*)
+            echo "false"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+elif [ "$expr" = "@.pending" ]; then
+    case "$json" in
+        *'"pending": true'* | *'"pending":true'*)
+            echo "true"
+            ;;
+        *'"pending": false'* | *'"pending":false'*)
+            echo "false"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+elif [ "$expr" = "@.available" ]; then
+    case "$json" in
+        *'"available": true'* | *'"available":true'*)
+            echo "true"
+            ;;
+        *'"available": false'* | *'"available":false'*)
+            echo "false"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+else
+    # Default: return empty
+    echo ""
+fi

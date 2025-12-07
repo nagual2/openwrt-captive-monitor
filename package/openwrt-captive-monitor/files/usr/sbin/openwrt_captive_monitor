@@ -125,7 +125,7 @@ DEFAULT_LOG_TAG="captive-monitor"
 DEFAULT_ENABLE_SYSLOG=1
 
 # Lock file to prevent multiple instances
-LOCK_FILE="/var/run/openwrt_captive_monitor.lock"
+LOCK_FILE="${LOCK_FILE:-/var/run/openwrt_captive_monitor.lock}"
 
 # Connectivity check domains that should bypass DNS intercept
 CONNECTIVITY_CHECK_DOMAINS="connectivitycheck.gstatic.com detectportal.firefox.com msftconnecttest.com www.msftconnecttest.com"
@@ -601,20 +601,30 @@ check_internet() {
     local delay="$INTERNET_CHECK_DELAY"
 
     while [ "$attempt" -le "$INTERNET_CHECK_RETRIES" ]; do
+        local icmp_ok=0
+        local http_ok=0
+
         for server in $PING_SERVERS; do
             if ping_host "$server" "$INTERNET_PING_TIMEOUT"; then
-                log_info "Интернет доступен по ICMP (сервер: $server)"
-                return 0
+                icmp_ok=1
+                break
             fi
         done
 
         if http_probe_internet; then
-            local probe_url="$HTTP_PROBE_RESULT_URL"
-            local probe_code="$HTTP_PROBE_RESULT_CODE"
-            [ -z "$probe_url" ] && probe_url="unknown"
-            [ -z "$probe_code" ] && probe_code="n/a"
-            log_info "Интернет доступен по HTTP/HTTPS (probe: $probe_url, статус: $probe_code)"
+            http_ok=1
+        fi
+
+        # Both ICMP and HTTP must work for true internet access
+        if [ "$icmp_ok" = "1" ] && [ "$http_ok" = "1" ]; then
+            log_info "Интернет доступен (ICMP и HTTP работают)"
             return 0
+        fi
+
+        # If only HTTP works but ICMP blocked - likely captive portal
+        if [ "$icmp_ok" = "0" ] && [ "$http_ok" = "1" ]; then
+            log_warn "ICMP заблокирован, но HTTP работает - возможен captive portal"
+            # Don't return success - continue to captive portal detection
         fi
 
         if [ "$attempt" -lt "$INTERNET_CHECK_RETRIES" ]; then
@@ -1350,7 +1360,7 @@ wait_for_internet_after_intercept() {
 check_wan_interface() {
     local wan_iface="${WIFI_LOGICAL:-wan}"
 
-    if ! command -v ifstatus > /dev/null 2>&1; then
+    if ! which ifstatus > /dev/null 2>&1 && ! type ifstatus > /dev/null 2>&1; then
         return 0
     fi
 

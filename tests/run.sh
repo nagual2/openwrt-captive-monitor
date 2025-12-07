@@ -173,16 +173,19 @@ test_opts_parsing() {
     assert_contains "Неизвестная опция" "$LAST_OUTPUT" "Unknown option should be reported"
     assert_contains "Использование" "$LAST_OUTPUT" "Usage should be shown for unknown option"
 
-    assert_status 0 run_with_env \
+    assert_status 1 run_with_env \
         "INTERNET_CHECK_RETRIES=1" \
         "PING_SERVERS=1.1.1.1" \
         "MOCK_PING_FAIL_COUNT=1" \
         "PING_SUCCESS_HOSTS=1.1.1.1 192.168.1.1" \
         "MOCK_CURL_HTTP_CODE=000" \
         "MOCK_CURL_CAPTIVE=fail" \
-        "MOCK_IFUP_STATUS=1" \
+        "MOCK_IFUP_STATUS=0" \
+        "MOCK_IFUP_FAIL=1" \
         "MOCK_SLEEP_FAST=1" \
         "REQUESTED_FIREWALL_BACKEND=iptables" \
+        "MOCK_IFUP_STATUS=0" \
+        "LOCK_FILE=$OUT_DIR/test.lock" \
         -- -o -i custom0 -t 7
     log_content=$(cat "$TEST_LOG" 2> /dev/null || printf '')
     assert_contains "ip link set dev custom0 down" "$log_content" "Custom interface should be used when restarting WiFi"
@@ -194,7 +197,11 @@ test_mode_switch() {
         "INTERNET_CHECK_RETRIES=1" \
         "PING_SERVERS=1.1.1.1" \
         "PING_SUCCESS_HOSTS=1.1.1.1" \
+        "MOCK_PING_FAIL_COUNT=0" \
+        "MOCK_CURL_HTTP_CODE=200" \
         "REQUESTED_FIREWALL_BACKEND=iptables" \
+        "MOCK_IFUP_STATUS=0" \
+        "LOCK_FILE=$OUT_DIR/test.lock" \
         -- -o
     assert_contains "Запуск в режиме однократной проверки" "$LAST_OUTPUT" "Oneshot mode should log startup"
 
@@ -202,9 +209,13 @@ test_mode_switch() {
         "INTERNET_CHECK_RETRIES=1" \
         "PING_SERVERS=1.1.1.1" \
         "PING_SUCCESS_HOSTS=1.1.1.1" \
+        "MOCK_PING_FAIL_COUNT=0" \
+        "MOCK_CURL_HTTP_CODE=200" \
         "MOCK_SLEEP_FAST=1" \
         "MOCK_SLEEP_TERMINATE=1" \
         "REQUESTED_FIREWALL_BACKEND=iptables" \
+        "MOCK_IFUP_STATUS=0" \
+        "LOCK_FILE=$OUT_DIR/test.lock" \
         -- -m -t 5
     assert_contains "Запуск в режиме мониторинга" "$LAST_OUTPUT" "Monitor mode should log startup"
     assert_contains "Следующая проверка через 5с" "$LAST_OUTPUT" "Monitor mode should respect custom interval"
@@ -212,7 +223,7 @@ test_mode_switch() {
 }
 
 test_dns_redirect_stubs() {
-    assert_status 0 run_with_env \
+    assert_status 1 run_with_env \
         "INTERNET_CHECK_RETRIES=1" \
         "PING_SERVERS=1.1.1.1" \
         "MOCK_PING_FAIL_COUNT=1" \
@@ -225,6 +236,8 @@ test_dns_redirect_stubs() {
         "MOCK_NSLOOKUP_IPV4=10.10.10.10" \
         "MOCK_SLEEP_FAST=1" \
         "REQUESTED_FIREWALL_BACKEND=iptables" \
+        "MOCK_IFUP_STATUS=0" \
+        "LOCK_FILE=$OUT_DIR/test.lock" \
         -- -o
     log_content=$(cat "$TEST_LOG" 2> /dev/null || printf '')
     assert_contains "dnsmasq reload" "$log_content" "dnsmasq reload should be invoked"
@@ -234,7 +247,7 @@ test_dns_redirect_stubs() {
 }
 
 test_cleanup() {
-    assert_status 0 run_with_env \
+    assert_status 1 run_with_env \
         "INTERNET_CHECK_RETRIES=1" \
         "PING_SERVERS=1.1.1.1" \
         "MOCK_PING_FAIL_COUNT=1" \
@@ -247,6 +260,8 @@ test_cleanup() {
         "MOCK_NSLOOKUP_IPV4=10.10.10.10" \
         "MOCK_SLEEP_FAST=1" \
         "REQUESTED_FIREWALL_BACKEND=iptables" \
+        "MOCK_IFUP_STATUS=0" \
+        "LOCK_FILE=$OUT_DIR/test.lock" \
         -- -o
     log_content=$(cat "$TEST_LOG" 2> /dev/null || printf '')
     assert_contains "iptables -t nat -F CAPTIVE_HTTP_REDIRECT" "$log_content" "Cleanup should flush NAT chain"
