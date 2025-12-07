@@ -31,6 +31,7 @@ WSL добавляет overhead на запуск Linux окружения. Ис
 | Переменные окружения | `wsl echo $PATH` | `$env:PATH` |
 | Python | `wsl python script.py` | `python script.py` |
 | Curl | `wsl curl url` | `Invoke-WebRequest url` |
+| Node.js / Bun | `wsl node script.js` | `node script.js` или `bun script.js` |
 
 ### ⚠️ Используй WSL только когда необходимо:
 
@@ -968,6 +969,7 @@ git --version
 docker --version
 gh --version
 python --version
+bun --version
 
 # Проверка Docker
 docker run --rm hello-world
