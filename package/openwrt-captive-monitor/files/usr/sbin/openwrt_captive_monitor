@@ -578,7 +578,7 @@ http_probe_internet() {
     for url in $INTERNET_HTTP_PROBES; do
         status=$(curl -sS -o /dev/null -m "$HTTP_PROBE_TIMEOUT" -w '%{http_code}' "$url" 2> /dev/null || printf '')
         case "$status" in
-            2?? | 3??)
+            2??)
                 HTTP_PROBE_RESULT_URL="$url"
                 HTTP_PROBE_RESULT_CODE="$status"
                 return 0
