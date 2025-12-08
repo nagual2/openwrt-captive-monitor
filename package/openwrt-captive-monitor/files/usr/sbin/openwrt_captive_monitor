@@ -1468,6 +1468,18 @@ monitor_mode() {
 
     log_info "Запуск в режиме мониторинга (интервал: ${MONITOR_INTERVAL}с)"
     while true; do
+        # Check WAN status first - if down, cleanup and skip this iteration
+        if ! check_wan_interface; then
+            log_warn "WAN интерфейс недоступен"
+            if [ "$CAPTIVE_ACTIVE" = "1" ]; then
+                log_info "Отключаем перехват из-за недоступности WAN"
+                cleanup_captive_intercept
+            fi
+            log_info "Следующая проверка через ${MONITOR_INTERVAL}с"
+            sleep "$MONITOR_INTERVAL"
+            continue
+        fi
+
         if ! check_and_fix_connection; then
             log_warn "Проверка подключения завершилась с ошибкой"
         fi
