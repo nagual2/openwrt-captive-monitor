@@ -7,6 +7,70 @@
 - Git commit сообщения только на английском
 - Показывать команды перед выполнением для прозрачности
 
+## Работающие и неработающие инструменты
+
+### ✅ Работающие инструменты
+
+**Git и GitHub:**
+- `gh` CLI - все операции (status, pr create, release, workflow run)
+- Git через executePwsh - все операции
+- GitKraken MCP - git operations (НО НЕ pr create - требует авторизацию)
+
+**Тестирование:**
+- `wsl bash tests/run.sh` - локальные unit тесты
+- GitHub Actions - CI/CD в облаке
+
+**SSH и удаленный доступ:**
+- `wsl ssh` - с правильной конвертацией Windows путей в WSL формат
+- Тестовая среда: `192.168.1.1` (НЕ IPv6!)
+- Production среда: `192.168.35.1` (только после одобрения пользователя!)
+
+**Сборка пакетов:**
+- GitHub Releases - пакеты собираются автоматически через workflows
+- Скачивание: `gh release download vX.X.X.X -p "*.ipk"`
+
+### ❌ НЕ работающие инструменты (НЕ ИСПОЛЬЗОВАТЬ!)
+
+**Act (локальное тестирование GitHub Actions):**
+- Требует Docker Desktop
+- Docker daemon не запущен на Windows
+- Использовать вместо: `wsl bash tests/run.sh` для локальных тестов
+
+**Serial Console:**
+- Нет доступа к COM порту
+- Использовать вместо: SSH доступ к роутерам
+
+**scripts/build_ipk.sh:**
+- Зависает без вывода при локальном запуске
+- Использовать вместо: GitHub workflows для сборки пакетов
+
+**GitKraken MCP pull_request_create:**
+- Требует авторизацию через браузер
+- Использовать вместо: `gh pr create`
+
+**ultrascript-tools MCP:**
+- Добавляет 69 инструментов (перегрузка)
+- Вызывает проблемы с производительностью
+- Держать отключенным в `.kiro/settings/mcp.json`
+
+### ⚠️ Важные особенности
+
+**Auto-version-tag workflow:**
+- НЕ запускается автоматически при push в main
+- Запускать вручную: `gh workflow run "Auto Version Tag and Release" --ref main`
+- После создания релиза пакеты доступны в GitHub Releases
+
+**Тестовая среда:**
+- Адрес: `192.168.1.1`
+- Доступ: `ssh root@192.168.1.1`
+
+**Конвертация путей для WSL:**
+```powershell
+# Правильная конвертация Windows путей
+$wslPath = $windowsPath -replace '\\','/' -replace 'C:','/mnt/c'
+wsl scp "$wslPath" root@192.168.1.1:/tmp/
+```
+
 ## Приоритет использования команд
 
 ### Правило: Нативные Windows команды в первую очередь
@@ -102,6 +166,42 @@ ssh-keyscan -H 192.168.35.127 >> $env:USERPROFILE\.ssh\known_hosts
 
 **openwrt-captive-monitor** - легковесный сервис для автоматического обнаружения и обработки captive порталов на маршрутизаторах OpenWrt.
 
+### Критичные исправления (декабрь 2025)
+
+**1. Детекция captive порталов (3xx коды)**
+- **Проблема:** 302/303 редиректы captive порталов считались успешным интернетом
+- **Решение:** `http_probe_internet()` теперь принимает только 2xx коды
+- **Код:** `[ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]`
+
+**2. Доступ к LuCI во время intercept**
+- **Проблема:** nftables блокировал доступ к веб-интерфейсу роутера
+- **Решение:** Добавлен bypass для IP роутера в `setup_nftables_intercept()`
+- **Код:** `nft add rule inet fw4 dstnat ip daddr $ROUTER_IP accept`
+
+**3. Bypass connectivity check доменов**
+- **Проблема:** Блокировались проверочные домены (msftconnecttest.com и т.д.)
+- **Решение:** DNS bypass через `server=/$domain/#` в dnsmasq
+- **Файл:** `/tmp/dnsmasq.d/connectivity-bypass.conf`
+
+**4. Защита от множественных экземпляров**
+- **Проблема:** Могли запускаться несколько копий скрипта одновременно
+- **Решение:** Lock файл `/var/run/captive-monitor.lock` с `acquire_lock()` и `release_lock()`
+- **Cleanup:** `trap release_lock EXIT INT TERM`
+
+**5. Проверка статуса WAN интерфейса**
+- **Проблема:** Скрипт пытался детектировать интернет даже при выключенном WAN
+- **Решение:** `check_wan_interface()` проверяет `ifstatus wan` перед детекцией
+- **Логика:** Если WAN down - отключить intercept и выйти
+
+**6. Двойная проверка интернета (ICMP + HTTP)**
+- **Проблема:** Скрипт считал интернет доступным если работал только HTTP (ICMP заблокирован)
+- **Решение:** `check_internet()` требует успеха ОБОИХ проверок
+- **Код:** `if icmp_probe_internet && http_probe_internet; then return 0; else return 1; fi`
+
+**7. Исправление init.d команд**
+- **Проблема:** `stop_service()` использовал несуществующий `procd_kill`
+- **Решение:** Заменен на `killall openwrt_captive_monitor` + удаление lock файла
+
 ### Ключевые компоненты
 
 - **Основной скрипт**: `openwrt_captive_monitor.sh` - bash скрипт для обнаружения и обработки captive порталов
@@ -141,22 +241,38 @@ vYYYY.M.D.N
 - `v2025.1.15.2` - второй релиз того же дня
 - `v2025.12.3.1` - первый релиз 3 декабря 2025
 
-### Workflow auto-version-tag.yml
+### Релиз процесс
 
-**Триггер:** Push в main
+**⚠️ ВАЖНО:** Все workflows запускаются ВРУЧНУЮ!
 
-**Процесс:**
+**Шаг 1: Создание версии и тега**
+```powershell
+gh workflow run "Auto Version Tag and Release" --ref main
+```
+
+Процесс:
 1. Получить все существующие теги
 2. Найти теги за текущую дату (`vYYYY.M.D.*`)
 3. Определить следующий порядковый номер `N`
-4. Обновить метаданные:
-   - `VERSION` = `YYYY.M.D.N` (без `v`)
-   - `PKG_VERSION` = `YYYY.M.D.N`
-   - `PKG_RELEASE` = `1`
+4. Обновить метаданные (VERSION, PKG_VERSION, PKG_RELEASE)
 5. Создать коммит с обновлением метаданных
-6. Создать тег `vYYYY.M.D.N` на этом коммите
-7. Создать GitHub Release с changelog
-8. Запустить `tag-build-release.yml`
+6. Создать тег `vYYYY.M.D.N`
+7. Создать GitHub Release (БЕЗ артефактов)
+
+**Шаг 2: Сборка и публикация пакета**
+```powershell
+gh workflow run "Manual Release" --ref main
+```
+
+Процесс:
+1. Собрать пакет с архитектурой "all"
+2. Создать новый релиз с инкрементом версии
+3. Загрузить пакет и SHA256SUMS в релиз
+
+**Шаг 3: Скачать и установить**
+```powershell
+gh release download vYYYY.M.D.N -p "*.ipk"
+```
 
 ### Conventional Commits
 
@@ -726,12 +842,64 @@ Property 1: Image size compliance
 **Validates: Requirements 2.1**
 ```
 
+## MCP расширения
+
+### GitKraken MCP (✅ Рекомендуется)
+
+**Статус:** Включен глобально, работает стабильно
+
+**Доступные инструменты:**
+- Git операции: status, add, commit, branch, checkout, log, diff, push, stash, blame
+- GitHub PR: создание, просмотр, комментарии, review
+- GitHub Issues: просмотр, комментарии
+- Repository: получение содержимого файлов
+
+**Использование:**
+```typescript
+// Вместо PowerShell команд используй MCP
+mcp_GitKraken_git_status({directory: "."})
+mcp_GitKraken_git_add_or_commit({directory: ".", action: "add", files: ["file.txt"]})
+mcp_GitKraken_pull_request_create({...})
+```
+
+**Преимущества:**
+- Более надежно чем PowerShell команды
+- Не требует gh CLI
+- Автоматическая обработка ошибок
+- Работает напрямую с Git API
+
+### ultrascript-tools MCP (❌ Не рекомендуется)
+
+**Статус:** Отключен из-за проблем с производительностью
+
+**Проблемы:**
+- Добавляет 69 MCP инструментов (перегрузка)
+- Kiro рекомендует отключить
+- Может вызывать зависания при индексации
+- Несовместимость JSON Schema draft 2020-12
+
+**Альтернатива:** Если нужен анализ кода, используй прямые инструменты:
+- `grepSearch` для поиска по коду
+- `readFile` для чтения файлов
+- `getDiagnostics` для проверки ошибок
+- Bash скрипты для специфичного анализа
+
+**Конфигурация (.kiro/settings/mcp.json):**
+```json
+{
+  "mcpServers": {
+    "ultrascript-tools": {
+      "disabled": true  // Держать отключенным
+    }
+  }
+}
+```
+
 ## Тестовое окружение
 
 ### OpenWrt Test Environment
 
-**Хост:** `root@2a11:6c7:1101:4f00:20c:29ff:fe15:16bb` (временный IPv6 адрес)
-**Старый адрес:** `root@192.168.35.127` (недоступен)
+**Хост:** `root@192.168.1.1`
 **Доступ:** SSH по ключу (без пароля)
 **Назначение:** Тестирование пакетов OpenWrt, интеграционные тесты
 
@@ -754,25 +922,25 @@ Property 1: Image size compliance
 
 ### Подключение к тестовым средам
 
-**Test Environment (IPv6):**
+**Test Environment:**
 ```powershell
 # Простое подключение
-wsl ssh root@2a11:6c7:1101:4f00:20c:29ff:fe15:16bb
+ssh root@192.168.1.1
 
 # Выполнить команду
-wsl ssh root@2a11:6c7:1101:4f00:20c:29ff:fe15:16bb "uname -a"
+ssh root@192.168.1.1 "uname -a"
 
-# Проверка доступности (IPv6)
-Test-Connection -ComputerName 2a11:6c7:1101:4f00:20c:29ff:fe15:16bb -Count 2
+# Проверка доступности
+Test-Connection -ComputerName 192.168.1.1 -Count 2
 ```
 
-**Production Environment (192.168.35.1):**
+**Production Environment:**
 ```powershell
 # Простое подключение
-wsl ssh root@192.168.35.1
+ssh root@192.168.35.1
 
 # Выполнить команду
-wsl ssh root@192.168.35.1 "uname -a"
+ssh root@192.168.35.1 "uname -a"
 
 # Проверка доступности
 Test-Connection -ComputerName 192.168.35.1 -Count 2
@@ -782,15 +950,54 @@ Test-Connection -ComputerName 192.168.35.1 -Count 2
 
 **1. Установка и тестирование пакета**
 ```bash
-# Скопировать пакет на роутер (IPv6)
-scp dist/openwrt-captive-monitor_*.ipk root@2a11:6c7:1101:4f00:20c:29ff:fe15:16bb:/tmp/
+# Скопировать пакет на роутер
+scp dist/openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
 
 # Подключиться к роутеру и установить
-ssh root@2a11:6c7:1101:4f00:20c:29ff:fe15:16bb "
+ssh root@192.168.1.1 "
   opkg install /tmp/openwrt-captive-monitor_*.ipk &&
   /etc/init.d/captive-monitor start &&
   /etc/init.d/captive-monitor status
 "
+```
+
+**2. Проверка работы captive monitor**
+```bash
+# Проверить что сервис запущен
+ssh root@192.168.1.1 "ps w | grep captive"
+
+# Проверить логи
+ssh root@192.168.1.1 "logread | grep captive"
+
+# Проверить lock файл
+ssh root@192.168.1.1 "ls -la /var/run/captive-monitor.lock"
+
+# Проверить nftables правила
+ssh root@192.168.1.1 "nft list ruleset | grep -A5 'chain dstnat'"
+
+# Проверить DNS bypass
+ssh root@192.168.1.1 "cat /tmp/dnsmasq.d/connectivity-bypass.conf"
+```
+
+**3. Тестирование детекции captive portal**
+```bash
+# Симуляция captive portal (302 redirect)
+ssh root@192.168.1.1 "
+  # Должен вернуть false (нет интернета)
+  curl -s -o /dev/null -w '%{http_code}' http://detectportal.firefox.com/success.txt
+"
+
+# Проверка что intercept включен
+ssh root@192.168.1.1 "
+  nft list ruleset | grep 'tcp dport 80 redirect'
+"
+```
+
+**4. Тестирование доступа к LuCI**
+```bash
+# Проверить что LuCI доступен даже при intercept
+curl -I http://192.168.35.1
+# Должен вернуть 200 или 302 (redirect на login)
 ```
 
 **2. Автоматизация тестирования**
@@ -800,7 +1007,7 @@ ssh root@2a11:6c7:1101:4f00:20c:29ff:fe15:16bb "
 
 set -euo pipefail
 
-ROUTER_IP="2a11:6c7:1101:4f00:20c:29ff:fe15:16bb"
+ROUTER_IP="192.168.1.1"
 PACKAGE_FILE=$1
 
 echo "=== Testing package on OpenWrt ==="
@@ -822,7 +1029,7 @@ echo "✅ Test completed successfully"
 
 ```
 Host openwrt-test
-    HostName 2a11:6c7:1101:4f00:20c:29ff:fe15:16bb
+    HostName 192.168.1.1
     User root
     Port 22
     StrictHostKeyChecking no
@@ -1548,3 +1755,67 @@ executePwsh({
 | `less file.txt` | `Get-Content file.txt` |
 | `ssh user@host` | `ssh -o BatchMode=yes user@host "cmd"` |
 | `vim file.txt` | `code file.txt` или `notepad file.txt` |
+
+
+## Работающие и неработающие инструменты
+
+### ✅ Работающие инструменты
+
+**Git и GitHub:**
+- `git` команды через PowerShell (status, add, commit, push, branch, checkout, pull)
+- `gh` CLI для всех операций (PR create, release, run list, workflow run)
+
+**SSH:**
+- **Нативный Windows SSH работает!** Используй `ssh` напрямую без WSL
+- Пример: `ssh root@192.168.1.1 "command"`
+- Используй WSL SSH только если есть проблемы с путями к ключам
+
+**Тестирование:**
+- `wsl bash tests/run.sh` - локальные unit тесты
+- GitHub Actions через push в ветку
+
+**Сборка пакетов:**
+- GitHub Releases - пакеты собираются автоматически
+- Скачивание: `gh release download vX.Y.Z.N -p "*.ipk"`
+
+### ❌ НЕ работающие инструменты (не использовать!)
+
+**Act (локальный запуск GitHub Actions):**
+- Требует Docker Desktop (не запущен)
+- Используй вместо: `wsl bash tests/run.sh` для локальных тестов
+
+**Serial Console:**
+- Нет доступа к COM порту
+- Используй вместо: SSH для доступа к роутеру
+
+**scripts/build_ipk.sh:**
+- Зависает без вывода при локальном запуске
+- Используй вместо: скачивание пакетов из GitHub Releases
+
+**GitKraken MCP:**
+- Не использовать вообще
+- Используй вместо: `git` команды через PowerShell и `gh` CLI
+
+**ultrascript-tools MCP:**
+- Перегружает систему (69 инструментов)
+- Держать отключенным в `.kiro/settings/mcp.json`
+
+### 🔧 Важные workflow особенности
+
+**Релиз процесс (ВРУЧНУЮ):**
+1. Создать версию: `gh workflow run "Auto Version Tag and Release" --ref main`
+2. Собрать пакет: `gh workflow run "Manual Release" --ref main`
+3. Проверить релиз: `gh release list --limit 1`
+4. Скачать пакет: `gh release download vX.Y.Z.N -p "*.ipk"`
+
+**Тестовая среда:**
+- Адрес: `192.168.1.1` (НЕ IPv6!)
+- Доступ: `ssh root@192.168.1.1`
+- Production: `192.168.35.1` (только после одобрения пользователя!)
+
+**Конвертация путей для WSL:**
+```powershell
+# Правильная конвертация Windows путей в WSL
+$wslPath = $windowsPath -replace '\\','/' -replace 'C:','/mnt/c'
+wsl bash -c "command '$wslPath'"
+```
