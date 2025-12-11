@@ -1,6 +1,65 @@
 #!/usr/bin/env python3
 """
-Простой скрипт для тестирования captive portal через WSL с принудительной маршрутизацией.
+Легковесный тестер Captive Portal
+================================
+
+Простой инструмент для быстрой проверки наличия и доступности captive портала
+с минимальными зависимостями. Идеально подходит для автоматизации и скриптов.
+
+Возможности:
+- Быстрая проверка наличия captive портала
+- Минимальные зависимости (только requests)
+- Работает в любом окружении (Windows, WSL, Linux)
+- Подходит для автоматизации и интеграции в скрипты
+- Принудительная маршрутизация через роутер (WSL/Linux)
+
+Использование:
+    # Простая проверка
+    python simple_captive_test.py
+
+    # Через WSL
+    wsl python3 simple_captive_test.py
+
+    # С конкретным роутером
+    python simple_captive_test.py --router 192.168.1.1
+
+    # С конкретным тестовым URL
+    python simple_captive_test.py --test-url "http://detectportal.firefox.com"
+
+    # Только проверка без настройки маршрутизации
+    python simple_captive_test.py --no-routing
+
+Требования:
+    - Python 3.6+
+    - requests library (pip install requests)
+    - sudo права для настройки маршрутизации (WSL/Linux)
+
+Переменные окружения:
+    CAPTIVE_ROUTER_IP - IP адрес роутера (по умолчанию: 192.168.1.1)
+    CAPTIVE_TEST_URL  - URL для проверки (по умолчанию: http://detectportal.firefox.com)
+    CAPTIVE_TIMEOUT   - таймаут запросов в секундах (по умолчанию: 10)
+
+Примеры:
+    # Использование переменных окружения
+    export CAPTIVE_ROUTER_IP="192.168.35.1"
+    export CAPTIVE_TEST_URL="http://www.google.com"
+    python simple_captive_test.py
+
+    # Интеграция в bash скрипт
+    if python3 simple_captive_test.py --no-routing; then
+        echo "Captive portal обнаружен"
+    else
+        echo "Интернет доступен"
+    fi
+
+Коды возврата:
+    0 - Интернет доступен (captive portal отсутствует)
+    1 - Captive portal обнаружен
+    2 - Ошибка сети или конфигурации
+    130 - Прервано пользователем
+
+Автор: OpenWrt Captive Monitor Project
+Лицензия: MIT
 """
 
 import subprocess
@@ -238,36 +297,142 @@ def check_internet_access():
     return False
 
 def main():
-    log("=" * 60)
-    log("ТЕСТИРОВАНИЕ CAPTIVE PORTAL (Простая версия)")
-    log("=" * 60)
+    import argparse
 
-    router_ip = sys.argv[1] if len(sys.argv) > 1 else "192.168.1.1"
+    parser = argparse.ArgumentParser(
+        description='Легковесное тестирование captive портала',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Примеры использования:
+  %(prog)s                                    # Базовая проверка
+  %(prog)s --router 192.168.1.1               # Указать роутер
+  %(prog)s --test-url "http://www.google.com"  # Указать тестовый URL
+  %(prog)s --no-routing                       # Без настройки маршрутизации
+  %(prog)s --timeout 15                       # Увеличить таймаут
+
+Переменные окружения:
+  CAPTIVE_ROUTER_IP - IP адрес роутера
+  CAPTIVE_TEST_URL  - URL для проверки
+  CAPTIVE_TIMEOUT   - таймаут запросов в секундах
+
+Коды возврата:
+  0 - Интернет доступен (captive portal отсутствует)
+  1 - Captive portal обнаружен
+  2 - Ошибка сети или конфигурации
+        """
+    )
+
+    parser.add_argument('--router', '--router-ip',
+                       default=os.environ.get('CAPTIVE_ROUTER_IP', '192.168.1.1'),
+                       help='IP адрес роутера (по умолчанию: 192.168.1.1)')
+    parser.add_argument('--test-url',
+                       default=os.environ.get('CAPTIVE_TEST_URL', 'http://detectportal.firefox.com'),
+                       help='URL для проверки captive портала')
+    parser.add_argument('--no-routing', action='store_true',
+                       help='Не настраивать маршрутизацию (только проверка)')
+    parser.add_argument('--timeout', type=int,
+                       default=int(os.environ.get('CAPTIVE_TIMEOUT', '10')),
+                       help='Таймаут запросов в секундах (по умолчанию: 10)')
+    parser.add_argument('--verbose', action='store_true',
+                       help='Подробный вывод')
+    parser.add_argument('--quiet', action='store_true',
+                       help='Минимальный вывод (только результат)')
+    parser.add_argument('--simulate-auth', action='store_true',
+                       help='Попытка симуляции авторизации при обнаружении портала')
+
+    args = parser.parse_args()
+
+    # Настройка уровня логирования
+    global verbose_logging
+    verbose_logging = args.verbose and not args.quiet
+
+    if not args.quiet:
+        log("=" * 60)
+        log("ТЕСТИРОВАНИЕ CAPTIVE PORTAL (Легковесная версия)")
+        log("=" * 60)
+        log(f"Роутер: {args.router}")
+        log(f"Тестовый URL: {args.test_url}")
+        log(f"Таймаут: {args.timeout}s")
 
     try:
-        # 1. Настройка маршрутизации
-        if not setup_routing(router_ip):
-            return 1
+        # 1. Настройка маршрутизации (если требуется)
+        if not args.no_routing:
+            if not setup_routing(args.router):
+                if not args.quiet:
+                    log("❌ Ошибка настройки маршрутизации")
+                return 2
+        elif not args.quiet:
+            log("⚠️ Пропуск настройки маршрутизации")
 
         # 2. Тестирование captive portal
-        captive_detected = test_captive_portal()
+        captive_detected = test_captive_portal(test_url=args.test_url, timeout=args.timeout)
 
         if captive_detected:
-            # 3. Попытка авторизации
-            simulate_portal_auth()
-        else:
-            log("✅ Captive portal не обнаружен - интернет доступен")
+            if not args.quiet:
+                log("🔒 Captive portal обнаружен")
 
-        return 0
+            # 3. Попытка авторизации (если запрошена)
+            if args.simulate_auth:
+                if not args.quiet:
+                    log("🤖 Попытка симуляции авторизации...")
+                simulate_portal_auth()
+
+            return 1  # Captive portal обнаружен
+        else:
+            if not args.quiet:
+                log("✅ Captive portal не обнаружен - интернет доступен")
+            return 0  # Интернет доступен
 
     except KeyboardInterrupt:
-        log("\n⚠️ Прервано пользователем")
-        return 1
+        if not args.quiet:
+            log("\n⚠️ Прервано пользователем")
+        return 130
     except Exception as e:
-        log(f"❌ Критическая ошибка: {e}")
-        return 1
+        if not args.quiet:
+            log(f"❌ Критическая ошибка: {e}")
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
+        return 2
     finally:
-        restore_routing()
+        if not args.no_routing:
+            restore_routing()
+
+def test_captive_portal(test_url="http://detectportal.firefox.com", timeout=10):
+    """Тестирование наличия captive портала"""
+    try:
+        import requests
+
+        log(f"Тестирование captive portal: {test_url}")
+
+        response = requests.get(test_url, timeout=timeout, allow_redirects=False)
+
+        # Проверяем редирект (признак captive портала)
+        if response.status_code in [301, 302, 303, 307, 308]:
+            redirect_url = response.headers.get('Location', '')
+            log(f"Обнаружен редирект: {response.status_code} -> {redirect_url}")
+            return True
+        elif response.status_code == 200:
+            # Проверяем содержимое ответа
+            if 'captive' in response.text.lower() or 'portal' in response.text.lower():
+                log("Обнаружены ключевые слова captive portal в ответе")
+                return True
+            else:
+                log("Получен нормальный HTTP 200 ответ")
+                return False
+        else:
+            log(f"Неожиданный статус код: {response.status_code}")
+            return False
+
+    except requests.exceptions.Timeout:
+        log("❌ Таймаут запроса")
+        return False
+    except requests.exceptions.ConnectionError:
+        log("❌ Ошибка подключения")
+        return False
+    except Exception as e:
+        log(f"❌ Ошибка тестирования: {e}")
+        return False
 
 if __name__ == "__main__":
     sys.exit(main())
