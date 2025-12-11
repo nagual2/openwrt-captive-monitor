@@ -2,7 +2,7 @@
 
 ## 🌐 Language / Язык
 
-**English** | [Русский](#русский)
+**English** | [Русский](README.ru.md)
 
 ---
 
