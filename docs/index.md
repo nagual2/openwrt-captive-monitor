@@ -40,7 +40,6 @@
 - [CI Workflow Simplified](ci/CI_WORKFLOW_SIMPLIFIED.md) - Упрощенный CI workflow
 - [GitHub Actions Workflows Audit](ci/GITHUB_ACTIONS_WORKFLOWS_AUDIT.md) - Аудит workflows
 - [Docker SDK Images](docker-sdk-images.md) - Docker образы для SDK
-- [Act Local Testing](act-local-testing.md) - Локальное тестирование GitHub Actions
 
 ### 🔒 Безопасность
 - [Security Scanning](SECURITY_SCANNING.md) - Сканирование безопасности

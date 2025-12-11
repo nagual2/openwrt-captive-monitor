@@ -1,0 +1,3 @@
+ip addr show
+cat /etc/config/network
+exit

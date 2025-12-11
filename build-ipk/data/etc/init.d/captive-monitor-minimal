@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+# Minimal test init script for debugging procd issues
+# shellcheck shell=ash
+
+START=99
+STOP=10
+USE_PROCD=1
+
+SCRIPT_PATH="/usr/sbin/openwrt_captive_monitor"
+
+start_service() {
+	logger -t captive-monitor-minimal "Starting minimal test service"
+	
+	# Absolute minimum procd configuration
+	procd_open_instance
+	procd_set_param command "$SCRIPT_PATH" --monitor
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_close_instance
+	
+	logger -t captive-monitor-minimal "Minimal service started"
+}
+
+stop_service() {
+	logger -t captive-monitor-minimal "Stopping minimal test service"
+}

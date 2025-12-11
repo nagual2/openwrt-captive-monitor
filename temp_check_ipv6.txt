@@ -1,0 +1,2 @@
+ip -6 route show
+ping6 -c 2 ff02::1%eth1

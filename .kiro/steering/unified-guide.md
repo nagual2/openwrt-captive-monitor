@@ -21,19 +21,25 @@
 - GitHub Actions - CI/CD в облаке
 
 **SSH и удаленный доступ:**
-- `wsl ssh` - с правильной конвертацией Windows путей в WSL формат
-- Тестовая среда: `192.168.1.1` (НЕ IPv6!)
-- Production среда: `192.168.35.1` (только после одобрения пользователя!)
+- ⚠️ **ВСЕ SSH подключения ТОЛЬКО через WSL для безопасности**
+- Используй короткие имена из /etc/hosts (IP могут меняться)
+- ✅ **WSL 1**: Автогенерация /etc/hosts отключена через /etc/wsl.conf
+- Тестовая среда: `wsl ssh root@dev-openwrt` (доступна по COM порту)
+- Production среда: `wsl ssh root@prod-openwrt` (только после одобрения пользователя!)
 
 **Сборка пакетов:**
 - GitHub Releases - пакеты собираются автоматически через workflows
 - Скачивание: `gh release download vX.X.X.X -p "*.ipk"`
 
+**COM порт (Serial Console):**
+- Доступ к тестовому роутеру: `python tools/serial_console.py COM1 115200 "command"`
+- Используй для проверки IP адреса когда SSH недоступен
+- Используй для первоначальной настройки SSH ключей
+
 ### ❌ НЕ работающие инструменты (НЕ ИСПОЛЬЗОВАТЬ!)
 
 **Act (локальное тестирование GitHub Actions):**
-- Требует Docker Desktop
-- Docker daemon не запущен на Windows
+- Не работает на Windows (проблемы с путями)
 - Использовать вместо: `wsl bash tests/run.sh` для локальных тестов
 
 **Serial Console:**
@@ -61,14 +67,19 @@
 - После создания релиза пакеты доступны в GitHub Releases
 
 **Тестовая среда:**
-- Адрес: `192.168.1.1`
-- Доступ: `ssh root@192.168.1.1`
+- Короткое имя: `dev-openwrt` (IP может меняться, смотри в /etc/hosts)
+- Доступ: `wsl ssh root@dev-openwrt`
+- COM порт: `python tools/serial_console.py COM1 115200 "command"`
+
+**Production среда:**
+- Короткое имя: `prod-openwrt` (IP может меняться, смотри в /etc/hosts)
+- Доступ: `wsl ssh root@prod-openwrt` (только после одобрения!)
 
 **Конвертация путей для WSL:**
 ```powershell
 # Правильная конвертация Windows путей
 $wslPath = $windowsPath -replace '\\','/' -replace 'C:','/mnt/c'
-wsl scp "$wslPath" root@192.168.1.1:/tmp/
+wsl scp "$wslPath" root@dev-openwrt:/tmp/
 ```
 
 ## Приоритет использования команд
@@ -85,7 +96,7 @@ WSL добавляет overhead на запуск Linux окружения. Ис
 |--------|---------------------|----------------------|
 | Git операции | `wsl git status` | `git status` |
 | GitHub CLI | `wsl gh pr list` | `gh pr list` |
-| Docker | `wsl docker ps` | `docker ps` |
+
 | Файловые операции | `wsl ls -la` | `Get-ChildItem` или `dir` |
 | Чтение файлов | `wsl cat file.txt` | `Get-Content file.txt` |
 | Копирование | `wsl cp file1 file2` | `Copy-Item file1 file2` |
@@ -108,56 +119,63 @@ WSL добавляет overhead на запуск Linux окружения. Ис
 | `wsl awk '{print $1}' file` | Нет прямого аналога в PowerShell |
 | `wsl make` | Makefile требует Linux окружение |
 
-### SSH на Windows
+### SSH через WSL (обязательно для безопасности)
 
-**Нативный Windows SSH работает!** Используй его вместо WSL:
+**⚠️ ВСЕ SSH подключения ТОЛЬКО через WSL!**
 
 ```powershell
-# ✅ Нативный Windows SSH
-ssh root@192.168.35.1 "uname -a"
-ssh root@192.168.35.127 "ps w"
+# ✅ Правильно - через WSL с короткими именами
+wsl ssh root@dev-openwrt "uname -a"
+wsl ssh root@prod-openwrt "ps w"
 
-# ✅ Через SSH config алиасы
-ssh openwrt-prod "uname -a"
-ssh openwrt-test "ps w"
-
-# ❌ Не используй WSL без необходимости
-wsl ssh root@192.168.35.1 "uname -a"
+# ❌ Неправильно - прямой Windows SSH
+ssh root@192.168.1.1 "uname -a"
 ```
 
-**SSH Config ($env:USERPROFILE\.ssh\config):**
-```
-# OpenWrt Production Environment
-Host openwrt-prod
-    HostName 192.168.35.1
-    User root
-    IdentityFile ~/.ssh/id_rsa
-
-# OpenWrt Test Environment 1
-Host openwrt-test
-    HostName 192.168.35.127
-    User root
-    IdentityFile ~/.ssh/id_ed25519_openwrt
+**WSL /etc/hosts (короткие имена):**
+```bash
+# OpenWrt роутеры (IP могут меняться, обновляй при необходимости)
+192.168.1.1     dev-openwrt      # Тестовая среда
+192.168.35.1    prod-openwrt     # Production среда
 ```
 
-**Генерация нового SSH ключа:**
+**Настройка WSL 1 (отключение автогенерации /etc/hosts):**
 ```powershell
-# Генерировать ed25519 ключ БЕЗ пароля
-ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\id_ed25519_openwrt" -N "" -C "openwrt-test"
+# Отключить автогенерацию /etc/hosts
+wsl bash -c "sudo mkdir -p /etc && echo -e '[network]\ngenerateHosts = false' | sudo tee /etc/wsl.conf"
 
-# Установить публичный ключ на роутер (одноразово через WSL если нет другого доступа)
-$pubKey = Get-Content "$env:USERPROFILE\.ssh\id_ed25519_openwrt.pub"
-wsl ssh root@192.168.35.127 "echo '$pubKey' >> /etc/dropbear/authorized_keys"
+# Перезапустить WSL для применения настроек
+wsl --shutdown
+
+# Добавить записи роутеров (один раз)
+wsl bash -c "echo '192.168.1.1     dev-openwrt' | sudo tee -a /etc/hosts"
+wsl bash -c "echo '192.168.35.1    prod-openwrt' | sudo tee -a /etc/hosts"
 
 # Проверить
-ssh -i "$env:USERPROFILE\.ssh\id_ed25519_openwrt" root@192.168.35.127 "uname -a"
+wsl bash -c "cat /etc/hosts | grep openwrt"
 ```
 
-**Добавление хостов в known_hosts:**
+**Обновление IP адресов роутеров:**
 ```powershell
-# Автоматически добавить хост
-ssh-keyscan -H 192.168.35.1 >> $env:USERPROFILE\.ssh\known_hosts
-ssh-keyscan -H 192.168.35.127 >> $env:USERPROFILE\.ssh\known_hosts
+# Проверить текущий IP через COM порт
+python tools/serial_console.py COM1 115200 "ip addr show br-lan"
+
+# Обновить IP в /etc/hosts (замени на актуальный IP)
+wsl bash -c "sudo sed -i 's/192.168.1.1.*dev-openwrt/192.168.1.1     dev-openwrt/' /etc/hosts"
+wsl bash -c "sudo sed -i 's/192.168.35.1.*prod-openwrt/192.168.35.1    prod-openwrt/' /etc/hosts"
+```
+
+**Генерация SSH ключа в WSL:**
+```powershell
+# Генерировать ed25519 ключ БЕЗ пароля в WSL
+wsl ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_openwrt -N "" -C "openwrt"
+
+# Установить публичный ключ на роутер через COM порт
+$pubKey = wsl cat ~/.ssh/id_ed25519_openwrt.pub
+python tools/serial_console.py COM1 115200 "echo '$pubKey' >> /etc/dropbear/authorized_keys"
+
+# Проверить подключение
+wsl ssh root@dev-openwrt "uname -a"
 ```
 
 ## Контекст проекта
@@ -206,7 +224,7 @@ ssh-keyscan -H 192.168.35.127 >> $env:USERPROFILE\.ssh\known_hosts
 
 - **Основной скрипт**: `openwrt_captive_monitor.sh` - bash скрипт для обнаружения и обработки captive порталов
 - **Пакет OpenWrt**: `package/openwrt-captive-monitor/` - структура пакета для OpenWrt
-- **Docker SDK**: `docker/sdk/` - Docker образы для сборки пакетов через OpenWrt SDK
+
 - **CI/CD**: `.github/workflows/` - автоматизированная сборка, тестирование и релизы
 
 ### Поддерживаемые версии OpenWrt
@@ -333,115 +351,6 @@ gh run list --branch main --limit 5
 # 9. Если Actions на main прошли - удалить ветку
 git branch -d feature/my-feature
 git push origin --delete feature/my-feature
-```## Doc
-ker паттерны
-
-### Оптимизация размера Docker образов
-
-**Целевые метрики:**
-- Максимальный размер образа: 2GB (2147483648 bytes)
-- Типичный размер после оптимизации: ~1.5GB
-- Экономия от оптимизации: ~40%
-
-### Multi-stage builds
-
-```dockerfile
-# Stage 1: Downloader - загрузка и распаковка
-FROM ubuntu:24.04 AS sdk-downloader
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        curl \
-        ca-certificates \
-        xz-utils && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-COPY docker/sdk/download-sdk.sh /tmp/
-RUN bash /tmp/download-sdk.sh && \
-    rm -f /tmp/download-sdk.sh
-
-# Stage 2: Final - финальный образ
-FROM ubuntu:24.04 AS final
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        libncurses-dev \
-        python3 \
-        git && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-COPY --from=sdk-downloader /opt/openwrt-sdk /opt/openwrt-sdk
-
-RUN useradd -m -u 1000 builder && \
-    chown -R builder:builder /opt/openwrt-sdk
-
-USER builder
-WORKDIR /opt/openwrt-sdk
-```
-
-### Правила оптимизации
-
-**Объединение RUN команд:**
-```dockerfile
-# ✅ Хорошо - один слой с очисткой
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends pkg1 pkg2 && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-```
-
-**Использование --no-install-recommends:**
-```dockerfile
-RUN apt-get install -y --no-install-recommends \
-    build-essential \
-    libncurses-dev \
-    python3
-```
-
-**Удаление архивов после распаковки:**
-```dockerfile
-RUN tar -C /opt/openwrt-sdk --strip-components=1 -xf sdk.tar.xz && \
-    rm -f sdk.tar.xz sha256sums
-```
-
-### Проверка размера образа
-
-```powershell
-# Получить размер в байтах
-$imageSize = docker inspect "$IMAGE" --format='{{.Size}}'
-$maxSize = 2 * 1024 * 1024 * 1024  # 2GB
-
-if ($imageSize -gt $maxSize) {
-    Write-Host "ERROR: Image size exceeds 2GB limit" -ForegroundColor Red
-    Write-Host "Actual: $([math]::Round($imageSize/1GB, 2))GB"
-    exit 1
-}
-
-Write-Host "✅ Image size: $([math]::Round($imageSize/1GB, 2))GB"
-```
-
-### Параллельная сборка Docker образов
-
-```powershell
-# Список архитектур
-$architectures = @(
-    @{target="x86"; subtarget="64"},
-    @{target="ath79"; subtarget="generic"},
-    @{target="ramips"; subtarget="mt76x8"}
-)
-
-# Запуск параллельных сборок через controlPwshProcess
-foreach ($arch in $architectures) {
-    $target = $arch.target
-    $subtarget = $arch.subtarget
-
-    Write-Host "Starting build for $target-$subtarget"
-
-    # Запуск через Kiro controlPwshProcess
-    kiro controlPwshProcess --action start `
-        --command "docker build --build-arg SDK_TARGET=$target --build-arg SDK_SUBTARGET=$subtarget -t sdk:$target-$subtarget ." `
-        --path "docker/sdk"
-}
 ```##
  GitHub Actions паттерны
 
@@ -462,7 +371,7 @@ concurrency:
 - Workflow выполняется быстро (< 10 минут)
 
 **cancel-in-progress: false** - использовать когда:
-- Workflow создает критичные артефакты (релизы, Docker образы)
+- Workflow создает критичные артефакты (релизы)
 - Workflow выполняется долго (> 10 минут)
 - Workflow запускается по тегам или schedule
 
@@ -523,7 +432,7 @@ jobs:
       - name: Download SDK
         timeout-minutes: 10  # Step будет отменен через 10 минут
         run: |
-          bash docker/sdk/download-sdk.sh
+          bash scripts/download-sdk.sh
 ```
 
 ## Bash скрипты паттерны
@@ -676,7 +585,6 @@ git show <commit>           # Открывает less
 git log                     # Открывает less
 git diff                    # Открывает less
 git commit                  # Открывает vim/nano
-docker exec -it container bash    # Интерактивный терминал
 ssh user@host               # Может спросить пароль
 ```
 
@@ -693,8 +601,7 @@ export GIT_PAGER=cat
 # Git commit - использовать -m для сообщения
 git commit -m "commit message"
 
-# Docker - использовать неинтерактивный режим
-docker exec container bash -c "ls -la"  # Без -it
+
 
 # SSH - использовать ключи или флаги
 ssh -o BatchMode=yes user@host
@@ -794,21 +701,7 @@ sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" package/openwrt-captive-mon
 - Медленные (минуты)
 - Используют реальные зависимости
 
-### Act - локальное тестирование GitHub Actions
-
-```powershell
-# Список всех workflow
-act --list
-
-# Dry-run конкретного workflow
-act -W .github/workflows/ci.yml --job lint -n
-
-# Запуск workflow локально
-act -W .github/workflows/ci.yml --job lint
-
-# Интерактивный режим для отладки
-act -W .github/workflows/ci.yml --job lint --interactive --verbose
-```## Спец
+## Спец
 ификации паттерны
 
 ### Структура спецификаций
@@ -897,10 +790,36 @@ mcp_GitKraken_pull_request_create({...})
 
 ## Тестовое окружение
 
+### Проверка и обновление IP адресов
+
+**⚠️ ВАЖНО:** IP адреса роутеров могут меняться. Всегда проверяй актуальный IP через COM порт перед подключением.
+
+**Проверить текущий IP через COM порт:**
+```powershell
+# Получить IP адрес тестового роутера
+python tools/serial_console.py COM1 115200 "ip addr show br-lan | grep 'inet '"
+
+# Или полная информация о сети
+python tools/serial_console.py COM1 115200 "ip addr show"
+```
+
+**Обновить /etc/hosts в WSL:**
+```powershell
+# Обновить dev-openwrt (замени 192.168.1.1 на актуальный IP)
+wsl bash -c 'sudo sed -i "/dev-openwrt/d" /etc/hosts && echo "192.168.1.1     dev-openwrt" | sudo tee -a /etc/hosts'
+
+# Обновить prod-openwrt (замени 192.168.35.1 на актуальный IP)
+wsl bash -c 'sudo sed -i "/prod-openwrt/d" /etc/hosts && echo "192.168.35.1    prod-openwrt" | sudo tee -a /etc/hosts'
+
+# Проверить обновление
+wsl cat /etc/hosts | grep openwrt
+```
+
 ### OpenWrt Test Environment
 
-**Хост:** `root@192.168.1.1`
-**Доступ:** SSH по ключу (без пароля)
+**Короткое имя:** `dev-openwrt` (IP может меняться, проверяй через COM порт)
+**Доступ:** `wsl ssh root@dev-openwrt` (SSH по ключу без пароля)
+**COM порт:** `python tools/serial_console.py COM1 115200`
 **Назначение:** Тестирование пакетов OpenWrt, интеграционные тесты
 
 **Характеристики системы:**
@@ -914,47 +833,52 @@ mcp_GitKraken_pull_request_create({...})
 
 ### OpenWrt Production Environment
 
-**Хост:** `root@192.168.35.1`
-**Доступ:** SSH по ключу (без пароля)
+**Короткое имя:** `prod-openwrt` (IP может меняться, уточни у пользователя)
+**Доступ:** `wsl ssh root@prod-openwrt` (SSH по ключу без пароля)
 **Назначение:** Продакшен среда, финальное тестирование перед релизом, проверка в реальных условиях
 
-**⚠️ ВНИМАНИЕ:** Это продакшен роутер! Будь осторожен с изменениями.
+**⚠️ ВНИМАНИЕ:**
+- Это продакшен роутер! Будь осторожен с изменениями
+- ВСЕГДА спрашивай одобрение пользователя перед подключением
+- Проверяй актуальный IP у пользователя перед обновлением /etc/hosts
 
 ### Подключение к тестовым средам
 
-**Test Environment:**
+**Test Environment (dev-openwrt):**
 ```powershell
-# Простое подключение
-ssh root@192.168.1.1
+# Простое подключение через WSL
+wsl ssh root@dev-openwrt
 
 # Выполнить команду
-ssh root@192.168.1.1 "uname -a"
+wsl ssh root@dev-openwrt "uname -a"
 
-# Проверка доступности
-Test-Connection -ComputerName 192.168.1.1 -Count 2
+# Через COM порт (если SSH недоступен)
+python tools/serial_console.py COM1 115200 "uname -a"
+
+# Проверить текущий IP
+python tools/serial_console.py COM1 115200 "ip addr show br-lan | grep 'inet '"
 ```
 
-**Production Environment:**
+**Production Environment (prod-openwrt):**
 ```powershell
-# Простое подключение
-ssh root@192.168.35.1
+# ⚠️ Только после одобрения пользователя!
+
+# Простое подключение через WSL
+wsl ssh root@prod-openwrt
 
 # Выполнить команду
-ssh root@192.168.35.1 "uname -a"
-
-# Проверка доступности
-Test-Connection -ComputerName 192.168.35.1 -Count 2
+wsl ssh root@prod-openwrt "uname -a"
 ```
 
 ### Типичные сценарии тестирования
 
 **1. Установка и тестирование пакета**
-```bash
-# Скопировать пакет на роутер
-scp dist/openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
+```powershell
+# Скопировать пакет на роутер через WSL
+wsl scp dist/openwrt-captive-monitor_*.ipk root@dev-openwrt:/tmp/
 
 # Подключиться к роутеру и установить
-ssh root@192.168.1.1 "
+wsl ssh root@dev-openwrt "
   opkg install /tmp/openwrt-captive-monitor_*.ipk &&
   /etc/init.d/captive-monitor start &&
   /etc/init.d/captive-monitor status
@@ -962,92 +886,109 @@ ssh root@192.168.1.1 "
 ```
 
 **2. Проверка работы captive monitor**
-```bash
+```powershell
 # Проверить что сервис запущен
-ssh root@192.168.1.1 "ps w | grep captive"
+wsl ssh root@dev-openwrt "ps w | grep captive"
 
 # Проверить логи
-ssh root@192.168.1.1 "logread | grep captive"
+wsl ssh root@dev-openwrt "logread | grep captive"
 
 # Проверить lock файл
-ssh root@192.168.1.1 "ls -la /var/run/captive-monitor.lock"
+wsl ssh root@dev-openwrt "ls -la /var/run/captive-monitor.lock"
 
 # Проверить nftables правила
-ssh root@192.168.1.1 "nft list ruleset | grep -A5 'chain dstnat'"
+wsl ssh root@dev-openwrt "nft list ruleset | grep -A5 'chain dstnat'"
 
 # Проверить DNS bypass
-ssh root@192.168.1.1 "cat /tmp/dnsmasq.d/connectivity-bypass.conf"
+wsl ssh root@dev-openwrt "cat /tmp/dnsmasq.d/connectivity-bypass.conf"
 ```
 
 **3. Тестирование детекции captive portal**
-```bash
+```powershell
 # Симуляция captive portal (302 redirect)
-ssh root@192.168.1.1 "
+wsl ssh root@dev-openwrt "
   # Должен вернуть false (нет интернета)
   curl -s -o /dev/null -w '%{http_code}' http://detectportal.firefox.com/success.txt
 "
 
 # Проверка что intercept включен
-ssh root@192.168.1.1 "
+wsl ssh root@dev-openwrt "
   nft list ruleset | grep 'tcp dport 80 redirect'
 "
 ```
 
 **4. Тестирование доступа к LuCI**
-```bash
+```powershell
 # Проверить что LuCI доступен даже при intercept
-curl -I http://192.168.35.1
+# (используй актуальный IP из /etc/hosts)
+wsl ssh root@dev-openwrt "curl -I http://\$(ip -4 addr show br-lan | grep -oP '(?<=inet\s)\d+(\.\d+){3}')"
 # Должен вернуть 200 или 302 (redirect на login)
 ```
 
-**2. Автоматизация тестирования**
+**5. Автоматизация тестирования**
 ```bash
 #!/bin/bash
 # test-on-openwrt.sh
 
 set -euo pipefail
 
-ROUTER_IP="192.168.1.1"
+ROUTER_HOST="dev-openwrt"
 PACKAGE_FILE=$1
 
 echo "=== Testing package on OpenWrt ==="
-scp "$PACKAGE_FILE" root@$ROUTER_IP:/tmp/
-ssh root@$ROUTER_IP "opkg install /tmp/$(basename $PACKAGE_FILE)"
-ssh root@$ROUTER_IP "/etc/init.d/captive-monitor start"
-ssh root@$ROUTER_IP "logread | grep captive-monitor | tail -10"
+scp "$PACKAGE_FILE" root@$ROUTER_HOST:/tmp/
+ssh root@$ROUTER_HOST "opkg install /tmp/$(basename $PACKAGE_FILE)"
+ssh root@$ROUTER_HOST "/etc/init.d/captive-monitor start"
+ssh root@$ROUTER_HOST "logread | grep captive-monitor | tail -10"
 echo "✅ Test completed successfully"
+```
+
+**Запуск через WSL:**
+```powershell
+wsl bash scripts/test-on-openwrt.sh dist/openwrt-captive-monitor_*.ipk
 ```
 
 ## Remote-SSH Setup
 
-### SSH Config файлы
+### WSL /etc/hosts (обязательно для коротких имен)
 
-**Windows:** `C:\Users\Администратор\.ssh\config`
-**WSL:** `~/.ssh/config`
+**Расположение:** `/etc/hosts` в WSL
 
-### Настроенные хосты
-
+**Настроенные хосты:**
+```bash
+# OpenWrt роутеры (IP могут меняться)
+192.168.1.1     dev-openwrt      # Тестовая среда
+192.168.35.1    prod-openwrt     # Production среда
 ```
-Host openwrt-test
-    HostName 192.168.1.1
-    User root
-    Port 22
-    StrictHostKeyChecking no
-    UserKnownHostsFile /dev/null
-    ServerAliveInterval 60
-    ServerAliveCountMax 3
+
+**Обновление хостов:**
+```powershell
+# Проверить текущий IP через COM порт
+python tools/serial_console.py COM1 115200 "ip addr show br-lan | grep 'inet '"
+
+# Обновить /etc/hosts в WSL (замени IP на актуальный)
+wsl bash -c "sudo sed -i '/dev-openwrt/d' /etc/hosts && echo '192.168.1.1     dev-openwrt' | sudo tee -a /etc/hosts"
+wsl bash -c "sudo sed -i '/prod-openwrt/d' /etc/hosts && echo '192.168.35.1    prod-openwrt' | sudo tee -a /etc/hosts"
+
+# Проверить
+wsl cat /etc/hosts | grep openwrt
 ```
 
 ### Использование в Kiro
 
-**Подключение через Remote-SSH:**
-1. Открыть Command Palette (Ctrl+Shift+P)
-2. Выбрать "Remote-SSH: Connect to Host..."
-3. Выбрать "openwrt-test"
+**Все SSH команды через WSL:**
+```powershell
+# ✅ Правильно
+wsl ssh root@dev-openwrt "uname -a"
+wsl ssh root@prod-openwrt "ps w"
+
+# ❌ Неправильно - не используй прямой Windows SSH
+ssh root@192.168.1.1
+```
 
 **Быстрое подключение:**
-```bash
-wsl ssh openwrt-test
+```powershell
+wsl ssh root@dev-openwrt
 ```#
 # Часто используемые команды
 
@@ -1161,10 +1102,7 @@ function ghw { gh workflow list }
 function ghr { gh run list --limit 10 }
 function ghp { gh pr status }
 
-# Act алиасы
-function act-list { act --list }
-function act-lint { act -W .github/workflows/ci.yml --job lint }
-function act-debug { param($workflow, $job) act -W $workflow --job $job --interactive --verbose }
+
 ```
 
 ## Быстрые проверки
@@ -1765,10 +1703,16 @@ executePwsh({
 - `git` команды через PowerShell (status, add, commit, push, branch, checkout, pull)
 - `gh` CLI для всех операций (PR create, release, run list, workflow run)
 
-**SSH:**
-- **Нативный Windows SSH работает!** Используй `ssh` напрямую без WSL
-- Пример: `ssh root@192.168.1.1 "command"`
-- Используй WSL SSH только если есть проблемы с путями к ключам
+**SSH (только через WSL для безопасности):**
+- ⚠️ **ВСЕ SSH подключения ТОЛЬКО через WSL!**
+- Используй короткие имена из /etc/hosts: `dev-openwrt`, `prod-openwrt`
+- Пример: `wsl ssh root@dev-openwrt "command"`
+- IP адреса могут меняться - проверяй через COM порт
+
+**COM порт (Serial Console):**
+- Доступ к тестовому роутеру: `python tools/serial_console.py COM1 115200 "command"`
+- Проверка IP: `python tools/serial_console.py COM1 115200 "ip addr show br-lan"`
+- Настройка SSH ключей через serial console
 
 **Тестирование:**
 - `wsl bash tests/run.sh` - локальные unit тесты
@@ -1781,12 +1725,12 @@ executePwsh({
 ### ❌ НЕ работающие инструменты (не использовать!)
 
 **Act (локальный запуск GitHub Actions):**
-- Требует Docker Desktop (не запущен)
+- Не работает на Windows (проблемы с путями и зависимостями)
 - Используй вместо: `wsl bash tests/run.sh` для локальных тестов
 
-**Serial Console:**
-- Нет доступа к COM порту
-- Используй вместо: SSH для доступа к роутеру
+**Прямой Windows SSH:**
+- Не использовать для безопасности
+- Используй вместо: `wsl ssh root@dev-openwrt` с короткими именами
 
 **scripts/build_ipk.sh:**
 - Зависает без вывода при локальном запуске
@@ -1809,9 +1753,15 @@ executePwsh({
 4. Скачать пакет: `gh release download vX.Y.Z.N -p "*.ipk"`
 
 **Тестовая среда:**
-- Адрес: `192.168.1.1` (НЕ IPv6!)
-- Доступ: `ssh root@192.168.1.1`
-- Production: `192.168.35.1` (только после одобрения пользователя!)
+- Короткое имя: `dev-openwrt` (IP может меняться)
+- Доступ SSH: `wsl ssh root@dev-openwrt`
+- COM порт: `python tools/serial_console.py COM1 115200`
+- Проверка IP: `python tools/serial_console.py COM1 115200 "ip addr show br-lan"`
+
+**Production среда:**
+- Короткое имя: `prod-openwrt` (IP может меняться, уточни у пользователя)
+- Доступ SSH: `wsl ssh root@prod-openwrt` (только после одобрения!)
+- Перед подключением: проверь актуальный IP у пользователя
 
 **Конвертация путей для WSL:**
 ```powershell

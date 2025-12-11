@@ -1,0 +1,8 @@
+uci delete network.lan_mgmt
+uci set network.lan6=interface
+uci set network.lan6.device='eth1'
+uci set network.lan6.proto='dhcpv6'
+uci set network.lan6.reqaddress='try'
+uci set network.lan6.reqprefix='auto'
+uci commit network
+/etc/init.d/network restart
