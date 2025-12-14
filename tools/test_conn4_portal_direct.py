@@ -53,6 +53,8 @@ class Conn4PortalTester:
 
         try:
             options = Options()
+            # Запускаем в видимом режиме для отладки
+            # options.add_argument("--headless")  # Отключаем headless для отладки
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
             options.add_argument("--disable-gpu")
@@ -86,7 +88,33 @@ class Conn4PortalTester:
 
             # Ждем загрузки JavaScript контента
             self.logger.info("Ожидание загрузки JavaScript контента...")
-            time.sleep(15)
+
+            # Ждем пока JavaScript создаст элементы на странице
+            for i in range(30):  # Максимум 30 секунд
+                time.sleep(1)
+
+                # Проверяем, появились ли элементы
+                inputs = self.driver.find_elements(By.TAG_NAME, "input")
+                buttons = self.driver.find_elements(By.TAG_NAME, "button")
+
+                if len(inputs) > 0 or len(buttons) > 0:
+                    self.logger.info(f"JavaScript загрузился за {i+1} секунд - найдено {len(inputs)} inputs и {len(buttons)} buttons")
+                    break
+
+                if i % 5 == 0:  # Каждые 5 секунд
+                    self.logger.info(f"Ожидание JavaScript... {i+1}/30 сек")
+
+            # Дополнительная пауза для завершения анимаций
+            time.sleep(3)
+
+            # Принудительно выполняем JavaScript для инициализации страницы
+            try:
+                self.driver.execute_script("if (typeof initPage === 'function') { initPage(); }")
+                self.driver.execute_script("if (typeof loadContent === 'function') { loadContent(); }")
+                self.driver.execute_script("document.dispatchEvent(new Event('DOMContentLoaded'));")
+                time.sleep(2)
+            except Exception as e:
+                self.logger.debug(f"Ошибка выполнения JavaScript: {e}")
 
             current_url = self.driver.current_url
             page_title = self.driver.title
@@ -113,6 +141,66 @@ class Conn4PortalTester:
         self.logger.info("=== АНАЛИЗ СТРАНИЦЫ ПОРТАЛА ===")
 
         try:
+            # Ждем дополнительно для загрузки динамического контента
+            time.sleep(5)
+
+            # Ищем ВСЕ элементы input
+            all_inputs = self.driver.find_elements(By.TAG_NAME, "input")
+            self.logger.info(f"Найдено всех input элементов: {len(all_inputs)}")
+
+            for i, inp in enumerate(all_inputs):
+                inp_type = inp.get_attribute("type") or "text"
+                inp_name = inp.get_attribute("name") or ""
+                inp_value = inp.get_attribute("value") or ""
+                inp_id = inp.get_attribute("id") or ""
+                inp_class = inp.get_attribute("class") or ""
+                is_visible = inp.is_displayed()
+                self.logger.info(f"  Input {i+1}: type='{inp_type}' name='{inp_name}' id='{inp_id}' class='{inp_class}' value='{inp_value}' visible={is_visible}")
+
+            # Ищем ВСЕ кнопки
+            buttons = self.driver.find_elements(By.TAG_NAME, "button")
+            submit_inputs = self.driver.find_elements(By.CSS_SELECTOR, "input[type='submit']")
+            button_inputs = self.driver.find_elements(By.CSS_SELECTOR, "input[type='button']")
+
+            all_buttons = buttons + submit_inputs + button_inputs
+            self.logger.info(f"Найдено всех кнопок: {len(all_buttons)}")
+
+            for i, btn in enumerate(all_buttons):
+                text = btn.text.strip() or btn.get_attribute("value") or ""
+                btn_type = btn.get_attribute("type") or ""
+                btn_id = btn.get_attribute("id") or ""
+                btn_class = btn.get_attribute("class") or ""
+                onclick = btn.get_attribute("onclick") or ""
+                is_visible = btn.is_displayed()
+                is_enabled = btn.is_enabled()
+                self.logger.info(f"  Кнопка {i+1}: text='{text}' type='{btn_type}' id='{btn_id}' class='{btn_class}' visible={is_visible} enabled={is_enabled}")
+                if onclick:
+                    self.logger.info(f"    onclick: {onclick}")
+
+            # Ищем чекбоксы отдельно
+            checkboxes = self.driver.find_elements(By.CSS_SELECTOR, "input[type='checkbox']")
+            self.logger.info(f"Найдено чекбоксов: {len(checkboxes)}")
+
+            for i, checkbox in enumerate(checkboxes):
+                name = checkbox.get_attribute("name") or ""
+                checkbox_id = checkbox.get_attribute("id") or ""
+                is_checked = checkbox.is_selected()
+                is_visible = checkbox.is_displayed()
+                self.logger.info(f"  Чекбокс {i+1}: name='{name}' id='{checkbox_id}' checked={is_checked} visible={is_visible}")
+
+            # Ищем элементы с текстом "Get Free WiFi"
+            wifi_elements = self.driver.find_elements(By.XPATH, "//*[contains(text(), 'Get Free WiFi')]")
+            self.logger.info(f"Найдено элементов с 'Get Free WiFi': {len(wifi_elements)}")
+
+            for i, elem in enumerate(wifi_elements):
+                tag = elem.tag_name
+                text = elem.text.strip()
+                elem_id = elem.get_attribute("id") or ""
+                elem_class = elem.get_attribute("class") or ""
+                is_visible = elem.is_displayed()
+                is_enabled = elem.is_enabled() if hasattr(elem, 'is_enabled') else True
+                self.logger.info(f"  WiFi элемент {i+1}: <{tag}> text='{text}' id='{elem_id}' class='{elem_class}' visible={is_visible} enabled={is_enabled}")
+
             # Ищем формы
             forms = self.driver.find_elements(By.TAG_NAME, "form")
             self.logger.info(f"Найдено форм: {len(forms)}")
@@ -120,38 +208,19 @@ class Conn4PortalTester:
             for i, form in enumerate(forms):
                 action = form.get_attribute("action") or ""
                 method = form.get_attribute("method") or "GET"
-                self.logger.info(f"  Форма {i+1}: {method} {action}")
+                form_id = form.get_attribute("id") or ""
+                self.logger.info(f"  Форма {i+1}: {method} {action} id='{form_id}'")
 
-                # Ищем поля в форме
-                inputs = form.find_elements(By.TAG_NAME, "input")
-                for inp in inputs:
-                    inp_type = inp.get_attribute("type") or "text"
-                    inp_name = inp.get_attribute("name") or ""
-                    inp_value = inp.get_attribute("value") or ""
-                    self.logger.info(f"    Input: {inp_type} '{inp_name}' = '{inp_value}'")
+            # Выводим часть HTML для отладки
+            page_source = self.driver.page_source
+            self.logger.info(f"Размер HTML: {len(page_source)} символов")
 
-            # Ищем кнопки
-            buttons = self.driver.find_elements(By.TAG_NAME, "button")
-            inputs = self.driver.find_elements(By.CSS_SELECTOR, "input[type='submit'], input[type='button']")
-
-            all_buttons = buttons + inputs
-            self.logger.info(f"Найдено кнопок: {len(all_buttons)}")
-
-            for i, btn in enumerate(all_buttons):
-                text = btn.text.strip() or btn.get_attribute("value") or ""
-                btn_type = btn.get_attribute("type") or ""
-                onclick = btn.get_attribute("onclick") or ""
-                self.logger.info(f"  Кнопка {i+1}: '{text}' type='{btn_type}' onclick='{onclick}'")
-
-            # Ищем ссылки
-            links = self.driver.find_elements(By.TAG_NAME, "a")
-            self.logger.info(f"Найдено ссылок: {len(links)}")
-
-            for i, link in enumerate(links[:5]):  # Показываем первые 5
-                text = link.text.strip()
-                href = link.get_attribute("href") or ""
-                if text or href:
-                    self.logger.info(f"  Ссылка {i+1}: '{text}' -> {href}")
+            # Ищем ключевые слова в HTML
+            keywords = ['get free wifi', 'checkbox', 'connect', 'continue', 'accept', 'agree', 'submit', 'button', 'input']
+            for keyword in keywords:
+                count = page_source.lower().count(keyword)
+                if count > 0:
+                    self.logger.info(f"  Найдено '{keyword}': {count} раз в HTML")
 
         except Exception as e:
             self.logger.error(f"Ошибка анализа страницы: {e}")
@@ -161,43 +230,85 @@ class Conn4PortalTester:
         self.logger.info("=== ПОПЫТКА АВТОРИЗАЦИИ ===")
 
         try:
-            # Ищем кнопки подключения
+            # Сначала ищем и отмечаем чекбоксы (галки)
+            checkboxes = self.driver.find_elements(By.CSS_SELECTOR, "input[type='checkbox']")
+
+            for i, checkbox in enumerate(checkboxes):
+                if checkbox.is_displayed() and not checkbox.is_selected():
+                    self.logger.info(f"Отмечаем чекбокс {i+1}")
+                    try:
+                        checkbox.click()
+                        self.logger.info(f"✅ Чекбокс {i+1} отмечен")
+                    except Exception as e:
+                        self.logger.warning(f"Не удалось отметить чекбокс {i+1}: {e}")
+
+            # Небольшая пауза после отметки чекбоксов
+            time.sleep(2)
+
+            # Теперь ищем кнопки для подключения
             connect_selectors = [
+                # Поиск по конкретному тексту "Get Free WiFi"
+                "//button[contains(text(), 'Get Free WiFi')]",
+                "//input[@value='Get Free WiFi']",
+                "//*[contains(text(), 'Get Free WiFi')]",
+
+                # Поиск по тексту кнопки (общие варианты)
+                "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'get free wifi')]",
                 "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'connect')]",
                 "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'continue')]",
                 "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'agree')]",
+                "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'submit')]",
+                "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accept')]",
+
+                # Поиск по типу
                 "//input[@type='submit']",
-                "//button[@type='submit']"
+                "//button[@type='submit']",
+                "//button[@type='button']",
+
+                # Поиск по классам (часто используемые в conn4)
+                "//button[contains(@class, 'btn')]",
+                "//button[contains(@class, 'button')]",
+                "//input[contains(@class, 'btn')]",
+
+                # Поиск любых кликабельных элементов
+                "//*[@onclick]",
+
+                # Поиск по ID (если есть стандартные)
+                "//button[@id]",
+                "//input[@id and @type='submit']"
             ]
 
             for selector in connect_selectors:
                 try:
-                    element = WebDriverWait(self.driver, 3).until(
-                        EC.element_to_be_clickable((By.XPATH, selector))
-                    )
+                    elements = self.driver.find_elements(By.XPATH, selector)
 
-                    text = element.text.strip() or element.get_attribute("value") or ""
-                    self.logger.info(f"Найдена кнопка: '{text}' ({selector})")
+                    for element in elements:
+                        if element.is_displayed() and element.is_enabled():
+                            text = element.text.strip() or element.get_attribute("value") or element.get_attribute("id") or "Безымянная кнопка"
+                            self.logger.info(f"Найдена кнопка: '{text}' ({selector})")
 
-                    element.click()
-                    self.logger.info("Кнопка нажата")
+                            try:
+                                element.click()
+                                self.logger.info(f"✅ Кнопка '{text}' нажата")
 
-                    time.sleep(10)
+                                time.sleep(10)
 
-                    # Проверяем результат
-                    new_url = self.driver.current_url
-                    self.logger.info(f"Новый URL после клика: {new_url}")
+                                # Проверяем результат
+                                new_url = self.driver.current_url
+                                self.logger.info(f"Новый URL после клика: {new_url}")
 
-                    # Сохраняем скриншот результата
-                    self.driver.save_screenshot("conn4_after_click.png")
-                    self.logger.info("Скриншот после клика: conn4_after_click.png")
+                                # Сохраняем скриншот результата
+                                self.driver.save_screenshot("conn4_after_click.png")
+                                self.logger.info("Скриншот после клика: conn4_after_click.png")
 
-                    # Проверяем успех
-                    if self.check_success():
-                        return True
+                                # Проверяем успех
+                                if self.check_success():
+                                    return True
 
-                except TimeoutException:
-                    continue
+                            except Exception as e:
+                                self.logger.warning(f"Ошибка клика по кнопке '{text}': {e}")
+                                continue
+
                 except Exception as e:
                     self.logger.debug(f"Ошибка с селектором {selector}: {e}")
                     continue
