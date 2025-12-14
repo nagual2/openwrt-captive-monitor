@@ -157,10 +157,12 @@ nameserver 8.8.8.8
 nameserver 1.1.1.1
 """
 
-            with open('/tmp/resolv.conf.test', 'w') as f:
+            temp_file = os.path.expanduser('~/resolv.conf.test')
+            with open(temp_file, 'w') as f:
                 f.write(dns_config)
 
-            subprocess.run(['sudo', 'cp', '/tmp/resolv.conf.test', '/etc/resolv.conf'], check=True)
+            subprocess.run(['sudo', 'cp', temp_file, '/etc/resolv.conf'], check=True)
+            os.remove(temp_file)
             self.log_test_result("Configure DNS via dev router", True)
 
             # Тестируем DNS разрешение
@@ -169,7 +171,7 @@ nameserver 1.1.1.1
 
             for host in test_hosts:
                 try:
-                    result = subprocess.run(['nslookup', host], capture_output=True, text=True, timeout=10)
+                    result = subprocess.run(['nslookup', host, self.dev_router_ip], capture_output=True, text=True, timeout=10)
                     dns_success = result.returncode == 0 and 'NXDOMAIN' not in result.stdout
                     dns_results[host] = dns_success
 
@@ -221,9 +223,11 @@ nameserver 1.1.1.1
             # Восстанавливаем оригинальную конфигурацию DNS
             if original_resolv:
                 try:
-                    with open('/tmp/resolv.conf.original', 'w') as f:
+                    temp_file = os.path.expanduser('~/resolv.conf.original')
+                    with open(temp_file, 'w') as f:
                         f.write(original_resolv)
-                    subprocess.run(['sudo', 'cp', '/tmp/resolv.conf.original', '/etc/resolv.conf'], check=True)
+                    subprocess.run(['sudo', 'cp', temp_file, '/etc/resolv.conf'], check=True)
+                    os.remove(temp_file)
                     self.log_test_result("Restore original DNS config", True)
                 except Exception as e:
                     self.logger.error(f"Ошибка восстановления DNS: {e}")

@@ -97,12 +97,14 @@ nameserver 8.8.8.8
 nameserver 1.1.1.1
 """
 
-            with open('/tmp/resolv.conf.dev_test', 'w') as f:
+            temp_file = os.path.expanduser('~/resolv.conf.dev_test')
+            with open(temp_file, 'w') as f:
                 f.write(dns_config)
 
             # Применяем новую конфигурацию
             subprocess.run(['sudo', 'cp', '/etc/resolv.conf', '/etc/resolv.conf.backup_dev_test'], check=True)
-            subprocess.run(['sudo', 'cp', '/tmp/resolv.conf.dev_test', '/etc/resolv.conf'], check=True)
+            subprocess.run(['sudo', 'cp', temp_file, '/etc/resolv.conf'], check=True)
+            os.remove(temp_file)
 
             self.log("✅ DNS настроен через роутер")
             self.results['dns_setup'] = True
@@ -114,21 +116,23 @@ nameserver 1.1.1.1
             return False
 
     def test_dns_resolution(self):
-        """Тестирование DNS разрешения"""
-        self.log("Тестирование DNS разрешения...")
+        """Тестирование DNS разрешения напрямую через роутер"""
+        self.log("Тестирование DNS разрешения напрямую через роутер...")
 
         test_domains = ['google.com', 'github.com', 'cloudflare.com']
         successful_resolutions = 0
 
         for domain in test_domains:
             try:
-                result = subprocess.run(['nslookup', domain], capture_output=True, text=True, timeout=10)
+                # Отправляем DNS запрос напрямую на роутер
+                result = subprocess.run(['nslookup', domain, self.router_ip],
+                                      capture_output=True, text=True, timeout=10)
 
                 success = result.returncode == 0 and 'NXDOMAIN' not in result.stdout
 
                 if success:
                     successful_resolutions += 1
-                    self.verbose_log(f"✅ DNS {domain}: успешно")
+                    self.verbose_log(f"✅ DNS {domain} через {self.router_ip}: успешно")
 
                     # Извлекаем IP адрес
                     lines = result.stdout.split('\n')
@@ -137,23 +141,26 @@ nameserver 1.1.1.1
                         ip = address_lines[0].split('Address:')[1].strip()
                         self.verbose_log(f"   IP: {ip}")
                 else:
-                    self.verbose_log(f"❌ DNS {domain}: неудача")
+                    self.verbose_log(f"❌ DNS {domain} через {self.router_ip}: неудача")
+                    if self.verbose:
+                        self.verbose_log(f"   Вывод: {result.stdout}")
 
             except Exception as e:
-                self.verbose_log(f"❌ DNS {domain}: ошибка {e}")
+                self.verbose_log(f"❌ DNS {domain} через {self.router_ip}: ошибка {e}")
 
         dns_success = successful_resolutions > 0
-        self.log(f"DNS разрешение: {successful_resolutions}/{len(test_domains)} доменов")
+        self.log(f"DNS разрешение через {self.router_ip}: {successful_resolutions}/{len(test_domains)} доменов")
 
         if dns_success:
-            self.log("✅ DNS работает")
+            self.log("✅ DNS работает через роутер")
         else:
-            self.log("❌ DNS не работает")
+            self.log("❌ DNS не работает через роутер")
 
         self.results['dns_resolution'] = {
             'success': dns_success,
             'resolved_domains': successful_resolutions,
-            'total_domains': len(test_domains)
+            'total_domains': len(test_domains),
+            'dns_server': self.router_ip
         }
 
         return dns_success
@@ -289,10 +296,7 @@ nameserver 1.1.1.1
             else:
                 self.log("⚠️ Backup файл DNS не найден")
 
-            # Очищаем временные файлы
-            for temp_file in ['/tmp/resolv.conf.dev_test']:
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
+            # Очищаем временные файлы (уже удалены выше)
 
             self.results['dns_restore'] = True
             return True

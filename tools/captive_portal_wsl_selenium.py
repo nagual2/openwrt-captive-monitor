@@ -110,9 +110,11 @@ nameserver 1.1.1.1
             subprocess.run(['sudo', 'cp', '/etc/resolv.conf', '/etc/resolv.conf.backup'], check=True)
 
             # Устанавливаем новый resolv.conf
-            with open('/tmp/resolv.conf.temp', 'w') as f:
+            temp_file = os.path.expanduser('~/resolv.conf.temp')
+            with open(temp_file, 'w') as f:
                 f.write(dns_config)
-            subprocess.run(['sudo', 'cp', '/tmp/resolv.conf.temp', '/etc/resolv.conf'], check=True)
+            subprocess.run(['sudo', 'cp', temp_file, '/etc/resolv.conf'], check=True)
+            os.remove(temp_file)
 
             # Добавляем маршруты для тестовых хостов через роутер
             test_hosts = [
@@ -213,12 +215,15 @@ nameserver 1.1.1.1
             options.add_argument("--disable-background-timer-throttling")
             options.add_argument("--disable-backgrounding-occluded-windows")
             options.add_argument("--disable-renderer-backgrounding")
-            options.add_argument("--disable-features=TranslateUI")
+            options.add_argument("--disable-features=TranslateUI,VizDisplayCompositor")
             options.add_argument("--disable-extensions")
             options.add_argument("--disable-plugins")
             options.add_argument("--disable-images")
-            options.add_argument("--disable-javascript")  # Отключаем JS для ускорения
-            options.add_argument("--single-process")  # Важно для WSL
+            options.add_argument("--disable-web-security")
+            options.add_argument("--disable-features=VizDisplayCompositor")
+            options.add_argument("--remote-debugging-port=9222")
+            options.add_argument("--window-size=1920,1080")
+            # НЕ используем single-process в WSL - это может вызывать проблемы
 
             # КЛЮЧЕВАЯ НАСТРОЙКА: Принудительная маршрутизация через роутер
             options.add_argument(f"--host-resolver-rules=MAP * {self.router_ip}")
