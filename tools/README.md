@@ -30,6 +30,19 @@ wsl python3 tools/captive_portal_wsl_selenium.py --username "12345" --password "
 wsl python3 tools/captive_portal_wsl_selenium.py --debug --verbose
 ```
 
+### Тестирование
+
+```bash
+# Полное тестирование скрипта
+wsl python3 tools/test_captive_portal_wsl_selenium.py
+
+# Быстрая проверка доступа к интернету через dev
+wsl python3 tools/test_dev_internet_access.py
+
+# Тестирование с учетными данными
+wsl python3 tools/test_captive_portal_wsl_selenium.py --username "12345" --password "secret"
+```
+
 ### Документация
 
 Подробная документация: [docs/captive-portal-wsl-selenium.md](../docs/captive-portal-wsl-selenium.md)
