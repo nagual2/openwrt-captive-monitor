@@ -1,0 +1,239 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/nagual2/openwrt-captive-monitor/tools/portal_config_schema.json",
+  "title": "Captive Portal Configuration Schema",
+  "description": "JSON схема для описания конфигурации различных типов captive порталов",
+  "type": "object",
+  "required": ["portal_type", "auth_method"],
+  "properties": {
+    "portal_type": {
+      "type": "string",
+      "description": "Тип captive портала (например: conn4.com, mikrotik, pfsense)",
+      "examples": ["conn4.com", "mikrotik", "pfsense", "generic"]
+    },
+    "auth_method": {
+      "type": "string",
+      "enum": ["form_submission", "javascript_emulation", "ajax_request", "simple_redirect"],
+      "description": "Метод авторизации на портале"
+    },
+    "detection": {
+      "type": "object",
+      "description": "Параметры для обнаружения портала",
+      "properties": {
+        "url_patterns": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Паттерны URL для идентификации портала"
+        },
+        "title_patterns": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Паттерны заголовков страниц"
+        },
+        "content_patterns": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Паттерны содержимого страницы"
+        }
+      }
+    },
+    "form_config": {
+      "type": "object",
+      "description": "Конфигурация формы авторизации",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "URL action формы (относительный или абсолютный)"
+        },
+        "method": {
+          "type": "string",
+          "enum": ["GET", "POST"],
+          "default": "POST",
+          "description": "HTTP метод отправки формы"
+        },
+        "required_fields": {
+          "type": "object",
+          "description": "Обязательные поля формы",
+          "patternProperties": {
+            "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+              "type": "string",
+              "description": "Имя поля и его назначение"
+            }
+          }
+        },
+        "optional_fields": {
+          "type": "object",
+          "description": "Опциональные поля формы",
+          "patternProperties": {
+            "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+              "type": "string"
+            }
+          }
+        },
+        "hidden_fields": {
+          "type": "object",
+          "description": "Скрытые поля формы с фиксированными значениями",
+          "patternProperties": {
+            "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "javascript_config": {
+      "type": "object",
+      "description": "Конфигурация JavaScript логики",
+      "properties": {
+        "validation_function": {
+          "type": "string",
+          "description": "Имя функции валидации"
+        },
+        "submit_function": {
+          "type": "string",
+          "description": "Имя функции отправки"
+        },
+        "required_variables": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Обязательные JavaScript переменные"
+        },
+        "ajax_endpoint": {
+          "type": "string",
+          "description": "AJAX endpoint для авторизации"
+        },
+        "custom_logic": {
+          "type": "string",
+          "description": "Пользовательский JavaScript код"
+        }
+      }
+    },
+    "success_indicators": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["redirect", "content_check", "http_status", "internet_check"],
+            "description": "Тип индикатора успеха"
+          },
+          "value": {
+            "type": "string",
+            "description": "Значение для проверки"
+          },
+          "timeout": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 300,
+            "default": 30,
+            "description": "Таймаут проверки в секундах"
+          }
+        },
+        "required": ["type", "value"]
+      },
+      "description": "Индикаторы успешной авторизации"
+    },
+    "retry_config": {
+      "type": "object",
+      "description": "Конфигурация повторных попыток",
+      "properties": {
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3,
+          "description": "Максимальное количество попыток"
+        },
+        "delay_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60,
+          "default": 5,
+          "description": "Задержка между попытками в секундах"
+        },
+        "backoff_multiplier": {
+          "type": "number",
+          "minimum": 1.0,
+          "maximum": 5.0,
+          "default": 1.5,
+          "description": "Множитель увеличения задержки"
+        }
+      }
+    },
+    "headers": {
+      "type": "object",
+      "description": "Дополнительные HTTP заголовки",
+      "patternProperties": {
+        "^[a-zA-Z-]+$": {
+          "type": "string"
+        }
+      }
+    },
+    "timeouts": {
+      "type": "object",
+      "description": "Таймауты для различных операций",
+      "properties": {
+        "page_load": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 120,
+          "default": 30,
+          "description": "Таймаут загрузки страницы в секундах"
+        },
+        "auth_request": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 60,
+          "default": 15,
+          "description": "Таймаут запроса авторизации в секундах"
+        },
+        "verification": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 60,
+          "default": 10,
+          "description": "Таймаут проверки успеха в секундах"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Метаданные конфигурации",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Человекочитаемое имя портала"
+        },
+        "description": {
+          "type": "string",
+          "description": "Описание портала"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Версия конфигурации (semver)"
+        },
+        "author": {
+          "type": "string",
+          "description": "Автор конфигурации"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Дата создания конфигурации"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Дата последнего обновления"
+        },
+        "tested_versions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Протестированные версии портала"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "ultrascript-tools": {
+      "command": "C:\\Users\\Администратор\\.bun\\bin\\bun.exe",
+      "args": [
+        "C:\\git\\ultrascript-tools-mcp\\dist\\index.js",
+        "C:\\git\\openwrt-captive-monitor"
+      ],
+      "disabled": true,
+      "autoApprove": [
+        "index",
+        "get_graph_stats",
+        "get_version",
+        "list_file_entities",
+        "semantic_search",
+        "query"
+      ]
+    }
+  }
+}

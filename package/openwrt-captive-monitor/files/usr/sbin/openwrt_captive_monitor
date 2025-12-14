@@ -123,6 +123,7 @@ DEFAULT_NFT_CHAIN_NAME="prerouting"
 
 DEFAULT_LOG_TAG="captive-monitor"
 DEFAULT_ENABLE_SYSLOG=1
+DEFAULT_AUTO_AUTH_ENABLED=1
 
 # Lock file to prevent multiple instances
 LOCK_FILE="${LOCK_FILE:-/var/run/openwrt_captive_monitor.lock}"
@@ -197,6 +198,7 @@ HTTP_PROBE_RESULT_CODE=""
 # Логирование
 LOG_TAG="${LOG_TAG:-$DEFAULT_LOG_TAG}"
 ENABLE_SYSLOG="${ENABLE_SYSLOG:-$DEFAULT_ENABLE_SYSLOG}"
+AUTO_AUTH_ENABLED="${AUTO_AUTH_ENABLED:-$DEFAULT_AUTO_AUTH_ENABLED}"
 
 # ============================================================================
 # UCI КОНФИГУРАЦИЯ
@@ -258,6 +260,17 @@ load_uci_config() {
     case "$value" in
         monitor | oneshot)
             DEFAULT_MODE="$value"
+            ;;
+    esac
+
+    # Загружаем параметры автоматической авторизации
+    value=$(uci_safe_get "${section}.auto_auth_enabled")
+    case "$value" in
+        0 | false | no | disabled)
+            AUTO_AUTH_ENABLED=0
+            ;;
+        1 | true | yes | enabled | "")
+            AUTO_AUTH_ENABLED=1
             ;;
     esac
 }
@@ -1417,6 +1430,22 @@ check_and_fix_connection() {
                 portal_ip4=""
             fi
         fi
+
+        # Попытка прямой авторизации без перехвата трафика
+        if auto_authenticate "$CAPTIVE_PORTAL_URL" "$CAPTIVE_PORTAL_HOST"; then
+            log_info "Прямая авторизация успешна, проверяем интернет"
+            # Даем время на обработку авторизации
+            sleep 5
+            if check_internet; then
+                log_info "Интернет доступен после прямой авторизации"
+                return 0
+            else
+                log_warn "Интернет недоступен после авторизации, настраиваем перехват"
+            fi
+        else
+            log_info "Прямая авторизация не удалась, настраиваем перехват для ручной авторизации"
+        fi
+
         if setup_captive_intercept "$CAPTIVE_PORTAL_URL" "$CAPTIVE_PORTAL_HOST" "$portal_ip4"; then
             if wait_for_internet_after_intercept; then
                 return 0
@@ -1502,6 +1531,190 @@ oneshot_mode() {
     fi
     release_lock
     exit 1
+}
+
+# ============================================================================
+# АВТОМАТИЧЕСКАЯ АВТОРИЗАЦИЯ
+# ============================================================================
+
+# Определение типа captive портала по URL и содержимому
+identify_portal_type() {
+    local portal_url="$1"
+    local portal_host="$2"
+
+    # Проверяем известные паттерны в URL
+    case "$portal_host" in
+        *conn4.com*|*conn4*)
+            echo "conn4.com"
+            return 0
+            ;;
+        *mikrotik*|*hotspot*)
+            echo "mikrotik"
+            return 0
+            ;;
+        *pfsense*)
+            echo "pfsense"
+            return 0
+            ;;
+    esac
+
+    # Если не удалось определить по URL, пробуем анализировать содержимое
+    if command -v curl > /dev/null 2>&1; then
+        local content_file
+        content_file=$(mktemp /tmp/portal_content.XXXXXX) || return 1
+
+        if curl -sS -m 10 -o "$content_file" "$portal_url" 2>/dev/null; then
+            # Проверяем характерные признаки в HTML
+            if grep -qi "roomNumber\|accessCode\|validateForm" "$content_file"; then
+                rm -f "$content_file"
+                echo "conn4.com"
+                return 0
+            elif grep -qi "mikrotik\|hotspot" "$content_file"; then
+                rm -f "$content_file"
+                echo "mikrotik"
+                return 0
+            elif grep -qi "username.*password" "$content_file"; then
+                rm -f "$content_file"
+                echo "generic"
+                return 0
+            fi
+        fi
+
+        rm -f "$content_file"
+    fi
+
+    # По умолчанию возвращаем generic
+    echo "generic"
+    return 0
+}
+
+# Прямая авторизация на captive портале (без перехвата трафика)
+auto_authenticate() {
+    local portal_url="$1"
+    local portal_host="$2"
+    local portal_type
+
+    # Проверяем, включена ли автоматическая авторизация
+    if [ "$AUTO_AUTH_ENABLED" != "1" ]; then
+        log_info "Автоматическая авторизация отключена в конфигурации"
+        return 1
+    fi
+
+    log_info "Попытка прямой авторизации на портале: $portal_url"
+
+    # Определяем тип портала
+    portal_type=$(identify_portal_type "$portal_url" "$portal_host")
+    log_info "Определен тип портала: $portal_type"
+
+    # Загружаем параметры авторизации из UCI
+    local room_number access_code username password
+    room_number=$(uci -q get captive-monitor.@auth[0].room_number || echo "")
+    access_code=$(uci -q get captive-monitor.@auth[0].access_code || echo "")
+    username=$(uci -q get captive-monitor.@auth[0].username || echo "")
+    password=$(uci -q get captive-monitor.@auth[0].password || echo "")
+
+    # Проверяем наличие Python скрипта авторизации
+    local auth_script=""
+    for script_path in \
+        "/usr/sbin/captive_portal_simple_auth.py" \
+        "/usr/sbin/captive_portal_final_auth.py" \
+        "/tmp/captive_portal_simple_auth.py" \
+        "/tmp/captive_portal_final_auth.py"; do
+        if [ -x "$script_path" ]; then
+            auth_script="$script_path"
+            break
+        fi
+    done
+
+    # Если есть Python скрипт, используем его
+    if [ -n "$auth_script" ]; then
+        log_info "Запуск Python авторизации через $auth_script"
+
+        # Подготавливаем переменные окружения
+        export CAPTIVE_PORTAL_URL="$portal_url"
+        export CAPTIVE_PORTAL_HOST="$portal_host"
+        export CAPTIVE_PORTAL_TYPE="$portal_type"
+        export CAPTIVE_ROOM_NUMBER="$room_number"
+        export CAPTIVE_ACCESS_CODE="$access_code"
+        export CAPTIVE_USERNAME="$username"
+        export CAPTIVE_PASSWORD="$password"
+
+        case "$portal_type" in
+            conn4.com)
+                if [ -n "$room_number" ] && [ -n "$access_code" ]; then
+                    if python3 "$auth_script" --portal-url "$portal_url" --portal-type "conn4.com" --room "$room_number" --password "$access_code" --verify 2>/dev/null; then
+                        log_info "Python авторизация успешна"
+                        return 0
+                    fi
+                else
+                    log_warn "Не заданы room_number или access_code для портала conn4.com"
+                fi
+                ;;
+            generic|mikrotik|pfsense)
+                if [ -n "$username" ] && [ -n "$password" ]; then
+                    if python3 "$auth_script" --portal-url "$portal_url" --portal-type "generic" --username "$username" --password "$password" --verify 2>/dev/null; then
+                        log_info "Python авторизация успешна"
+                        return 0
+                    fi
+                else
+                    log_warn "Не заданы username или password для портала $portal_type"
+                fi
+                ;;
+        esac
+
+        log_warn "Python авторизация не удалась"
+    fi
+
+    # Fallback на простую curl авторизацию
+    log_info "Пробуем простую curl авторизацию"
+    return simple_auth_attempt "$portal_url" "$portal_type" "$room_number" "$access_code" "$username" "$password"
+}
+
+# Простая попытка авторизации через curl
+simple_auth_attempt() {
+    local portal_url="$1"
+    local portal_type="$2"
+    local room_number="$3"
+    local access_code="$4"
+    local username="$5"
+    local password="$6"
+
+    log_info "Попытка простой curl авторизации для портала типа: $portal_type"
+
+    if ! command -v curl > /dev/null 2>&1; then
+        log_error "curl не найден, невозможно выполнить авторизацию"
+        return 1
+    fi
+
+    case "$portal_type" in
+        generic)
+            if [ -n "$username" ] && [ -n "$password" ]; then
+                log_info "Попытка POST авторизации с username/password"
+                if curl -sS -m 15 -X POST \
+                    -d "username=$username" \
+                    -d "password=$password" \
+                    -d "submit=Login" \
+                    "$portal_url" > /dev/null 2>&1; then
+                    return 0
+                fi
+            fi
+            ;;
+        conn4.com)
+            if [ -n "$room_number" ] && [ -n "$access_code" ]; then
+                log_info "Попытка POST авторизации с roomNumber/accessCode"
+                if curl -sS -m 15 -X POST \
+                    -d "roomNumber=$room_number" \
+                    -d "accessCode=$access_code" \
+                    -d "action=login" \
+                    "$portal_url" > /dev/null 2>&1; then
+                    return 0
+                fi
+            fi
+            ;;
+    esac
+
+    log_warn "Простая авторизация не удалась"
+    return 1
 }
 
 # ============================================================================

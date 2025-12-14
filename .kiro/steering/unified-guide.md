@@ -20,10 +20,15 @@
 - `wsl bash tests/run.sh` - локальные unit тесты
 - GitHub Actions - CI/CD в облаке
 
+**Cline CLI (WSL) - НЕ ИСПОЛЬЗОВАТЬ:**
+- ❌ **Требует внешнюю авторизацию и регистрацию аккаунта**
+- Установлен но не настроен (версия 1.0.8)
+- Использовать вместо: стандартные инструменты (git, gh, docker, wsl)
+
 **SSH и удаленный доступ:**
 - ⚠️ **ВСЕ SSH подключения ТОЛЬКО через WSL для безопасности**
 - Используй короткие имена из /etc/hosts (IP могут меняться)
-- ✅ **WSL 1**: Автогенерация /etc/hosts отключена через /etc/wsl.conf
+- ✅ **WSL 2**: Автогенерация /etc/hosts отключена через /etc/wsl.conf
 - Тестовая среда: `wsl ssh root@dev-openwrt` (доступна по COM порту)
 - Production среда: `wsl ssh root@prod-openwrt` (только после одобрения пользователя!)
 
@@ -35,6 +40,13 @@
 - Доступ к тестовому роутеру: `python tools/serial_console.py COM1 115200 "command"`
 - Используй для проверки IP адреса когда SSH недоступен
 - Используй для первоначальной настройки SSH ключей
+
+**Google Chrome (WSL) с debugging:**
+- ✅ **ЕДИНСТВЕННЫЙ рекомендуемый браузер для тестирования**
+- Запуск с debugging: `wsl google-chrome --headless=new --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug --no-sandbox --disable-gpu`
+- DevTools API: `http://localhost:9222/json/list` (доступен из Windows и WSL)
+- Headless операции: скриншоты, PDF, парсинг HTML
+- WebSocket управление в реальном времени
 
 ### ❌ НЕ работающие инструменты (НЕ ИСПОЛЬЗОВАТЬ!)
 
@@ -59,7 +71,16 @@
 - Вызывает проблемы с производительностью
 - Держать отключенным в `.kiro/settings/mcp.json`
 
-### ⚠️ Важные особенности
+**Другие браузеры (Firefox, Chromium):**
+- НЕ ИСПОЛЬЗОВАТЬ - требуют snap установку
+- Firefox и Chromium установлены как transitional packages
+- Используй вместо: Google Chrome с debugging API
+
+**Cline CLI:**
+- НЕ ИСПОЛЬЗОВАТЬ - требует внешнюю авторизацию
+- Установлен в WSL но не настроен
+- Используй вместо: стандартные инструменты разработки### ⚠
+️ Важные особенности
 
 **Auto-version-tag workflow:**
 - НЕ запускается автоматически при push в main
@@ -105,9 +126,8 @@ WSL добавляет overhead на запуск Linux окружения. Ис
 | Переменные окружения | `wsl echo $PATH` | `$env:PATH` |
 | Python | `wsl python script.py` | `python script.py` |
 | Curl | `wsl curl url` | `Invoke-WebRequest url` |
-| Node.js / Bun | `wsl node script.js` | `node script.js` или `bun script.js` |
-
-### ⚠️ Используй WSL только когда необходимо:
+| Node.js / Bun | `wsl node script.js` | `node script.js` или `bun script.js` |###
+ ⚠️ Используй WSL только когда необходимо:
 
 | Задача | Причина |
 |--------|---------|
@@ -138,7 +158,7 @@ ssh root@192.168.1.1 "uname -a"
 192.168.35.1    prod-openwrt     # Production среда
 ```
 
-**Настройка WSL 1 (отключение автогенерации /etc/hosts):**
+**Настройка WSL 2 (отключение автогенерации /etc/hosts):**
 ```powershell
 # Отключить автогенерацию /etc/hosts
 wsl bash -c "sudo mkdir -p /etc && echo -e '[network]\ngenerateHosts = false' | sudo tee /etc/wsl.conf"
@@ -152,9 +172,8 @@ wsl bash -c "echo '192.168.35.1    prod-openwrt' | sudo tee -a /etc/hosts"
 
 # Проверить
 wsl bash -c "cat /etc/hosts | grep openwrt"
-```
-
-**Обновление IP адресов роутеров:**
+```**Об
+новление IP адресов роутеров:**
 ```powershell
 # Проверить текущий IP через COM порт
 python tools/serial_console.py COM1 115200 "ip addr show br-lan"
@@ -200,41 +219,69 @@ wsl ssh root@dev-openwrt "uname -a"
 - **Решение:** DNS bypass через `server=/$domain/#` в dnsmasq
 - **Файл:** `/tmp/dnsmasq.d/connectivity-bypass.conf`
 
-**4. Защита от множественных экземпляров**
-- **Проблема:** Могли запускаться несколько копий скрипта одновременно
-- **Решение:** Lock файл `/var/run/captive-monitor.lock` с `acquire_lock()` и `release_lock()`
-- **Cleanup:** `trap release_lock EXIT INT TERM`
+## Google Chrome управление
 
-**5. Проверка статуса WAN интерфейса**
-- **Проблема:** Скрипт пытался детектировать интернет даже при выключенном WAN
-- **Решение:** `check_wan_interface()` проверяет `ifstatus wan` перед детекцией
-- **Логика:** Если WAN down - отключить intercept и выйти
+### Запуск Chrome с debugging
 
-**6. Двойная проверка интернета (ICMP + HTTP)**
-- **Проблема:** Скрипт считал интернет доступным если работал только HTTP (ICMP заблокирован)
-- **Решение:** `check_internet()` требует успеха ОБОИХ проверок
-- **Код:** `if icmp_probe_internet && http_probe_internet; then return 0; else return 1; fi`
+```powershell
+# Остановить существующие процессы Chrome
+wsl pkill chrome
 
-**7. Исправление init.d команд**
-- **Проблема:** `stop_service()` использовал несуществующий `procd_kill`
-- **Решение:** Заменен на `killall openwrt_captive_monitor` + удаление lock файла
+# Запустить Chrome с debugging API (headless)
+wsl google-chrome --headless=new --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug --no-sandbox --disable-gpu --disable-dev-shm-usage https://google.com &
 
-### Ключевые компоненты
+# Проверить доступность API
+Invoke-WebRequest "http://localhost:9222/json/list" -UseBasicParsing
+```
 
-- **Основной скрипт**: `openwrt_captive_monitor.sh` - bash скрипт для обнаружения и обработки captive порталов
-- **Пакет OpenWrt**: `package/openwrt-captive-monitor/` - структура пакета для OpenWrt
-- **CI/CD**: `.github/workflows/` - автоматизированная сборка, тестирование и релизы
+### Chrome DevTools Protocol API
 
-### Поддерживаемые версии OpenWrt
+```powershell
+# Список всех вкладок
+Invoke-WebRequest "http://localhost:9222/json/list" -UseBasicParsing
 
-- 21.02 (LTS) - iptables backend
-- 22.03 (LTS) - автоопределение backend
-- 23.05 (Stable) - полная поддержка nftables
-- 24.10 (Development)
+# Создать новую вкладку
+Invoke-WebRequest "http://localhost:9222/json/new?https://example.com" -UseBasicParsing
 
-### Поддерживаемые архитектуры
+# Закрыть вкладку (замени ID)
+Invoke-WebRequest "http://localhost:9222/json/close/TAB_ID" -UseBasicParsing
 
-- mips_24kc (основная для роутеров)
-- aarch64_cortex-a53
-- x86_64
-- all (универсальный пакет)
+# Версия Chrome
+Invoke-WebRequest "http://localhost:9222/json/version" -UseBasicParsing
+```
+
+### Headless операции
+
+```powershell
+# Скриншот страницы
+wsl google-chrome --headless=new --screenshot=/tmp/screenshot.png --window-size=1920,1080 https://example.com
+
+# Сохранить в PDF
+wsl google-chrome --headless=new --print-to-pdf=/tmp/page.pdf https://example.com
+
+# Получить HTML содержимое
+wsl google-chrome --headless=new --dump-dom https://example.com
+
+# Тестирование captive portal
+wsl google-chrome --headless=new --dump-dom http://detectportal.firefox.com/canonical.html
+```
+
+### Тестирование роутеров
+
+```powershell
+# Доступ к веб-интерфейсу роутера
+wsl google-chrome --headless=new --dump-dom http://192.168.1.1
+
+# Скриншот LuCI интерфейса
+wsl google-chrome --headless=new --screenshot=/tmp/luci.png --window-size=1920,1080 http://192.168.1.1
+
+# Тестирование captive portal intercept
+wsl google-chrome --headless=new --dump-dom http://example.com
+```
+
+### ⚠️ Важно: НЕ использовать другие браузеры
+
+- **Firefox** - требует `snap install firefox` (transitional package)
+- **Chromium** - требует `snap install chromium` (transitional package)
+- **Текстовые браузеры** (lynx, w3m) - ограниченная функциональность
+- **Используй только Google Chrome** - полностью настроен и готов к работе

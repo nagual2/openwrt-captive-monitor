@@ -393,6 +393,70 @@ act -W .github/workflows/ci.yml --job lint
 act -W .github/workflows/ci.yml --job lint --matrix linter:yamllint
 ```
 
+## WSL Routing Manager (отладка через dev сервер)
+
+### Настройка sudo без пароля
+
+```powershell
+# Настроить sudo для сетевых команд (один раз)
+wsl bash tools/setup_wsl_sudo.sh
+```
+
+### Управление маршрутизацией
+
+```powershell
+# Проверить текущий статус маршрутизации
+.\tools\wsl_routing_manager.ps1 status
+
+# Включить маршрутизацию через dev сервер (192.168.1.1)
+.\tools\wsl_routing_manager.ps1 enable
+
+# Отключить маршрутизацию через dev сервер
+.\tools\wsl_routing_manager.ps1 disable
+
+# Сбросить к WSL по умолчанию (если что-то пошло не так)
+.\tools\wsl_routing_manager.ps1 reset
+
+# Протестировать подключение
+.\tools\wsl_routing_manager.ps1 test
+```
+
+### Отладка captive portal detection
+
+```powershell
+# 1. Включить маршрутизацию через dev сервер
+.\tools\wsl_routing_manager.ps1 enable
+
+# 2. Мониторить логи на dev сервере (в отдельном терминале)
+wsl ssh root@dev-openwrt "logread -f | grep captive"
+
+# 3. Тестировать HTTP запросы из WSL
+wsl curl -v http://detectportal.firefox.com/canonical.html
+wsl curl -v http://www.msftconnecttest.com/connecttest.txt
+
+# 4. Отключить маршрутизацию
+.\tools\wsl_routing_manager.ps1 disable
+```
+
+### Тестирование intercept режима
+
+```powershell
+# 1. Включить маршрутизацию через dev
+.\tools\wsl_routing_manager.ps1 enable
+
+# 2. Активировать intercept на dev сервере
+wsl ssh root@dev-openwrt "/usr/sbin/openwrt_captive_monitor intercept"
+
+# 3. Тестировать - запросы должны перенаправляться
+wsl curl -v http://example.com
+
+# 4. Деактивировать intercept
+wsl ssh root@dev-openwrt "/usr/sbin/openwrt_captive_monitor release"
+
+# 5. Отключить маршрутизацию
+.\tools\wsl_routing_manager.ps1 disable
+```
+
 ## Быстрые проверки
 
 ### Проверка окружения
