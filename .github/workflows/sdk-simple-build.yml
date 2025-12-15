@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Cache OpenWrt SDK
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: sdk.tar.xz
           key: openwrt-sdk-23.05.5-x86-64
@@ -70,7 +70,7 @@ jobs:
           make package/openwrt-captive-monitor/compile V=s
 
       - name: Upload .ipk artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ipk-x86_64
           path: sdk/bin/packages/**/*.ipk

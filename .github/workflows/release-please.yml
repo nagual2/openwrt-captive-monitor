@@ -88,7 +88,7 @@ jobs:
 
       - name: Run markdownlint
         if: matrix.linter == 'markdownlint'
-        uses: DavidAnson/markdownlint-cli2-action@v21
+        uses: DavidAnson/markdownlint-cli2-action@v22
         with:
           config: '.markdownlint.json'
           files: '**/*.md'
@@ -136,7 +136,7 @@ jobs:
           busybox ash tests/run.sh
 
       - name: Upload test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: test-results-release

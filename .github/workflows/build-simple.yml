@@ -95,7 +95,7 @@ jobs:
           echo "✓ Found $IPK_COUNT .ipk file(s)"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ipk-host-build+${{ env.SHORT_SHA }}
           path: ./artifacts/${{ env.BUILD_NAME }}
