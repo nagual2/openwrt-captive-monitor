@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openwrt-captive-monitor
 # Date-based package version aligned with the latest vYYYY.MM.DD.N git tag and root VERSION file.
-PKG_VERSION:=2026.01.16.1
+PKG_VERSION:=2026.01.16.3
 # PKG_RELEASE must remain a small integer
 PKG_RELEASE:=1
 
@@ -52,10 +52,10 @@ endef
 define Package/openwrt-captive-monitor/postinst
 #!/bin/sh
 [ -n "$$IPKG_INSTROOT" ] && exit 0
-# Append cron job if not exists
-if ! grep -q "/usr/sbin/auth_conn4.sh" /etc/crontabs/root 2>/dev/null; then
-    echo "*/1 * * * * /usr/sbin/auth_conn4.sh >/dev/null 2>&1" >> /etc/crontabs/root
-fi
+# Remove old cron job if exists (including one with redirection)
+sed -i '\#/usr/sbin/auth_conn4.sh#d' /etc/crontabs/root 2>/dev/null
+# Append new cron job without redirection
+echo "*/1 * * * * /usr/sbin/auth_conn4.sh" >> /etc/crontabs/root
 /etc/init.d/cron restart
 exit 0
 endef

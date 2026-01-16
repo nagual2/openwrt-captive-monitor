@@ -16,7 +16,7 @@ log() {
 # 1. Check Internet
 check_internet() {
     # Check for specific 204 response from Google
-    CODE=$(curl -I -s --connect-timeout 5 -w "%{http_code}" -o /dev/null "$TEST_URL")
+    CODE=$(/usr/bin/curl -I -s --connect-timeout 5 -w "%{http_code}" -o /dev/null "$TEST_URL")
     if [ "$CODE" = "204" ]; then
         return 0
     else
@@ -64,7 +64,7 @@ elif check_internet; then
             HEARTBEAT_URL="https://${SAVED_DOMAIN}/wbs/api/v1/login/status"
             
             # We use the cookies we have
-            HB_RESPONSE=$(curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
+            HB_RESPONSE=$(/usr/bin/curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
                 -X POST "$HEARTBEAT_URL" \
                 -H "X-Requested-With: XMLHttpRequest" \
                 -H "Content-Type: application/x-www-form-urlencoded" \
@@ -96,7 +96,7 @@ log "Internet not available. Starting authentication flow..."
 # Note: neverssl.com sometimes returns 200 OK directly if not intercepted.
 # We should try a known HTTP endpoint that definitely redirects in a captive portal.
 # If PORTAL_TRIGGER_URL fails to redirect (returns 200), we might need another target or assume we are already online (but check_internet failed?).
-PORTAL_URL=$(curl -A "$USER_AGENT" -s -I "$PORTAL_TRIGGER_URL" | grep -i "^Location:" | awk '{print $2}' | tr -d '\r')
+PORTAL_URL=$(/usr/bin/curl -A "$USER_AGENT" -s -I "$PORTAL_TRIGGER_URL" | grep -i "^Location:" | awk '{print $2}' | tr -d '\r')
 
 if [ -z "$PORTAL_URL" ]; then
     # Fallback: try following one redirect if it's just a local redirect (rare)
@@ -104,11 +104,11 @@ if [ -z "$PORTAL_URL" ]; then
     log "Failed to detect portal URL via Location header. Trying effective URL."
     # If we got 200 OK from neverssl, it means NO PORTAL or PORTAL IS BROKEN/TRANSPARENT?
     # Let's try http://www.msftconnecttest.com/redirect which is standard
-    PORTAL_URL=$(curl -A "$USER_AGENT" -s -I "http://www.msftconnecttest.com/redirect" | grep -i "^Location:" | awk '{print $2}' | tr -d '\r')
+    PORTAL_URL=$(/usr/bin/curl -A "$USER_AGENT" -s -I "http://www.msftconnecttest.com/redirect" | grep -i "^Location:" | awk '{print $2}' | tr -d '\r')
     
     if [ -z "$PORTAL_URL" ]; then
          log "Failed to detect portal URL via msftconnecttest too. Trying effective URL of neverssl."
-         PORTAL_URL=$(curl -A "$USER_AGENT" -s -L -w "%{url_effective}" -o /dev/null "$PORTAL_TRIGGER_URL")
+         PORTAL_URL=$(/usr/bin/curl -A "$USER_AGENT" -s -L -w "%{url_effective}" -o /dev/null "$PORTAL_TRIGGER_URL")
     fi
 fi
 
@@ -126,7 +126,7 @@ log "Initial Portal URL: $PORTAL_URL"
 
 # 3. Fetch Landing Page & Extract Token
 # Use a temporary file for headers/output to capture effective URL and content
-curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -L -w "%{url_effective}" "$PORTAL_URL" -o /tmp/landing_page.html > /tmp/effective_url.txt
+/usr/bin/curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -L -w "%{url_effective}" "$PORTAL_URL" -o /tmp/landing_page.html > /tmp/effective_url.txt
 LANDING_HTML=$(cat /tmp/landing_page.html)
 EFFECTIVE_URL=$(cat /tmp/effective_url.txt)
 
@@ -154,7 +154,7 @@ if echo "$LANDING_HTML" | grep -q "Cookies are required"; then
         log "Added cookie-challenge to cookie jar. Retrying..."
         
         # Retry fetch - go back to initial PORTAL_URL which contains ident info
-        curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -L "$PORTAL_URL" -o /tmp/landing_page.html
+        /usr/bin/curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -L "$PORTAL_URL" -o /tmp/landing_page.html
         LANDING_HTML=$(cat /tmp/landing_page.html)
     else
         log "Could not extract cookie-challenge from URL."
@@ -172,7 +172,7 @@ if echo "$LANDING_HTML" | grep -q "Cookies are required"; then
                 RECONNECT_URL="$RECONNECT_LINK"
             fi
              # Retry fetch
-            curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -L "$RECONNECT_URL" -o /tmp/landing_page.html
+            /usr/bin/curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" -L "$RECONNECT_URL" -o /tmp/landing_page.html
             LANDING_HTML=$(cat /tmp/landing_page.html)
         fi
     fi
@@ -212,7 +212,7 @@ PAYLOAD="session_id=&with-tariffs=1&locationId=${SITE_ID}&locale=en_US&authoriza
 
 log "Sending create-session request..."
 
-RESPONSE=$(curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
+RESPONSE=$(/usr/bin/curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
     -X POST "$SESSION_URL" \
     -H "X-Requested-With: XMLHttpRequest" \
     -H "Content-Type: application/x-www-form-urlencoded; charset=UTF-8" \
@@ -288,7 +288,7 @@ if [ -z "$IS_LOGGED_IN" ]; then
     
     log "Sending registration request to $REG_ENDPOINT..."
     
-    REG_RESPONSE=$(curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
+    REG_RESPONSE=$(/usr/bin/curl -A "$USER_AGENT" -s -c "$COOKIE_FILE" -b "$COOKIE_FILE" \
         -X POST "$REG_URL" \
         -H "X-Requested-With: XMLHttpRequest" \
         -H "Content-Type: application/x-www-form-urlencoded; charset=UTF-8" \
