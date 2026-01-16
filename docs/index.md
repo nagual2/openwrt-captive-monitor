@@ -4,8 +4,6 @@
 
 ### 🚀 Быстрый старт
 - [README.md](../README.md) - Основная документация проекта
-- [Quick Start Guide](usage/quick-start.md) - Быстрый старт для пользователей
-- [Installation Guide](usage/installation.md) - Инструкции по установке
 
 ### 🏗️ Архитектура и разработка
 - [Architecture Guide](guides/architecture.md) - Архитектура системы
