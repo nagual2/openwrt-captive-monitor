@@ -1,9 +1,0 @@
-#!/bin/sh
-set -eu
-. "$(dirname "$0")/_lib.sh"
-
-mock_log ifup "$@"
-
-# MOCK_IFUP_FAIL controls whether ifup command fails
-# MOCK_IFUP_STATUS controls WAN interface status (used by ifstatus)
-exit "${MOCK_IFUP_FAIL:-0}"

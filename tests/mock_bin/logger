@@ -1,0 +1,3 @@
+#!/bin/sh
+# Mock logger
+echo "[LOGGER] $@" >> "$TEST_LOG_FILE"
