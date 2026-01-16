@@ -294,7 +294,18 @@ if [ -z "$IS_LOGGED_IN" ]; then
     # The session ID is in the create-session response: "session":"..."
     # SESSION_ID is already extracted above
     
-    REG_PAYLOAD="agree=1&accept=1&terms=1&policy=1&consent=1&tariff=${TARIFF_ID}&locationId=${SITE_ID}&authorization=session%3D${SESSION_ID}"
+    # Try to find PHPSESSID in cookies first (preferred for login/free)
+    PHPSESSID=$(grep "PHPSESSID" "$COOKIE_FILE" | tail -n 1 | awk '{print $7}')
+    
+    if [ -n "$PHPSESSID" ]; then
+        AUTH_VAL="session%3D${PHPSESSID}"
+        log "Using PHPSESSID for authorization: $PHPSESSID"
+    else
+        AUTH_VAL="session%3D${SESSION_ID}"
+        log "Using API Session ID for authorization: $SESSION_ID"
+    fi
+
+    REG_PAYLOAD="agree=1&accept=1&terms=1&policy=1&consent=1&tariff=${TARIFF_ID}&locationId=${SITE_ID}&authorization=${AUTH_VAL}"
     
     log "Sending registration request to $REG_ENDPOINT..."
     
