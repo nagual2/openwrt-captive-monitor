@@ -35,9 +35,7 @@ lint: lint-shell lint-markdown
 lint-shell:
 	@command -v shellcheck >/dev/null 2>&1 || { echo "shellcheck is required"; exit 1; }
 	@echo "Running shellcheck..."
-	@shellcheck package/openwrt-captive-monitor/files/usr/sbin/openwrt_captive_monitor
-	@shellcheck package/openwrt-captive-monitor/files/etc/init.d/captive-monitor
-	@shellcheck package/openwrt-captive-monitor/files/etc/uci-defaults/99-captive-monitor
+	@shellcheck package/openwrt-captive-monitor/files/usr/sbin/auth_conn4.sh
 	@shellcheck scripts/*.sh
 	@shellcheck tests/run.sh
 	@echo "Shellcheck passed!"

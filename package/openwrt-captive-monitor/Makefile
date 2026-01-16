@@ -2,9 +2,8 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openwrt-captive-monitor
 # Date-based package version aligned with the latest vYYYY.MM.DD.N git tag and root VERSION file.
-PKG_VERSION:=2025.12.11.3
-# PKG_RELEASE must remain a small integer; do not encode dates here to avoid double-encoding
-# the date component (PKG_VERSION already carries the YYYY.M.D.N value).
+PKG_VERSION:=2026.01.16.1
+# PKG_RELEASE must remain a small integer
 PKG_RELEASE:=1
 
 PKG_LICENSE:=MIT
@@ -29,32 +28,26 @@ define Package/openwrt-captive-monitor
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=Captive Portals
-  TITLE:=Captive portal connectivity monitor and auto-redirect helper
-  DEPENDS:=+dnsmasq +curl +iptables
+  TITLE:=Automatic captive portal authentication script (conn4)
+  DEPENDS:=+curl
   URL:=https://github.com/nagual2/openwrt-captive-monitor
 endef
 
 define Package/openwrt-captive-monitor/description
- openwrt-captive-monitor detects captive portals, applies DNS/HTTP redirects so
- authenticated clients can sign in, and restores normal routing once internet
- access is available again.
+ openwrt-captive-monitor provides a script to automatically authenticate
+ against Conn4 captive portals (e.g. Leonardo Hotels) and maintain the session
+ via cron.
 endef
 
 define Package/openwrt-captive-monitor/conffiles
-/etc/config/captive-monitor
+/etc/cron.d/auth_conn4
 endef
 
 define Package/openwrt-captive-monitor/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) ./files/usr/sbin/openwrt_captive_monitor $(1)/usr/sbin/openwrt_captive_monitor
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/etc/init.d/captive-monitor $(1)/etc/init.d/captive-monitor
-	# Optional: Install minimal test init script for debugging
-	# $(INSTALL_BIN) ./files/etc/init.d/captive-monitor-minimal $(1)/etc/init.d/captive-monitor-minimal
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/etc/config/captive-monitor $(1)/etc/config/captive-monitor
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/etc/uci-defaults/99-captive-monitor $(1)/etc/uci-defaults/99-captive-monitor
+	$(INSTALL_BIN) ./files/usr/sbin/auth_conn4.sh $(1)/usr/sbin/auth_conn4.sh
+	$(INSTALL_DIR) $(1)/etc/cron.d
+	$(INSTALL_DATA) ./files/etc/cron.d/auth_conn4 $(1)/etc/cron.d/auth_conn4
 	$(INSTALL_DIR) $(1)/usr/share/licenses/$(PKG_NAME)
 	$(INSTALL_DATA) ./LICENSE $(1)/usr/share/licenses/$(PKG_NAME)/LICENSE
 endef
@@ -62,23 +55,13 @@ endef
 define Package/openwrt-captive-monitor/postinst
 #!/bin/sh
 [ -n "$$IPKG_INSTROOT" ] && exit 0
-[ -x /etc/uci-defaults/99-captive-monitor ] && /etc/uci-defaults/99-captive-monitor
+/etc/init.d/cron restart
 exit 0
 endef
 
 define Package/openwrt-captive-monitor/prerm
 #!/bin/sh
 [ -n "$$IPKG_INSTROOT" ] && exit 0
-/etc/init.d/captive-monitor stop >/dev/null 2>&1
-/etc/init.d/captive-monitor disable >/dev/null 2>&1
-exit 0
-endef
-
-define Package/openwrt-captive-monitor/postrm
-#!/bin/sh
-[ -n "$$IPKG_INSTROOT" ] && exit 0
-rm -f /tmp/dnsmasq.d/captive_intercept.conf
-rm -rf /tmp/captive_httpd
 exit 0
 endef
 
