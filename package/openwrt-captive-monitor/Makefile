@@ -40,14 +40,13 @@ define Package/openwrt-captive-monitor/description
 endef
 
 define Package/openwrt-captive-monitor/conffiles
-/etc/cron.d/auth_conn4
 endef
 
 define Package/openwrt-captive-monitor/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/usr/sbin/auth_conn4.sh $(1)/usr/sbin/auth_conn4.sh
-	$(INSTALL_DIR) $(1)/etc/cron.d
-	$(INSTALL_DATA) ./files/etc/cron.d/auth_conn4 $(1)/etc/cron.d/auth_conn4
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/etc/uci-defaults/99-captive-monitor-cron $(1)/etc/uci-defaults/99-captive-monitor-cron
 	$(INSTALL_DIR) $(1)/usr/share/licenses/$(PKG_NAME)
 	$(INSTALL_DATA) ./LICENSE $(1)/usr/share/licenses/$(PKG_NAME)/LICENSE
 endef
@@ -55,6 +54,12 @@ endef
 define Package/openwrt-captive-monitor/postinst
 #!/bin/sh
 [ -n "$$IPKG_INSTROOT" ] && exit 0
+# Append cron job if not exists
+if ! grep -q "/usr/sbin/auth_conn4.sh" /etc/crontabs/root 2>/dev/null; then
+    echo "*/1 * * * * /usr/sbin/auth_conn4.sh >/dev/null 2>&1" >> /etc/crontabs/root
+fi
+# Apply uci-defaults immediately
+( . /etc/uci-defaults/99-captive-monitor-cron ) && rm -f /etc/uci-defaults/99-captive-monitor-cron
 /etc/init.d/cron restart
 exit 0
 endef
@@ -62,6 +67,9 @@ endef
 define Package/openwrt-captive-monitor/prerm
 #!/bin/sh
 [ -n "$$IPKG_INSTROOT" ] && exit 0
+# Remove cron job
+sed -i '\#^*/1 \* \* \* \* /usr/sbin/auth_conn4.sh#d' /etc/crontabs/root
+/etc/init.d/cron restart
 exit 0
 endef
 

@@ -1,0 +1,6 @@
+#!/bin/sh
+# Set cron log level to 9 (disable/critical only) to avoid spamming logs with per-minute job execution events
+uci set system.@system[0].cronloglevel='9'
+uci commit system
+/etc/init.d/cron restart
+exit 0
