@@ -58,7 +58,7 @@ elif check_internet; then
         SAVED_DOMAIN=$(grep "conn4_site_id" "$COOKIE_FILE" | awk '{print $1}')
         
         if [ -n "$SAVED_SESSION" ] && [ -n "$SAVED_SITE" ]; then
-            log "Sending heartbeat for session $SAVED_SESSION..."
+            log "Sending heartbeat for session $(echo "$SAVED_SESSION" | cut -c1-7)..."
             
             # Use POST /wbs/api/v1/login/status with proper auth header
             HEARTBEAT_URL="https://${SAVED_DOMAIN}/wbs/api/v1/login/status"

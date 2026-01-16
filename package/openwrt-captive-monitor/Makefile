@@ -45,8 +45,6 @@ endef
 define Package/openwrt-captive-monitor/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/usr/sbin/auth_conn4.sh $(1)/usr/sbin/auth_conn4.sh
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/etc/uci-defaults/99-captive-monitor-cron $(1)/etc/uci-defaults/99-captive-monitor-cron
 	$(INSTALL_DIR) $(1)/usr/share/licenses/$(PKG_NAME)
 	$(INSTALL_DATA) ./LICENSE $(1)/usr/share/licenses/$(PKG_NAME)/LICENSE
 endef
@@ -58,8 +56,6 @@ define Package/openwrt-captive-monitor/postinst
 if ! grep -q "/usr/sbin/auth_conn4.sh" /etc/crontabs/root 2>/dev/null; then
     echo "*/1 * * * * /usr/sbin/auth_conn4.sh >/dev/null 2>&1" >> /etc/crontabs/root
 fi
-# Apply uci-defaults immediately
-( . /etc/uci-defaults/99-captive-monitor-cron ) && rm -f /etc/uci-defaults/99-captive-monitor-cron
 /etc/init.d/cron restart
 exit 0
 endef
