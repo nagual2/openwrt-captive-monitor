@@ -1,8 +1,10 @@
 # openwrt-captive-monitor
 
 [![CI](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/ci.yml/badge.svg?branch=main&label=CI)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/ci.yml?query=branch%3Amain)
+[![Security Scanning](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/security-scanning.yml/badge.svg?branch=main&label=Security)](https://github.com/nagual2/openwrt-captive-monitor/actions/workflows/security-scanning.yml?query=branch%3Amain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/nagual2/openwrt-captive-monitor.svg)](https://github.com/nagual2/openwrt-captive-monitor/releases)
+[![GitHub stars](https://img.shields.io/github/stars/nagual2/openwrt-captive-monitor.svg?style=social)](https://github.com/nagual2/openwrt-captive-monitor/stargazers)
 
 ---
 
