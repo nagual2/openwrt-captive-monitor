@@ -1,9 +1,0 @@
-# Pre-commit configuration for local linting
-# Includes actionlint to validate GitHub Actions workflows before commits.
-repos:
-- repo: https://github.com/rhysd/actionlint
-# Use a pinned, known-good version of actionlint
-rev: v1.6.26
-hooks:
-- id: actionlint
-# Rely on the project's .actionlintignore to skip temporary/build dirs

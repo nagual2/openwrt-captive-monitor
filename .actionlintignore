@@ -1,7 +1,0 @@
-# Ignore temporary and build directories for actionlint
-# This prevents accidental scanning of generated workflow files or binaries
-# in local development and CI environments.
-tmp/
-.tmp/
-build/
-*.tmp/
