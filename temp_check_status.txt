@@ -1,2 +1,0 @@
-ifstatus lan_mgmt
-logread | tail -20

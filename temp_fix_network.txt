@@ -1,8 +1,0 @@
-uci set network.lan_mgmt=interface
-uci set network.lan_mgmt.device='eth1'
-uci set network.lan_mgmt.proto='dhcpv6'
-uci set network.lan_mgmt.reqaddress='try'
-uci set network.lan_mgmt.reqprefix='auto'
-uci commit network
-ifup lan_mgmt
-ip addr show eth1
