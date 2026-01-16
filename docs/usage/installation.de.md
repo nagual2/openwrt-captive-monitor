@@ -258,24 +258,18 @@ file /tmp/openwrt-captive-monitor_*.ipk
 ### Dienst startet nicht
 
 ```bash
-## Dienststatus überprüfen
-/etc/init.d/captive-monitor status
-
 ## Protokolle überprüfen
-logread | grep captive-monitor
+logread | grep conn4_auth
 
 ## Manueller Test
-/usr/sbin/openwrt_captive_monitor --help
+sh /usr/sbin/auth_conn4.sh
 ```
 
 ### Konfigurationsprobleme
 
 ```bash
-## UCI-Konfiguration überprüfen
-uci show captive-monitor
-
-## Auf Standardwerte zurücksetzen
-uci revert captive-monitor
+## Cron-Job überprüfen
+cat /etc/cron.d/auth_conn4
 ```
 
 Weitere Tipps zur Fehlerbehebung finden Sie in der [Anleitung zur Fehlerbehebung](../guides/troubleshooting.md).

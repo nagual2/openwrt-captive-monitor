@@ -122,6 +122,66 @@ logread -f | grep captive-monitor
 ## captive-monitor: Testing captive portal detection URLs
 ## captive-monitor: Captive portal detected: http://portal.example.com/login
 ## captive-monitor: Activating captive portal interception mode
+
+---
+
+## 🧩 NoJS план доработок (conn4.com)
+
+> Этот план носит ориентировочный характер и не является строгой спецификацией. Конкретные шаги и приоритеты могут меняться по мере эволюции портала и скриптов.
+
+Основная цель: приблизить `test_conn4_portal_nojs.py` по возможностям к `captive_portal_wsl_selenium.py`, максимально используя артефакты Selenium и при этом оставаясь «без JS» на стороне клиента.
+
+### 1. Усиление сбора токенов в nojs
+
+- В `_collect_tokens` дополнительно разбирать query текущего URL (`page_url/portal_url`) и подмешивать параметры:
+  - `client_ip`, `client_mac`, `site_id`, `signature`, `loggedin`, `remembered_mac`, `cookie-challenge`.
+- Для совместимости с Selenium добавлять camelCase-версии:
+  - `client_ip → clientIp`, `client_mac → clientMac`, `site_id → siteId`.
+- При объединении HTML/JS-токенов с `dynamic_tokens` отдавать приоритет значениям из `dynamic_tokens` (особенно когда они приходят из артефактов Selenium).
+
+### 2. Более плотная интеграция с артефактами Selenium
+
+- Воспринимать `conn4_debug_*.json` и `conn4_compare*.json` как основной источник «эталонного» поведения:
+  - поднимать оттуда `computedTokens` и сохранять в `dynamic_tokens`;
+  - если в сравнении есть `network`/`networkSummary`, использовать их в `apply_captured_flow` как основной сценарий воспроизведения.
+- В `apply_captured_flow` проигрывать события в приоритете:
+  - `/_time`, `/ident`, `/wbs/api/v1/create-session/`, `/wbs/api/v1/login/free/`,
+  - затем остальные `conn4.com`‑запросы.
+
+### 3. Улучшение `/ident` и работы с куками
+
+- После `detect_portal_via_redirect` и `sync_time`:
+  - если `himalaya-site-ident` отсутствует, но есть токены `site_id/client_ip/client_mac/signature` (из URL,cookie или артефакта), делать явный вызов `/ident`:
+    - либо по схеме `https://<site_id>.rdr.conn4.com/ident?...`, как в Selenium,
+    - либо через `/admon-assets/ident.php` как fallback.
+- После удачного `/ident`:
+  - обновлять `dynamic_tokens` и `initial_query` на основе новых cookie/URL,
+  - повторно вызывать `_detect_client_ip_mac`, чтобы все последующие шаги опирались на актуальные IP/MAC.
+
+### 4. Сближение WBS API flow с Selenium
+
+- В `_call_create_session_api` и `_run_api_flow`:
+  - логировать используемый `authorization=token=...`/`session=...` так, чтобы его можно было сравнивать с браузерным (через `networkSummary`).
+- При наличии артефакта Selenium:
+  - проверять, совпадают ли `locationId/siteId`, `clientIp/client_ip`, `clientMac/client_mac` и формат `authorization` с тем, что видно в сетевых событиях браузера.
+- При отсутствии артефакта:
+  - использовать локально сгенерированный `WBSApiAuthToken` на основе `himalaya-site-ident` (как делает Selenium), но с расширенной диагностикой ошибок.
+
+### 5. Пост-авторизационный connectivity check
+
+- После успешного `run_flow()` и/или `apply_captured_flow()`:
+  - выполнять короткий HTTP‑проверочный цикл через SOCKS (аналог `check_internet_via_socks`);
+  - подтверждать успех, если:
+    - `generate_204`/`canonical.html` возвращают 2xx без редиректа,
+    - `detect_portal_via_redirect` больше не ведет на `conn4.com`.
+- Логировать этот шаг как явное подтверждение того, что «интернет есть и captive portal пройден».
+
+### 6. Диагностический «план nojs»
+
+- Использовать уже формируемый `nojs_plan` в master‑отчете Selenium как ориентир:
+  - логировать его в nojs‑скрипте при наличии соответствующего JSON рядом;
+  - по возможности отмечать, какие шаги плана реально выполнены (`login free`, `cookie-challenge`, `/ident`, `create-session`, `login/free` и т.д.).
+- Подчеркнуть в документации, что этот план — ориентир, а не жесткий контракт: реальные порталы и их версии могут требовать адаптации шагов.
 ```
 
 ### Detection Process

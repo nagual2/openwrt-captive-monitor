@@ -183,64 +183,11 @@ $(eval $(call BuildPackage,openwrt-captive-monitor))
 
 ### Configuration Files
 
-**UCI Configuration (`etc/config/captive-monitor`):**
-```
-config captive_monitor 'config'
-    option enabled '0'
-    option mode 'monitor'
-    option wifi_interface 'phy1-sta0'
-    option wifi_logical 'wwan'
-    option monitor_interval '60'
-    option ping_servers '1.1.1.1 8.8.8.8 9.9.9.9'
-    option captive_check_urls 'http://connectivitycheck.gstatic.com/generate_204 http://detectportal.firefox.com/success.txt'
-    option enable_syslog '1'
+**Cron Configuration (`etc/cron.d/auth_conn4`):**
+```cron
+*/1 * * * * root /usr/sbin/auth_conn4.sh
 ```
 
-**Init Script (`etc/init.d/captive-monitor`):**
-```bash
-#!/bin/sh /etc/rc.common
-
-START=99
-STOP=10
-USE_PROCD=1
-
-PROG="/usr/sbin/openwrt_captive_monitor"
-PID_FILE="/var/run/captive-monitor.pid"
-
-start_service() {
-    procd_open_instance
-    procd_set_param command "$PROG"
-    procd_set_param pidfile "$PID_FILE"
-    procd_set_param respawn
-    procd_set_param stdout 1
-    procd_set_param stderr 1
-    
-    # Load UCI configuration
-    config_load 'captive-monitor'
-    config_get ENABLED config enabled '0'
-    config_get MODE config mode 'monitor'
-    
-    if [ "$ENABLED" = "1" ]; then
-        procd_append_param command "--$MODE"
-    else
-        echo "Service is disabled in UCI configuration"
-        return 1
-    fi
-    
-    procd_close_instance
-}
-
-stop_service() {
-    if [ -f "$PID_FILE" ]; then
-        kill $(cat "$PID_FILE")
-        rm -f "$PID_FILE"
-    fi
-}
-
-service_running() {
-    [ -f "$PID_FILE" ] && kill -0 $(cat "$PID_FILE") 2>/dev/null
-}
-```
 
 ---
 

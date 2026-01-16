@@ -16,17 +16,14 @@ Comprehensive troubleshooting guide for **openwrt-captive-monitor** covering com
 ### Immediate Checks
 
 ```bash
-## 1. Check if service is running
-ps aux | grep openwrt_captive_monitor
+## 1. Check if cron job exists
+cat /etc/cron.d/auth_conn4
 
-## 2. Check service status
-/etc/init.d/captive-monitor status
+## 2. Check recent logs
+logread | grep conn4_auth | tail -20
 
-## 3. Check recent logs
-logread | grep captive-monitor | tail -20
-
-## 4. Check configuration
-uci show captive-monitor
+## 3. Run script manually
+sh /usr/sbin/auth_conn4.sh
 ```
 
 ### Health Check Script
@@ -600,8 +597,6 @@ Include the following information:
 
 ## 📚 Additional Resources
 
-- [Configuration Reference](../configuration/reference.md) - Complete configuration options
-- [Advanced Configuration](../configuration/advanced-config.md) - Advanced settings and customization
 - [Captive Portal Walkthrough](captive-portal-walkthrough.md) - End-to-end example
 - [Project FAQ](../project/faq.md) - Frequently asked questions
 

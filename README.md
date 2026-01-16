@@ -189,29 +189,16 @@ make package/openwrt-captive-monitor/compile V=s
 ### Dependencies
 
 **Runtime dependencies:**
-- `dnsmasq` - DNS and DHCP server
 - `curl` - HTTP probes and captive detection
-- `iptables` or `nftables` - Traffic redirection
 
 **Build dependencies:**
-- `binutils`, `busybox`, `gzip`, `pigz`, `tar`, `xz-utils`
+- `tar`, `xz-utils`
 
 ## 🔧 Configuration
 
-### Basic Settings
+The package is configured via cron job.
+See `/etc/cron.d/auth_conn4` for schedule configuration.
 
-```uci
-config captive_monitor 'config'
-    option enabled '1'                    # Enable service
-    option mode 'monitor'                 # monitor or oneshot
-    option wifi_interface 'phy1-sta0'       # WiFi interface
-    option wifi_logical 'wwan'              # Logical interface
-    option monitor_interval '60'            # Check interval (seconds)
-    option ping_servers '1.1.1.1 8.8.8.8'   # Ping servers
-    option enable_syslog '1'               # Enable logging
-```
-
-### Advanced Options
 
 ```uci
 config captive_monitor 'config'

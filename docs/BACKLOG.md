@@ -13,13 +13,15 @@
 ### Iteration 1 — Stabilization and Compatibility
 | Task | Priority | Estimate | Comments |
 | --- | --- | --- | --- |
-| Replace `resolveip -s` with a supported stack (nslookup/host + timeout control) | P0 | 0.5d | BusyBox doesn't support `-s`, which may cause captive portal IP detection to fail. Need to cover IPv4/IPv6 and fallback to system DNS. |
-| Rewrite health-check: add HTTP/HTTPS probes, exponential backoff, and separate timeouts for gateway/internet | P0 | 1.5d | Will prevent infinite Wi-Fi restarts in networks with blocked ICMP and provide diagnostics for portals without explicit 204. |
-| Strengthen integration with `fw4`/nftables and `iptables-nft` (backend selection, chain ordering, proper cleanup on `fw4 reload`) | P0 | 2d | Verify that the `captive_monitor` table is reinstated after `fw4 reload` and that iptables fallback works correctly with iptables-nft. |
-| Improve init script: implement `depends()`, use `procd_kill` in `stop_service`, pass missing UCI variables | P1 | 0.5d | Prevents hanging processes and ensures proper service reload. |
-| Automatic interface selection for Filogic (via `ubus network.wireless`, `network.lan.device`) and configuration validation | P1 | 1d | Default values (`phy1-sta0`/`wwan`) don't match AX3000T. Need verifiable defaults and clear error messages. |
-| Dependency check at startup (`curl`, `busybox httpd`, `nft`, `iptables`, `dnsmasq`) with clear hints | P1 | 0.5d | Improves diagnostics for custom builds and prevents silent script failures. |
-| Additional cleanup guards (restore iptables/nft rules on crash, protection against double calls) | P1 | 0.5d | Reduces risk of rule leaks after crashes or `kill -9`. |
+| Harden NoJS captive portal test script (request plan, API coverage, reporting) | P0 | 2d | Align `test_conn4_portal_nojs.py` with Selenium master report: cover create-session, time endpoints, big JS, cookie-challenge, and improve diagnostics. |
+| Replace `resolveip -s` with a supported stack (nslookup/host + timeout control) | P1 | 0.5d | BusyBox doesn't support `-s`, which may cause captive portal IP detection to fail. Need to cover IPv4/IPv6 and fallback to system DNS. |
+| Rewrite health-check: add HTTP/HTTPS probes, exponential backoff, and separate timeouts for gateway/internet | P1 | 1.5d | Will prevent infinite Wi-Fi restarts in networks with blocked ICMP and provide diagnostics for portals without explicit 204. |
+| Fix memory leak in long-running monitor mode | P1 | 3d | See GitHub issue #3; stabilize memory usage in monitor mode. |
+| Strengthen integration with `fw4`/nftables and `iptables-nft` (backend selection, chain ordering, proper cleanup on `fw4 reload`) | P1 | 2d | Verify that the `captive_monitor` table is reinstated after `fw4 reload` and that iptables fallback works correctly with iptables-nft. |
+| Improve init script: implement `depends()`, use `procd_kill` in `stop_service`, pass missing UCI variables | P2 | 0.5d | Prevents hanging processes and ensures proper service reload. |
+| Automatic interface selection for Filogic (via `ubus network.wireless`, `network.lan.device`) and configuration validation | P2 | 1d | Default values (`phy1-sta0`/`wwan`) don't match AX3000T. Need verifiable defaults and clear error messages. |
+| Dependency check at startup (`curl`, `busybox httpd`, `nft`, `iptables`, `dnsmasq`) with clear hints | P2 | 0.5d | Improves diagnostics for custom builds and prevents silent script failures. |
+| Additional cleanup guards (restore iptables/nft rules on crash, protection against double calls) | P2 | 0.5d | Reduces risk of rule leaks after crashes or `kill -9`. |
 
 ### Iteration 2 — UX and Observability
 | Task | Priority | Estimate | Comments |
@@ -49,13 +51,15 @@
 ### Итерация 1 — Стабилизация и совместимость
 | Задача | Приоритет | Оценка | Комментарии |
 | --- | --- | --- | --- |
-| Заменить использование `resolveip -s` на поддерживаемый стек (nslookup/host + контроль времени ожидания) | P0 | 0.5d | BusyBox не поддерживает `-s`, из-за чего определение IP captive-портала может провалиться. Нужно покрыть IPv4/IPv6 и fallback на системный DNS. |
-| Переписать health-check: добавить HTTP/HTTPS probes, экспоненциальный бэкофф и отдельные таймауты для gateway/internet | P0 | 1.5d | Исключит бесконечные перезапуски Wi‑Fi в сетях с заблокированным ICMP и обеспечит диагностику порталов без явного 204. |
-| Укрепить интеграцию с `fw4`/nftables и `iptables-nft` (выбор backend, порядок цепочек, корректный cleanup при `fw4 reload`) | P0 | 2d | Проверить, что таблица `captive_monitor` переустанавливается после `fw4 reload`, а fallback на iptables корректно работает на iptables-nft. |
-| Улучшить init-скрипт: реализовать `depends()`, использовать `procd_kill` в `stop_service`, пробрасывать недостающие UCI переменные | P1 | 0.5d | Предотвратит зависшие процессы и обеспечит корректную перезагрузку службы. |
-| Автоматический выбор интерфейсов для Filogic (по `ubus network.wireless`, `network.lan.device`) и валидация конфигурации | P1 | 1d | Значения по умолчанию (`phy1-sta0`/`wwan`) не совпадают с AX3000T. Нужны проверяемые дефолты и понятные ошибки. |
-| Проверка зависимостей при старте (`curl`, `busybox httpd`, `nft`, `iptables`, `dnsmasq`) с понятными подсказками | P1 | 0.5d | Улучшит диагностику кастомных сборок и избавит от немых падений скрипта. |
-| Дополнительные guard'ы в cleanup (восстановление iptables/nft правил при краше, защита от двойного вызова) | P1 | 0.5d | Снизит риск утечек правил после аварийного завершения или `kill -9`. |
+| Укрепить NoJS-скрипт портала (план запросов, покрытие API, диагностика) | P0 | 2d | Привести `test_conn4_portal_nojs.py` в соответствие с Selenium master report: покрыть create-session, time endpoint'ы, большой JS, cookie-challenge, улучшить отчётность. |
+| Заменить использование `resolveip -s` на поддерживаемый стек (nslookup/host + контроль времени ожидания) | P1 | 0.5d | BusyBox не поддерживает `-s`, из-за чего определение IP captive-портала может провалиться. Нужно покрыть IPv4/IPv6 и fallback на системный DNS. |
+| Переписать health-check: добавить HTTP/HTTPS probes, экспоненциальный бэкофф и отдельные таймауты для gateway/internet | P1 | 1.5d | Исключит бесконечные перезапуски Wi‑Fi в сетях с заблокированным ICMP и обеспечит диагностику порталов без явного 204. |
+| Исправить утечку памяти в режиме длительного мониторинга | P1 | 3d | См. issue #3; стабилизировать использование памяти в monitor‑режиме. |
+| Укрепить интеграцию с `fw4`/nftables и `iptables-nft` (выбор backend, порядок цепочек, корректный cleanup при `fw4 reload`) | P1 | 2d | Проверить, что таблица `captive_monitor` переустанавливается после `fw4 reload`, а fallback на iptables корректно работает на iptables-nft. |
+| Улучшить init-скрипт: реализовать `depends()`, использовать `procd_kill` в `stop_service`, пробрасывать недостающие UCI переменные | P2 | 0.5d | Предотвратит зависшие процессы и обеспечит корректную перезагрузку службы. |
+| Автоматический выбор интерфейсов для Filogic (по `ubus network.wireless`, `network.lan.device`) и валидация конфигурации | P2 | 1d | Значения по умолчанию (`phy1-sta0`/`wwan`) не совпадают с AX3000T. Нужны проверяемые дефолты и понятные ошибки. |
+| Проверка зависимостей при старте (`curl`, `busybox httpd`, `nft`, `iptables`, `dnsmasq`) с понятными подсказками | P2 | 0.5d | Улучшит диагностику кастомных сборок и избавит от немых падений скрипта. |
+| Дополнительные guard'ы в cleanup (восстановление iptables/nft правил при краше, защита от двойного вызова) | P2 | 0.5d | Снизит риск утечек правил после аварийного завершения или `kill -9`. |
 
 ### Итерация 2 — UX и наблюдаемость
 | Задача | Приоритет | Оценка | Комментарии |

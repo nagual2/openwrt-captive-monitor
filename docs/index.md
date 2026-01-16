@@ -14,9 +14,7 @@
 - [Troubleshooting Guide](guides/troubleshooting.md) - Решение проблем
 
 ### ⚙️ Конфигурация
-- [Configuration Reference](configuration/reference.md) - Полный справочник конфигурации
-- [Basic Configuration](configuration/basic-config.md) - Базовая настройка
-- [Advanced Configuration](configuration/advanced-config.md) - Продвинутые настройки
+- **Configuration**: Настройка производится через cron. См. `README.md`.
 
 ### 📦 Пакетирование и сборка
 - [Package Build Process](PACKAGE_BUILD_PROCESS_AND_MANIFEST.md) - Процесс сборки пакетов

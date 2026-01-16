@@ -77,4 +77,3 @@ Welcome to the openwrt-captive-monitor documentation. This index provides quick 
 - Landing page and user guides
   - index.md
   - usage/quick-start.md
-  - configuration/reference.md

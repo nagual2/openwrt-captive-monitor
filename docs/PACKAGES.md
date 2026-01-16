@@ -85,23 +85,24 @@
 ### Current Version (1.0.3-1)
 ```
 Package: openwrt-captive-monitor
-Version: 1.0.3-1
+Version: 2026.01.16.1-1
 Architecture: all
 Maintainer: OpenWrt Captive Monitor Team
 License: MIT
 Section: net
 Category: Network
 Priority: optional
-Depends: dnsmasq, curl
+Depends: curl
 Source: https://github.com/nagual2/openwrt-captive-monitor
-Installed-Size: 96
-Description: Captive portal connectivity monitor and auto-redirect helper
+Installed-Size: 10240
+Description: Automatic captive portal authentication script (conn4)
 ```
 
 ### Version History / История версий
 | Версия | Дата тега | Статус сборки | Пакет доступен |
 |--------|-----------|---------------|----------------|
-| 1.0.3 | Текущая | ✅ Доступно через артефакты CI | Да |
+| 2026.01.16.1 | Текущая | ✅ Доступно через релизы | Да |
+| 1.0.3 | Legacy | ✅ Доступно через артефакты CI | Да |
 | 1.0.1 | 2025-11-01 | ✅ Доступно через артефакты CI | Да |
 | 0.1.2 | 2025-10-26 | ❌ CI выполнен, но артефакты не сохранены | Нет |
 | 0.1.0 | 2025-10-23 | ❌ Релиз существует, но нет активов | Нет |

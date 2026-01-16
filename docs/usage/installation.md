@@ -251,32 +251,23 @@ opkg info openwrt-captive-monitor
 
 ## Check available space
 df -h
-
-## Check package integrity
-file /tmp/openwrt-captive-monitor_*.ipk
 ```
 
 ### Service Won't Start
 
 ```bash
-## Check service status
-/etc/init.d/captive-monitor status
-
-## Check logs
-logread | grep captive-monitor
+## Check cron logs (if enabled)
+logread | grep auth_conn4
 
 ## Manual test
-/usr/sbin/openwrt_captive_monitor --help
+sh /usr/sbin/auth_conn4.sh
 ```
 
 ### Configuration Issues
 
 ```bash
-## Validate UCI configuration
-uci show captive-monitor
-
-## Reset to defaults
-uci revert captive-monitor
+## Check cron job
+cat /etc/cron.d/auth_conn4
 ```
 
 For more troubleshooting tips, see the [Troubleshooting Guide](../guides/troubleshooting.md).
