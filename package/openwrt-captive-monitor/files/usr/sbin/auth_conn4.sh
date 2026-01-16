@@ -185,6 +185,16 @@ TOKEN=$(echo "$LANDING_HTML" | sed -n 's/.*conn4\.hotspot\.wbsToken.*"token"\s*:
 
 if [ -z "$TOKEN" ]; then
     log "Failed to extract wbsApiAuthToken from landing page."
+    
+    # SPECIAL CASE: Pre-authorized but cookie file missing or internet check flaky?
+    # If we are already online, the portal might not intercept, so we get no token.
+    # Check internet one more time to be sure.
+    log "Re-checking internet connectivity..."
+    if check_internet; then
+        log "Internet is actually available! Assuming session is valid."
+        exit 0
+    fi
+    
     # Debug: dump HTML snippet
     # echo "$LANDING_HTML" > /tmp/landing_debug.html
     # log "Dumped HTML to /tmp/landing_debug.html"
@@ -193,7 +203,7 @@ fi
 
 log "Extracted wbsApiAuthToken (len=$(echo "$TOKEN" | awk '{print length($0)}'))"
 
-# Extract Location ID (Site ID) if possible, default to something if not found (or parse from URL?)
+    # Extract Location ID (Site ID) if possible, default to something if not found (or parse from URL?)
 # Usually in URL: https://1096.rdr.conn4.com -> 1096
 SITE_ID=$(echo "$PORTAL_BASE" | sed -n 's/.*https:\/\/\([0-9]\+\)\..*/\1/p')
 
