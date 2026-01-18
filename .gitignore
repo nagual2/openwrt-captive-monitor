@@ -100,3 +100,11 @@ tools/opkg-utils/
 .idea/
 .vscode/
 .zed/
+/.cache/
+/mcp_artifacts/
+/.trae/
+/.kombai/
+/.kiro/
+/.trunk/
+ /conn4_js/
+git_log_full.txt
