@@ -7,6 +7,9 @@ override_dh_auto_install:
 	# Install main script
 	install -D -m 755 tools/captive_portal_wsl_selenium.py debian/openwrt-captive-monitor/usr/bin/captive-portal-monitor
 	
+	# Install wrapper script
+	install -D -m 755 debian/captive-portal-wrapper.sh debian/openwrt-captive-monitor/usr/bin/captive-portal-wrapper
+	
 	# Install library modules
 	install -d debian/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor
 	install -D -m 644 tools/__init__.py debian/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/__init__.py

@@ -41,9 +41,13 @@ sudo apt-get install -f
 
 ### Переменные окружения
 
-Создайте файл `/etc/default/captive-portal-monitor`:
+Файл `/etc/default/captive-portal-monitor` создаётся автоматически при установке:
 
 ```bash
+# Использовать cron вместо systemd (по умолчанию: false)
+# Установите "true" для использования cron, "false" для systemd
+USE_CRON=false
+
 # OpenWrt роутер для SOCKS прокси
 OPENWRT_SSH_HOST=192.168.1.1
 OPENWRT_SSH_USER=root
@@ -56,6 +60,47 @@ CPM_ENV=prod
 
 # Язык браузера
 SELENIUM_ACCEPT_LANGUAGE=en-US,en;q=0.9
+```
+
+### Выбор режима запуска
+
+**Режим systemd (по умолчанию):**
+- Сервис постоянно работает в фоне
+- Автоматический перезапуск при падении (каждые 60 секунд)
+- Управление через `systemctl`
+- Логи через `journalctl`
+
+**Режим cron:**
+- Скрипт запускается каждую минуту через cron
+- Автоматическая блокировка предотвращает множественные запуски
+- Подходит для минимального использования ресурсов
+- Аналогично установке на Minisforum
+
+**Переключение на cron:**
+
+```bash
+# 1. Отредактируйте конфигурацию
+sudo nano /etc/default/captive-portal-monitor
+# Установите: USE_CRON=true
+
+# 2. Переустановите пакет для применения
+sudo apt-get install --reinstall openwrt-captive-monitor
+
+# Или вручную:
+sudo systemctl stop captive-portal-monitor
+sudo systemctl disable captive-portal-monitor
+(crontab -l 2>/dev/null; echo "* * * * * /usr/bin/captive-portal-wrapper") | crontab -
+```
+
+**Переключение обратно на systemd:**
+
+```bash
+# 1. Отредактируйте конфигурацию
+sudo nano /etc/default/captive-portal-monitor
+# Установите: USE_CRON=false
+
+# 2. Переустановите пакет
+sudo apt-get install --reinstall openwrt-captive-monitor
 ```
 
 ### SSH ключи

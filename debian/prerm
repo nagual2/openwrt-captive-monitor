@@ -3,11 +3,18 @@ set -e
 
 case "$1" in
     remove|deconfigure)
-        # Stop service
-        systemctl stop captive-portal-monitor.service || true
+        # Stop and disable systemd service
+        systemctl stop captive-portal-monitor.service 2>/dev/null || true
+        systemctl disable captive-portal-monitor.service 2>/dev/null || true
         
-        # Disable service
-        systemctl disable captive-portal-monitor.service || true
+        # Remove cron job if exists
+        if crontab -l 2>/dev/null | grep -q "captive-portal-wrapper"; then
+            crontab -l 2>/dev/null | grep -v "captive-portal-wrapper" | crontab - || true
+            echo "Cron job removed"
+        fi
+        
+        # Remove lock file
+        rm -f /var/lock/captive-portal-monitor.lock
         ;;
 esac
 

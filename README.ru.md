@@ -62,8 +62,14 @@ sudo apt-get install -f
 
 Пакет автоматически:
 1. Установит Python скрипт в `/usr/bin/captive-portal-monitor`
-2. Установит systemd сервис для автозапуска
+2. Установит systemd сервис для автозапуска (режим по умолчанию)
 3. Включит сервис для автоматического запуска при загрузке
+
+**Режимы запуска:**
+- **systemd** (по умолчанию) - Сервис постоянно работает в фоне с автоматическим перезапуском
+- **cron** - Скрипт запускается каждую минуту через cron (минимальное использование ресурсов)
+
+Для переключения на режим cron отредактируйте `/etc/default/captive-portal-monitor` и установите `USE_CRON=true`, затем переустановите пакет.
 
 ### Управление сервисом
 
@@ -103,6 +109,10 @@ sudo apt-get install -f
 Сервис работает автоматически. Для настройки создайте файл `/etc/default/captive-portal-monitor`:
 
 ```bash
+# Использовать cron вместо systemd (по умолчанию: false)
+# Установите "true" для использования cron, "false" для systemd
+USE_CRON=false
+
 # OpenWrt роутер для SOCKS прокси
 OPENWRT_SSH_HOST=192.168.1.1
 OPENWRT_SSH_USER=root
@@ -112,6 +122,16 @@ NOJS_SOCKS_PORT=10800
 
 # Окружение (dev или prod)
 CPM_ENV=prod
+```
+
+**Переключение между режимами:**
+```bash
+# Отредактируйте конфигурацию
+sudo nano /etc/default/captive-portal-monitor
+# Измените USE_CRON=true или USE_CRON=false
+
+# Переустановите пакет для применения изменений
+sudo apt-get install --reinstall openwrt-captive-monitor
 ```
 
 ## 🔍 Решение проблем

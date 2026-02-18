@@ -82,6 +82,9 @@ chmod 755 "$BUILD_DIR/openwrt-captive-monitor/DEBIAN/prerm"
 # Install main script
 install -m 755 tools/captive_portal_wsl_selenium.py "$BUILD_DIR/openwrt-captive-monitor/usr/bin/captive-portal-monitor"
 
+# Install wrapper script
+install -m 755 debian/captive-portal-wrapper.sh "$BUILD_DIR/openwrt-captive-monitor/usr/bin/captive-portal-wrapper"
+
 # Install Python modules
 install -m 644 tools/__init__.py "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/"
 install -m 644 tools/conn4_auth_lib.py "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/"
