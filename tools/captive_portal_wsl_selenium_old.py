@@ -21,26 +21,6 @@ import socket
 import base64
 import shutil
 from urllib.parse import urlparse, parse_qs, unquote, urlencode
-
-# Попытка загрузки .env из корня проекта
-try:
-    from dotenv import load_dotenv
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    env_path = os.path.join(project_root, ".env")
-    if os.path.exists(env_path):
-        load_dotenv(env_path)
-    else:
-        load_dotenv()
-except ImportError:
-    # Если python-dotenv не установлен, пробуем прочитать вручную
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    env_path = os.path.join(project_root, ".env")
-    if os.path.exists(env_path):
-        with open(env_path, "r") as f:
-            for line in f:
-                if "=" in line and not line.startswith("#"):
-                    k, v = line.strip().split("=", 1)
-                    os.environ[k] = v
 sys.path.append(os.path.dirname(__file__))
 from conn4_shared import base_origin_from_url, extract_resource_urls_from_html, extract_urls_from_js_text, extract_tokens_from_html, collect_tokens_from_text, build_consent_body
 from conn4_utils import setup_logging, run_shell_cmd, SocksProxyManager
@@ -75,39 +55,19 @@ class Conn4PortalTester:
         self.portal_frame_index = None
         self.pre_click_url = None
         self.pre_click_tokens = {}
-        self.noform = False
 
-        # 1. Сначала определяем директорию для артефактов
-        try:
-            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        except Exception:
-            project_root = os.getcwd()
-        
-        base_dir = os.environ.get("MCP_ARTIFACTS_DIR") or os.path.join(project_root, "mcp_artifacts", "conn4_selenium")
-        label = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-        run_id = f"{label}_{os.getpid()}"
-        self.artifact_dir = os.path.join(base_dir, run_id)
-        
-        try:
-            os.makedirs(self.artifact_dir, exist_ok=True)
-        except Exception:
-            # Если не удалось создать mcp_artifacts, используем временную папку ОС
-            import tempfile
-            self.artifact_dir = os.path.join(tempfile.gettempdir(), f"conn4_selenium_{run_id}")
-            os.makedirs(self.artifact_dir, exist_ok=True)
+        # Настройка логирования
+        self.logger = setup_logging(__name__, "conn4_selenium_debug.log")
 
-        # 2. Теперь настраиваем логирование внутри этой директории
-        log_file = os.path.join(self.artifact_dir, "conn4_selenium_debug.log")
-        self.logger = setup_logging(__name__, log_file)
-        self.logger.info(f"Артефакты и логи будут сохранены в: {self.artifact_dir}")
-
-        cpm_env = (os.environ.get("CPM_ENV") or "dev").lower()
-        default_host = "prod-openwrt" if cpm_env == "prod" else "dev-openwrt"
-        self.ssh_host = ssh_host or os.environ.get("OPENWRT_SSH_HOST", default_host)
-        self.ssh_user = ssh_user or os.environ.get("OPENWRT_SSH_USER", "root")
-        self.socks_manager = SocksProxyManager(self.logger, self.ssh_host, self.ssh_user)
+        self.socks_manager = SocksProxyManager(self.logger, ssh_host, ssh_user)
+        self.ssh_host = self.socks_manager.ssh_host
+        self.ssh_user = self.socks_manager.ssh_user
+        self.cookie_decoded_ip = None
+        self.cookie_decoded_mac = None
+        self.cookie_decoded_site_id = None
 
     def check_environment(self):
+        """Быстрая проверка доступности роутера и SOCKS-прокси до запуска браузера."""
         try:
             if self.socks_manager.check_router_ping():
                  self.logger.info("Проверка роутера: OK")
@@ -116,13 +76,9 @@ class Conn4PortalTester:
             
             if self.socks_manager.verify_socks_proxy():
                  self.logger.info(f"Проверка SOCKS {self.socks_manager.socks_port}: OK")
-                 return True
-            self.logger.info(f"Проверка SOCKS {self.socks_manager.socks_port}: FAIL")
-            if self.socks_manager.ensure_socks_proxy():
-                 self.logger.info(f"SOCKS {self.socks_manager.socks_port} поднят")
-                 return True
-            self.logger.error("SOCKS недоступен, выходим")
-            return False
+            else:
+                 self.logger.info(f"Проверка SOCKS {self.socks_manager.socks_port}: FAIL")
+            return True
         except Exception:
             return False
 
@@ -190,32 +146,11 @@ class Conn4PortalTester:
 
         try:
             options = Options()
-            options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
-            options.add_argument("--headless")
+            options.add_argument("--headless=new")
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
             options.add_argument("--disable-gpu")
-            options.add_argument("--disable-software-rasterizer")
-            options.add_argument("--remote-debugging-pipe")
             options.add_argument("--window-size=1920,1080")
-            options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-            try:
-                bin_env = os.environ.get("CHROME_BINARY") or os.environ.get("GOOGLE_CHROME_BINARY") or "/usr/bin/chromium-browser"
-                candidates = [
-                    bin_env,
-                    "/usr/bin/chromium-browser",
-                    "/usr/bin/google-chrome-stable",
-                    "/usr/bin/google-chrome",
-                    "/opt/google/chrome/google-chrome",
-                    "/snap/bin/chromium"
-                ]
-                for p in candidates:
-                    if p and os.path.exists(p):
-                        options.binary_location = p
-                        self.logger.info(f"Chrome binary: {p}")
-                        break
-            except Exception:
-                pass
             try:
                 lang_pref = os.environ.get("SELENIUM_ACCEPT_LANGUAGE_PREF") or os.environ.get("SELENIUM_ACCEPT_LANGUAGE") or "en-US,en"
                 options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2, "intl.accept_languages": lang_pref})
@@ -226,18 +161,8 @@ class Conn4PortalTester:
             
             # Настройка прокси
             socks_port = os.environ.get("NOJS_SOCKS_PORT") or "10800"
-            try:
-                if getattr(self, "socks_manager", None):
-                    if not self.socks_manager.verify_socks_proxy(silent=False):
-                        self.socks_manager.ensure_socks_proxy()
-                    if not self.socks_manager.verify_socks_proxy(silent=False):
-                        self.logger.error("SOCKS недоступен, выходим")
-                        return False
-                options.add_argument(f"--proxy-server=socks5://127.0.0.1:{socks_port}")
-                self.logger.info(f"Настройка Chrome через SOCKS прокси: 127.0.0.1:{socks_port}")
-            except Exception:
-                self.logger.error("Ошибка проверки/запуска SOCKS, выходим")
-                return False
+            options.add_argument(f"--proxy-server=socks5://127.0.0.1:{socks_port}")
+            self.logger.info(f"Настройка Chrome через SOCKS прокси: 127.0.0.1:{socks_port}")
 
             # НЕ отключаем JavaScript - он нужен для conn4.com
 
@@ -251,7 +176,6 @@ class Conn4PortalTester:
             drv = None
             # 1) Локальный chromedriver
             try:
-                os.environ.setdefault("CHROMEDRIVER_PATH", "/usr/bin/chromedriver")
                 drv_path = os.environ.get("CHROMEDRIVER_PATH") or "/usr/bin/chromedriver"
                 if os.path.exists(drv_path):
                     self.logger.info(f"Используем локальный chromedriver: {drv_path}")
@@ -482,431 +406,371 @@ class Conn4PortalTester:
 
         try:
             try:
-                start_candidates = [
-                    "http://www.msftconnecttest.com/redirect",
-                    "http://detectportal.firefox.com/canonical.html",
-                    "http://connectivitycheck.gstatic.com/generate_204",
-                    "http://captive.apple.com/hotspot-detect.html"
-                ]
-                current = None
-                for target_url in start_candidates:
-                    self.logger.info(f"Эмуляция входа: переход на {target_url} ...")
-                    try:
-                        self.driver.get(target_url)
-                        time.sleep(5)
-                        current = self.driver.current_url
-                        try:
-                            dom_lang = self.driver.execute_script("return document.documentElement.getAttribute('lang') || ''")
-                        except Exception:
-                            dom_lang = ""
-                        try:
-                            dom_locale = self.driver.execute_script("return (document.body && document.body.getAttribute('data-locale')) || ''")
-                        except Exception:
-                            dom_locale = ""
-                        self.logger.info(f"DOM lang={dom_lang} data-locale={dom_locale}")
-                        self.logger.info(f"URL после {target_url}: {current}")
-                        if "conn4.com" in (current or "").lower():
-                            portal_url = current
-                            break
-                        cu = (current or "").lower()
-                        if cu and ("msn.com" in cu or "microsoft.com" in cu):
-                            self.logger.info(f"Авторизация уже пройдена: обнаружен редирект на {cu}. Завершение.")
-                            try:
-                                self.driver.save_screenshot(os.path.join(self.artifact_dir, "already_authorized_msn.png"))
-                            except Exception:
-                                pass
-                            sys.exit(0)
-                    except Exception:
-                        continue
-                # Если серия проб не дала conn4, попробуем напрямую базовый хост портала
-                if not portal_url:
-                    try:
-                        host = self._resolve_portal_host()
-                    except Exception:
-                        host = None
-                    if host:
-                        try:
-                            base_try = f"http://{host}/_time"
-                            self.logger.info(f"Пробуем перейти на {base_try}")
-                            self.driver.get(base_try)
-                            time.sleep(3)
-                            current = self.driver.current_url
-                            self.logger.info(f"URL после {base_try}: {current}")
-                            if "conn4.com" in (current or "").lower():
-                                portal_url = current
-                            else:
-                                base_try2 = f"http://{host}/"
-                                self.logger.info(f"Пробуем перейти на {base_try2}")
-                                self.driver.get(base_try2)
-                                time.sleep(3)
-                                current = self.driver.current_url
-                                self.logger.info(f"URL после {base_try2}: {current}")
-                                if "conn4.com" in (current or "").lower():
-                                    portal_url = current
-                        except Exception:
-                            pass
-            except Exception:
-                current = None
-                pass
-        
-        if not portal_url:
-            cu = (current or "").lower()
-            # Если редирект на msn.com или microsoft.com — мы авторизованы.
-            if cu and ("msn.com" in cu or "microsoft.com" in cu):
-                self.logger.info(f"Авторизация уже пройдена: обнаружен редирект на {cu}. Завершение.")
+                target_url = "http://www.msftconnecttest.com/redirect"
+                self.logger.info(f"Эмуляция входа: переход на {target_url} ...")
+                self.driver.get(target_url)
+                time.sleep(5)
+                current = self.driver.current_url
                 try:
-                    self.driver.save_screenshot(os.path.join(self.artifact_dir, "already_authorized_msn.png"))
+                    dom_lang = self.driver.execute_script("return document.documentElement.getAttribute('lang') || ''")
                 except Exception:
-                    pass
-                sys.exit(0)
+                    dom_lang = ""
+                try:
+                    dom_locale = self.driver.execute_script("return (document.body && document.body.getAttribute('data-locale')) || ''")
+                except Exception:
+                    dom_locale = ""
+                self.logger.info(f"DOM lang={dom_lang} data-locale={dom_locale}")
+                self.logger.info(f"URL после {target_url}: {current}")
+                if "conn4.com" in (current or "").lower():
+                    portal_url = current
+            except Exception:
+                pass
             
-            # Если редирект не на conn4.com, а на любой другой внешний сайт (начинается с http)
-            # Исключаем msftconnecttest.com, так как это наш стартовый URL
-            if cu and ("conn4.com" not in cu) and ("msftconnecttest.com" not in cu) and (cu.startswith("http")):
-                self.logger.info(f"Авторизация уже пройдена: редирект на {cu}")
+            if not portal_url:
+                cu = (current or "").lower()
+                if cu and ("conn4.com" not in cu) and (cu.startswith("http")):
+                    self.logger.info("Авторизация уже пройдена: редирект не ведёт на портал")
+                    try:
+                        self.driver.save_screenshot("already_authorized.png")
+                    except Exception:
+                        pass
+                    return True
+                self.logger.warning("Не удалось автоматически обнаружить портал через редирект")
+                return False
+            
+            try:
+                do_block = (os.environ.get("CPM_BLOCK_EXTERNAL") or "1").strip() == "1"
+            except Exception:
+                do_block = True
+            if do_block:
                 try:
-                    self.driver.save_screenshot(os.path.join(self.artifact_dir, "already_authorized.png"))
+                    self._apply_block_redirect_policy(portal_url)
                 except Exception:
                     pass
-                return True
-            self.logger.warning("Не удалось автоматически обнаружить портал через редирект")
-            return False
-        
-        try:
-            do_block = (os.environ.get("CPM_BLOCK_EXTERNAL") or "1").strip() == "1"
-        except Exception:
-            do_block = True
-        if do_block:
-            try:
-                self._apply_block_redirect_policy(portal_url)
-            except Exception:
-                pass
 
-        # Динамическая готовность без фиксированных пауз
-        self.logger.info("Ожидание готовности страницы (динамически)...")
-        try:
-            WebDriverWait(self.driver, 1).until(
-                lambda d: (
-                    len(d.find_elements(By.XPATH, "//*[contains(translate(normalize-space(string(.)), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'get free wi-fi')]")) > 0
-                    or len(d.find_elements(By.CSS_SELECTOR, "input[type='checkbox']")) > 0
-                    or (d.execute_script("return (window.performance && window.performance.getEntriesByType) ? window.performance.getEntriesByType('resource').filter(e => e.initiatorType==='script').length : 0") or 0) > 10
-                    or (d.execute_script("return (window.__capturedRequests || []).length") or 0) > 3
+            # Динамическая готовность без фиксированных пауз
+            self.logger.info("Ожидание готовности страницы (динамически)...")
+            try:
+                WebDriverWait(self.driver, 1).until(
+                    lambda d: (
+                        len(d.find_elements(By.XPATH, "//*[contains(translate(normalize-space(string(.)), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'get free wi-fi')]")) > 0
+                        or len(d.find_elements(By.CSS_SELECTOR, "input[type='checkbox']")) > 0
+                        or (d.execute_script("return (window.performance && window.performance.getEntriesByType) ? window.performance.getEntriesByType('resource').filter(e => e.initiatorType==='script').length : 0") or 0) > 10
+                        or (d.execute_script("return (window.__capturedRequests || []).length") or 0) > 3
+                    )
                 )
-            )
-        except TimeoutException:
-            self.logger.info("Таймаут ожидания динамической готовности, продолжаем с текущим состоянием")
-        # Логируем список скриптов, загруженных ресурсами
-        try:
-            perfScripts = self.driver.execute_script("return (window.performance && window.performance.getEntriesByType) ? window.performance.getEntriesByType('resource') : []")
+            except TimeoutException:
+                self.logger.info("Таймаут ожидания динамической готовности, продолжаем с текущим состоянием")
+            # Логируем список скриптов, загруженных ресурсами
             try:
-                perfScripts = sorted(perfScripts or [], key=lambda e: e.get('startTime') or 0)
-            except Exception:
-                pass
-            names = []
-            for e in perfScripts or []:
-                if e.get('initiatorType') == 'script':
-                    names.append(e.get('name'))
-            if names:
-                self.logger.info(f"Загружено скриптов: {len(names)}")
-                for n in names[:25]:
-                    self.logger.info(f"  script: {n}")
-        except Exception:
-            pass
-        try:
-            self.debug_checkpoint("ready")
-        except Exception:
-            pass
-
-        try:
-            pass
-        except Exception:
-            pass
-
-        # Принудительно выполняем JavaScript для инициализации страницы
-        try:
-            self.driver.execute_script("if (typeof initPage === 'function') { initPage(); }")
-            self.driver.execute_script("if (typeof loadContent === 'function') { loadContent(); }")
-            self.driver.execute_script("document.dispatchEvent(new Event('DOMContentLoaded'));")
-        except Exception as e:
-            self.logger.debug(f"Ошибка выполнения JavaScript: {e}")
-
-        try:
-            self._switch_to_portal_frame()
-            if self.portal_frame_index is not None:
-                self.logger.info(f"Переключение в iframe индекса {self.portal_frame_index}")
-                frames = self.driver.find_elements(By.TAG_NAME, "iframe")
-                if self.portal_frame_index < len(frames):
-                    self.driver.switch_to.frame(frames[self.portal_frame_index])
-        except Exception:
-            pass
-
-        current_url = self.driver.current_url
-        page_title = self.driver.title
-
-        self.logger.info(f"Текущий URL: {current_url}")
-        self.logger.info(f"Заголовок: {page_title}")
-
-        # Сохраняем скриншот
-        path = os.path.join(self.artifact_dir, "conn4_portal_page.png")
-        self.driver.save_screenshot(path)
-        self.logger.info(f"Скриншот сохранен: {path}")
-
-        # Анализируем страницу
-        self.analyze_page()
-        try:
-            ev = self.driver.execute_script("try { return window.__getStorageEvents ? window.__getStorageEvents() : '[]'; } catch(e) { return '[]'; }") or "[]"
-            try:
-                path = os.path.join(self.artifact_dir, "conn4_session_storage_trace.json")
-                with open(path,"w",encoding="utf-8") as f:
-                    f.write(ev)
-                self.logger.info(f"Трасса sessionStorage сохранена: {path}")
-            except Exception:
-                pass
-        except Exception:
-            pass
-        try:
-            cb = self.driver.find_elements(By.CSS_SELECTOR, "input[type='checkbox']")
-        except Exception:
-            cb = []
-        try:
-            btns = self.driver.find_elements(By.TAG_NAME, "button")
-        except Exception:
-            btns = []
-        try:
-            subm = self.driver.find_elements(By.CSS_SELECTOR, "input[type='submit']")
-        except Exception:
-            subm = []
-        try:
-            binp = self.driver.find_elements(By.CSS_SELECTOR, "input[type='button']")
-        except Exception:
-            binp = []
-        all_buttons = btns + subm + binp
-        try:
-            forms = self.driver.find_elements(By.TAG_NAME, "form")
-        except Exception:
-            forms = []
-        self.logger.info(f"Проверка портала: чекбоксов={len(cb)} кнопок={len(all_buttons)} форм={len(forms)}")
-        if len(cb) == 0 or len(all_buttons) == 0 or len(forms) == 0:
-            self.logger.error("❌ Портал не открыт: нет формы с галкой и кнопкой")
-            return False
-        self.dump_cookies_and_storage(label="before-auth")
-        try:
-            self.save_debug_artifact("conn4_debug_before_auth.json")
-        except Exception:
-            pass
-        try:
-            self.driver.execute_script("""
-            window.__capturedRequests = [];
-            window.__traceLog = [];
-            window.__formSubmits = [];
-            function __tracePush(type, detail){
-              try {
-                window.__traceLog.push({type:type, detail:detail, ts: Date.now()});
-              } catch(e){}
-            }
-            __tracePush('inject', 'start');
-            document.addEventListener('DOMContentLoaded', function(){ __tracePush('dom', 'DOMContentLoaded'); });
-            window.addEventListener('load', function(){ __tracePush('dom', 'load'); });
-            (function(){
-              try {
-                var origFetch = window.fetch;
-                if (origFetch) {
-                  window.fetch = function(){
-                    try { 
-                      var u = arguments[0];
-                      var st = null; try { st = (new Error()).stack; } catch(e){}
-                      window.__capturedRequests.push({kind:'fetch', url:u, stack: st}); 
-                    } catch(e){}
-                    __tracePush('fetch', arguments[0]);
-                    return origFetch.apply(this, arguments);
-                  };
-                }
-              } catch(e){}
-              try {
-                var origOpen = XMLHttpRequest.prototype.open;
-                XMLHttpRequest.prototype.open = function(method, url){
-                  try { 
-                    var st = null; try { st = (new Error()).stack; } catch(e){}
-                    window.__capturedRequests.push({kind:'xhr', url:url, stack: st}); 
-                  } catch(e){}
-                  __tracePush('xhr', method+':'+url);
-                  return origOpen.apply(this, arguments);
-                };
-              } catch(e){}
-              try {
-                var origSubmit = HTMLFormElement.prototype.submit;
-                HTMLFormElement.prototype.submit = function(){
-                  try {
-                    var fd = new FormData(this);
-                    var o = {action: (this.action || ''), method: ((this.method || 'GET')+'').toUpperCase(), fields: []};
-                    fd.forEach(function(v,k){ try { o.fields.push({name:k, value: v}); } catch(e){} });
-                    try { window.__formSubmits.push(o); } catch(e){}
-                    __tracePush('form.submit', o.action || '');
-                  } catch(e){}
-                  return origSubmit.apply(this, arguments);
-                };
-                try {
-                  var forms = document.getElementsByTagName('form');
-                  for (var i=0;i<forms.length;i++){
-                    try {
-                      forms[i].addEventListener('submit', function(ev){
-                        try {
-                          var fd = new FormData(this);
-                          var o = {action: (this.action || ''), method: ((this.method || 'GET')+'').toUpperCase(), fields: []};
-                          fd.forEach(function(v,k){ try { o.fields.push({name:k, value: v}); } catch(e){} });
-                          try { window.__formSubmits.push(o); } catch(e){}
-                          __tracePush('form.event', o.action || '');
-                        } catch(e){}
-                      }, true);
-                    } catch(e){}
-                  }
-                } catch(e){}
-              } catch(e){}
-              try {
-                var origNow = Date.now;
-                Date.now = function(){
-                  var v = origNow.call(Date);
-                  __tracePush('date.now', v);
-                  return v;
-                };
-              } catch(e){}
-              try {
-                var pnow = (window.performance && window.performance.now) ? window.performance.now.bind(window.performance) : null;
-                if (pnow) {
-                  window.performance.now = function(){
-                    var v = pnow();
-                    __tracePush('perf.now', v);
-                    return v;
-                  }
-                }
-              } catch(e){}
-              try {
-                if (typeof initPage === 'function') {
-                  var origInit = initPage;
-                  initPage = function(){
-                    __tracePush('func', 'initPage');
-                    return origInit.apply(this, arguments);
-                  }
-                }
-              } catch(e){}
-              try {
-                if (typeof loadContent === 'function') {
-                  var origLoad = loadContent;
-                  loadContent = function(){
-                    __tracePush('func', 'loadContent');
-                    return origLoad.apply(this, arguments);
-                  }
-                }
-              } catch(e){}
-            })();
-            """)
-            self.logger.info("Инжект перехвата fetch/XHR выполнен")
-        except Exception:
-            pass
-        try:
-            self.save_debug_artifact("conn4_debug_after_inject.json")
-        except Exception:
-            pass
-        try:
-            self._nojs_compute_and_compare()
-        except Exception:
-            pass
-        # Инжект в каждый iframe
-        try:
-            self.driver.switch_to.default_content()
-            frames = self.driver.find_elements(By.TAG_NAME, "iframe")
-            for fr in frames:
+                perfScripts = self.driver.execute_script("return (window.performance && window.performance.getEntriesByType) ? window.performance.getEntriesByType('resource') : []")
                 try:
-                    self.driver.switch_to.frame(fr)
-                    self.driver.execute_script("""
+                    perfScripts = sorted(perfScripts or [], key=lambda e: e.get('startTime') or 0)
+                except Exception:
+                    pass
+                names = []
+                for e in perfScripts or []:
+                    if e.get('initiatorType') == 'script':
+                        names.append(e.get('name'))
+                if names:
+                    self.logger.info(f"Загружено скриптов: {len(names)}")
+                    for n in names[:25]:
+                        self.logger.info(f"  script: {n}")
+            except Exception:
+                pass
+            try:
+                self.debug_checkpoint("ready")
+            except Exception:
+                pass
+
+            try:
+                pass
+            except Exception:
+                pass
+
+            # Принудительно выполняем JavaScript для инициализации страницы
+            try:
+                self.driver.execute_script("if (typeof initPage === 'function') { initPage(); }")
+                self.driver.execute_script("if (typeof loadContent === 'function') { loadContent(); }")
+                self.driver.execute_script("document.dispatchEvent(new Event('DOMContentLoaded'));")
+            except Exception as e:
+                self.logger.debug(f"Ошибка выполнения JavaScript: {e}")
+
+            try:
+                self._switch_to_portal_frame()
+                if self.portal_frame_index is not None:
+                    self.logger.info(f"Переключение в iframe индекса {self.portal_frame_index}")
+                    frames = self.driver.find_elements(By.TAG_NAME, "iframe")
+                    if self.portal_frame_index < len(frames):
+                        self.driver.switch_to.frame(frames[self.portal_frame_index])
+            except Exception:
+                pass
+
+            current_url = self.driver.current_url
+            page_title = self.driver.title
+
+            self.logger.info(f"Текущий URL: {current_url}")
+            self.logger.info(f"Заголовок: {page_title}")
+
+            # Сохраняем скриншот
+            self.driver.save_screenshot("conn4_portal_page.png")
+            self.logger.info("Скриншот сохранен: conn4_portal_page.png")
+
+            # Анализируем страницу
+            self.analyze_page()
+            try:
+                ev = self.driver.execute_script("try { return window.__getStorageEvents ? window.__getStorageEvents() : '[]'; } catch(e) { return '[]'; }") or "[]"
+                try:
+                    with open("conn4_session_storage_trace.json","w",encoding="utf-8") as f:
+                        f.write(ev)
+                    self.logger.info("Трасса sessionStorage сохранена: conn4_session_storage_trace.json")
+                except Exception:
+                    pass
+            except Exception:
+                pass
+            try:
+                cb = self.driver.find_elements(By.CSS_SELECTOR, "input[type='checkbox']")
+            except Exception:
+                cb = []
+            try:
+                btns = self.driver.find_elements(By.TAG_NAME, "button")
+            except Exception:
+                btns = []
+            try:
+                subm = self.driver.find_elements(By.CSS_SELECTOR, "input[type='submit']")
+            except Exception:
+                subm = []
+            try:
+                binp = self.driver.find_elements(By.CSS_SELECTOR, "input[type='button']")
+            except Exception:
+                binp = []
+            all_buttons = btns + subm + binp
+            try:
+                forms = self.driver.find_elements(By.TAG_NAME, "form")
+            except Exception:
+                forms = []
+            self.logger.info(f"Проверка портала: чекбоксов={len(cb)} кнопок={len(all_buttons)} форм={len(forms)}")
+            if len(cb) == 0 or len(all_buttons) == 0 or len(forms) == 0:
+                self.logger.error("❌ Портал не открыт: нет формы с галкой и кнопкой")
+                return False
+            self.dump_cookies_and_storage(label="before-auth")
+            try:
+                self.save_debug_artifact("conn4_debug_before_auth.json")
+            except Exception:
+                pass
+            try:
+                self.driver.execute_script("""
+                window.__capturedRequests = [];
+                window.__traceLog = [];
+                window.__formSubmits = [];
+                function __tracePush(type, detail){
+                  try {
+                    window.__traceLog.push({type:type, detail:detail, ts: Date.now()});
+                  } catch(e){}
+                }
+                __tracePush('inject', 'start');
+                document.addEventListener('DOMContentLoaded', function(){ __tracePush('dom', 'DOMContentLoaded'); });
+                window.addEventListener('load', function(){ __tracePush('dom', 'load'); });
+                (function(){
+                  try {
+                    var origFetch = window.fetch;
+                    if (origFetch) {
+                      window.fetch = function(){
+                        try { 
+                          var u = arguments[0];
+                          var st = null; try { st = (new Error()).stack; } catch(e){}
+                          window.__capturedRequests.push({kind:'fetch', url:u, stack: st}); 
+                        } catch(e){}
+                        __tracePush('fetch', arguments[0]);
+                        return origFetch.apply(this, arguments);
+                      };
+                    }
+                  } catch(e){}
+                  try {
+                    var origOpen = XMLHttpRequest.prototype.open;
+                    XMLHttpRequest.prototype.open = function(method, url){
+                      try { 
+                        var st = null; try { st = (new Error()).stack; } catch(e){}
+                        window.__capturedRequests.push({kind:'xhr', url:url, stack: st}); 
+                      } catch(e){}
+                      __tracePush('xhr', method+':'+url);
+                      return origOpen.apply(this, arguments);
+                    };
+                  } catch(e){}
+                  try {
+                    var origSubmit = HTMLFormElement.prototype.submit;
+                    HTMLFormElement.prototype.submit = function(){
+                      try {
+                        var fd = new FormData(this);
+                        var o = {action: (this.action || ''), method: ((this.method || 'GET')+'').toUpperCase(), fields: []};
+                        fd.forEach(function(v,k){ try { o.fields.push({name:k, value: v}); } catch(e){} });
+                        try { window.__formSubmits.push(o); } catch(e){}
+                        __tracePush('form.submit', o.action || '');
+                      } catch(e){}
+                      return origSubmit.apply(this, arguments);
+                    };
                     try {
-                      window.__capturedRequests = window.__capturedRequests || [];
-                      window.__traceLog = window.__traceLog || [];
-                      window.__formSubmits = window.__formSubmits || [];
-                      function __tracePush(type, detail){
-                        try { window.__traceLog.push({type:type, detail:detail, ts: Date.now()}); } catch(e){}
-                      }
-                      (function(){
+                      var forms = document.getElementsByTagName('form');
+                      for (var i=0;i<forms.length;i++){
                         try {
-                          var origFetch = window.fetch;
-                          if (origFetch) {
-                            window.fetch = function(){
-                              try { window.__capturedRequests.push(arguments[0]); } catch(e){}
-                              __tracePush('fetch', arguments[0]);
-                              return origFetch.apply(this, arguments);
-                            };
-                          }
-                        } catch(e){}
-                        try {
-                          var origOpen = XMLHttpRequest.prototype.open;
-                          XMLHttpRequest.prototype.open = function(method, url){
-                            try { window.__capturedRequests.push(url); } catch(e){}
-                            __tracePush('xhr', method+':'+url);
-                            return origOpen.apply(this, arguments);
-                          };
-                        } catch(e){}
-                        try {
-                          var origSubmit = HTMLFormElement.prototype.submit;
-                          HTMLFormElement.prototype.submit = function(){
+                          forms[i].addEventListener('submit', function(ev){
                             try {
                               var fd = new FormData(this);
                               var o = {action: (this.action || ''), method: ((this.method || 'GET')+'').toUpperCase(), fields: []};
                               fd.forEach(function(v,k){ try { o.fields.push({name:k, value: v}); } catch(e){} });
                               try { window.__formSubmits.push(o); } catch(e){}
-                              __tracePush('form.submit', o.action || '');
+                              __tracePush('form.event', o.action || '');
                             } catch(e){}
-                            return origSubmit.apply(this, arguments);
-                          };
-                          try {
-                            var forms = document.getElementsByTagName('form');
-                            for (var i=0;i<forms.length;i++){
-                              try {
-                                forms[i].addEventListener('submit', function(ev){
-                                  try {
-                                    var fd = new FormData(this);
-                                    var o = {action: (this.action || ''), method: ((this.method || 'GET')+'').toUpperCase(), fields: []};
-                                    fd.forEach(function(v,k){ try { o.fields.push({name:k, value: v}); } catch(e){} });
-                                    try { window.__formSubmits.push(o); } catch(e){}
-                                    __tracePush('form.event', o.action || '');
-                                  } catch(e){}
-                                }, true);
-                              } catch(e){}
-                            }
-                          } catch(e){}
+                          }, true);
                         } catch(e){}
-                      })();
-                    """)
-                except Exception:
-                    pass
-                finally:
-                    self.driver.switch_to.default_content()
-            self.logger.info("Инжект перехвата в iframe выполнен")
-        except Exception:
-            pass
-        def _log_conn4_requests(urls, label=""):
-            try:
-                items = [u for u in (urls or []) if isinstance(u, str) and ("conn4.com" in u)]
-                if items:
-                    self.logger.info(f"[conn4.com requests{(' ' + label) if label else ''}] {len(items)}")
-                    for u in items:
-                        self.logger.info(f"  {u}")
-                        try:
-                            p = urlparse(u)
-                            qs = parse_qs(p.query)
-                            keys = ["client_ip","client_mac","site_id","signature","loggedin","remembered_mac"]
-                            vals = {k:(qs.get(k,[None])[0]) for k in keys}
-                            self.logger.info(f"    params: {json.dumps(vals, ensure_ascii=False)}")
-                        except Exception:
-                            pass
+                      }
+                    } catch(e){}
+                  } catch(e){}
+                  try {
+                    var origNow = Date.now;
+                    Date.now = function(){
+                      var v = origNow.call(Date);
+                      __tracePush('date.now', v);
+                      return v;
+                    };
+                  } catch(e){}
+                  try {
+                    var pnow = (window.performance && window.performance.now) ? window.performance.now.bind(window.performance) : null;
+                    if (pnow) {
+                      window.performance.now = function(){
+                        var v = pnow();
+                        __tracePush('perf.now', v);
+                        return v;
+                      }
+                    }
+                  } catch(e){}
+                  try {
+                    if (typeof initPage === 'function') {
+                      var origInit = initPage;
+                      initPage = function(){
+                        __tracePush('func', 'initPage');
+                        return origInit.apply(this, arguments);
+                      }
+                    }
+                  } catch(e){}
+                  try {
+                    if (typeof loadContent === 'function') {
+                      var origLoad = loadContent;
+                      loadContent = function(){
+                        __tracePush('func', 'loadContent');
+                        return origLoad.apply(this, arguments);
+                      }
+                    }
+                  } catch(e){}
+                })();
+                """)
+                self.logger.info("Инжект перехвата fetch/XHR выполнен")
             except Exception:
                 pass
-        try:
-            pass
-        except Exception:
-            pass
+            try:
+                self.save_debug_artifact("conn4_debug_after_inject.json")
+            except Exception:
+                pass
+            try:
+                self._nojs_compute_and_compare()
+            except Exception:
+                pass
+            # Инжект в каждый iframe
+            try:
+                self.driver.switch_to.default_content()
+                frames = self.driver.find_elements(By.TAG_NAME, "iframe")
+                for fr in frames:
+                    try:
+                        self.driver.switch_to.frame(fr)
+                        self.driver.execute_script("""
+                        try {
+                          window.__capturedRequests = window.__capturedRequests || [];
+                          window.__traceLog = window.__traceLog || [];
+                          window.__formSubmits = window.__formSubmits || [];
+                          function __tracePush(type, detail){
+                            try { window.__traceLog.push({type:type, detail:detail, ts: Date.now()}); } catch(e){}
+                          }
+                          (function(){
+                            try {
+                              var origFetch = window.fetch;
+                              if (origFetch) {
+                                window.fetch = function(){
+                                  try { window.__capturedRequests.push(arguments[0]); } catch(e){}
+                                  __tracePush('fetch', arguments[0]);
+                                  return origFetch.apply(this, arguments);
+                                };
+                              }
+                            } catch(e){}
+                            try {
+                              var origOpen = XMLHttpRequest.prototype.open;
+                              XMLHttpRequest.prototype.open = function(method, url){
+                                try { window.__capturedRequests.push(url); } catch(e){}
+                                __tracePush('xhr', method+':'+url);
+                                return origOpen.apply(this, arguments);
+                              };
+                            } catch(e){}
+                            try {
+                              var origSubmit = HTMLFormElement.prototype.submit;
+                              HTMLFormElement.prototype.submit = function(){
+                                try {
+                                  var fd = new FormData(this);
+                                  var o = {action: (this.action || ''), method: ((this.method || 'GET')+'').toUpperCase(), fields: []};
+                                  fd.forEach(function(v,k){ try { o.fields.push({name:k, value: v}); } catch(e){} });
+                                  try { window.__formSubmits.push(o); } catch(e){}
+                                  __tracePush('form.submit', o.action || '');
+                                } catch(e){}
+                                return origSubmit.apply(this, arguments);
+                              };
+                              try {
+                                var forms = document.getElementsByTagName('form');
+                                for (var i=0;i<forms.length;i++){
+                                  try {
+                                    forms[i].addEventListener('submit', function(ev){
+                                      try {
+                                        var fd = new FormData(this);
+                                        var o = {action: (this.action || ''), method: ((this.method || 'GET')+'').toUpperCase(), fields: []};
+                                        fd.forEach(function(v,k){ try { o.fields.push({name:k, value: v}); } catch(e){} });
+                                        try { window.__formSubmits.push(o); } catch(e){}
+                                        __tracePush('form.event', o.action || '');
+                                      } catch(e){}
+                                    }, true);
+                                  } catch(e){}
+                                }
+                              } catch(e){}
+                            } catch(e){}
+                          })();
+                        """)
+                    except Exception:
+                        pass
+                    finally:
+                        self.driver.switch_to.default_content()
+                self.logger.info("Инжект перехвата в iframe выполнен")
+            except Exception:
+                pass
+            def _log_conn4_requests(urls, label=""):
+                try:
+                    items = [u for u in (urls or []) if isinstance(u, str) and ("conn4.com" in u)]
+                    if items:
+                        self.logger.info(f"[conn4.com requests{(' ' + label) if label else ''}] {len(items)}")
+                        for u in items:
+                            self.logger.info(f"  {u}")
+                            try:
+                                p = urlparse(u)
+                                qs = parse_qs(p.query)
+                                keys = ["client_ip","client_mac","site_id","signature","loggedin","remembered_mac"]
+                                vals = {k:(qs.get(k,[None])[0]) for k in keys}
+                                self.logger.info(f"    params: {json.dumps(vals, ensure_ascii=False)}")
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+            try:
+                pass
+            except Exception:
+                pass
 
-        # Пробуем авторизацию
-        return self.try_authentication()
+            # Пробуем авторизацию
+            return self.try_authentication()
 
         except Exception as e:
             self.logger.error(f"❌ Ошибка доступа к порталу: {e}")
@@ -1150,11 +1014,9 @@ class Conn4PortalTester:
             except Exception:
                 pass
             try:
-                name = f"conn4_debug_checkpoint_{label}.json"
-                path = os.path.join(self.artifact_dir, name)
-                with open(path,"w",encoding="utf-8") as f:
+                with open(f"conn4_debug_checkpoint_{label}.json","w",encoding="utf-8") as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
-                self.logger.info(f"Отладочный чекпоинт сохранён: {name}")
+                self.logger.info(f"Отладочный чекпоинт сохранён: conn4_debug_checkpoint_{label}.json")
             except Exception:
                 pass
             try:
@@ -1314,13 +1176,6 @@ class Conn4PortalTester:
                                 except Exception as e:
                                     self.logger.error(f"Ошибка сбора токенов перед кликом: {e}")
 
-                                if getattr(self, "noform", False):
-                                    try:
-                                        self.dump_cookies_and_storage(label="after-noform")
-                                    except Exception:
-                                        pass
-                                    return False
-
                                 try:
                                     WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable(element))
                                 except Exception:
@@ -1359,9 +1214,8 @@ class Conn4PortalTester:
                                 self.logger.info(f"Новый URL после клика: {new_url}")
 
                                 # Сохраняем скриншот результата
-                                path = os.path.join(self.artifact_dir, "conn4_after_click.png")
-                                self.driver.save_screenshot(path)
-                                self.logger.info(f"Скриншот после клика: {path}")
+                                self.driver.save_screenshot("conn4_after_click.png")
+                                self.logger.info("Скриншот после клика: conn4_after_click.png")
 
                                 # Проверяем успех
                                 try:
@@ -1521,10 +1375,9 @@ class Conn4PortalTester:
                                                                 if edl is not None:
                                                                     item['encodedDataLength'] = edl
                                                             detailed.append(item)
-                                                        net_path = os.path.join(self.artifact_dir, "conn4_network.json")
-                                                        with open(net_path,"w",encoding="utf-8") as f:
+                                                        with open("conn4_network.json","w",encoding="utf-8") as f:
                                                             json.dump({'events': detailed}, f, ensure_ascii=False, indent=2)
-                                                        self.logger.info(f"Артефакт сети сохранен: {net_path}")
+                                                        self.logger.info("Артефакт сети сохранен: conn4_network.json")
                                                     except Exception:
                                                         pass
                                             except Exception:
@@ -1709,7 +1562,7 @@ class Conn4PortalTester:
     
     def _save_assets_artifact(self, data):
         try:
-            path = os.path.join(self.artifact_dir, "conn4_assets.json")
+            path = "conn4_assets.json"
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             self.logger.info(f"[Assets artifact] сохранён: {path}")
@@ -1889,13 +1742,9 @@ class Conn4PortalTester:
             except Exception:
                 data["networkSummary"] = []
             try:
-                if not os.path.isabs(path):
-                    full_path = os.path.join(self.artifact_dir, path)
-                else:
-                    full_path = path
-                with open(full_path, "w", encoding="utf-8") as f:
+                with open(path, "w", encoding="utf-8") as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
-                self.logger.info(f"Отладочный артефакт сохранен: {full_path}")
+                self.logger.info(f"Отладочный артефакт сохранен: {path}")
             except Exception as e:
                 self.logger.info(f"Ошибка сохранения артефакта: {e}")
         except Exception as e:
@@ -1903,38 +1752,6 @@ class Conn4PortalTester:
                 self.logger.info(f"Ошибка подготовки артефакта: {e}")
             except Exception:
                 pass
-
-    def _filtered_cookies_for_compare(self):
-        items = []
-        try:
-            cs = self.driver.get_cookies() or []
-        except Exception:
-            cs = []
-        for c in cs:
-            try:
-                d = (c.get("domain") or "").lower()
-                if ("conn4.com" in d) or ("rdr.conn4.com" in d):
-                    name = c.get("name")
-                    if name:
-                        items.append({"name": name, "domain": c.get("domain"), "path": c.get("path")})
-            except Exception:
-                pass
-        return items
-
-    def save_cookie_set_artifact(self, path="conn4_cookies_selenium.json"):
-        try:
-            if not os.path.isabs(path):
-                full_path = os.path.join(self.artifact_dir, path)
-            else:
-                full_path = path
-            data = {"cookies": self._filtered_cookies_for_compare()}
-            with open(full_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-            self.logger.info(f"Cookie-набор сохранён: {full_path}")
-            return full_path
-        except Exception as e:
-            self.logger.info(f"Ошибка сохранения cookie-набора: {e}")
-            return None
     
     def _nojs_collect_tokens(self, html):
         tokens = extract_tokens_from_html(html or "")
@@ -2499,31 +2316,14 @@ class Conn4PortalTester:
             net = []
         summary = {"computedTokens": tokens, "computedConsent": body, "network": net}
         try:
-            name = "conn4_compare.json"
-            path = os.path.join(self.artifact_dir, name)
-            with open(path,"w",encoding="utf-8") as f:
+            with open("conn4_compare.json","w",encoding="utf-8") as f:
                 json.dump(summary, f, ensure_ascii=False, indent=2)
-            self.logger.info(f"Сравнение вычислений сохранено: {name}")
+            self.logger.info("Сравнение вычислений сохранено: conn4_compare.json")
         except Exception as e:
             try:
                 self.logger.info(f"Ошибка сохранения сравнения: {e}")
             except Exception:
                 pass
-
-    def reset_authorization(self):
-        """Сброс авторизации через рестарт интерфейса wwan на роутере."""
-        self.logger.info("Сброс авторизации: рестарт интерфейса wwan...")
-        base = self.socks_manager.get_ssh_base_cmd()
-        target = f"{self.socks_manager.ssh_user}@{self.socks_manager.ssh_host}"
-        cmd = base + [target, "ifdown wwan && ifup wwan"]
-        rc, out, err = run_shell_cmd(cmd, timeout=30)
-        if rc == 0:
-            self.logger.info("Интерфейс wwan перезагружен, ждем восстановления сети...")
-            time.sleep(15) # Wait for interface to come up
-            return True
-        else:
-            self.logger.error(f"Ошибка рестарта wwan: {err}")
-            return False
 
     def run_test(self):
         """Запуск полного теста"""
@@ -2536,13 +2336,6 @@ class Conn4PortalTester:
                 self.ensure_socks_proxy()
             except Exception:
                 pass
-            
-            if (os.environ.get("NOJS_RESET_AUTH") or "").strip() == "1":
-                 if self.reset_authorization():
-                     self.logger.info("Авторизация сброшена, продолжаем...")
-                 else:
-                     self.logger.error("Не удалось сбросить авторизацию")
-
             force_run = (os.environ.get("CPM_FORCE_RUN") or "").strip() == "1"
             if not self.verify_socks_proxy() and not force_run:
                 self.logger.error("❌ SOCKS-прокси не готов")
@@ -2641,7 +2434,9 @@ class Conn4PortalTester:
     
     def ensure_socks_proxy(self):
         try:
-            target = f"{self.ssh_user}@{self.ssh_host}"
+            host = os.environ.get("OPENWRT_SSH_HOST","dev-openwrt")
+            user = os.environ.get("OPENWRT_SSH_USER","root")
+            target = f"{user}@{host}"
             port = os.environ.get("NOJS_SOCKS_PORT") or "10800"
             rc, out, _ = self._sh(["bash","-lc",f"ss -lnt | awk '{{print $4}}' | grep -q ':{port}$' && echo ok || echo fail"], timeout=5)
             active = ((out or "").strip() == "ok")
@@ -2686,7 +2481,9 @@ class Conn4PortalTester:
     
     def verify_ssh_router_access(self):
         try:
-            target = f"{self.ssh_user}@{self.ssh_host}"
+            host = os.environ.get("OPENWRT_SSH_HOST","dev-openwrt")
+            user = os.environ.get("OPENWRT_SSH_USER","root")
+            target = f"{user}@{host}"
             rc, out, err = self._sh(["bash","-lc",f"ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=6 {target} ip addr show br-lan"], timeout=12)
             ok = (rc == 0) and ("br-lan" in (out or ""))
             self.logger.info(f"[SSH br-lan] {'OK' if ok else 'FAIL'} rc={rc}")
@@ -2775,17 +2572,11 @@ def main():
     tester = Conn4PortalTester()
 
     try:
-        url_arg = os.environ.get("SELENIUM_START_URL") or os.environ.get("PORTAL_START_URL") or None
-        out_arg = os.environ.get("SELENIUM_OUT_FILE") or "conn4_tokens.json"
-        collect_only = str((os.environ.get("SELENIUM_COLLECT_TOKENS") or "")).strip().lower() in ("1","true","yes","on")
-        write_compare = str((os.environ.get("SELENIUM_WRITE_COMPARE") or "")).strip().lower() in ("1","true","yes","on")
+        url_arg = None
+        out_arg = "conn4_tokens.json"
+        collect_only = False
+        write_compare = False
         args = sys.argv[1:] if len(sys.argv) > 1 else []
-        if "--noform" in args:
-            tester.noform = True
-        else:
-            nf = os.environ.get("SELENIUM_NOFORM") or ""
-            if str(nf).strip().lower() in ("1","true","yes","on"):
-                tester.noform = True
         if "--url" in args:
             i = args.index("--url")
             if i + 1 < len(args):
@@ -2798,47 +2589,7 @@ def main():
             collect_only = True
         if "--write-compare" in args:
             write_compare = True
-        try:
-            env_restart = os.environ.get("SELENIUM_RESTART_WWAN") or os.environ.get("RESTART_WWAN") or ""
-            if str(env_restart).strip().lower() in ("1","true","yes","on"):
-                try:
-                    tester.reset_authorization()
-                except Exception:
-                    pass
-        except Exception:
-            pass
-        try:
-            require_socks = str((os.environ.get("SELENIUM_REQUIRE_SOCKS") or "")).strip().lower() in ("1","true","yes","on")
-            if not require_socks and collect_only:
-                rc, out, err = run_shell_cmd(["curl", "-s", "http://captive.apple.com/hotspot-detect.html"], timeout=8)
-                if rc == 0 and ("Success" in (out or "")):
-                    data = {
-                        "apiSessionId": None,
-                        "paymentReturnProxyUrl": None,
-                        "siteId": None,
-                        "clientIp": None,
-                        "clientMac": None,
-                        "signature": None,
-                        "client_ip": None,
-                        "client_mac": None,
-                        "site_id": None,
-                        "loggedin": True,
-                        "remembered_mac": None,
-                        "cookie-challenge": None,
-                    }
-                    out_path = os.path.join(tester.artifact_dir, out_arg)
-                try:
-                    with open(out_path, "w", encoding="utf-8") as f:
-                        json.dump(data, f, ensure_ascii=False, indent=2)
-                    tester.logger.info(f"Токены (уже авторизован) сохранены в: {out_path}")
-                except Exception:
-                    pass
-                sys.exit(0)
-        except Exception:
-            pass
-        ok_env = tester.check_environment()
-        if not ok_env:
-            sys.exit(3)
+        tester.check_environment()
         if collect_only:
             try:
                 ok = tester.setup_chrome_driver()
@@ -2957,11 +2708,9 @@ def main():
                     "remembered_mac": toks.get("remembered_mac"),
                     "cookie-challenge": toks.get("cookie-challenge"),
                 }
-                out_path = os.path.join(tester.artifact_dir, out_arg)
                 try:
-                    with open(out_path, "w", encoding="utf-8") as f:
+                    with open(out_arg, "w", encoding="utf-8") as f:
                         json.dump(data, f, ensure_ascii=False, indent=2)
-                    tester.logger.info(f"Токены сохранены в: {out_path}")
                 except Exception:
                     pass
                 if write_compare:
@@ -2978,39 +2727,23 @@ def main():
                         "computedConsent": consent,
                         "network": net
                     }
-                    cmp_path = os.path.join(tester.artifact_dir, "conn4_compare_selenium.json")
                     try:
-                        with open(cmp_path, "w", encoding="utf-8") as f:
+                        with open("conn4_compare_selenium.json", "w", encoding="utf-8") as f:
                             json.dump(cmp_obj, f, ensure_ascii=False, indent=2)
-                        tester.logger.info(f"Данные сравнения сохранены в: {cmp_path}")
                     except Exception:
                         pass
-                # Сохраняем финальные куки и артефакты
-                tester.save_debug_artifact("conn4_debug_final.json")
-                tester.save_cookie_set_artifact("conn4_cookies_selenium.json")
                 try:
                     tester.driver.quit()
                 except Exception:
                     pass
                 sys.exit(0)
-            except Exception as e:
-                tester.logger.error(f"Ошибка в блоке collect_only: {e}")
-                try:
-                    tester.save_debug_artifact("conn4_debug_final.json")
-                    tester.save_cookie_set_artifact("conn4_cookies_selenium.json")
-                except Exception:
-                    pass
+            except Exception:
                 try:
                     tester.driver.quit()
                 except Exception:
                     pass
                 sys.exit(1)
         success = tester.run_test()
-        try:
-            tester.save_debug_artifact("conn4_debug_final.json")
-            tester.save_cookie_set_artifact("conn4_cookies_selenium.json")
-        except Exception:
-            pass
         sys.exit(0 if success else 1)
 
     except KeyboardInterrupt:
@@ -3021,23 +2754,27 @@ def main():
 
 def _save_mcp_artifacts(self, ordered):
         try:
-            run_dir = getattr(self, "artifact_dir", None)
-            if not run_dir:
-                try:
-                    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                except Exception:
-                    project_root = os.getcwd()
-                base_dir = os.environ.get("MCP_ARTIFACTS_DIR") or os.path.join(project_root, "mcp_artifacts", "conn4_selenium")
-                label = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-                run_id = f"{label}_{os.getpid()}"
-                run_dir = os.path.join(base_dir, run_id)
-                os.makedirs(run_dir, exist_ok=True)
-
+            try:
+                project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            except Exception:
+                project_root = os.getcwd()
+            base_dir = os.environ.get("MCP_ARTIFACTS_DIR") or os.path.join(project_root, "mcp_artifacts", "conn4_selenium")
             try:
                 meta = ordered.get("meta") or {}
             except Exception:
                 meta = {}
-            
+            ts = None
+            try:
+                ts = meta.get("timestamp")
+            except Exception:
+                ts = None
+            if isinstance(ts, (int, float)):
+                label = time.strftime("%Y%m%d_%H%M%S", time.localtime(ts))
+            else:
+                label = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+            run_id = f"{label}_{os.getpid()}"
+            run_dir = os.path.join(base_dir, run_id)
+            os.makedirs(run_dir, exist_ok=True)
             artifacts = [
                 "conn4_master.json",
                 "conn4_portal_page.png",
@@ -3048,30 +2785,23 @@ def _save_mcp_artifacts(self, ordered):
                 "conn4_debug_fail.json",
                 "conn4_assets.json",
                 "conn4_schema.json",
-                "conn4_cookies_selenium.json",
                 "conn4_compare.json",
                 "conn4_compare_selenium.json",
                 "conn4_network.json",
                 "conn4_selenium_debug.log",
-                "conn4_js_time_sources.json",
-                "conn4_time_initiators.json"
             ]
             saved = []
             for name in artifacts:
                 try:
-                    # Check in run_dir first
-                    if os.path.exists(os.path.join(run_dir, name)):
-                        saved.append(name)
-                    # Check in CWD and move/copy if found (cleanup trash)
-                    elif os.path.exists(name):
+                    if os.path.exists(name):
                         dst = os.path.join(run_dir, name)
-                        shutil.move(name, dst) # Move to clean up root
+                        shutil.copy2(name, dst)
                         saved.append(name)
                 except Exception:
                     pass
             index = {
                 "created_at": time.time(),
-                "run_id": os.path.basename(run_dir),
+                "run_id": run_id,
                 "artifacts": saved,
                 "meta": meta,
                 "request": ordered.get("Request"),
@@ -3083,7 +2813,7 @@ def _save_mcp_artifacts(self, ordered):
             except Exception:
                 pass
             try:
-                self.logger.info(f"MCP артефакты обновлены: {run_dir}")
+                self.logger.info(f"MCP артефакты сохранены: {run_dir}")
             except Exception:
                 pass
         except Exception:
@@ -3210,8 +2940,7 @@ def _save_master_report(self):
                 report["network"] = filt
             else:
                 try:
-                    net_path = os.path.join(self.artifact_dir, "conn4_network.json")
-                    with open(net_path,"r",encoding="utf-8") as f:
+                    with open("conn4_network.json","r",encoding="utf-8") as f:
                         obj = json.load(f)
                         ev = obj.get("events") or []
                         filt = []
@@ -3250,8 +2979,7 @@ def _save_master_report(self):
             report["schema"] = {}
         # compare and plan
         try:
-            cmp_path = os.path.join(self.artifact_dir, "conn4_compare.json")
-            with open(cmp_path, "r", encoding="utf-8") as f:
+            with open("conn4_compare.json", "r", encoding="utf-8") as f:
                 compare_data = json.load(f)
         except Exception:
             compare_data = {}
@@ -3466,39 +3194,9 @@ def _save_master_report(self):
                     pass
             except Exception:
                 ordered["step_diffs"] = []
-            master_path = os.path.join(self.artifact_dir, "conn4_master.json")
-            with open(master_path,"w",encoding="utf-8") as f:
+            with open("conn4_master.json","w",encoding="utf-8") as f:
                 json.dump(ordered, f, ensure_ascii=False, indent=2)
-            self.logger.info(f"Сводный отчёт сохранён: {master_path}")
-
-            print("\n--- DEBUG: CAPTURED HIDDEN REQUESTS ---")
-            try:
-                # Iterate over normalized events if available, or raw network events
-                net_events = ordered.get("network") or []
-                seen_urls = set()
-                for e in net_events:
-                    # Try to extract URL and Method from various event formats
-                    u = _evt_url(e)
-                    if not u: continue
-                    
-                    # Filter for the specific hidden steps we care about
-                    if any(x in u for x in ["/_time", "/ident", "create-session", "ident.php"]):
-                        # Avoid duplicates
-                        if u in seen_urls: continue
-                        seen_urls.add(u)
-                        
-                        m = "GET" # Default
-                        # Try to find method in request object
-                        if "request" in e and "method" in e["request"]:
-                            m = e["request"]["method"]
-                        elif "method" in e:
-                            m = e["method"]
-                            
-                        print(f"FOUND HIDDEN STEP: [{m}] {u}")
-            except Exception as e:
-                print(f"DEBUG PRINT ERROR: {e}")
-            print("---------------------------------------\n")
-
+            self.logger.info("Сводный отчёт сохранён: conn4_master.json")
             try:
                 _save_mcp_artifacts(self, ordered)
             except Exception:
@@ -3601,8 +3299,7 @@ if __name__ == "__main__":
     def _save_js_time_sources(self):
         idx = self._collect_time_sources()
         try:
-            path = os.path.join(self.artifact_dir, "conn4_js_time_sources.json")
-            with open(path,"w",encoding="utf-8") as f:
+            with open("conn4_js_time_sources.json","w",encoding="utf-8") as f:
                 json.dump({"items": idx}, f, ensure_ascii=False, indent=2)
         except Exception:
             pass
@@ -3610,8 +3307,7 @@ if __name__ == "__main__":
     def _save_time_initiators(self):
         items = self._collect_time_initiators()
         try:
-            path = os.path.join(self.artifact_dir, "conn4_time_initiators.json")
-            with open(path,"w",encoding="utf-8") as f:
+            with open("conn4_time_initiators.json","w",encoding="utf-8") as f:
                 json.dump({'items': items}, f, ensure_ascii=False, indent=2)
         except Exception:
             pass
@@ -3708,8 +3404,7 @@ if __name__ == "__main__":
         except Exception:
             schema = {}
         try:
-            path = os.path.join(self.artifact_dir, "conn4_schema.json")
-            with open(path,"w",encoding="utf-8") as f:
+            with open("conn4_schema.json","w",encoding="utf-8") as f:
                 json.dump(schema, f, ensure_ascii=False, indent=2)
         except Exception:
             pass

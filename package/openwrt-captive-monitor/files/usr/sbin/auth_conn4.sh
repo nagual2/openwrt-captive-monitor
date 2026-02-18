@@ -95,8 +95,11 @@ curl_custom() {
     if [ -n "$WWAN_DEVICE" ]; then
         IFACE_ARG="--interface $WWAN_DEVICE"
     fi
+
+    CURL_CONNECT_TIMEOUT="${CONN4_CURL_CONNECT_TIMEOUT:-5}"
+    CURL_MAX_TIME="${CONN4_CURL_MAX_TIME:-20}"
     
-    /usr/bin/curl -k $IFACE_ARG $RESOLVE_ARGS "$@"
+    /usr/bin/curl -k $IFACE_ARG $RESOLVE_ARGS --connect-timeout "$CURL_CONNECT_TIMEOUT" --max-time "$CURL_MAX_TIME" "$@"
 }
 
 urlencode() {
