@@ -42,15 +42,14 @@ Dieser hybride Ansatz nutzt die Vorteile beider Plattformen: leichtgewichtiges M
 
 ## 🚀 Schnellstart
 
-### Für Debian/Ubuntu/Linux Mint (Empfohlen)
+### Systemanforderungen
 
-#### Systemanforderungen
 - Debian 11+ / Ubuntu 20.04+ / Linux Mint 20+
-- 4GB+ RAM
+- 4GB+ RAM (empfohlen)
 - Python 3.8+
 - Chromium oder Google Chrome
 
-#### Installation aus .deb-Paket
+### Installation aus .deb-Paket
 
 ```bash
 # Aktuelles Paket herunterladen
@@ -68,7 +67,7 @@ Das Paket wird automatisch:
 2. Systemd-Dienst für Autostart installieren
 3. Dienst für automatischen Start beim Booten aktivieren
 
-#### Dienstverwaltung
+### Dienstverwaltung
 
 ```bash
 # Dienst starten
@@ -84,35 +83,7 @@ sudo journalctl -u captive-portal-monitor -f
 sudo systemctl stop captive-portal-monitor
 ```
 
-📖 **Ausführliche Dokumentation:** [docs/debian-installation.md](docs/debian-installation.md)
-
----
-
-### Für OpenWrt Router
-
-#### Voraussetzungen
-- OpenWrt 21.02+ (oder jedes System mit `opkg`, `curl` und `cron`)
-- `curl` Paket installiert (wird automatisch durch Abhängigkeit behandelt)
-
-#### Installation
-
-**Option 1: Vorgefertigtes Paket (Empfohlen)**
-
-```bash
-# Aktuelles Paket herunterladen
-wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_*.ipk
-
-# Auf Router installieren
-scp openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
-```
-
-Das Paket wird automatisch:
-1. Das Auth-Skript nach `/usr/sbin/auth_conn4.sh` installieren
-2. Einen Cron-Job zu `/etc/crontabs/root` hinzufügen, der jede Minute läuft
-3. Den Cron-Dienst neu starten
-
-**Option 2: Aus Quellcode erstellen**
+### Aus Quellcode erstellen
 
 ```bash
 # Repository klonen
@@ -120,16 +91,16 @@ git clone https://github.com/nagual2/openwrt-captive-monitor.git
 cd openwrt-captive-monitor
 
 # Paket erstellen
-scripts/build_ipk.sh --arch all
+bash scripts/build_deb.sh
 
 # Installieren
-scp dist/opkg/all/openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
-ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
+sudo dpkg -i dist/deb/openwrt-captive-monitor_*.deb
+sudo apt-get install -f
 ```
 
-## 🔧 Konfiguration
+📖 **Ausführliche Dokumentation:** [docs/debian-installation.md](docs/debian-installation.md)
 
-### Für Debian/Ubuntu
+## 🔧 Konfiguration
 
 Der Dienst funktioniert automatisch. Für die Konfiguration erstellen Sie die Datei `/etc/default/captive-portal-monitor`:
 
@@ -145,24 +116,7 @@ NOJS_SOCKS_PORT=10800
 CPM_ENV=prod
 ```
 
-### Für OpenWrt
-
-Die Konfiguration ist berührungslos (Zero-Touch). Das Skript erkennt die Portal-URL automatisch.
-
-Um den Zeitplan zu deaktivieren oder zu ändern, bearbeiten Sie die Root-Crontab:
-
-```bash
-crontab -e
-```
-
-Standard-Eintrag:
-```cron
-*/1 * * * * /usr/sbin/auth_conn4.sh
-```
-
 ## 🔍 Fehlerbehebung
-
-### Für Debian/Ubuntu
 
 **Logs prüfen:**
 ```bash
@@ -177,24 +131,6 @@ sudo /usr/bin/captive-portal-monitor
 **Status prüfen:**
 ```bash
 sudo systemctl status captive-portal-monitor
-```
-
-### Für OpenWrt
-
-**Logs prüfen:**
-```bash
-logread | grep conn4_auth
-```
-
-**Manuell ausführen:**
-```bash
-sh /usr/sbin/auth_conn4.sh
-```
-
-**Installation überprüfen:**
-```bash
-ls -l /usr/sbin/auth_conn4.sh
-grep auth_conn4 /etc/crontabs/root
 ```
 
 ## 📄 Lizenz
