@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -88,6 +88,20 @@ jobs:
             echo "previous_tag=$PREVIOUS_TAG"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Verify update-version-metadata.sh exists
+        if: steps.auto-version-skip.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          if [ ! -f "./scripts/update-version-metadata.sh" ]; then
+            echo "::error file=scripts/update-version-metadata.sh::Required script scripts/update-version-metadata.sh is missing from the repository."
+            exit 1
+          fi
+          if [ ! -x "./scripts/update-version-metadata.sh" ]; then
+            echo "::warning::scripts/update-version-metadata.sh is not executable; fixing with chmod +x"
+            chmod +x ./scripts/update-version-metadata.sh
+          fi
+          echo "scripts/update-version-metadata.sh is present and executable."
+
       - name: Update version metadata and commit changes
         if: steps.auto-version-skip.outputs.skip != 'true'
         id: update-metadata
@@ -99,9 +113,17 @@ jobs:
 
           echo "New tag: $NEW_TAG"
           echo "Clean version: $CLEAN_VERSION"
+          echo "Current VERSION file: $(cat VERSION)"
+          echo "Current PKG_VERSION : $(grep '^PKG_VERSION:=' package/openwrt-captive-monitor/Makefile || echo '<not found>')"
 
           # Update VERSION and PKG_VERSION metadata in the working tree
-          ./scripts/update-version-metadata.sh "$CLEAN_VERSION"
+          if ! ./scripts/update-version-metadata.sh "$CLEAN_VERSION"; then
+            echo "::error::scripts/update-version-metadata.sh failed for version '$CLEAN_VERSION'"
+            exit 1
+          fi
+
+          echo "Post-update VERSION file: $(cat VERSION)"
+          echo "Post-update PKG_VERSION : $(grep '^PKG_VERSION:=' package/openwrt-captive-monitor/Makefile || echo '<not found>')"
 
           # Check if there are any changes to commit
           if git diff --quiet --exit-code VERSION package/openwrt-captive-monitor/Makefile; then
