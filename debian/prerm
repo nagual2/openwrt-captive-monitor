@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    remove|deconfigure)
+        # Stop service
+        systemctl stop captive-portal-monitor.service || true
+        
+        # Disable service
+        systemctl disable captive-portal-monitor.service || true
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

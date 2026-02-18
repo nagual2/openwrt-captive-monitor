@@ -1,0 +1,9 @@
+openwrt-captive-monitor (2025.12.11.3-1) unstable; urgency=medium
+
+  * Initial Debian package release
+  * Migrate from OpenWrt shell script to Python/Selenium solution
+  * Add systemd service for automatic portal detection
+  * Support for Debian/Ubuntu on Raspberry Pi and x86-64 systems
+  * Requires 4GB+ RAM for Chrome/Selenium operation
+
+ -- OpenWrt Captive Monitor Team <nahual15@gmail.com>  Wed, 18 Feb 2026 23:00:00 +0100

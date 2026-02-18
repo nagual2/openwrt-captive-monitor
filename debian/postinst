@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    configure)
+        # Reload systemd daemon
+        systemctl daemon-reload || true
+        
+        # Enable service
+        systemctl enable captive-portal-monitor.service || true
+        
+        echo "Captive Portal Monitor installed successfully!"
+        echo "To start the service: sudo systemctl start captive-portal-monitor"
+        echo "To check status: sudo systemctl status captive-portal-monitor"
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

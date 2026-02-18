@@ -1,0 +1,26 @@
+Source: openwrt-captive-monitor
+Section: net
+Priority: optional
+Maintainer: OpenWrt Captive Monitor Team <nahual15@gmail.com>
+Build-Depends: debhelper-compat (= 13), dh-python, python3-all
+Standards-Version: 4.6.0
+Homepage: https://github.com/nagual2/openwrt-captive-monitor
+Vcs-Browser: https://github.com/nagual2/openwrt-captive-monitor
+Vcs-Git: https://github.com/nagual2/openwrt-captive-monitor.git
+
+Package: openwrt-captive-monitor
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends},
+ python3-selenium,
+ python3-requests,
+ python3-dotenv,
+ chromium-browser | google-chrome-stable,
+ chromium-chromedriver | google-chrome-stable
+Description: Automatic captive portal authentication for Conn4 portals
+ This package provides automatic authentication against Conn4-based
+ captive portals (e.g., Leonardo Hotels) using Selenium and Chrome.
+ .
+ The service runs as a systemd daemon and monitors network connectivity,
+ automatically authenticating when a captive portal is detected.
+ .
+ Recommended hardware: Raspberry Pi 3+, x86-64 mini-PC with 4GB+ RAM.

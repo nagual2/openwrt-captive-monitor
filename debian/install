@@ -1,0 +1,9 @@
+tools/captive_portal_wsl_selenium.py usr/bin/captive-portal-monitor
+tools/__init__.py usr/lib/python3/dist-packages/captive_monitor/
+tools/conn4_auth_lib.py usr/lib/python3/dist-packages/captive_monitor/
+tools/conn4_shared.py usr/lib/python3/dist-packages/captive_monitor/
+tools/conn4_utils.py usr/lib/python3/dist-packages/captive_monitor/
+tools/conn4_wbs_client.py usr/lib/python3/dist-packages/captive_monitor/
+tools/html_form_parser.py usr/lib/python3/dist-packages/captive_monitor/
+tools/schema_utils.py usr/lib/python3/dist-packages/captive_monitor/
+debian/captive-portal-monitor.service lib/systemd/system/
