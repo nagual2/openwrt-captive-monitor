@@ -53,7 +53,7 @@ Dieser hybride Ansatz nutzt die Vorteile beider Plattformen: leichtgewichtiges M
 
 ```bash
 # Aktuelles Paket herunterladen
-wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_2026.1.16.5-1_all.deb
+wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_2026.2.19.1-1_all.deb
 
 # Paket installieren
 sudo dpkg -i openwrt-captive-monitor_*.deb

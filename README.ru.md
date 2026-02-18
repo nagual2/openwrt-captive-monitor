@@ -51,7 +51,7 @@
 
 ```bash
 # Скачать последний пакет
-wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_2026.1.16.5-1_all.deb
+wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_2026.2.19.1-1_all.deb
 
 # Установить пакет
 sudo dpkg -i openwrt-captive-monitor_*.deb

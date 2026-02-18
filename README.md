@@ -53,7 +53,7 @@ This hybrid approach leverages the advantages of both platforms: lightweight mon
 
 ```bash
 # Download latest package
-wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_2026.1.16.5-1_all.deb
+wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_2026.2.19.1-1_all.deb
 
 # Install package
 sudo dpkg -i openwrt-captive-monitor_*.deb
