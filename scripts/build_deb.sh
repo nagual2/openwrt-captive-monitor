@@ -28,14 +28,22 @@ fi
 # Clean previous builds
 echo "Cleaning previous builds..."
 rm -rf dist/deb
-mkdir -p dist/deb/openwrt-captive-monitor/DEBIAN
-mkdir -p dist/deb/openwrt-captive-monitor/usr/bin
-mkdir -p dist/deb/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor
-mkdir -p dist/deb/openwrt-captive-monitor/lib/systemd/system
-mkdir -p dist/deb/openwrt-captive-monitor/usr/share/doc/openwrt-captive-monitor
+
+# Create build directory in /tmp to avoid WSL permission issues
+BUILD_DIR=$(mktemp -d)
+echo "Using build directory: $BUILD_DIR"
+
+mkdir -p "$BUILD_DIR/openwrt-captive-monitor/DEBIAN"
+mkdir -p "$BUILD_DIR/openwrt-captive-monitor/usr/bin"
+mkdir -p "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor"
+mkdir -p "$BUILD_DIR/openwrt-captive-monitor/lib/systemd/system"
+mkdir -p "$BUILD_DIR/openwrt-captive-monitor/usr/share/doc/openwrt-captive-monitor"
+
+# Fix permissions for DEBIAN directory (required by dpkg-deb)
+chmod 755 "$BUILD_DIR/openwrt-captive-monitor/DEBIAN"
 
 # Create control file
-cat > dist/deb/openwrt-captive-monitor/DEBIAN/control <<EOF
+cat > "$BUILD_DIR/openwrt-captive-monitor/DEBIAN/control" <<EOF
 Package: openwrt-captive-monitor
 Version: ${VERSION}-1
 Section: net
@@ -55,38 +63,42 @@ Homepage: https://github.com/nagual2/openwrt-captive-monitor
 EOF
 
 # Copy postinst script
-cp debian/postinst dist/deb/openwrt-captive-monitor/DEBIAN/
-chmod 755 dist/deb/openwrt-captive-monitor/DEBIAN/postinst
+cp debian/postinst "$BUILD_DIR/openwrt-captive-monitor/DEBIAN/"
+chmod 755 "$BUILD_DIR/openwrt-captive-monitor/DEBIAN/postinst"
 
 # Copy prerm script
-cp debian/prerm dist/deb/openwrt-captive-monitor/DEBIAN/
-chmod 755 dist/deb/openwrt-captive-monitor/DEBIAN/prerm
+cp debian/prerm "$BUILD_DIR/openwrt-captive-monitor/DEBIAN/"
+chmod 755 "$BUILD_DIR/openwrt-captive-monitor/DEBIAN/prerm"
 
 # Install main script
-install -m 755 tools/captive_portal_wsl_selenium.py dist/deb/openwrt-captive-monitor/usr/bin/captive-portal-monitor
+install -m 755 tools/captive_portal_wsl_selenium.py "$BUILD_DIR/openwrt-captive-monitor/usr/bin/captive-portal-monitor"
 
 # Install Python modules
-install -m 644 tools/__init__.py dist/deb/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/
-install -m 644 tools/conn4_auth_lib.py dist/deb/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/
-install -m 644 tools/conn4_shared.py dist/deb/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/
-install -m 644 tools/conn4_utils.py dist/deb/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/
-install -m 644 tools/conn4_wbs_client.py dist/deb/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/
-install -m 644 tools/html_form_parser.py dist/deb/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/
-install -m 644 tools/schema_utils.py dist/deb/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/
+install -m 644 tools/__init__.py "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/"
+install -m 644 tools/conn4_auth_lib.py "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/"
+install -m 644 tools/conn4_shared.py "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/"
+install -m 644 tools/conn4_utils.py "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/"
+install -m 644 tools/conn4_wbs_client.py "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/"
+install -m 644 tools/html_form_parser.py "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/"
+install -m 644 tools/schema_utils.py "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/"
 
 # Install systemd service
-install -m 644 debian/captive-portal-monitor.service dist/deb/openwrt-captive-monitor/lib/systemd/system/
+install -m 644 debian/captive-portal-monitor.service "$BUILD_DIR/openwrt-captive-monitor/lib/systemd/system/"
 
 # Install documentation
-install -m 644 README.md dist/deb/openwrt-captive-monitor/usr/share/doc/openwrt-captive-monitor/
-install -m 644 LICENSE dist/deb/openwrt-captive-monitor/usr/share/doc/openwrt-captive-monitor/
+install -m 644 README.md "$BUILD_DIR/openwrt-captive-monitor/usr/share/doc/openwrt-captive-monitor/"
+install -m 644 LICENSE "$BUILD_DIR/openwrt-captive-monitor/usr/share/doc/openwrt-captive-monitor/"
 
 # Build package
 echo "Building package..."
-dpkg-deb --build dist/deb/openwrt-captive-monitor
+dpkg-deb --build "$BUILD_DIR/openwrt-captive-monitor"
 
-# Rename to proper name
-mv dist/deb/openwrt-captive-monitor.deb dist/deb/openwrt-captive-monitor_${VERSION}-1_all.deb
+# Move to dist directory
+mkdir -p dist/deb
+mv "$BUILD_DIR/openwrt-captive-monitor.deb" "dist/deb/openwrt-captive-monitor_${VERSION}-1_all.deb"
+
+# Cleanup
+rm -rf "$BUILD_DIR"
 
 echo ""
 echo "=== Build complete ==="
