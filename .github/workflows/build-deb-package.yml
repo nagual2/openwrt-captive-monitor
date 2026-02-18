@@ -34,7 +34,10 @@ jobs:
       
       - name: Build Debian package
         run: |
+          # dpkg-dev уже установлен в предыдущем шаге
           bash scripts/build_deb.sh
+        env:
+          SKIP_APT_INSTALL: "1"
       
       - name: Upload .deb package
         uses: actions/upload-artifact@v4

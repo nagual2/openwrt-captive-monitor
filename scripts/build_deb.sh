@@ -16,18 +16,22 @@ fi
 VERSION=$(cat VERSION | tr -d '\n\r')
 echo "Version: $VERSION"
 
-# Install build dependencies (skip if already installed)
-echo "Installing build dependencies..."
-if ! command -v dpkg-deb >/dev/null 2>&1; then
-    if [ "$EUID" -eq 0 ]; then
-        apt-get update
-        apt-get install -y dpkg-dev
+# Install build dependencies (skip if already installed or in CI)
+if [ "${SKIP_APT_INSTALL:-0}" != "1" ]; then
+    echo "Installing build dependencies..."
+    if ! command -v dpkg-deb >/dev/null 2>&1; then
+        if [ "$EUID" -eq 0 ]; then
+            apt-get update
+            apt-get install -y dpkg-dev
+        else
+            sudo apt-get update
+            sudo apt-get install -y dpkg-dev
+        fi
     else
-        sudo apt-get update
-        sudo apt-get install -y dpkg-dev
+        echo "dpkg-deb found, skipping installation"
     fi
 else
-    echo "dpkg-deb found, skipping installation"
+    echo "Skipping dependency installation (SKIP_APT_INSTALL=1)"
 fi
 
 # Clean previous builds
