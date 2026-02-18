@@ -1,6 +1,5 @@
 # openwrt-captive-monitor
 
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/nagual2/openwrt-captive-monitor.svg)](https://github.com/nagual2/openwrt-captive-monitor/releases)
 [![GitHub stars](https://img.shields.io/github/stars/nagual2/openwrt-captive-monitor.svg?style=social)](https://github.com/nagual2/openwrt-captive-monitor/stargazers)
@@ -10,6 +9,25 @@
 ## 🌐 Sprache
 
 [English](README.md) | **Deutsch** | [Русский](README.ru.md)
+
+---
+
+## 🤖 Über die Projektentwicklung
+
+Dieses Projekt wurde vollständig mit Hilfe von KI-Agenten entwickelt und hat eine bedeutende Evolution durchlaufen. Ursprünglich als einfaches Shell-Skript für OpenWrt gestartet, entwickelte sich das Projekt zu einer vollwertigen Python-Lösung basierend auf der Selenium-Bibliothek.
+
+Während des Debuggings wurde klar, dass eine zuverlässige Authentifizierung über Browser-Technologien auf kompakten Routern mit begrenzten Ressourcen unmöglich ist. Selenium-basierte Skripte benötigen erheblichen RAM (mindestens 2-4 GB) und einen vollständigen Chrome/Chromium-Browser.
+
+**Aktuelle Architektur:**
+- **OpenWrt Router** - minimales Shell-Skript zur Erkennung von Captive Portals
+- **Externer Server** - Python-Skript mit Selenium zur Authentifizierung (Debian/Ubuntu auf Mini-PC mit 4GB RAM)
+
+**Empfohlene Hardware für Authentifizierungsserver:**
+- Raspberry Pi 3 oder höher
+- Beliebiger x86-64 Mini-PC mit 4GB+ RAM
+- Linux Mint / Ubuntu / Debian
+
+Dieser hybride Ansatz nutzt die Vorteile beider Plattformen: leichtgewichtiges Monitoring auf dem Router und leistungsstarke Browser-Automatisierung auf einem dedizierten Gerät.
 
 ---
 

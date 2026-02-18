@@ -1,6 +1,5 @@
 # openwrt-captive-monitor
 
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/nagual2/openwrt-captive-monitor.svg)](https://github.com/nagual2/openwrt-captive-monitor/releases)
 [![GitHub stars](https://img.shields.io/github/stars/nagual2/openwrt-captive-monitor.svg?style=social)](https://github.com/nagual2/openwrt-captive-monitor/stargazers)
@@ -10,6 +9,25 @@
 ## 🌐 Language
 
 **English** | [Deutsch](README.de.md) | [Русский](README.ru.md)
+
+---
+
+## 🤖 About Project Development
+
+This project was entirely developed with the assistance of AI agents and has undergone a significant evolution. Initially starting as a simple shell script for OpenWrt, the project evolved into a full-fledged Python solution based on the Selenium library.
+
+During debugging, it became clear that reliable authentication through browser technologies is impossible on compact routers with limited resources. Selenium-based scripts require significant RAM (minimum 2-4 GB) and a full Chrome/Chromium browser.
+
+**Current Architecture:**
+- **OpenWrt Router** - minimal shell script for captive portal detection
+- **External Server** - Python script with Selenium for authentication (Debian/Ubuntu on mini-PC with 4GB RAM)
+
+**Recommended Hardware for Authentication Server:**
+- Raspberry Pi 3 or higher
+- Any x86-64 mini-PC with 4GB+ RAM
+- Linux Mint / Ubuntu / Debian
+
+This hybrid approach leverages the advantages of both platforms: lightweight monitoring on the router and powerful browser automation on a dedicated device.
 
 ---
 
