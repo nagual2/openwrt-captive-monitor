@@ -40,20 +40,67 @@
 
 ## 🚀 Быстрый старт
 
-### Предварительные требования
+### Для Debian/Ubuntu/Linux Mint (Рекомендуется)
 
+#### Системные требования
+- Debian 11+ / Ubuntu 20.04+ / Linux Mint 20+
+- 4GB+ RAM
+- Python 3.8+
+- Chromium или Google Chrome
+
+#### Установка из .deb пакета
+
+```bash
+# Скачать последний пакет
+wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_2026.1.16.5-1_all.deb
+
+# Установить пакет
+sudo dpkg -i openwrt-captive-monitor_*.deb
+
+# Установить зависимости (если есть ошибки)
+sudo apt-get install -f
+```
+
+Пакет автоматически:
+1. Установит Python скрипт в `/usr/bin/captive-portal-monitor`
+2. Установит systemd сервис для автозапуска
+3. Включит сервис для автоматического запуска при загрузке
+
+#### Управление сервисом
+
+```bash
+# Запустить сервис
+sudo systemctl start captive-portal-monitor
+
+# Проверить статус
+sudo systemctl status captive-portal-monitor
+
+# Посмотреть логи
+sudo journalctl -u captive-portal-monitor -f
+
+# Остановить сервис
+sudo systemctl stop captive-portal-monitor
+```
+
+📖 **Подробная документация:** [docs/debian-installation.md](docs/debian-installation.md)
+
+---
+
+### Для OpenWrt роутеров
+
+#### Предварительные требования
 - OpenWrt 21.02+ (или любая система с `opkg`, `curl` и `cron`)
 - Пакет `curl` установлен (автоматически обрабатывается как зависимость)
 
-### Установка
+#### Установка
 
-#### Вариант 1: Готовый пакет (Рекомендуется)
+**Вариант 1: Готовый пакет (Рекомендуется)**
 
 ```bash
-## Загрузить последний пакет
+# Загрузить последний пакет
 wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_*.ipk
 
-## Установить на маршрутизатор
+# Установить на маршрутизатор
 scp openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 ```
@@ -63,22 +110,40 @@ ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 2. Добавит задание cron в `/etc/crontabs/root` для запуска каждую минуту
 3. Перезапустит службу cron
 
-#### Вариант 2: Сборка из исходного кода
+**Вариант 2: Сборка из исходного кода**
 
 ```bash
-## Клонировать репозиторий
+# Клонировать репозиторий
 git clone https://github.com/nagual2/openwrt-captive-monitor.git
 cd openwrt-captive-monitor
 
-## Собрать пакет
+# Собрать пакет
 scripts/build_ipk.sh --arch all
 
-## Установить
+# Установить
 scp dist/opkg/all/openwrt-captive-monitor_*.ipk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1 "opkg install /tmp/openwrt-captive-monitor_*.ipk"
 ```
 
 ## 🔧 Конфигурация
+
+### Для Debian/Ubuntu
+
+Сервис работает автоматически. Для настройки создайте файл `/etc/default/captive-portal-monitor`:
+
+```bash
+# OpenWrt роутер для SOCKS прокси
+OPENWRT_SSH_HOST=192.168.1.1
+OPENWRT_SSH_USER=root
+
+# Порт SOCKS прокси (по умолчанию 10800)
+NOJS_SOCKS_PORT=10800
+
+# Окружение (dev или prod)
+CPM_ENV=prod
+```
+
+### Для OpenWrt
 
 Конфигурация не требуется (Zero-Touch). Скрипт автоматически определяет URL портала.
 
@@ -94,6 +159,25 @@ crontab -e
 ```
 
 ## 🔍 Решение проблем
+
+### Для Debian/Ubuntu
+
+**Проверить логи:**
+```bash
+sudo journalctl -u captive-portal-monitor -n 50
+```
+
+**Запустить вручную:**
+```bash
+sudo /usr/bin/captive-portal-monitor
+```
+
+**Проверить статус:**
+```bash
+sudo systemctl status captive-portal-monitor
+```
+
+### Для OpenWrt
 
 **Проверить логи:**
 ```bash
