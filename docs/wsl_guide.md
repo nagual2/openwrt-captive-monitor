@@ -7,7 +7,7 @@
 - WSL используем для ВСЕХ скриптов (Python, Shell), SSH на роутеры, make, сетевых утилит.
 - SSH к dev/prod‑роутерам через `wsl ssh`, хосты задаём в `/etc/hosts`:
   - `192.168.1.1 dev-openwrt`
-  - `192.168.35.1 prod-openwrt`
+  - `192.168.x.x prod-openwrt`
 
 ## Дополнительные
 
