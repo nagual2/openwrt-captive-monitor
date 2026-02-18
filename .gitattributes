@@ -11,6 +11,15 @@
 *.json text eol=lf
 *.txt text eol=lf
 
+# Debian package scripts (no extension)
+debian/postinst text eol=lf
+debian/prerm text eol=lf
+debian/postrm text eol=lf
+debian/preinst text eol=lf
+debian/rules text eol=lf
+debian/control text eol=lf
+debian/install text eol=lf
+
 # Windows scripts
 *.ps1 text eol=crlf
 *.cmd text eol=crlf
