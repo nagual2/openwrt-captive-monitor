@@ -73,8 +73,8 @@ class Conn4PortalTester:
 
     def test_conn4_portal(self):
         """Тестирование conn4.com портала"""
-        # URL из curl ответа с роутера
-        portal_url = "https://1096.rdr.conn4.com/ident?client_ip=10.72.192.213&client_mac=1824301B7A8F&site_id=1096&signature=2b73aa027f1d377f8cd6c3d35ce3cd7684a6283ed1ac3beb6aa8880b225ef0c8&loggedin=0&remembered_mac=0"
+        # URL из curl ответа с роутера (example with placeholder values)
+        portal_url = "https://1096.rdr.conn4.com/ident?client_ip=10.x.x.x&client_mac=XXXXXXXXXXXX&site_id=1096&signature=PLACEHOLDER&loggedin=0&remembered_mac=0"
 
         self.logger.info("Переход на conn4.com портал...")
         self.logger.info(f"URL: {portal_url}")

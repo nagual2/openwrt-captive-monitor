@@ -3075,10 +3075,10 @@ class NoJsConn4Authorizer:
             
             # Why did Selenium succeed and NoJS fail?
             # Selenium Payload for login/free:
-            # agree=1&accept=1&terms=1&policy=1&consent=1&loggedin=0&remembered_mac=0&loggedIn=0&rememberedMac=0&site_id=1096&client_ip=10.73.193.5&client_mac=A6BC2D9589B6&signature=...&apiSessionId=...&api_session_id=...&paymentReturnProxyUrl=...&payment_return_proxy_url=...&clientIp=...&clientMac=...&siteId=...&authorization=session%3D...&tariff=381
+            # agree=1&accept=1&terms=1&policy=1&consent=1&loggedin=0&remembered_mac=0&loggedIn=0&rememberedMac=0&site_id=1096&client_ip=10.x.x.x&client_mac=XXXXXXXXXXXX&signature=...&apiSessionId=...&api_session_id=...&paymentReturnProxyUrl=...&payment_return_proxy_url=...&clientIp=...&clientMac=...&siteId=...&authorization=session%3D...&tariff=381
             
             # NoJS Payload:
-            # agree=1&accept=1&terms=1&policy=1&consent=1&loggedin=0&remembered_mac=0&loggedIn=0&rememberedMac=0&site_id=1096&client_ip=10.73.193.5&client_mac=A6BC2D9589B6&signature=...&paymentReturnProxyUrl=...&payment_return_proxy_url=...&clientIp=...&clientMac=...&siteId=...&authorization=session%3D...&tariff=381
+            # agree=1&accept=1&terms=1&policy=1&consent=1&loggedin=0&remembered_mac=0&loggedIn=0&rememberedMac=0&site_id=1096&client_ip=10.x.x.x&client_mac=XXXXXXXXXXXX&signature=...&paymentReturnProxyUrl=...&payment_return_proxy_url=...&clientIp=...&clientMac=...&siteId=...&authorization=session%3D...&tariff=381
             
             # Difference: NoJS payload has `apiSessionId` MISSING in the diffs!
             # Wait, let's check the diff output from the failed run.
