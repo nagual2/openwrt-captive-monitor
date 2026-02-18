@@ -113,7 +113,6 @@ echo ""
 echo "=== Build complete ==="
 ls -lh dist/deb/*.deb
 
-echo ""
 echo "To install:"
 echo "  sudo dpkg -i dist/deb/openwrt-captive-monitor_${VERSION}-1_all.deb"
 echo "  sudo apt-get install -f  # Install dependencies"
