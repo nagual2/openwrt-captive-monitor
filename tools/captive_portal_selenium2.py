@@ -1,8 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 -u
 """
 Daemon для авторизации на captive портале conn4.com
 Запускается один раз и висит в памяти, проверяя портал каждую минуту
 Chrome/Selenium остаются в памяти для быстрых проверок
+
+-u флаг включает unbuffered режим для немедленного вывода логов
 """
 
 import sys
@@ -66,9 +68,14 @@ if DEBUG_MODE:
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=handlers
+    handlers=handlers,
+    force=True  # Принудительная перенастройка логирования
 )
 logger = logging.getLogger(__name__)
+
+# Отключаем буферизацию для всех handlers
+for handler in logger.handlers:
+    handler.flush = lambda: handler.stream.flush() if hasattr(handler, 'stream') else None
 
 
 def signal_handler(signum, frame):
@@ -364,14 +371,39 @@ class CaptivePortalDaemon:
         try:
             # Быстрая проверка через msftconnecttest
             logger.info("Проверка: http://www.msftconnecttest.com/redirect")
+            logger.info("Загрузка страницы...")
+            
+            start_time = time.time()
             self.driver.get("http://www.msftconnecttest.com/redirect")
+            load_time = time.time() - start_time
+            
+            logger.info(f"Страница загружена за {load_time:.1f} секунд")
+            for handler in logger.handlers:
+                handler.flush()
             
             # Увеличенное время ожидания для медленных систем
             wait_time = int(os.environ.get('CAPTIVE_PAGE_WAIT', '10'))
+            logger.info(f"Ожидание {wait_time} секунд для выполнения JavaScript...")
+            for handler in logger.handlers:
+                handler.flush()
             time.sleep(wait_time)
+            
+            logger.info("JavaScript выполнен, получение URL...")
+            for handler in logger.handlers:
+                handler.flush()
             
             current_url = self.driver.current_url
             logger.info(f"Текущий URL: {current_url}")
+            for handler in logger.handlers:
+                handler.flush()
+            
+            # Получаем title страницы для дополнительной информации
+            try:
+                page_title = self.driver.title
+                if page_title:
+                    logger.info(f"Заголовок страницы: {page_title[:100]}")
+            except:
+                pass
             
             # Уже авторизованы
             if "msn.com" in current_url.lower() or "microsoft.com" in current_url.lower():
@@ -404,14 +436,29 @@ class CaptivePortalDaemon:
             try:
                 # Проверяем редирект с msftconnecttest
                 logger.info(f"Проверка: http://www.msftconnecttest.com/redirect (попытка {attempt}/{max_retries})")
+                logger.info("Загрузка страницы...")
+                
+                start_time = time.time()
                 self.driver.get("http://www.msftconnecttest.com/redirect")
+                load_time = time.time() - start_time
+                
+                logger.info(f"Страница загружена за {load_time:.1f} секунд")
                 
                 # Увеличенное время ожидания для медленных систем
                 wait_time = int(os.environ.get('CAPTIVE_PAGE_WAIT', '10'))
+                logger.info(f"Ожидание {wait_time} секунд для выполнения JavaScript...")
                 time.sleep(wait_time)
                 
                 current_url = self.driver.current_url
                 logger.info(f"Текущий URL: {current_url}")
+                
+                # Получаем title страницы для дополнительной информации
+                try:
+                    page_title = self.driver.title
+                    if page_title:
+                        logger.info(f"Заголовок страницы: {page_title[:100]}")
+                except:
+                    pass
 
                 # Проверка на уже авторизованное состояние (редирект на msn.com)
                 if "msn.com" in current_url.lower() or "microsoft.com" in current_url.lower():
