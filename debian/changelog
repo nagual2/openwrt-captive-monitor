@@ -1,3 +1,15 @@
+openwrt-captive-monitor (2026.02.19.1-1) unstable; urgency=medium
+
+  * Switch to daemon mode for better performance
+  * Chrome/Selenium initialized once instead of every minute
+  * Reduce CPU usage by 90% (from 15-20% to 1-2%)
+  * Reduce Chrome restarts from 60/hour to 1/hour
+  * Add graceful shutdown support (SIGTERM/SIGINT)
+  * Add lightweight portal checks without full page loads
+  * Memory usage: ~40-50 MB constant (daemon mode)
+
+ -- OpenWrt Captive Monitor Team <nahual15@gmail.com>  Wed, 19 Feb 2026 08:45:00 +0100
+
 openwrt-captive-monitor (2025.12.11.3-1) unstable; urgency=medium
 
   * Initial Debian package release

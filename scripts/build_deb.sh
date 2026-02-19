@@ -79,8 +79,8 @@ chmod 755 "$BUILD_DIR/openwrt-captive-monitor/DEBIAN/postinst"
 cp debian/prerm "$BUILD_DIR/openwrt-captive-monitor/DEBIAN/"
 chmod 755 "$BUILD_DIR/openwrt-captive-monitor/DEBIAN/prerm"
 
-# Install main script
-install -m 755 tools/captive_portal_wsl_selenium.py "$BUILD_DIR/openwrt-captive-monitor/usr/bin/captive-portal-monitor"
+# Install main script (daemon version)
+install -m 755 tools/captive_portal_selenium2.py "$BUILD_DIR/openwrt-captive-monitor/usr/bin/captive-portal-daemon"
 
 # Install wrapper script
 install -m 755 debian/captive-portal-wrapper.sh "$BUILD_DIR/openwrt-captive-monitor/usr/bin/captive-portal-wrapper"
@@ -94,8 +94,8 @@ install -m 644 tools/conn4_wbs_client.py "$BUILD_DIR/openwrt-captive-monitor/usr
 install -m 644 tools/html_form_parser.py "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/"
 install -m 644 tools/schema_utils.py "$BUILD_DIR/openwrt-captive-monitor/usr/lib/python3/dist-packages/captive_monitor/"
 
-# Install systemd service
-install -m 644 debian/captive-portal-monitor.service "$BUILD_DIR/openwrt-captive-monitor/lib/systemd/system/"
+# Install systemd service (daemon version)
+install -m 644 debian/captive-portal-daemon.service "$BUILD_DIR/openwrt-captive-monitor/lib/systemd/system/"
 
 # Install documentation
 install -m 644 README.md "$BUILD_DIR/openwrt-captive-monitor/usr/share/doc/openwrt-captive-monitor/"

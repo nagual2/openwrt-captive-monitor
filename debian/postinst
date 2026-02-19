@@ -4,83 +4,43 @@ set -e
 case "$1" in
     configure)
         # Create default configuration file if it doesn't exist
-        if [ ! -f /etc/default/captive-portal-monitor ]; then
-            cat > /etc/default/captive-portal-monitor <<'EOF'
-# Captive Portal Monitor Configuration
+        if [ ! -f /etc/default/captive-portal-daemon ]; then
+            cat > /etc/default/captive-portal-daemon <<'EOF'
+# Captive Portal Daemon Configuration
 
-# Use cron instead of systemd service (default: false)
-# Set to "true" to use cron, "false" to use systemd
-USE_CRON=false
+# Check interval in seconds (default: 60)
+CHECK_INTERVAL=60
 
-# OpenWrt router for SOCKS proxy
-OPENWRT_SSH_HOST=192.168.1.1
-OPENWRT_SSH_USER=root
+# Debug mode (default: false)
+# Set to "true" to enable debug logging
+DEBUG_MODE=false
 
-# SOCKS proxy port (default 10800)
-NOJS_SOCKS_PORT=10800
-
-# Environment (dev or prod)
+# Environment
 CPM_ENV=prod
-
-# Language preference
-SELENIUM_ACCEPT_LANGUAGE=en-US,en;q=0.9
 EOF
-            chmod 644 /etc/default/captive-portal-monitor
+            chmod 644 /etc/default/captive-portal-daemon
         fi
 
-        # Read configuration
-        USE_CRON=false
-        if [ -f /etc/default/captive-portal-monitor ]; then
-            . /etc/default/captive-portal-monitor
-        fi
-
-        if [ "$USE_CRON" = "true" ]; then
-            # Setup cron mode
-            echo "Configuring captive-portal-monitor to use cron..."
-            
-            # Disable and stop systemd service
-            systemctl disable captive-portal-monitor.service 2>/dev/null || true
-            systemctl stop captive-portal-monitor.service 2>/dev/null || true
-            
-            # Add cron job if not exists
-            CRON_JOB="* * * * * /usr/bin/captive-portal-wrapper"
-            if ! crontab -l 2>/dev/null | grep -q "captive-portal-wrapper"; then
-                (crontab -l 2>/dev/null || true; echo "$CRON_JOB") | crontab -
-                echo "Cron job added: $CRON_JOB"
-            fi
-            
-            echo "Captive Portal Monitor configured for cron mode"
-            echo "To switch to systemd: edit /etc/default/captive-portal-monitor and set USE_CRON=false"
-        else
-            # Setup systemd mode (default)
-            echo "Configuring captive-portal-monitor to use systemd..."
-            
-            # Remove cron job if exists
-            if crontab -l 2>/dev/null | grep -q "captive-portal-wrapper"; then
-                crontab -l 2>/dev/null | grep -v "captive-portal-wrapper" | crontab - || true
-                echo "Cron job removed"
-            fi
-            
-            # Reload systemd daemon
-            systemctl daemon-reload || true
-            
-            # Enable service
-            systemctl enable captive-portal-monitor.service || true
-            
-            echo "Captive Portal Monitor configured for systemd mode"
-            echo "To start: sudo systemctl start captive-portal-monitor"
-            echo "To switch to cron: edit /etc/default/captive-portal-monitor and set USE_CRON=true"
-        fi
+        echo "Configuring captive-portal-daemon..."
+        
+        # Reload systemd daemon
+        systemctl daemon-reload || true
+        
+        # Enable service
+        systemctl enable captive-portal-daemon.service || true
         
         echo ""
-        echo "Captive Portal Monitor installed successfully!"
-        echo "Configuration file: /etc/default/captive-portal-monitor"
+        echo "Captive Portal Daemon installed successfully!"
+        echo "Configuration file: /etc/default/captive-portal-daemon"
+        echo ""
+        echo "To start daemon:"
+        echo "  sudo systemctl start captive-portal-daemon"
+        echo ""
         echo "To check status:"
-        if [ "$USE_CRON" = "true" ]; then
-            echo "  sudo journalctl -f | grep captive-portal"
-        else
-            echo "  sudo systemctl status captive-portal-monitor"
-        fi
+        echo "  sudo systemctl status captive-portal-daemon"
+        echo ""
+        echo "To view logs:"
+        echo "  sudo journalctl -u captive-portal-daemon -f"
         ;;
 esac
 
