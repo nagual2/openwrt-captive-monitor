@@ -293,7 +293,19 @@ class CaptivePortalDaemon:
             service = Service()
 
             self.driver = webdriver.Chrome(service=service, options=options)
-            self.driver.set_page_load_timeout(60)  # Увеличено с 30 до 60 секунд для WSL
+            
+            # Увеличенные таймауты для медленных систем (Minisforum)
+            page_load_timeout = int(os.environ.get('CAPTIVE_PAGE_LOAD_TIMEOUT', '120'))
+            self.driver.set_page_load_timeout(page_load_timeout)
+            
+            # Увеличиваем таймауты для Selenium HTTP клиента
+            # Это предотвращает ReadTimeoutError до истечения page_load_timeout
+            from selenium.webdriver.remote.remote_connection import RemoteConnection
+            RemoteConnection.set_timeout(page_load_timeout + 30)  # +30 секунд запаса
+            
+            logger.info(f"Page load timeout: {page_load_timeout} секунд")
+            logger.info(f"Selenium HTTP timeout: {page_load_timeout + 30} секунд")
+            
             self.chrome_initialized = True
             logger.info("✅ Chrome инициализирован")
             return True
@@ -353,7 +365,10 @@ class CaptivePortalDaemon:
             # Быстрая проверка через msftconnecttest
             logger.info("Проверка: http://www.msftconnecttest.com/redirect")
             self.driver.get("http://www.msftconnecttest.com/redirect")
-            time.sleep(5)  # Увеличено с 2 до 5 секунд для WSL
+            
+            # Увеличенное время ожидания для медленных систем
+            wait_time = int(os.environ.get('CAPTIVE_PAGE_WAIT', '10'))
+            time.sleep(wait_time)
             
             current_url = self.driver.current_url
             logger.info(f"Текущий URL: {current_url}")
@@ -390,7 +405,10 @@ class CaptivePortalDaemon:
                 # Проверяем редирект с msftconnecttest
                 logger.info(f"Проверка: http://www.msftconnecttest.com/redirect (попытка {attempt}/{max_retries})")
                 self.driver.get("http://www.msftconnecttest.com/redirect")
-                time.sleep(5)
+                
+                # Увеличенное время ожидания для медленных систем
+                wait_time = int(os.environ.get('CAPTIVE_PAGE_WAIT', '10'))
+                time.sleep(wait_time)
                 
                 current_url = self.driver.current_url
                 logger.info(f"Текущий URL: {current_url}")

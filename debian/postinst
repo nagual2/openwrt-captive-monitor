@@ -3,6 +3,37 @@ set -e
 
 case "$1" in
     configure)
+        # Install Python dependencies if not present
+        echo "Checking Python dependencies..."
+        
+        # Check if pip packages are needed (for systems without system packages)
+        NEED_PIP=false
+        
+        # Try to install system packages first
+        if command -v apt-get >/dev/null 2>&1; then
+            echo "Installing dependencies via apt-get..."
+            apt-get update -qq || true
+            apt-get install -y python3-selenium python3-dotenv 2>/dev/null || NEED_PIP=true
+        elif command -v yum >/dev/null 2>&1; then
+            echo "Installing dependencies via yum..."
+            yum install -y python3-selenium python3-dotenv 2>/dev/null || NEED_PIP=true
+        else
+            NEED_PIP=true
+        fi
+        
+        # Fallback to pip if system packages not available
+        if [ "$NEED_PIP" = true ]; then
+            echo "Installing dependencies via pip..."
+            if command -v pip3 >/dev/null 2>&1; then
+                pip3 install --quiet selenium python-dotenv 2>/dev/null || true
+            elif command -v pip >/dev/null 2>&1; then
+                pip install --quiet selenium python-dotenv 2>/dev/null || true
+            else
+                echo "WARNING: Could not install Python dependencies automatically"
+                echo "Please install manually: pip3 install selenium python-dotenv"
+            fi
+        fi
+        
         # Create default configuration file if it doesn't exist
         if [ ! -f /etc/default/captive-portal-daemon ]; then
             cat > /etc/default/captive-portal-daemon <<'EOF'
@@ -15,11 +46,44 @@ CHECK_INTERVAL=60
 # Set to "true" to enable debug logging
 DEBUG_MODE=false
 
+# Page load timeout in seconds (default: 120)
+# Increase for slow systems or networks
+CAPTIVE_PAGE_LOAD_TIMEOUT=120
+
+# Page wait time in seconds (default: 10)
+# Time to wait after page load for JavaScript execution
+CAPTIVE_PAGE_WAIT=10
+
 # Environment
 CPM_ENV=prod
 EOF
             chmod 644 /etc/default/captive-portal-daemon
         fi
+
+        # Create symlink for log file in /var/log
+        # Determine the actual log file location based on user
+        if [ -n "$SUDO_USER" ]; then
+            # Running via sudo - use the original user
+            ACTUAL_USER="$SUDO_USER"
+            USER_ID=$(id -u "$SUDO_USER")
+        else
+            # Running as root directly - use 'max' as default
+            ACTUAL_USER="max"
+            USER_ID=$(id -u max 2>/dev/null || echo "1000")
+        fi
+        
+        LOG_DIR="/run/user/${USER_ID}"
+        LOG_FILE="${LOG_DIR}/captive_portal_daemon.log"
+        SYMLINK="/var/log/captive_portal_daemon.log"
+        
+        # Remove old symlink if exists
+        if [ -L "$SYMLINK" ]; then
+            rm -f "$SYMLINK"
+        fi
+        
+        # Create new symlink
+        ln -sf "$LOG_FILE" "$SYMLINK"
+        echo "Created log symlink: $SYMLINK -> $LOG_FILE"
 
         echo "Configuring captive-portal-daemon..."
         
@@ -32,6 +96,7 @@ EOF
         echo ""
         echo "Captive Portal Daemon installed successfully!"
         echo "Configuration file: /etc/default/captive-portal-daemon"
+        echo "Log file: /var/log/captive_portal_daemon.log"
         echo ""
         echo "To start daemon:"
         echo "  sudo systemctl start captive-portal-daemon"
@@ -40,6 +105,7 @@ EOF
         echo "  sudo systemctl status captive-portal-daemon"
         echo ""
         echo "To view logs:"
+        echo "  sudo tail -f /var/log/captive_portal_daemon.log"
         echo "  sudo journalctl -u captive-portal-daemon -f"
         ;;
 esac

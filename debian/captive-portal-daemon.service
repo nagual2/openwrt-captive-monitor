@@ -11,6 +11,9 @@ RestartSec=10
 User=max
 Group=max
 
+# Environment configuration
+EnvironmentFile=-/etc/default/captive-portal-daemon
+
 # Logging
 StandardOutput=journal
 StandardError=journal

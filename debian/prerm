@@ -11,6 +11,13 @@ case "$1" in
         rm -f /tmp/captive_portal_daemon.pid
         rm -f /run/user/*/captive_portal_daemon.pid
         
+        # Remove log symlink
+        SYMLINK="/var/log/captive_portal_daemon.log"
+        if [ -L "$SYMLINK" ]; then
+            rm -f "$SYMLINK"
+            echo "Removed log symlink: $SYMLINK"
+        fi
+        
         echo "Captive Portal Daemon stopped and disabled"
         ;;
 esac

@@ -10,10 +10,8 @@ Vcs-Git: https://github.com/nagual2/openwrt-captive-monitor.git
 
 Package: openwrt-captive-monitor
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends},
- python3-selenium,
- python3-requests,
- python3-dotenv,
+Depends: ${python3:Depends}, ${misc:Depends}, python3
+Recommends: python3-selenium, python3-requests, python3-dotenv,
  chromium-browser | google-chrome-stable,
  chromium-chromedriver | google-chrome-stable
 Description: Automatic captive portal authentication for Conn4 portals
@@ -22,5 +20,7 @@ Description: Automatic captive portal authentication for Conn4 portals
  .
  The service runs as a systemd daemon and monitors network connectivity,
  automatically authenticating when a captive portal is detected.
+ .
+ Dependencies are installed automatically during package configuration.
  .
  Recommended hardware: Raspberry Pi 3+, x86-64 mini-PC with 4GB+ RAM.
