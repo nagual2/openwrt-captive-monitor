@@ -13,6 +13,7 @@ services:
     
     # Переменные окружения
     environment:
+      - TZ=Europe/Berlin
       - CHECK_INTERVAL=60
       - LOG_LEVEL=INFO
       - CONN4_USERNAME=${CONN4_USERNAME:-}
