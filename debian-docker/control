@@ -1,5 +1,5 @@
 Package: openwrt-captive-monitor-docker
-Version: 2026.2.19.8-1
+Version: 2026.2.20.1-1
 Section: net
 Priority: optional
 Architecture: all

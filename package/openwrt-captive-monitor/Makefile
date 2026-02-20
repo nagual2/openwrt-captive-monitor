@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openwrt-captive-monitor
 # Date-based package version aligned with the latest vYYYY.MM.DD.N git tag and root VERSION file.
-PKG_VERSION:=2026.2.19.8
+PKG_VERSION:=2026.2.20.1
 # PKG_RELEASE must remain a small integer
 PKG_RELEASE:=1
 
