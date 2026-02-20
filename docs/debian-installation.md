@@ -1,250 +1,192 @@
-# Установка Debian/Ubuntu пакета
+# Установка на Debian/Ubuntu (Docker)
 
 ## Системные требования
 
 - Debian 11+ / Ubuntu 20.04+ / Linux Mint 20+
+- Docker (`curl -fsSL https://get.docker.com | sudo sh`)
 - 4GB+ RAM (рекомендуется)
-- Python 3.8+
-- Chromium или Google Chrome
+- x86-64 архитектура
 
 ## Быстрая установка
 
 ### Вариант 1: Из GitHub Releases (Рекомендуется)
 
 ```bash
+# Установить Docker (если ещё не установлен)
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+
 # Скачать последний .deb пакет
-wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_2026.1.16.5-1_all.deb
+wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor-docker_latest_all.deb
 
 # Установить пакет
-sudo dpkg -i openwrt-captive-monitor_*.deb
-
-# Установить зависимости (если есть ошибки)
-sudo apt-get install -f
+sudo dpkg -i openwrt-captive-monitor-docker_*.deb
 ```
 
-### Вариант 2: Сборка из исходного кода
+Пакет автоматически:
+1. Загрузит Docker образ с Chrome и Selenium
+2. Установит systemd сервис `captive-daemon`
+3. Запустит daemon
+
+### Вариант 2: Docker Compose
 
 ```bash
-# Клонировать репозиторий
+git clone https://github.com/nagual2/openwrt-captive-monitor.git
+cd openwrt-captive-monitor/docker/daemon
+
+cp .env.example .env
+# Отредактируйте .env при необходимости
+
+docker compose up -d
+```
+
+### Вариант 3: Сборка deb пакета из исходного кода
+
+```bash
 git clone https://github.com/nagual2/openwrt-captive-monitor.git
 cd openwrt-captive-monitor
 
-# Собрать пакет
-bash scripts/build_deb.sh
+# Собрать пакет (требует Docker)
+bash scripts/build_deb_docker.sh
 
 # Установить
-sudo dpkg -i dist/deb/openwrt-captive-monitor_*.deb
-sudo apt-get install -f
+sudo dpkg -i dist/deb-docker/openwrt-captive-monitor-docker_*.deb
 ```
 
 ## Конфигурация
 
-### Переменные окружения
-
-Файл `/etc/default/captive-portal-monitor` создаётся автоматически при установке:
+Файл `/etc/default/captive-daemon` создаётся автоматически при установке:
 
 ```bash
-# Использовать cron вместо systemd (по умолчанию: false)
-# Установите "true" для использования cron, "false" для systemd
-USE_CRON=false
+# Интервал проверки в секундах (по умолчанию: 60)
+CHECK_INTERVAL=60
 
-# OpenWrt роутер для SOCKS прокси
-OPENWRT_SSH_HOST=192.168.1.1
-OPENWRT_SSH_USER=root
+# Уровень логирования (DEBUG, INFO, WARNING, ERROR)
+LOG_LEVEL=INFO
 
-# Порт SOCKS прокси (по умолчанию 10800)
-NOJS_SOCKS_PORT=10800
-
-# Окружение (dev или prod)
-CPM_ENV=prod
-
-# Язык браузера
-SELENIUM_ACCEPT_LANGUAGE=en-US,en;q=0.9
-```
-
-### Выбор режима запуска
-
-**Режим systemd (по умолчанию):**
-- Сервис постоянно работает в фоне
-- Автоматический перезапуск при падении (каждые 60 секунд)
-- Управление через `systemctl`
-- Логи через `journalctl`
-
-**Режим cron:**
-- Скрипт запускается каждую минуту через cron
-- Автоматическая блокировка предотвращает множественные запуски
-- Подходит для минимального использования ресурсов
-- Аналогично установке на Minisforum
-
-**Переключение на cron:**
-
-```bash
-# 1. Отредактируйте конфигурацию
-sudo nano /etc/default/captive-portal-monitor
-# Установите: USE_CRON=true
-
-# 2. Переустановите пакет для применения
-sudo apt-get install --reinstall openwrt-captive-monitor
-
-# Или вручную:
-sudo systemctl stop captive-portal-monitor
-sudo systemctl disable captive-portal-monitor
-(crontab -l 2>/dev/null; echo "* * * * * /usr/bin/captive-portal-wrapper") | crontab -
-```
-
-**Переключение обратно на systemd:**
-
-```bash
-# 1. Отредактируйте конфигурацию
-sudo nano /etc/default/captive-portal-monitor
-# Установите: USE_CRON=false
-
-# 2. Переустановите пакет
-sudo apt-get install --reinstall openwrt-captive-monitor
-```
-
-### SSH ключи
-
-Настройте SSH доступ к OpenWrt роутеру без пароля:
-
-```bash
-# Сгенерировать SSH ключ (если еще нет)
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
-
-# Скопировать публичный ключ на роутер
-ssh-copy-id root@192.168.1.1
-
-# Проверить подключение
-ssh root@192.168.1.1 "uname -a"
+# Conn4 credentials (опционально)
+CONN4_USERNAME=
+CONN4_PASSWORD=
 ```
 
 ## Управление сервисом
 
 ```bash
 # Запустить сервис
-sudo systemctl start captive-portal-monitor
+sudo systemctl start captive-daemon
 
 # Остановить сервис
-sudo systemctl stop captive-portal-monitor
+sudo systemctl stop captive-daemon
 
 # Перезапустить сервис
-sudo systemctl restart captive-portal-monitor
+sudo systemctl restart captive-daemon
 
 # Проверить статус
-sudo systemctl status captive-portal-monitor
+sudo systemctl status captive-daemon
 
 # Включить автозапуск
-sudo systemctl enable captive-portal-monitor
+sudo systemctl enable captive-daemon
 
 # Отключить автозапуск
-sudo systemctl disable captive-portal-monitor
+sudo systemctl disable captive-daemon
 ```
 
 ## Просмотр логов
 
 ```bash
-# Последние 50 строк
-sudo journalctl -u captive-portal-monitor -n 50
+# Через journalctl
+sudo journalctl -u captive-daemon -f
 
-# Следить за логами в реальном времени
-sudo journalctl -u captive-portal-monitor -f
+# Через файл логов
+tail -f /var/log/captive-daemon/captive_portal_daemon.log
 
-# Логи за последний час
-sudo journalctl -u captive-portal-monitor --since "1 hour ago"
-
-# Логи за сегодня
-sudo journalctl -u captive-portal-monitor --since today
-```
-
-## Ручной запуск (для отладки)
-
-```bash
-# Запустить скрипт вручную
-/usr/bin/captive-portal-monitor
-
-# С переменными окружения
-OPENWRT_SSH_HOST=192.168.1.1 /usr/bin/captive-portal-monitor
+# Через Docker
+docker logs captive-daemon --tail 50
+docker logs captive-daemon -f
 ```
 
 ## Удаление
 
 ```bash
-# Остановить и отключить сервис
-sudo systemctl stop captive-portal-monitor
-sudo systemctl disable captive-portal-monitor
+# Остановить и удалить
+sudo systemctl stop captive-daemon
+sudo dpkg -r openwrt-captive-monitor-docker
 
-# Удалить пакет
-sudo apt-get remove openwrt-captive-monitor
-
-# Удалить пакет и конфигурацию
-sudo apt-get purge openwrt-captive-monitor
+# Удалить Docker образ
+sudo docker rmi captive-portal-daemon:latest
 ```
 
 ## Решение проблем
 
-### Проблема: Сервис не запускается
+### Docker не установлен
+
+```bash
+curl -fsSL https://get.docker.com | sudo sh
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+### Контейнер не запускается
 
 ```bash
 # Проверить логи
-sudo journalctl -u captive-portal-monitor -n 100
+docker logs captive-daemon
 
-# Проверить зависимости
-dpkg -l | grep -E "python3-selenium|chromium"
+# Проверить статус Docker
+sudo systemctl status docker
 
-# Переустановить зависимости
-sudo apt-get install --reinstall python3-selenium chromium-browser chromium-chromedriver
+# Пересоздать контейнер
+sudo systemctl restart captive-daemon
 ```
 
-### Проблема: Не удается подключиться к роутеру
+### Высокое использование памяти
+
+Docker контейнер ограничен 512MB RAM. Если нужно больше, отредактируйте systemd unit:
 
 ```bash
-# Проверить SSH подключение
-ssh root@192.168.1.1 "uname -a"
-
-# Проверить SOCKS прокси
-curl --socks5 127.0.0.1:10800 http://example.com
+sudo systemctl edit captive-daemon
+# Добавьте: Environment="DOCKER_MEM_LIMIT=1g"
 ```
 
-### Проблема: Chrome не найден
+### Chrome не работает в контейнере
 
 ```bash
-# Установить Chromium
-sudo apt-get install chromium-browser chromium-chromedriver
+# Проверить Chrome в контейнере
+docker exec captive-daemon google-chrome --version
 
-# Или Google Chrome
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo dpkg -i google-chrome-stable_current_amd64.deb
-sudo apt-get install -f
+# Проверить Selenium
+docker exec captive-daemon python3 -c "import selenium; print(selenium.__version__)"
 ```
 
 ## Архитектура
 
 ```
-┌─────────────────┐         SSH Tunnel          ┌──────────────┐
-│  Debian Server  │◄──────── (SOCKS5) ─────────►│ OpenWrt      │
-│  (4GB+ RAM)     │                              │ Router       │
-│                 │                              │              │
-│  ┌───────────┐  │                              │ ┌──────────┐ │
-│  │ Selenium  │  │                              │ │ Captive  │ │
-│  │ + Chrome  │  │                              │ │ Portal   │ │
-│  └───────────┘  │                              │ │ Detector │ │
-│                 │                              │ └──────────┘ │
-└─────────────────┘                              └──────────────┘
-        │                                                │
-        │                                                │
-        └────────────► Авторизация ◄────────────────────┘
-                    на Captive Portal
+┌──────────────────────────────┐
+│  Docker Container            │
+│  ┌────────────────────────┐  │
+│  │ Python Daemon          │  │
+│  │ + Selenium + Chrome    │  │
+│  │                        │  │
+│  │ Проверка каждые 60с:   │  │
+│  │ 1. HTTP probe          │  │
+│  │ 2. Portal detection    │  │
+│  │ 3. Auto-auth           │  │
+│  └────────────────────────┘  │
+│  network_mode: host          │
+└──────────────────────────────┘
+         │
+         │ Captive Portal Auth
+         ▼
+┌──────────────────────────────┐
+│  Conn4 Portal (conn4.com)    │
+│  - Checkbox accept           │
+│  - "Get Free Wi-Fi" button   │
+└──────────────────────────────┘
 ```
-
-## Рекомендуемое оборудование
-
-- **Raspberry Pi 3+** - минимум 1GB RAM, рекомендуется 2GB+
-- **Raspberry Pi 4** - 4GB RAM (оптимально)
-- **x86-64 mini-PC** - 4GB+ RAM (Intel NUC, Minisforum и т.д.)
-- **Виртуальная машина** - 2 CPU, 4GB RAM
 
 ## Дополнительная информация
 
 - [Основной README](../README.ru.md)
+- [Docker Daemon README](../docker/daemon/README.md)
 - [Troubleshooting](troubleshooting.md)
 - [GitHub Issues](https://github.com/nagual2/openwrt-captive-monitor/issues)

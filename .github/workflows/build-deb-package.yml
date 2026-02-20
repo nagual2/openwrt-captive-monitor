@@ -1,4 +1,4 @@
-name: Build Debian Package
+name: Build Debian Package (Docker)
 
 on:
   push:
@@ -6,12 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
-# Least-privilege default: no repository-wide write access.
 permissions:
   contents: read
 
-# Cancel in-progress runs for the same ref so duplicate tag pushes don't
-# queue multiple concurrent package builds.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -22,36 +19,14 @@ defaults:
 
 jobs:
   build-deb:
-    name: Build Debian package
+    name: Build Docker-based Debian package
     runs-on: ubuntu-24.04
-    # Write access is granted only to this job so it can upload release assets.
     permissions:
       contents: write
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install build dependencies
-        run: |
-          set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y dpkg-dev
-
-      - name: Make scripts executable
-        run: |
-          set -euo pipefail
-          chmod +x debian/rules
-          chmod +x debian/postinst
-          chmod +x debian/prerm
-          chmod +x scripts/build_deb.sh
-          chmod +x scripts/update-version-metadata.sh
-          chmod +x tools/captive_portal_wsl_selenium.py
 
       - name: Read version
         id: version
@@ -63,30 +38,33 @@ jobs:
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Building Debian package for version: $VERSION"
+          echo "Building Docker deb package for version: $VERSION"
+
+      - name: Build Docker image
+        run: |
+          set -euo pipefail
+          docker build -f docker/daemon/Dockerfile -t captive-portal-daemon:latest .
 
       - name: Build Debian package
         run: |
           set -euo pipefail
-          # dpkg-dev is already installed in the previous step
-          bash scripts/build_deb.sh
-        env:
-          SKIP_APT_INSTALL: "1"
+          chmod +x scripts/build_deb_docker.sh
+          bash scripts/build_deb_docker.sh
 
       - name: Verify built package exists
         run: |
           set -euo pipefail
           echo "Listing built packages:"
-          ls -lh dist/deb/*.deb || {
-            echo "::error::No .deb files found under dist/deb/ — build_deb.sh may have failed silently"
+          ls -lh dist/deb-docker/*.deb || {
+            echo "::error::No .deb files found under dist/deb-docker/"
             exit 1
           }
 
       - name: Upload .deb package artifact
         uses: actions/upload-artifact@v5
         with:
-          name: debian-package-${{ steps.version.outputs.version }}
-          path: dist/deb/*.deb
+          name: debian-docker-package-${{ steps.version.outputs.version }}
+          path: dist/deb-docker/*.deb
           if-no-files-found: error
           retention-days: 30
 
@@ -94,6 +72,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/deb/*.deb
+          files: dist/deb-docker/*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

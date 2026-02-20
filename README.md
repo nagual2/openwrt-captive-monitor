@@ -19,8 +19,8 @@ This project was entirely developed with the assistance of AI agents and has und
 During debugging, it became clear that reliable authentication through browser technologies is impossible on compact routers with limited resources. Selenium-based scripts require significant RAM (minimum 2-4 GB) and a full Chrome/Chromium browser.
 
 **Current Architecture:**
-- **OpenWrt Router** - minimal shell script for captive portal detection
-- **External Server** - Python script with Selenium for authentication (Debian/Ubuntu on mini-PC with 4GB RAM)
+- **OpenWrt Router** — minimal shell script for captive portal detection and curl-based auth
+- **External Server (Docker)** — Python daemon with Selenium for browser-based authentication
 
 **Recommended Hardware for Authentication Server:**
 - Raspberry Pi 3 or higher
@@ -33,10 +33,10 @@ This hybrid approach leverages the advantages of both platforms: lightweight mon
 
 ## ✨ Features
 
-- **🔍 Automatic Authentication** - Automatically authenticates against Conn4 captive portals (e.g. Leonardo Hotels)
-- **⚡ Lightweight** - Simple shell script (~10KB), no heavy dependencies
-- **🔄 Session Maintenance** - Cron-based checks ensure you stay online
-- **🛡️ Secure** - Uses standard system tools (`curl`)
+- **🔍 Automatic Authentication** — Automatically authenticates against Conn4 captive portals (e.g. Leonardo Hotels)
+- **🐳 Docker Packaging** — All dependencies (Chrome, Selenium, Python) bundled in a single container
+- **🔄 Session Maintenance** — Daemon continuously monitors connectivity and re-authenticates when needed
+- **🛡️ Secure** — Isolated Docker environment, no system-wide dependencies
 
 > **Note**: This package is specifically designed for Conn4-based captive portals.
 
@@ -45,113 +45,123 @@ This hybrid approach leverages the advantages of both platforms: lightweight mon
 ### System Requirements
 
 - Debian 11+ / Ubuntu 20.04+ / Linux Mint 20+
+- Docker installed (`curl -fsSL https://get.docker.com | sudo sh`)
 - 4GB+ RAM (recommended)
-- Python 3.8+
-- Chromium or Google Chrome
 
-### Installation from .deb Package
+### Option 1: Install from .deb Package (Recommended)
+
+The .deb package includes the pre-built Docker image and a systemd service.
 
 ```bash
 # Download latest package
-wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_2026.2.19.1-1_all.deb
+wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor-docker_latest_all.deb
 
-# Install package
-sudo dpkg -i openwrt-captive-monitor_*.deb
-
-# Install dependencies (if errors occur)
-sudo apt-get install -f
+# Install
+sudo dpkg -i openwrt-captive-monitor-docker_*.deb
 ```
 
 The package will automatically:
-1. Install Python script to `/usr/bin/captive-portal-monitor`
-2. Install systemd service for autostart (default mode)
-3. Enable service for automatic startup on boot
+1. Load the Docker image
+2. Install a systemd service
+3. Start the daemon
 
-**Startup Mode:**
-- **systemd** (default) - Service runs continuously in background with automatic restart
-- **cron** - Script runs every minute via cron (minimal resource usage)
-
-To switch to cron mode, edit `/etc/default/captive-portal-monitor` and set `USE_CRON=true`, then reinstall the package.
-
-### Service Management
+### Option 2: Docker Compose
 
 ```bash
-# Start service
-sudo systemctl start captive-portal-monitor
+git clone https://github.com/nagual2/openwrt-captive-monitor.git
+cd openwrt-captive-monitor/docker/daemon
 
+cp .env.example .env
+# Edit .env if needed
+
+docker compose up -d
+```
+
+### Option 3: Docker Run
+
+```bash
+# Build image
+docker build -f docker/daemon/Dockerfile -t captive-portal-daemon:latest .
+
+# Run
+docker run -d \
+  --name captive-daemon \
+  --network host \
+  --restart unless-stopped \
+  -v /var/log/captive-daemon:/var/log \
+  -v /dev/shm:/dev/shm \
+  -e CHECK_INTERVAL=60 \
+  captive-portal-daemon:latest
+```
+
+## 🔧 Service Management
+
+```bash
 # Check status
-sudo systemctl status captive-portal-monitor
+sudo systemctl status captive-daemon
 
 # View logs
-sudo journalctl -u captive-portal-monitor -f
+sudo journalctl -u captive-daemon -f
+# or
+tail -f /var/log/captive-daemon/captive_portal_daemon.log
 
-# Stop service
-sudo systemctl stop captive-portal-monitor
+# Restart
+sudo systemctl restart captive-daemon
+
+# Stop
+sudo systemctl stop captive-daemon
 ```
 
-### Build from Source
+## ⚙️ Configuration
+
+Edit `/etc/default/captive-daemon`:
 
 ```bash
-# Clone repository
-git clone https://github.com/nagual2/openwrt-captive-monitor.git
-cd openwrt-captive-monitor
+# Check interval in seconds (default: 60)
+CHECK_INTERVAL=60
 
-# Build package
-bash scripts/build_deb.sh
-
-# Install
-sudo dpkg -i dist/deb/openwrt-captive-monitor_*.deb
-sudo apt-get install -f
+# Log level (DEBUG, INFO, WARNING, ERROR)
+LOG_LEVEL=INFO
 ```
 
-📖 **Detailed Documentation:** [docs/debian-installation.md](docs/debian-installation.md)
+## 📦 OpenWrt Package
 
-## 🔧 Configuration
-
-The service works automatically. For configuration, create file `/etc/default/captive-portal-monitor`:
+For OpenWrt routers, a lightweight shell script package is available:
 
 ```bash
-# Use cron instead of systemd (default: false)
-# Set to "true" to use cron, "false" to use systemd
-USE_CRON=false
+# Download from GitHub Releases
+wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_latest_all.ipk
 
-# OpenWrt router for SOCKS proxy
-OPENWRT_SSH_HOST=192.168.1.1
-OPENWRT_SSH_USER=root
-
-# SOCKS proxy port (default 10800)
-NOJS_SOCKS_PORT=10800
-
-# Environment (dev or prod)
-CPM_ENV=prod
+# Install on router
+opkg install openwrt-captive-monitor_*.ipk
 ```
 
-**To switch between modes:**
-```bash
-# Edit configuration
-sudo nano /etc/default/captive-portal-monitor
-# Change USE_CRON=true or USE_CRON=false
-
-# Reinstall package to apply changes
-sudo apt-get install --reinstall openwrt-captive-monitor
-```
+The OpenWrt package uses `curl` for HTTP-based authentication without browser dependencies.
 
 ## 🔍 Troubleshooting
 
-**Check logs:**
+**Check container status:**
 ```bash
-sudo journalctl -u captive-portal-monitor -n 50
+docker ps -a --filter name=captive-daemon
 ```
 
-**Run manually:**
+**View daemon logs:**
 ```bash
-sudo /usr/bin/captive-portal-monitor
+docker logs captive-daemon --tail 50
 ```
 
-**Check status:**
+**Restart daemon:**
 ```bash
-sudo systemctl status captive-portal-monitor
+docker restart captive-daemon
 ```
+
+**Rebuild image:**
+```bash
+docker compose -f docker/daemon/docker-compose.yml build --no-cache
+docker compose -f docker/daemon/docker-compose.yml up -d
+```
+
+📖 **Detailed Documentation:** [docs/debian-installation.md](docs/debian-installation.md)
 
 ## 📄 License
 

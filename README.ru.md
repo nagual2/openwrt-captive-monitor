@@ -19,8 +19,8 @@
 В процессе отладки выяснилось, что на компактных роутерах с ограниченными ресурсами невозможно реализовать надёжную авторизацию через браузерные технологии. Скрипты на базе Selenium требуют значительного объёма оперативной памяти (минимум 2-4 GB) и полноценный браузер Chrome/Chromium.
 
 **Текущая архитектура:**
-- **OpenWrt роутер** - минимальный shell-скрипт для обнаружения captive portal
-- **Внешний сервер** - Python-скрипт с Selenium для авторизации (Debian/Ubuntu на mini-PC с 4GB RAM)
+- **OpenWrt роутер** — минимальный shell-скрипт для обнаружения captive portal и авторизации через curl
+- **Внешний сервер (Docker)** — Python daemon с Selenium для браузерной авторизации
 
 **Рекомендуемое оборудование для сервера авторизации:**
 - Raspberry Pi 3 или выше
@@ -33,8 +33,10 @@
 
 ## ✨ Возможности
 
-- **🔍 Автоматическая аутентификация** - Автоматически авторизуется на captive порталах одного типа
-- **🔄 Поддержание сессии** - Проверки по расписанию (cron) гарантируют, что вы останетесь онлайн
+- **🔍 Автоматическая аутентификация** — Автоматически авторизуется на captive порталах Conn4 (напр. Leonardo Hotels)
+- **🐳 Docker упаковка** — Все зависимости (Chrome, Selenium, Python) в одном контейнере
+- **🔄 Поддержание сессии** — Daemon непрерывно мониторит подключение и переавторизуется при необходимости
+- **🛡️ Безопасность** — Изолированное Docker окружение, без системных зависимостей
 
 > **Примечание**: Этот пакет разработан специально для captive порталов на базе Conn4.
 
@@ -43,113 +45,123 @@
 ### Системные требования
 
 - Debian 11+ / Ubuntu 20.04+ / Linux Mint 20+
+- Docker (`curl -fsSL https://get.docker.com | sudo sh`)
 - 4GB+ RAM (рекомендуется)
-- Python 3.8+
-- Chromium или Google Chrome
 
-### Установка из .deb пакета
+### Вариант 1: Установка из .deb пакета (Рекомендуется)
+
+Deb пакет включает предсобранный Docker образ и systemd сервис.
 
 ```bash
 # Скачать последний пакет
-wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_2026.2.19.1-1_all.deb
+wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor-docker_latest_all.deb
 
-# Установить пакет
-sudo dpkg -i openwrt-captive-monitor_*.deb
-
-# Установить зависимости (если есть ошибки)
-sudo apt-get install -f
+# Установить
+sudo dpkg -i openwrt-captive-monitor-docker_*.deb
 ```
 
 Пакет автоматически:
-1. Установит Python скрипт в `/usr/bin/captive-portal-monitor`
-2. Установит systemd сервис для автозапуска (режим по умолчанию)
-3. Включит сервис для автоматического запуска при загрузке
+1. Загрузит Docker образ
+2. Установит systemd сервис
+3. Запустит daemon
 
-**Режимы запуска:**
-- **systemd** (по умолчанию) - Сервис постоянно работает в фоне с автоматическим перезапуском
-- **cron** - Скрипт запускается каждую минуту через cron (минимальное использование ресурсов)
-
-Для переключения на режим cron отредактируйте `/etc/default/captive-portal-monitor` и установите `USE_CRON=true`, затем переустановите пакет.
-
-### Управление сервисом
+### Вариант 2: Docker Compose
 
 ```bash
-# Запустить сервис
-sudo systemctl start captive-portal-monitor
-
-# Проверить статус
-sudo systemctl status captive-portal-monitor
-
-# Посмотреть логи
-sudo journalctl -u captive-portal-monitor -f
-
-# Остановить сервис
-sudo systemctl stop captive-portal-monitor
-```
-
-### Сборка из исходного кода
-
-```bash
-# Клонировать репозиторий
 git clone https://github.com/nagual2/openwrt-captive-monitor.git
-cd openwrt-captive-monitor
+cd openwrt-captive-monitor/docker/daemon
 
-# Собрать пакет
-bash scripts/build_deb.sh
+cp .env.example .env
+# Отредактируйте .env при необходимости
 
-# Установить
-sudo dpkg -i dist/deb/openwrt-captive-monitor_*.deb
-sudo apt-get install -f
+docker compose up -d
 ```
 
-📖 **Подробная документация:** [docs/debian-installation.md](docs/debian-installation.md)
-
-## 🔧 Конфигурация
-
-Сервис работает автоматически. Для настройки создайте файл `/etc/default/captive-portal-monitor`:
+### Вариант 3: Docker Run
 
 ```bash
-# Использовать cron вместо systemd (по умолчанию: false)
-# Установите "true" для использования cron, "false" для systemd
-USE_CRON=false
+# Собрать образ
+docker build -f docker/daemon/Dockerfile -t captive-portal-daemon:latest .
 
-# OpenWrt роутер для SOCKS прокси
-OPENWRT_SSH_HOST=192.168.1.1
-OPENWRT_SSH_USER=root
-
-# Порт SOCKS прокси (по умолчанию 10800)
-NOJS_SOCKS_PORT=10800
-
-# Окружение (dev или prod)
-CPM_ENV=prod
+# Запустить
+docker run -d \
+  --name captive-daemon \
+  --network host \
+  --restart unless-stopped \
+  -v /var/log/captive-daemon:/var/log \
+  -v /dev/shm:/dev/shm \
+  -e CHECK_INTERVAL=60 \
+  captive-portal-daemon:latest
 ```
 
-**Переключение между режимами:**
+## 🔧 Управление сервисом
+
 ```bash
-# Отредактируйте конфигурацию
-sudo nano /etc/default/captive-portal-monitor
-# Измените USE_CRON=true или USE_CRON=false
+# Проверить статус
+sudo systemctl status captive-daemon
 
-# Переустановите пакет для применения изменений
-sudo apt-get install --reinstall openwrt-captive-monitor
+# Просмотр логов
+sudo journalctl -u captive-daemon -f
+# или
+tail -f /var/log/captive-daemon/captive_portal_daemon.log
+
+# Перезапустить
+sudo systemctl restart captive-daemon
+
+# Остановить
+sudo systemctl stop captive-daemon
 ```
+
+## ⚙️ Конфигурация
+
+Отредактируйте `/etc/default/captive-daemon`:
+
+```bash
+# Интервал проверки в секундах (по умолчанию: 60)
+CHECK_INTERVAL=60
+
+# Уровень логирования (DEBUG, INFO, WARNING, ERROR)
+LOG_LEVEL=INFO
+```
+
+## 📦 Пакет для OpenWrt
+
+Для роутеров OpenWrt доступен легковесный shell-скрипт:
+
+```bash
+# Скачать из GitHub Releases
+wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_latest_all.ipk
+
+# Установить на роутере
+opkg install openwrt-captive-monitor_*.ipk
+```
+
+OpenWrt пакет использует `curl` для HTTP-авторизации без браузерных зависимостей.
 
 ## 🔍 Решение проблем
 
-**Проверить логи:**
+**Статус контейнера:**
 ```bash
-sudo journalctl -u captive-portal-monitor -n 50
+docker ps -a --filter name=captive-daemon
 ```
 
-**Запустить вручную:**
+**Логи daemon:**
 ```bash
-sudo /usr/bin/captive-portal-monitor
+docker logs captive-daemon --tail 50
 ```
 
-**Проверить статус:**
+**Перезапуск:**
 ```bash
-sudo systemctl status captive-portal-monitor
+docker restart captive-daemon
 ```
+
+**Пересборка образа:**
+```bash
+docker compose -f docker/daemon/docker-compose.yml build --no-cache
+docker compose -f docker/daemon/docker-compose.yml up -d
+```
+
+📖 **Подробная документация:** [docs/debian-installation.md](docs/debian-installation.md)
 
 ## 📄 Лицензия
 

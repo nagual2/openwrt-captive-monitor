@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  captive-daemon:
+    build:
+      context: ../..
+      dockerfile: docker/daemon/Dockerfile
+    container_name: captive-portal-daemon
+    restart: unless-stopped
+    
+    # Сетевой режим host для доступа к локальной сети
+    network_mode: host
+    
+    # Переменные окружения
+    environment:
+      - CHECK_INTERVAL=60
+      - LOG_LEVEL=INFO
+      - CONN4_USERNAME=${CONN4_USERNAME:-}
+      - CONN4_PASSWORD=${CONN4_PASSWORD:-}
+    
+    # Монтирование логов
+    volumes:
+      - ./logs:/var/log
+      - /dev/shm:/dev/shm  # Для Chrome shared memory
+    
+    # Ограничения ресурсов
+    mem_limit: 512m
+    cpus: 1.0
+    
+    # Capabilities для Chrome
+    cap_add:
+      - SYS_ADMIN  # Для Chrome sandbox (можно убрать с --no-sandbox)
+    
+    # Логирование
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
