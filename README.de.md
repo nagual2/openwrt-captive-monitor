@@ -72,13 +72,11 @@ LOG_LEVEL=INFO
 
 ## 📦 OpenWrt-Paket
 
-Für den Router (Xiaomi AX3000T usw.) installieren Sie das leichtgewichtige `.ipk`:
+Für den Router (Xiaomi AX3000T usw.) können Sie ein leichtgewichtiges `.ipk`-Paket mit dem OpenWrt SDK erstellen und installieren:
 
 ```bash
-# Von GitHub Releases herunterladen
-wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download/openwrt-captive-monitor_latest_all.ipk
-
-# Auf dem Router installieren
+# Build mit OpenWrt SDK (siehe docs/docker-master.md)
+# Dann auf dem Router installieren:
 opkg install openwrt-captive-monitor_*.ipk
 ```
 
