@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  captive-daemon:
+    build:
+      context: ../..
+      dockerfile: docker/daemon/Dockerfile
+    container_name: captive-portal-daemon
+    restart: unless-stopped
+    
+    # Сетевой режим host для доступа к локальной сети
+    network_mode: host
+    
+    # Переменные окружения
+    environment:
+      - TZ=Europe/Berlin
+      - CHECK_INTERVAL=60
+      - LOG_LEVEL=INFO
+    
+    # Монтирование логов
+    volumes:
+      - ./logs:/var/log
+    
+    # Ограничения ресурсов (снижены для lightweight daemon)
+    mem_limit: 128m
+    cpus: 0.5
+    
+    # Логирование
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

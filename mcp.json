@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "ultracode": {
+      "command": "bun",
+      "args": [
+        "C:\\git\\ultracode\\dist\\index.js",
+        "C:\\git\\openwrt-captive-monitor"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "index",
+        "get_graph_stats",
+        "get_version",
+        "list_file_entities",
+        "semantic_search",
+        "query"
+      ]
+    }
+  }
+}

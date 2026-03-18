@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  captive-daemon:
+    build:
+      context: ../..
+      dockerfile: docker/daemon-selenium/Dockerfile
+    container_name: captive-daemon
+    restart: unless-stopped
+    
+    # Сетевой режим host для доступа к локальной сети (рекомендуется для captive portal)
+    # На Windows/Mac 'network_mode: host' не работает как на Linux,
+    # но Docker Desktop всё равно позволяет достучаться до DNS и HTTP.
+    network_mode: host
+    
+    # Переменные окружения
+    environment:
+      - TZ=Europe/Berlin
+      - CHECK_INTERVAL=60
+      - LOG_LEVEL=INFO
+      - COOKIES_FILE=/var/lib/captive-portal/cookies.pkl
+    
+    # Монтирование данных и логов
+    volumes:
+      - ./logs:/var/log
+      - ./data:/var/lib/captive-portal
+    
+    # Ограничения ресурсов (Selenium + Chrome требуют больше памяти)
+    # 256m - минимум, 512m - комфортно для Debian + Chromium
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '0.8'
+    
+    # Логирование
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

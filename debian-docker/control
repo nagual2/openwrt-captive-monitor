@@ -1,0 +1,17 @@
+Package: openwrt-captive-monitor-docker
+Version: 2026.2.20.2-1
+Section: net
+Priority: optional
+Architecture: all
+Depends: docker.io | docker-ce
+Maintainer: OpenWrt Captive Monitor Team <nahual15@gmail.com>
+Homepage: https://github.com/nagual2/openwrt-captive-monitor
+Description: Captive Portal Daemon (Docker version)
+ Automatic captive portal detection and authentication daemon
+ for Conn4-based captive portals (e.g. Leonardo Hotels).
+ .
+ This package installs a Docker-based daemon with Chrome and
+ Selenium for browser-based portal authentication.
+ .
+ Requires Docker to be installed and running.
+ Recommended: 4GB+ RAM, x86-64 architecture.

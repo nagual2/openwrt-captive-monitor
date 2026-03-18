@@ -1,0 +1,130 @@
+# Temporary and runtime artifacts
+*.log
+*.pid
+*.tmp
+*.bak
+*.swp
+ed -n *
+shell-files.txt
+tests/_out/
+
+# macOS
+.DS_Store
+
+# Local build artifacts
+/dist/
+/dist/**
+/artifacts/*
+!/artifacts/.gitkeep
+/artifacts/**/*
+!/artifacts/.gitkeep
+*.ipk
+*.ipk.gz
+build_tmp/
+build_ipk/
+
+# Backups
+/backups/
+
+# Minisforum configuration scripts
+/Minisforum/
+
+# Documentation build
+/site/
+/site/**/
+*.pyc
+__pycache__/
+.pycache/
+
+# MkDocs
+.mkdocs/
+mkdocs.yml.local
+how --*
+.fake-remote/
+
+
+# Sensitive files and credentials
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+.secrets
+*.key
+*.pem
+*.crt
+*.p12
+id_rsa*
+id_ed25519*
+id_ecdsa*
+known_hosts
+
+# Local configuration
+config.local.*
+
+# GitHub Actions diagnostics
+diagnostic-output.log
+latest-failure-logs.zip
+ACTIONS_DIAGNOSTIC_DATA.json
+*.diagnostic.json
+run-*-logs.zip
+run-*-logs/
+
+# Python virtual environment
+venv/
+.venv/
+
+# Security audit and sensitive scan outputs
+security_audit/
+security_audit/**
+*.audit
+security_report*.json
+
+# Release notes generation
+release-notes-*.md
+.github/tmp/
+
+# Temporary CI/CD log files (use tools/analysis for permanent scripts)
+ci_*.txt
+*_log*.txt
+logs.txt
+jobs.json
+failed_job*.txt
+
+# Temporary documentation and batch files
+batch_*.json
+remaining_*.csv
+remaining_*.json
+temp_doc*.json
+scan_*.txt
+
+# opkg-utils download directory
+tools/opkg-utils/
+
+# IDE configuration with API keys
+.openrouter/
+.continue/
+.cursor/
+.windsurf/
+.cline/
+.clause/
+.kilocode/
+.antigravity/
+.idea/
+.vscode/
+.zed/
+/.cache/
+/mcp_artifacts/
+/.trae/
+/.kombai/
+/.kiro/
+/.trunk/
+ /conn4_js/
+
+# Kiro chat history exports
+/kiro-chats/
+git_log_full.txt
+conn4_js/1096.rdr.conn4.com_cache_js-file-gz-7b92388ebcce9ca2a005267dca8a98371b8122a-b435ce5b0833f5fe8b0e7f00579f5ea2.js
+conn4_js/1096.rdr.conn4.com_cache_js-file-gz-19d53ce4ab350183577313a6d54ec7d45091c3e-1b13bc47bae7ecaabe692978c4f88644.js
+conn4_js/1096.rdr.conn4.com_cache_js-file-gz-ca0fb1b7ff532e92b7acb95d6a0eedc9a3ae447-06ee163008913416f4a3ac67a820773b.js
+conn4_js/1096.rdr.conn4.com_cache_js-file-gz-d37ffebfd815b71aa8eb774955e5853b5181ff3-092ecfec1f901c1eadf250f86445e979.js

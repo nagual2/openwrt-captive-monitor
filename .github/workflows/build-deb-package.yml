@@ -1,0 +1,77 @@
+name: Build Debian Package (Docker)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-deb:
+    name: Build Docker-based Debian package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Read version
+        id: version
+        run: |
+          set -euo pipefail
+          VERSION="$(cat VERSION | tr -d '\r\n')"
+          if [ -z "$VERSION" ]; then
+            echo "::error file=VERSION::VERSION file is empty or missing"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building Docker deb package for version: $VERSION"
+
+      - name: Build Docker image
+        run: |
+          set -euo pipefail
+          docker build -f docker/daemon/Dockerfile -t captive-portal-daemon:latest .
+
+      - name: Build Debian package
+        run: |
+          set -euo pipefail
+          chmod +x scripts/build_deb_docker.sh
+          bash scripts/build_deb_docker.sh
+
+      - name: Verify built package exists
+        run: |
+          set -euo pipefail
+          echo "Listing built packages:"
+          ls -lh dist/deb-docker/*.deb || {
+            echo "::error::No .deb files found under dist/deb-docker/"
+            exit 1
+          }
+
+      - name: Upload .deb package artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: debian-docker-package-${{ steps.version.outputs.version }}
+          path: dist/deb-docker/*.deb
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/deb-docker/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

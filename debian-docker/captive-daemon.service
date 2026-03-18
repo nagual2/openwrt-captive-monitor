@@ -1,0 +1,39 @@
+[Unit]
+Description=Captive Portal Daemon (Docker)
+After=docker.service
+Requires=docker.service
+Documentation=https://github.com/nagual2/openwrt-captive-monitor
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/default/captive-daemon
+
+# Остановить и удалить старый контейнер
+ExecStartPre=-/usr/bin/docker stop captive-daemon
+ExecStartPre=-/usr/bin/docker rm captive-daemon
+
+# Запустить контейнер
+ExecStart=/usr/bin/docker run -d \
+    --name captive-daemon \
+    --network host \
+    --restart unless-stopped \
+    -v /var/log/captive-daemon:/var/log \
+    -v /var/lib/captive-daemon:/var/lib/captive-portal \
+    -v /dev/shm:/dev/shm \
+    --cap-add=SYS_ADMIN \
+    -e TZ=Europe/Berlin \
+    -e CHECK_INTERVAL=${CHECK_INTERVAL} \
+    -e LOG_LEVEL=${LOG_LEVEL} \
+    -e COOKIES_FILE=/var/lib/captive-portal/cookies.pkl \
+    captive-portal-daemon:latest
+
+# Остановить контейнер при остановке сервиса
+ExecStop=/usr/bin/docker stop captive-daemon
+
+# Ограничения ресурсов
+MemoryLimit=512M
+CPUQuota=100%
+
+[Install]
+WantedBy=multi-user.target

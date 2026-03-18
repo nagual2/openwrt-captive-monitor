@@ -1,0 +1,66 @@
+#!/bin/bash
+set -e
+
+# Проверка Docker
+if ! command -v docker &> /dev/null; then
+    echo "ERROR: Docker не установлен!"
+    echo "Установите Docker: curl -fsSL https://get.docker.com | sudo sh"
+    exit 1
+fi
+
+# Проверка Docker daemon
+if ! docker info &> /dev/null; then
+    echo "ERROR: Docker daemon не запущен!"
+    echo "Запустите: sudo systemctl start docker"
+    exit 1
+fi
+
+# Загрузить образ из tar.gz
+if [ -f /usr/share/captive-daemon/captive-portal-daemon.tar.gz ]; then
+    echo "Загрузка Docker образа (может занять 1-2 минуты)..."
+    gunzip -c /usr/share/captive-daemon/captive-portal-daemon.tar.gz | docker load
+    echo "Docker образ загружен"
+elif [ -f /usr/share/captive-daemon/captive-portal-daemon.tar ]; then
+    echo "Загрузка Docker образа..."
+    docker load -i /usr/share/captive-daemon/captive-portal-daemon.tar
+    echo "Docker образ загружен"
+fi
+
+# Создать директорию для логов
+mkdir -p /var/log/captive-daemon
+
+# Создать конфигурацию
+if [ ! -f /etc/default/captive-daemon ]; then
+    cat > /etc/default/captive-daemon <<'EOF'
+# Captive Portal Daemon Configuration
+
+# Conn4 credentials (optional)
+CONN4_USERNAME=
+CONN4_PASSWORD=
+
+# Check interval in seconds
+CHECK_INTERVAL=60
+
+# Log level
+LOG_LEVEL=INFO
+EOF
+fi
+
+# Включить и запустить сервис
+systemctl daemon-reload
+systemctl enable captive-daemon.service
+systemctl start captive-daemon.service
+
+echo ""
+echo "✅ Captive Portal Daemon (Docker) установлен!"
+echo ""
+echo "Конфигурация: /etc/default/captive-daemon"
+echo "Логи: /var/log/captive-daemon/captive_portal_daemon.log"
+echo ""
+echo "Управление:"
+echo "  sudo systemctl status captive-daemon"
+echo "  sudo systemctl restart captive-daemon"
+echo "  sudo journalctl -u captive-daemon -f"
+echo ""
+
+exit 0
