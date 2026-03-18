@@ -1,56 +1,27 @@
-# openwrt-captive-monitor
+# openwrt-captive-monitor 🐳
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub release](https://img.shields.io/github/release/nagual2/openwrt-captive-monitor.svg)](https://github.com/nagual2/openwrt-captive-monitor/releases)
-[![GitHub stars](https://img.shields.io/github/stars/nagual2/openwrt-captive-monitor.svg?style=social)](https://github.com/nagual2/openwrt-captive-monitor/stargazers)
-
----
-
-## 🌐 Language
-
-**English** | [Deutsch](README.de.md) | [Русский](README.ru.md)
-
----
-
-## 🤖 About Project Development
-
-This project was entirely developed with the assistance of AI agents and has undergone a significant evolution. Initially starting as a simple shell script for OpenWrt, the project evolved into a full-fledged Python solution based on the Selenium library.
-
-During debugging, it became clear that reliable authentication through browser technologies is impossible on compact routers with limited resources. Selenium-based scripts require significant RAM (minimum 2-4 GB) and a full Chrome/Chromium browser.
-
-**Current Architecture:**
-- **OpenWrt Router** — minimal shell script for captive portal detection and curl-based auth
-- **External Server (Docker)** — Python daemon with Selenium for browser-based authentication
-
-**Recommended Hardware for Authentication Server:**
-- Raspberry Pi 3 or higher
-- Any x86-64 mini-PC with 4GB+ RAM
-- Linux Mint / Ubuntu / Debian
-
-This hybrid approach leverages the advantages of both platforms: lightweight monitoring on the router and powerful browser automation on a dedicated device.
+Hybrid automation system for Conn4-based captive portals (e.g. Leonardo Hotels). Lightweight monitoring on OpenWrt and powerful browser-based authentication on a dedicated Docker-enabled device.
 
 ---
 
 ## ✨ Features
 
-- **🔍 Automatic Authentication** — Automatically authenticates against Conn4 captive portals (e.g. Leonardo Hotels)
-- **🐳 Docker Packaging** — All dependencies (Chrome, Selenium, Python) bundled in a single container
-- **🔄 Session Maintenance** — Daemon continuously monitors connectivity and re-authenticates when needed
-- **🛡️ Secure** — Isolated Docker environment, no system-wide dependencies
-
-> **Note**: This package is specifically designed for Conn4-based captive portals.
+- **🔍 Automatic Authentication** — Uses Selenium & Chromium to authenticate against complex portals
+- **🐳 Docker Packaging** — Everything (Chrome, Selenium, Python) bundled in a single Debian-based image
+- **🔄 Session Maintenance** — Optimized daemon monitors connectivity and re-authenticates only when needed
+- **🛡️ Secure & Clean** — Runs in an isolated Docker environment with resource limits
 
 ## 🚀 Quick Start
 
 ### System Requirements
 
 - Debian 11+ / Ubuntu 20.04+ / Linux Mint 20+
-- Docker installed (`curl -fsSL https://get.docker.com | sudo sh`)
-- 4GB+ RAM (recommended)
+- Docker & Docker Compose
+- 512MB+ RAM (Docker instance limit)
 
 ### Option 1: Install from .deb Package (Recommended)
 
-The .deb package includes the pre-built Docker image and a systemd service.
+The easiest way to deploy on a Debian-based server.
 
 ```bash
 # Download latest package
@@ -60,73 +31,48 @@ wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download
 sudo dpkg -i openwrt-captive-monitor-docker_*.deb
 ```
 
-The package will automatically:
-1. Load the Docker image
-2. Install a systemd service
-3. Start the daemon
-
-### Option 2: Docker Compose
+### Option 2: Docker Compose (Local Build)
 
 ```bash
 git clone https://github.com/nagual2/openwrt-captive-monitor.git
-cd openwrt-captive-monitor/docker/daemon
+cd openwrt-captive-monitor/docker/daemon-selenium
 
-cp .env.example .env
-# Edit .env if needed
-
+# Build and start
 docker compose up -d
 ```
 
-### Option 3: Docker Run
+## 🔧 Management
 
-```bash
-# Build image
-docker build -f docker/daemon/Dockerfile -t captive-portal-daemon:latest .
-
-# Run
-docker run -d \
-  --name captive-daemon \
-  --network host \
-  --restart unless-stopped \
-  -v /var/log/captive-daemon:/var/log \
-  -v /dev/shm:/dev/shm \
-  -e CHECK_INTERVAL=60 \
-  captive-portal-daemon:latest
+### Using PowerShell (Windows/WSL)
+Use the included management script in `docker/daemon-selenium/manage.ps1`:
+```powershell
+.\manage.ps1 status    # Check status
+.\manage.ps1 logs      # View logs
+.\manage.ps1 restart   # Restart daemon
 ```
 
-## 🔧 Service Management
-
+### Using Docker CLI
 ```bash
 # Check status
-sudo systemctl status captive-daemon
+docker ps -a --filter name=captive-daemon
 
 # View logs
-sudo journalctl -u captive-daemon -f
-# or
-tail -f /var/log/captive-daemon/captive_portal_daemon.log
-
-# Restart
-sudo systemctl restart captive-daemon
-
-# Stop
-sudo systemctl stop captive-daemon
+docker logs -f captive-daemon
 ```
 
 ## ⚙️ Configuration
 
-Edit `/etc/default/captive-daemon`:
+Config file (on host): `/var/lib/captive-daemon/cookies.pkl` (automatically managed)
+Systemd Environment: `/etc/default/captive-daemon`
 
 ```bash
-# Check interval in seconds (default: 60)
 CHECK_INTERVAL=60
-
-# Log level (DEBUG, INFO, WARNING, ERROR)
 LOG_LEVEL=INFO
 ```
 
 ## 📦 OpenWrt Package
 
-For OpenWrt routers, a lightweight shell script package is available:
+For the router side (Xiaomi AX3000T, etc.), install the lightweight `.ipk`:
 
 ```bash
 # Download from GitHub Releases
@@ -136,32 +82,7 @@ wget https://github.com/nagual2/openwrt-captive-monitor/releases/latest/download
 opkg install openwrt-captive-monitor_*.ipk
 ```
 
-The OpenWrt package uses `curl` for HTTP-based authentication without browser dependencies.
-
-## 🔍 Troubleshooting
-
-**Check container status:**
-```bash
-docker ps -a --filter name=captive-daemon
-```
-
-**View daemon logs:**
-```bash
-docker logs captive-daemon --tail 50
-```
-
-**Restart daemon:**
-```bash
-docker restart captive-daemon
-```
-
-**Rebuild image:**
-```bash
-docker compose -f docker/daemon/docker-compose.yml build --no-cache
-docker compose -f docker/daemon/docker-compose.yml up -d
-```
-
-📖 **Detailed Documentation:** [docs/debian-installation.md](docs/debian-installation.md)
+📖 **Detailed Documentation:** [docs/docker-master.md](docs/docker-master.md)
 
 ## 📄 License
 
