@@ -16,13 +16,8 @@
 .\docker\daemon-selenium\manage.ps1 logs     # Просмотр логов
 ```
 
-## 2. OpenWrt SDK & Сборка
-Используется для компиляции `.ipk` пакетов и `.deb` образов.
-
-- **Сборка SDK:** `docker build -t openwrt-sdk:local .`
-- **Сборка DEB пакета:** `bash scripts/build_deb_docker.sh`
-
-## 3. Обслуживание Docker
+---
+*Документация консолидирована для уменьшения ментального шума.*
 Команды для поддержания чистоты инфополя:
 
 - **Статус:** `docker ps -a`
