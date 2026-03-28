@@ -84,38 +84,28 @@ class SingleInstanceLock:
 
 
 def check_internet_lightweight():
-    """Легкая проверка подключения без Chrome (через curl)"""
+    """Быстрая проверка интернета через ping и curl"""
+    # 1. Сначала curl (он более надежен для детекции портала)
     try:
-        logger.info("Легкая проверка подключения (curl)...")
-        # Используем -I для получения только заголовков и -w для финального URL
+        # Проверяем MSN, так как он часто используется для проверки связи
         result = subprocess.run(
-            ['curl', '-s', '-I', '-L', '-m', '5', '-w', '%{url_effective}',
-             'http://www.msftconnecttest.com/redirect'],
-            capture_output=True,
-            text=True,
-            timeout=10
+            ['curl', '-s', '-I', '--connect-timeout', '5', 'http://www.msftconnecttest.com/connecttest.txt'],
+            capture_output=True, text=True
         )
-        
-        # Финальный URL будет в последней строке после заголовков
-        lines = result.stdout.strip().split('\n')
-        final_url = lines[-1] if lines else ""
-        
-        logger.info(f"curl финальный URL: {final_url}")
-        
-        # Если редирект на msn.com или microsoft.com - авторизованы
-        if "msn.com" in final_url.lower() or "microsoft.com" in final_url.lower():
-            logger.info("✅ Подключение активно (curl)")
+        if "Microsoft Connect Test" in result.stdout:
             return True
-        # Если редирект на conn4.com - captive portal
-        elif "conn4.com" in final_url.lower():
-            logger.info("⚠️  Обнаружен captive portal (curl)")
-            return False
-        else:
-            # Неожиданный результат - нужна проверка через Chrome
-            logger.info(f"⚠️  Неожиданный URL, требуется проверка (curl)")
-            return False
-    except Exception as e:
-        logger.warning(f"Ошибка curl проверки: {e}")
+        # Если редирект на MSN - это тоже интернет (уже авторизованы)
+        if "msn.com" in result.stdout or "location: https://www.msn.com" in result.stdout.lower():
+            return True
+    except:
+        pass
+
+    # 2. Если curl не уверен, пробуем ping
+    try:
+        subprocess.check_call(['ping', '-c', '1', '-W', '2', '8.8.8.8'], 
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except:
         return False
 
 
@@ -504,7 +494,7 @@ class CaptivePortalAuth:
 
                         self.driver.switch_to.default_content()
                         self.save_cookies()
-                        
+
                         iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
                         if iframes:
                             self.driver.switch_to.frame(iframes[0])

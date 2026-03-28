@@ -1,0 +1,14 @@
+# .dockerignore
+.git
+.github
+.trae
+.kiro
+node_modules
+dist
+build
+*.deb
+*.tar.gz
+*.log
+docker/daemon-selenium/logs
+docker/daemon-selenium/data
+!tools/captive-portal-monitor-optimized.py

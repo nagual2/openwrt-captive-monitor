@@ -22,9 +22,16 @@ tests/_out/
 *.ipk.gz
 build_tmp/
 build_ipk/
+/openwrt-images/
+
+# DSLab
+/DSLab/
+/MCP/
 
 # Backups
 /backups/
+/backups-max/
+/Backup_OLD/
 
 # Minisforum configuration scripts
 /Minisforum/

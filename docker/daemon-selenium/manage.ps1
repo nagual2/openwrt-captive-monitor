@@ -96,8 +96,27 @@ function Show-Logs {
 
 function Build-Image {
     Write-Host "🔨 Сборка Docker образа (Debian + Selenium)..." -ForegroundColor Cyan
+    
+    # Засекаем время и размер до сборки
+    $startTime = Get-Date
+    
     docker build -f (Join-Path $PSScriptRoot "Dockerfile") -t $ImageName $ProjectRoot
+    
+    # Проверка размера образа
+    $imageSize = docker images --filter "reference=$ImageName" --format "{{.Size}}"
+    $duration = (Get-Date) - $startTime
+    
     Write-Host "✅ Образ собран: $ImageName" -ForegroundColor Green
+    Write-Host "📊 Размер образа: $imageSize" -ForegroundColor Cyan
+    Write-Host "⏱️ Время сборки: $($duration.TotalSeconds.ToString("F1")) сек" -ForegroundColor Gray
+    
+    # Проверка лимита в 2ГБ (согласно спецификации docker-windows-optimization)
+    if ($imageSize -like "*GB*") {
+        $sizeValue = [double]($imageSize -replace "GB", "").Trim()
+        if ($sizeValue -gt 2.0) {
+            Write-Host "⚠️ ВНИМАНИЕ: Размер образа ($imageSize) превышает лимит 2GB!" -ForegroundColor Yellow
+        }
+    }
 }
 
 function Clean-All {
