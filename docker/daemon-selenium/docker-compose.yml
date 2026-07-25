@@ -17,6 +17,8 @@ services:
       - TZ=Europe/Berlin
       - CHECK_INTERVAL=5
       - REFRESH_INTERVAL=1800
+      - PING_TARGETS=1.1.1.1,8.8.8.8
+      - PING_TIMEOUT=1
       - LOG_LEVEL=INFO
       - COOKIES_FILE=/var/lib/captive-portal/cookies.pkl
     

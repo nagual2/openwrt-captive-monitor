@@ -41,7 +41,7 @@ RUN pip install --no-cache-dir selenium==4.15.2 requests
 WORKDIR /app
 
 # Copy optimized monitor + adaptive interval helpers
-COPY tools/captive-portal-monitor-optimized.py tools/daemon_interval.py /app/
+COPY tools/captive-portal-monitor-optimized.py tools/daemon_interval.py tools/internet_check.py /app/
 
 # Создание директорий для логов и данных
 RUN mkdir -p /var/log /var/lib/captive-portal && \

@@ -26,6 +26,7 @@ try:
         next_backoff,
         should_send_keepalive,
     )
+    from internet_check import check_internet_lightweight
 except ImportError:  # pragma: no cover - package import when run as tools.*
     from tools.daemon_interval import (
         get_check_interval,
@@ -33,6 +34,7 @@ except ImportError:  # pragma: no cover - package import when run as tools.*
         next_backoff,
         should_send_keepalive,
     )
+    from tools.internet_check import check_internet_lightweight
 
 try:
     from selenium import webdriver
@@ -101,30 +103,7 @@ class SingleInstanceLock:
                 pass
 
 
-def check_internet_lightweight():
-    """Быстрая проверка интернета через ping и curl"""
-    # 1. Сначала curl (он более надежен для детекции портала)
-    try:
-        # Проверяем MSN, так как он часто используется для проверки связи
-        result = subprocess.run(
-            ['curl', '-s', '-I', '--connect-timeout', '5', 'http://www.msftconnecttest.com/connecttest.txt'],
-            capture_output=True, text=True
-        )
-        if "Microsoft Connect Test" in result.stdout:
-            return True
-        # Если редирект на MSN - это тоже интернет (уже авторизованы)
-        if "msn.com" in result.stdout or "location: https://www.msn.com" in result.stdout.lower():
-            return True
-    except:
-        pass
-
-    # 2. Если curl не уверен, пробуем ping
-    try:
-        subprocess.check_call(['ping', '-c', '1', '-W', '2', '8.8.8.8'], 
-                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return True
-    except:
-        return False
+# check_internet_lightweight is imported from internet_check (ICMP-first)
 
 
 def get_cookie_metadata():

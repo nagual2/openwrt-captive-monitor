@@ -64,10 +64,13 @@ Environment (compose / systemd):
 |----------|---------|---------|
 | `CHECK_INTERVAL` | `5` | Baseline sleep between checks (seconds) |
 | `REFRESH_INTERVAL` | `1800` | Min seconds between Chrome keepalives when cookies are still valid |
+| `PING_TARGETS` | `1.1.1.1,8.8.8.8` | Comma-separated ICMP hosts for the hot-path check |
+| `PING_TARGET` | — | Single host (used if `PING_TARGETS` unset) |
+| `PING_TIMEOUT` | `1` | Seconds for `ping -W` per probe |
 | `DAEMON_MODE` | `true` | Loop forever; set `false` for one-shot |
 | `LOG_LEVEL` | `INFO` | Logging level |
 
-On network failure the daemon doubles the sleep interval up to **60s**, then resets to `CHECK_INTERVAL` after a successful check. Chrome is **not** kept warm in memory — it starts only when cookies need refresh, keepalive is due, or connectivity is down.
+Hot-path connectivity uses **ICMP only** (no curl to msftconnecttest). On failure the daemon doubles the sleep interval up to **60s**, then resets to `CHECK_INTERVAL` after a successful check. Captive-portal HTTP/UI handling stays in the Chrome path (cookie TTL / keepalive). Chrome is **not** kept warm in memory.
 
 Detailed docs: [docs/docker-master.md](docs/docker-master.md) (if present) and [docs/commands_cheatsheet.md](docs/commands_cheatsheet.md).
 

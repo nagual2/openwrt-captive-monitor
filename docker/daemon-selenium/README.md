@@ -33,6 +33,8 @@
 |------------|----------|-----------------------|
 | `CHECK_INTERVAL` | Baseline interval between checks (sec); doubles on failure up to 60 | `5` |
 | `REFRESH_INTERVAL` | Min seconds between Chrome keepalives when cookies are valid | `1800` |
+| `PING_TARGETS` | Comma-separated ICMP hosts for the hot-path check | `1.1.1.1,8.8.8.8` |
+| `PING_TIMEOUT` | Seconds for `ping -W` per probe | `1` |
 | `TZ` | Timezone | `Europe/Berlin` |
 | `LOG_LEVEL` | Log level | `INFO` |
 | `COOKIES_FILE` | Cookie file path inside the container | `/var/lib/captive-portal/cookies.pkl` |
