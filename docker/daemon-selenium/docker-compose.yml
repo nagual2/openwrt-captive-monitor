@@ -15,7 +15,8 @@ services:
     # Переменные окружения
     environment:
       - TZ=Europe/Berlin
-      - CHECK_INTERVAL=60
+      - CHECK_INTERVAL=5
+      - REFRESH_INTERVAL=1800
       - LOG_LEVEL=INFO
       - COOKIES_FILE=/var/lib/captive-portal/cookies.pkl
     

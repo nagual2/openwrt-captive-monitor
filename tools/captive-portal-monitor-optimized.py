@@ -14,7 +14,25 @@ import fcntl
 import pickle
 import json
 import subprocess
-from datetime import datetime, timedelta
+
+# Adaptive interval helpers (sibling module in Docker /app, or tools/ in repo)
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+try:
+    from daemon_interval import (
+        get_check_interval,
+        get_refresh_interval,
+        next_backoff,
+        should_send_keepalive,
+    )
+except ImportError:  # pragma: no cover - package import when run as tools.*
+    from tools.daemon_interval import (
+        get_check_interval,
+        get_refresh_interval,
+        next_backoff,
+        should_send_keepalive,
+    )
 
 try:
     from selenium import webdriver
@@ -457,6 +475,48 @@ class CaptivePortalAuth:
         except Exception as e:
             logger.error(f"Ошибка обработки чекбоксов: {e}")
 
+    def _verify_internet_access(self):
+        """Реальная проверка доступа к интернету после авторизации"""
+        logger.info("Проверка реального доступа к интернету...")
+        
+        test_urls = [
+            "http://www.google.com",
+            "http://connectivitycheck.gstatic.com/generate_204",
+            "http://www.msftconnecttest.com/connecttest.txt"
+        ]
+        
+        for test_url in test_urls:
+            try:
+                logger.info(f"  Проверка: {test_url}")
+                self.driver.get(test_url)
+                time.sleep(3)
+                
+                current_url = self.driver.current_url.lower()
+                title = self.driver.title.lower()
+                
+                # Если URL содержит google/msn/microsoft - интернет работает
+                if any(domain in current_url for domain in ['google.com', 'msn.com', 'microsoft.com', 'gstatic.com']):
+                    logger.info(f"  ✅ Интернет доступен (URL: {current_url[:60]}...)")
+                    return True
+                
+                # Проверяем страницу на успешные индикаторы
+                page_source = self.driver.page_source.lower()
+                success_indicators = [
+                    "success", "connected", "internet access", 
+                    "generate_204", "microsoft connect test"
+                ]
+                for indicator in success_indicators:
+                    if indicator in page_source or indicator in title:
+                        logger.info(f"  ✅ Найден индикатор успеха: '{indicator}'")
+                        return True
+                        
+            except Exception as e:
+                logger.warning(f"  ⚠️ Ошибка проверки {test_url}: {e}")
+                continue
+        
+        logger.error("❌ Интернет НЕ доступен после авторизации")
+        return False
+
     def click_connect_button(self):
         """Поиск и клик по кнопке подключения"""
         logger.info("Поиск кнопки подключения...")
@@ -507,12 +567,13 @@ class CaptivePortalAuth:
                         logger.info(f"✅ Кнопка '{text}' нажата")
                         time.sleep(8)
 
-                        new_url = self.driver.current_url
-                        logger.info(f"URL после клика: {new_url}")
-
-                        if "conn4.com" not in new_url.lower():
-                            logger.info("✅ Авторизация успешна!")
+                        # РЕАЛЬНАЯ проверка интернета (не просто смена URL)
+                        if self._verify_internet_access():
+                            logger.info("✅ Авторизация успешна - интернет работает!")
                             return True
+                        else:
+                            logger.error("❌ Авторизация не удалась - интернет не работает")
+                            return False
 
             except Exception as e:
                 logger.debug(f"Селектор {selector[:50]}: {e}")
@@ -608,58 +669,79 @@ import signal
 
 # Флаг для graceful shutdown
 shutdown_flag = False
+# Timestamp of last successful Chrome keepalive (0 = never)
+last_keepalive_ts = 0.0
+
 
 def signal_handler(signum, frame):
     global shutdown_flag
     logger.info(f"Получен сигнал {signum}, завершение...")
     shutdown_flag = True
 
+
 def run_check_cycle():
-    """Одна итерация проверки"""
+    """One check iteration.
+
+    Fast path: curl/ping + cookie TTL. Chrome only when internet is down,
+    cookies need refresh, or REFRESH_INTERVAL keepalive is due.
+    """
+    global last_keepalive_ts
+
     logger.info("=== Проверка captive портала (оптимизированная) ===")
-    
-    # 1. Легкая проверка подключения (без Chrome)
+    refresh_interval = get_refresh_interval()
+    now = time.time()
+
     if check_internet_lightweight():
-        # 2. Проверка валидности cookies
         if are_cookies_valid():
-            logger.info("✅ Cookies валидны, Chrome не требуется")
-            logger.info("=== Проверка завершена (быстрый путь) ===")
-            return True
+            if not should_send_keepalive(last_keepalive_ts, now, refresh_interval):
+                logger.info("✅ Cookies валидны, Chrome не требуется")
+                logger.info("=== Проверка завершена (быстрый путь) ===")
+                return True
+            logger.info(
+                "⚠️  Keepalive по REFRESH_INTERVAL (%ss), запуск Chrome...",
+                refresh_interval,
+            )
         else:
             logger.info("⚠️  Cookies требуют обновления, запуск Chrome...")
     else:
         logger.info("⚠️  Подключение неактивно, запуск Chrome...")
-    
-    # 3. Полная проверка с Chrome (только если нужно)
+
     auth = CaptivePortalAuth()
     success = auth.authenticate()
-    
+
     if success:
+        last_keepalive_ts = time.time()
         logger.info("=== Проверка завершена успешно ===")
     else:
         logger.error("=== Проверка завершена с ошибкой ===")
     return success
 
+
 def main():
-    """Точка входа с оптимизацией"""
+    """Entry point with adaptive interval and exponential backoff."""
     global shutdown_flag
-    
-    # Регистрация сигналов для daemon режима
+
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
-    
-    # Интервал проверки (из окружения или 60 сек)
-    check_interval = int(os.environ.get("CHECK_INTERVAL", "60"))
+
+    baseline = get_check_interval()
+    refresh_interval = get_refresh_interval()
     daemon_mode = os.environ.get("DAEMON_MODE", "true").lower() == "true"
+    backoff = baseline
 
     with SingleInstanceLock(LOCK_FILE):
         if daemon_mode:
-            logger.info(f"Запуск в режиме DAEMON (интервал {check_interval}с)")
+            logger.info(
+                "Запуск в режиме DAEMON (baseline %ss, refresh %ss, backoff cap 60s)",
+                baseline,
+                refresh_interval,
+            )
             while not shutdown_flag:
-                run_check_cycle()
-                
-                # Ожидание с проверкой флага
-                remaining = check_interval
+                success = run_check_cycle()
+                backoff = next_backoff(backoff, success=success, baseline=baseline)
+                logger.info("Следующая проверка через %ss (success=%s)", backoff, success)
+
+                remaining = backoff
                 while remaining > 0 and not shutdown_flag:
                     sleep_time = min(5, remaining)
                     time.sleep(sleep_time)

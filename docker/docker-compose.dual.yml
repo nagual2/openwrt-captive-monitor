@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  captive-portal-dual:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dual
+    image: openwrt-captive-monitor:dual
+    container_name: captive-portal-dual
+    restart: unless-stopped
+    
+    # Network configuration for dual WAN
+    networks:
+      - primary_wan
+      - secondary_wan
+    
+    # Capabilities for networking
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    
+    # Device access for specific interfaces
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    
+    # Environment variables
+    environment:
+      - PRIMARY_WAN_INTERFACE=eth0
+      - SECONDARY_WAN_INTERFACE=eth1
+      - PRIMARY_GATEWAY=192.168.1.1
+      - SECONDARY_GATEWAY=192.168.45.1
+      - CHECK_INTERVAL=60
+      - SOCKS_ENABLED=true
+      - SOCKS_HOST=0.0.0.0
+      - SOCKS_PORT=1080
+      - LOG_LEVEL=INFO
+    
+    # Ports
+    ports:
+      - "1080:1080"  # SOCKS proxy
+    
+    # Volumes for persistence
+    volumes:
+      - ./data:/tmp
+      - ./logs:/var/log/captive-portal-dual
+      - /etc/localtime:/etc/localtime:ro
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1080", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # SOCKS proxy service (optional separate container)
+  socks-proxy:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dual
+    image: openwrt-captive-monitor:dual
+    container_name: captive-socks-proxy
+    restart: unless-stopped
+    command: ["python", "captive-portal-dual.py", "--proxy-channel", "secondary"]
+    
+    networks:
+      - secondary_wan
+    
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    
+    environment:
+      - SOCKS_HOST=0.0.0.0
+      - SOCKS_PORT=1080
+      - PROXY_CHANNEL=secondary
+    
+    ports:
+      - "1081:1080"  # Secondary SOCKS on port 1081
+    
+    volumes:
+      - ./data:/tmp
+    
+    depends_on:
+      - captive-portal-dual
+    
+    profiles:
+      - proxy
+
+networks:
+  primary_wan:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-primary
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24
+  
+  secondary_wan:
+    driver: macvlan
+    driver_opts:
+      parent: eth1  # Adjust to your secondary interface
+    ipam:
+      config:
+        - subnet: 192.168.45.0/24
+          gateway: 192.168.45.1

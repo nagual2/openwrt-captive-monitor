@@ -31,10 +31,11 @@
 
 | Переменная | Описание | Значение по умолчанию |
 |------------|----------|-----------------------|
-| `CHECK_INTERVAL` | Интервал между проверками (сек) | `60` |
-| `TZ` | Часовой пояс | `Europe/Berlin` |
-| `LOG_LEVEL` | Уровень логирования | `INFO` |
-| `COOKIES_FILE` | Путь к файлу куков внутри контейнера | `/var/lib/captive-portal/cookies.pkl` |
+| `CHECK_INTERVAL` | Baseline interval between checks (sec); doubles on failure up to 60 | `5` |
+| `REFRESH_INTERVAL` | Min seconds between Chrome keepalives when cookies are valid | `1800` |
+| `TZ` | Timezone | `Europe/Berlin` |
+| `LOG_LEVEL` | Log level | `INFO` |
+| `COOKIES_FILE` | Cookie file path inside the container | `/var/lib/captive-portal/cookies.pkl` |
 
 ## Структура файлов
 

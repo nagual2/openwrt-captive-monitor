@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  captive-portal-dual:
+    image: captive-portal-dual:v4
+    container_name: captive-portal-dual
+    restart: unless-stopped
+    command: python3 /app/captive-portal-dual.py --daemon --interval 300
+    environment:
+      - LOG_FILE=/tmp/captive_dual.log
+      - LOCK_FILE=/tmp/captive_dual.lock
+      - COOKIES_FILE=/tmp/captive_dual_cookies.pkl
+      - COOKIES_META_FILE=/tmp/captive_dual_cookies_meta.json
+    volumes:
+      - /opt/captive-portal-dual/logs:/tmp
+    networks:
+      - default
+    labels:
+      - "app.captive-portal-dual=true"
+
+networks:
+  default:
+    name: captive-portal-dual-network

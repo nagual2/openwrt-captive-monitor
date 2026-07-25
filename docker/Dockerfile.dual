@@ -1,0 +1,51 @@
+FROM python:3.12-slim-bookworm
+
+LABEL maintainer="Dwarh-Cruiser" \
+      description="Dual-channel captive portal authorization" \
+      version="1.0.0"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    wget \
+    ca-certificates \
+    chromium \
+    chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    RUNTIME_DIR=/tmp \
+    LOG_FILE=/tmp/captive_dual.log \
+    LOCK_FILE=/tmp/captive_dual.lock \
+    COOKIES_FILE=/tmp/captive_dual_cookies.pkl \
+    COOKIES_META_FILE=/tmp/captive_dual_cookies_meta.json \
+    CHROME_BIN=/usr/bin/chromium \
+    CHROMEDRIVER_PATH=/usr/bin/chromedriver
+
+# Create working directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt \
+    selenium \
+    requests \
+    schedule \
+    psutil
+
+# Copy application files
+COPY tools/captive-portal-dual.py .
+COPY tools/conn4_auth_lib.py .
+
+# Make scripts executable
+RUN chmod +x captive-portal-dual.py
+
+# Create necessary directories
+RUN mkdir -p /tmp
+
+# Default command - run in daemon mode
+CMD ["python", "captive-portal-dual.py", "--daemon", "--interval", "60"]
